@@ -39,14 +39,27 @@ import {
   gpuResourceKey,
   AppSourceConfigs
 } from '@/constants/app';
-import { cpuFormatToM, memoryFormatToMi, formatPodTime, atobSecretYaml } from '@/utils/tools';
+import { formatPodTime, atobSecretYaml } from '@/utils/tools';
 import { defaultEditVal } from '@/constants/editApp';
 import { customAlphabet } from 'nanoid';
 import { has } from 'lodash';
 import { lauchpadRemarkKey } from '@/constants/account';
-import { getInitData } from '@/api/platform';
+import {
+  parseK8sQuantityOrZero,
+  quantityToStorageGi,
+  storageAnnotationToQuantity
+} from '@/utils/resourceQuantity';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
+
+export const normalizeCustomDomainHost = (input: string) => {
+  try {
+    const url = input.includes('://') ? new URL(input) : new URL(`https://${input}`);
+    return url.hostname.toLowerCase();
+  } catch {
+    return input.trim().toLowerCase();
+  }
+};
 
 // Calculate app  status
 function calculateAppStatus(
@@ -113,10 +126,12 @@ export const getAppSource = (
 export const adaptAppListItem = (app: V1Deployment & V1StatefulSet): AppListItemType => {
   // compute store amount
   const storeAmount = app.spec?.volumeClaimTemplates
-    ? app.spec?.volumeClaimTemplates.reduce(
-        (sum, item) => sum + Number(item?.metadata?.annotations?.value),
-        0
-      )
+    ? app.spec?.volumeClaimTemplates.reduce((sum, item) => {
+        const storage = item?.spec?.resources?.requests?.storage
+          ? parseK8sQuantityOrZero(item.spec.resources.requests.storage)
+          : storageAnnotationToQuantity(item?.metadata?.annotations?.value);
+        return sum + quantityToStorageGi(storage);
+      }, 0)
     : 0;
 
   const gpuNodeSelector = app?.spec?.template?.spec?.nodeSelector;
@@ -124,11 +139,13 @@ export const adaptAppListItem = (app: V1Deployment & V1StatefulSet): AppListItem
   return {
     id: app.metadata?.uid || ``,
     name: app.metadata?.name || 'app name',
-    status: appStatusMap.waiting,
+    status: calculateAppStatus(app),
     isPause: !!app?.metadata?.annotations?.[pauseKey],
     createTime: dayjs(app.metadata?.creationTimestamp).format('YYYY/MM/DD HH:mm'),
-    cpu: cpuFormatToM(app.spec?.template?.spec?.containers?.[0]?.resources?.limits?.cpu || '0'),
-    memory: memoryFormatToMi(
+    cpu: parseK8sQuantityOrZero(
+      app.spec?.template?.spec?.containers?.[0]?.resources?.limits?.cpu || '0'
+    ),
+    memory: parseK8sQuantityOrZero(
       app.spec?.template?.spec?.containers?.[0]?.resources?.limits?.memory || '0'
     ),
     gpu: {
@@ -214,7 +231,7 @@ export const adaptPod = (pod: V1Pod): PodDetailType => {
     nodeName: pod.spec?.nodeName || 'node name',
     ip: pod.status?.podIP || 'pod ip',
     restarts: pod.status?.containerStatuses
-      ? (pod.status?.containerStatuses[0]?.restartCount ?? 0)
+      ? pod.status?.containerStatuses[0]?.restartCount ?? 0
       : 0,
     age: formatPodTime(pod.metadata?.creationTimestamp),
     usedCpu: {
@@ -227,16 +244,16 @@ export const adaptPod = (pod: V1Pod): PodDetailType => {
       xData: new Array(30).fill(0),
       yData: new Array(30).fill('0')
     },
-    cpu: cpuFormatToM(pod.spec?.containers?.[0]?.resources?.limits?.cpu || '0'),
-    memory: memoryFormatToMi(pod.spec?.containers?.[0]?.resources?.limits?.memory || '0')
+    cpu: parseK8sQuantityOrZero(pod.spec?.containers?.[0]?.resources?.limits?.cpu || '0'),
+    memory: parseK8sQuantityOrZero(pod.spec?.containers?.[0]?.resources?.limits?.memory || '0')
   };
 };
 
 export const adaptMetrics = (metrics: SinglePodMetrics): PodMetrics => {
   return {
     podName: metrics.metadata.name,
-    cpu: cpuFormatToM(metrics?.containers?.[0]?.usage?.cpu),
-    memory: memoryFormatToMi(metrics?.containers?.[0]?.usage?.memory)
+    cpu: parseK8sQuantityOrZero(metrics?.containers?.[0]?.usage?.cpu),
+    memory: parseK8sQuantityOrZero(metrics?.containers?.[0]?.usage?.memory)
   };
 };
 
@@ -275,16 +292,14 @@ export enum YamlKindEnum {
 
 export const adaptAppDetail = async (
   configs: DeployKindsType[],
-  options?: {
-    SEALOS_DOMAIN: string;
-    SEALOS_USER_DOMAINS: {
+  cloudOptions: {
+    domain: string;
+    userDomains: {
       name: string;
       secretName: string;
     }[];
   }
 ): Promise<AppDetailType> => {
-  const { SEALOS_DOMAIN, SEALOS_USER_DOMAINS } = options ?? (await getInitData());
-
   const allServices = configs
     .filter((item) => item.kind === YamlKindEnum.Service)
     .map((item) => item as V1Service);
@@ -433,10 +448,10 @@ export const adaptAppDetail = async (
         ? appDeploy.spec?.template?.spec?.containers?.[0]?.args.join(' ')
         : JSON.stringify(appDeploy.spec?.template?.spec?.containers?.[0]?.args)) || '',
     replicas: appDeploy.spec?.replicas || 0,
-    cpu: cpuFormatToM(
+    cpu: parseK8sQuantityOrZero(
       appDeploy.spec?.template?.spec?.containers?.[0]?.resources?.limits?.cpu || '0'
     ),
-    memory: memoryFormatToMi(
+    memory: parseK8sQuantityOrZero(
       appDeploy.spec?.template?.spec?.containers?.[0]?.resources?.limits?.memory || '0'
     ),
     gpu: {
@@ -490,8 +505,8 @@ export const adaptAppDetail = async (
           ] as ApplicationProtocolType) ?? (protocol === 'TCP' ? 'HTTP' : undefined);
 
         const isCustomDomain =
-          !domain.endsWith(SEALOS_DOMAIN) &&
-          !SEALOS_USER_DOMAINS.some((item) => domain.endsWith(item.name));
+          !domain.endsWith(cloudOptions.domain) &&
+          !cloudOptions.userDomains.some((item) => domain.endsWith(item.name));
 
         const result = {
           serviceName: service?.metadata?.name || '',
@@ -506,12 +521,12 @@ export const adaptAppDetail = async (
           publicDomain: isCustomDomain
             ? ingress?.metadata?.labels?.[publicDomainKey] || ''
             : domain.split('.')[0],
-          customDomain: isCustomDomain ? domain : '',
+          customDomain: isCustomDomain ? normalizeCustomDomainHost(domain) : '',
           domain: isCustomDomain
-            ? SEALOS_DOMAIN
+            ? cloudOptions.domain
             : item?.nodePort
-              ? domain
-              : domain.split('.').slice(1).join('.') || SEALOS_DOMAIN
+            ? domain
+            : domain.split('.').slice(1).join('.') || cloudOptions.domain
         };
         return result;
       }) || [],
@@ -540,11 +555,16 @@ export const adaptAppDetail = async (
     configMapList: getConfigMapList(),
     secret: atobSecretYaml(deployKindsMap?.Secret?.data?.['.dockerconfigjson']),
     storeList: deployKindsMap.StatefulSet?.spec?.volumeClaimTemplates
-      ? deployKindsMap.StatefulSet?.spec?.volumeClaimTemplates.map((item) => ({
-          name: item.metadata?.name || '',
-          path: item.metadata?.annotations?.path || '',
-          value: Number(item.metadata?.annotations?.value || 0)
-        }))
+      ? deployKindsMap.StatefulSet?.spec?.volumeClaimTemplates.map((item) => {
+          const storage = item.spec?.resources?.requests?.storage;
+          return {
+            name: item.metadata?.name || '',
+            path: item.metadata?.annotations?.path || '',
+            value: storage
+              ? parseK8sQuantityOrZero(storage)
+              : storageAnnotationToQuantity(item.metadata?.annotations?.value)
+          };
+        })
       : [],
     volumeMounts: getFilteredVolumeMounts(),
     volumes: getFilteredVolumes(),

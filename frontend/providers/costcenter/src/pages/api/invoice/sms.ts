@@ -1,3 +1,4 @@
+import { Config } from '@/config';
 import { addOrUpdateCode, checkSendable } from '@/service/backend/db/verifyCode';
 import { jsonRes } from '@/service/backend/response';
 import { getClientIPFromRequest, retrySerially } from '@/utils/tools';
@@ -6,12 +7,13 @@ import * as OpenApi from '@alicloud/openapi-client';
 import * as Util from '@alicloud/tea-util';
 import { NextApiRequest, NextApiResponse } from 'next';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const accessKeyId = global.AppConfig.costCenter.invoice.aliSms.accessKeyID;
-  const accessKeySecret = global.AppConfig.costCenter.invoice.aliSms.accessKeySecret;
-  const templateCode = global.AppConfig.costCenter.invoice.aliSms.templateCode;
-  const signName = global.AppConfig.costCenter.invoice.aliSms.signName;
+  const cfg = Config();
+  const accessKeyId = cfg.costCenter.invoice.aliSms.accessKeyID;
+  const accessKeySecret = cfg.costCenter.invoice.aliSms.accessKeySecret;
+  const templateCode = cfg.costCenter.invoice.aliSms.templateCode;
+  const signName = cfg.costCenter.invoice.aliSms.signName;
   try {
-    if (!global.AppConfig.costCenter.invoice.enabled) {
+    if (!cfg.costCenter.invoice.enabled) {
       throw new Error('invoice is not enabled');
     }
     if (process.env.NODE_ENV === 'development') {

@@ -13,6 +13,7 @@ import type {
   V1Volume,
   V1VolumeMount
 } from '@kubernetes/client-node';
+import type { Quantity } from '@sealos/shared';
 import { MonitorDataResult } from './monitor';
 
 export type HpaTarget = 'cpu' | 'memory' | 'gpu';
@@ -48,8 +49,8 @@ export interface AppListItemType {
   status: AppStatusMapType;
   isPause: boolean;
   createTime: string;
-  cpu: number;
-  memory: number;
+  cpu: Quantity;
+  memory: Quantity;
   gpu?: GpuType;
   usedCpu: MonitorDataResult;
   usedMemory: MonitorDataResult; // average value
@@ -73,8 +74,8 @@ export interface AppEditType {
   runCMD: string;
   cmdParam: string;
   replicas: number | '';
-  cpu: number;
-  memory: number;
+  cpu: Quantity;
+  memory: Quantity;
   gpu?: GpuType;
   networks: {
     serviceName?: string;
@@ -118,7 +119,7 @@ export interface AppEditType {
   storeList: {
     name: string;
     path: string;
-    value: number;
+    value: Quantity;
   }[];
   labels: { [key: string]: string };
   volumes: V1Volume[];
@@ -194,16 +195,16 @@ export interface PodDetailType extends V1Pod {
   age: string;
   usedCpu: MonitorDataResult;
   usedMemory: MonitorDataResult;
-  cpu: number;
-  memory: number;
+  cpu: Quantity;
+  memory: Quantity;
   podReason?: string;
   podMessage?: string;
   containerStatuses: ContainerStatusType[];
 }
 export interface PodMetrics {
   podName: string;
-  cpu: number;
-  memory: number;
+  cpu: Quantity;
+  memory: Quantity;
 }
 
 export interface PodEvent {

@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useMemo } from 'react';
 import type { SessionV1 } from 'sealos-desktop-sdk';
-import { sealosApp as defaultSealosApp } from 'sealos-desktop-sdk/app';
+import type { sealosApp as defaultSealosApp } from 'sealos-desktop-sdk/app';
 
 export type UseQuotaGuardedConfig = {
   getSession: () => SessionV1 | null;

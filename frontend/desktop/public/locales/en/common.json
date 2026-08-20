@@ -38,10 +38,13 @@
   "avatar": "Avatar",
   "balance_popover": {
     "balance": "Balance",
+    "cancelled_notice": "Your subscription is cancelled. Resources will be deleted after {{date}}. Please back up your data or renew to avoid loss.",
     "check_costcenter_tip": "Check more details in Cost Center",
     "expired_at": "Expired At:",
+    "expires_on": "Expires on:",
     "payg_plan": "PAYG",
     "plan_suffix": "Plan",
+    "renew_subscription_button": "Renew subscription",
     "subscription_status": {
       "expired": "Expired",
       "limited_trial": "Limited Trial"
@@ -52,7 +55,8 @@
     "trial_expiry_upgrade_tip_one": "Your trial will expire in {{count}} day. Upgrade to keep your services online.",
     "trial_expiry_upgrade_tip_other": "Your trial will expire in {{count}} days. Upgrade to keep your services online.",
     "upgrade_button": "Upgrade Plan",
-    "upgrade_tip": "To upgrade your plan, you can visit the Cost Center."
+    "upgrade_tip": "To upgrade your plan, you can visit the Cost Center.",
+    "can_not_manage_payments": "Please contact the namespace owner to update or cancel the subscription."
   },
   "balance_text": "Balance",
   "bank_name": "Bank",
@@ -86,9 +90,23 @@
   "click_on_any_shadow_to_skip": "Click on any shadow to skip",
   "click_to_upload_file": "Click to upload file",
   "completed": "Finish",
+  "community": {
+    "menu": {
+      "title": "Community",
+      "badge": "Featured",
+      "description": "Updates • Events • Stories"
+    },
+    "modal": {
+      "title": "Join the Sealos Community",
+      "description": "Help shape the future of Sealos.",
+      "button": "Join Us",
+      "qr_alt": "Sealos community QR code"
+    }
+  },
   "completed_the_deployment_of_an_nginx_for_the_first_time": "Completed a deployment of nginx for the first time",
   "confirm": "Confirm",
   "confirm_again": "confirm again",
+  "copy": "Copy",
   "confirmnewpassword": "Confirm New Password",
   "contact_info": "Phone Number",
   "contact_info_must_be_numeric": "It must be a numeric string",
@@ -185,6 +203,8 @@
   "invalid_username_or_password": "Invalid username or password",
   "invalid_verification_amount": "The verification amount format is invalid",
   "invalid_verification_code": "The input verification code is incorrect, please check if there is an input error.",
+  "invalid_verification_code_with_attempts_one": "Incorrect verification code. {{count}} attempt remaining.",
+  "invalid_verification_code_with_attempts_other": "Incorrect verification code. {{count}} attempts remaining.",
   "invitation_reminder": "Invitation reminder",
   "invite_member": "Invite Member",
   "invite_members_to_workspace": "Invite members to workspace {{workspace}}",
@@ -222,8 +242,10 @@
   "name_of_team": "Name of Workspace",
   "nav_links": {
     "balance": "Balance",
+    "cancelled": "Cancelled",
     "plan_expired": "Expired",
     "plan_suffix": "Plan",
+    "renew": "Renew",
     "subscribe": "Subscribe",
     "upgrade_plan": "Upgrade"
   },
@@ -294,6 +316,7 @@
   "recharge_amount": "Recharge Amount",
   "redirecting_to_homepage_in_3_seconds": "Redirecting to homepage in 3 seconds",
   "refresh_qr_code": "Refresh the QR code",
+  "regenerate_link": "Regenerate",
   "region": "Region",
   "reject": "Reject",
   "remain_app_tips": "There are still undeleted application resources in your account. Please backup any important data and manually delete all application resources.",
@@ -365,6 +388,10 @@
   "verification_amount_required": "The verification amount cannot be empty",
   "verification_amount_tips": "Shanghai UnionPay will deposit a random amount into your bank account for\nverification, typically arriving in real-time. If not received in 3 business day, please ",
   "verification_amount_tips2": "Please confirm the deposited verification amount with your finance team. It usually arrives in real-time.",
+  "verification_attempts_exhausted": "Too many attempts. Request a new verification code.",
+  "verification_attempts_exhausted_with_retry": "Too many attempts. Request a new verification code in {{countdown}} seconds.",
+  "verification_code_expired": "The verification code has expired. Request a new one.",
+  "verification_send_rate_limited": "Too many requests. Try again in {{countdown}} seconds.",
   "verification_code_login": "with Phone",
   "verify_code_tips": "Please input 6-digit Verification Code",
   "verify_password": "Verify password",
@@ -446,5 +473,22 @@
       "update_success": "Updated successfully",
       "update_failed": "Failed to update"
     }
-  }
+  },
+  "refresh_kubeconfig": "Refresh Kubeconfig",
+  "kubeconfig_rotating": "Rotating Kubeconfig...",
+  "kubeconfig_rotated_successfully": "Kubeconfig refreshed successfully",
+  "kubeconfig_rotation_failed": "Failed to refresh Kubeconfig",
+  "delete_account_subscription_warning_title": "Warning:",
+  "delete_account_subscription_warning": "Active subscriptions and resources were found in your account. We recommend canceling subscriptions in the Cost Center and removing your current work first. Alternatively, if you have confirmed everything, you can proceed to delete your account directly, and the related workspace & subscription will be canceled meanwhile:",
+  "delete_account_open_cost_center": "Open Cost Center",
+  "delete_account_delete_immediately": "Delete Immediately",
+  "delete_account_pending_title": "Account deletion is in progress",
+  "delete_account_pending_description": "We have started deleting your account. Keep this window open while we wait for the final result.",
+  "delete_account_pending_hint": "You will be signed out automatically after the deletion succeeds.",
+  "delete_account_success_title": "Account deleted successfully",
+  "delete_account_success_description": "Your account deletion has finished successfully.",
+  "delete_account_success_hint": "Signing you out now…",
+  "delete_account_failed_description": "We could not finish deleting your account. Review the failed workspaces below.",
+  "delete_account_failed_hint": "Workspace subscription cancellation failed before account deletion could finish.",
+  "delete_account_failed_no_details": "No workspace failure details were returned."
 }

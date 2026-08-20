@@ -3,6 +3,7 @@ FROM scratch
 USER 65532:65532
 
 COPY registry registry
-COPY manifests manifests
+COPY charts charts
+COPY job-init-entrypoint.sh job-init-entrypoint.sh
 
-CMD ["kubectl apply -f manifests"]
+CMD ["bash job-init-entrypoint.sh"]

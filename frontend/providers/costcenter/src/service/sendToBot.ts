@@ -1,4 +1,4 @@
-import { initAppConfig } from '@/pages/api/platform/getAppConfig';
+import { Config } from '@/config';
 import {
   InvoiceBillingItem,
   InvoicePayload,
@@ -25,8 +25,7 @@ const getStatus = (invoiceStatus: InvoicePayload['status']) =>
   invoiceStatus === 'COMPLETED' ? '已完成' : '申请中';
 export const updateTenantAccessToken = async () => {
   try {
-    initAppConfig();
-    const feishuConfig = global.AppConfig.costCenter.invoice.feishApp;
+    const feishuConfig = Config().costCenter.invoice.feishuApp;
 
     const body = {
       app_id: feishuConfig.appId,
@@ -116,8 +115,8 @@ const generateBotTemplate = ({
   const card = {
     type: 'template',
     data: {
-      template_id: AppConfig.costCenter.invoice.feishApp.template.id,
-      template_version_name: AppConfig.costCenter.invoice.feishApp.template.version,
+      template_id: Config().costCenter.invoice.feishuApp.template.id,
+      template_version_name: Config().costCenter.invoice.feishuApp.template.version,
       template_variable: {
         invoiceId: invoice.id,
         invoiceDetail,
@@ -136,7 +135,7 @@ const generateBotTemplate = ({
 };
 export const getInvoicePayments = async (invoiceID: string): Promise<RechargeBillingItem[]> => {
   try {
-    const token = AppConfig.costCenter.invoice.serviceToken;
+    const token = Config().costCenter.invoice.serviceToken;
     if (!token) throw Error('token is null');
     const client = await makeAPIClient(null);
     const res = await client.post(`/account/v1alpha1/invoice/get-payment`, {
@@ -181,7 +180,7 @@ export const sendToBot = async ({
 
   const body = {
     msg_type: 'interactive',
-    receive_id: AppConfig.costCenter.invoice.feishApp.chatId,
+    receive_id: Config().costCenter.invoice.feishuApp.chatId,
     content: JSON.stringify(card)
   };
 
@@ -208,7 +207,7 @@ export const sendToUpdateBot = async ({
   const card = generateBotTemplate({ invoice, payments });
   const body = {
     msg_type: 'interactive',
-    receive_id: AppConfig.costCenter.invoice.feishApp.chatId,
+    receive_id: Config().costCenter.invoice.feishuApp.chatId,
     content: JSON.stringify(card)
   };
 
@@ -279,11 +278,12 @@ export const sendInvoiceCompletedSMS = async ({
       return false;
     }
 
-    const accessKeyId = global.AppConfig.costCenter.invoice.aliSms.accessKeyID;
-    const accessKeySecret = global.AppConfig.costCenter.invoice.aliSms.accessKeySecret;
-    const signName = global.AppConfig.costCenter.invoice.aliSms.signName;
-    const templateCode = global.AppConfig.costCenter.invoice.aliSms.invoiceCompletedTemplateCode;
-    const smsEndpoint = global.AppConfig.costCenter.invoice.aliSms.endpoint;
+    const aliSmsConfig = Config().costCenter.invoice.aliSms;
+    const accessKeyId = aliSmsConfig.accessKeyID;
+    const accessKeySecret = aliSmsConfig.accessKeySecret;
+    const signName = aliSmsConfig.signName;
+    const templateCode = aliSmsConfig.invoiceCompletedTemplateCode;
+    const smsEndpoint = aliSmsConfig.endpoint;
     if (!accessKeyId || !accessKeySecret || !templateCode || !signName) {
       console.log('Invoice completed SMS config is incomplete');
       return false;

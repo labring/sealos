@@ -14,7 +14,7 @@ import { useTranslation } from 'next-i18next';
 import { useForm } from 'react-hook-form';
 import { getSmsUnbindCodeRequest, verifySmsUnbindRequest } from '@/api/auth';
 import { SettingInput } from '../SettingInput';
-import { MouseEventHandler } from 'react';
+import { MouseEventHandler, useState } from 'react';
 
 import { SettingInputGroup } from '../SettingInputGroup';
 import { SettingInputRightElement } from '../SettingInputRightElement';
@@ -27,6 +27,7 @@ const smsUnBindGen = (smsType: SmsType) =>
   function UnBindCore({ onClose }: { onClose: () => void }) {
     const { t } = useTranslation();
     const { toast } = useCustomToast({ status: 'error' });
+    const [challengeId, setChallengeId] = useState('');
 
     const { register, handleSubmit, trigger, getValues, reset, formState } = useForm<{
       id: string;
@@ -42,6 +43,7 @@ const smsUnBindGen = (smsType: SmsType) =>
         return getSmsUnbindCodeRequest(smsType)({ id });
       },
       onSuccess(data) {
+        setChallengeId(data.data?.challengeId || '');
         startTimer();
         toast({
           status: 'success',
@@ -81,7 +83,15 @@ const smsUnBindGen = (smsType: SmsType) =>
     };
     const queryClient = useQueryClient();
     const mutation = useMutation({
-      mutationFn({ smsType, ...data }: { id: string; smsType: SmsType; code: string }) {
+      mutationFn({
+        smsType,
+        ...data
+      }: {
+        id: string;
+        smsType: SmsType;
+        code: string;
+        challengeId: string;
+      }) {
         return verifySmsUnbindRequest(smsType)(data);
       },
       async onSuccess(data) {
@@ -91,6 +101,7 @@ const smsUnBindGen = (smsType: SmsType) =>
             title: t('common:unbind_success')
           });
           reset();
+          setChallengeId('');
           await queryClient.invalidateQueries();
           onClose?.();
         }
@@ -110,6 +121,7 @@ const smsUnBindGen = (smsType: SmsType) =>
               mutation.mutate({
                 id: data.id,
                 code: data.verifyCode,
+                challengeId,
                 smsType
               });
             },

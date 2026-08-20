@@ -26,7 +26,7 @@ const RunningTime = ({
     ['getMysqlInnoDB'],
     () => GET('/api/monitor/getMysqlInnoDB', { dbName: dbName, dbType: dbType }),
     {
-      enabled: dbType === DBTypeEnum.mysql
+      enabled: dbType === DBTypeEnum.mysql || dbType === DBTypeEnum.notapemysql
     }
   );
 
@@ -35,7 +35,7 @@ const RunningTime = ({
     return formatTimeToDay(parseFloat(RunningTimeData?.maxRunningTime));
   }, [RunningTimeData?.maxRunningTime]);
 
-  if (dbType === DBTypeEnum.mysql && MysqlInnoDB) {
+  if ((dbType === DBTypeEnum.mysql || dbType === DBTypeEnum.notapemysql) && MysqlInnoDB) {
     return (
       <Flex justifyContent={'space-between'}>
         <Flex

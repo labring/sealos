@@ -1,21 +1,23 @@
 import { jsonRes } from '@/services/backend/response';
 import { TemplateType } from '@/types/app';
-import { findTopKeyWords } from '@/utils/template';
+import { getCategorySlugs } from '@/utils/template';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';
-import { readTemplates } from '../../listTemplate';
+import { readTemplatesFromFile } from '../../listTemplate';
+import { Config } from '@/config';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const language = (req.query.language as string) || 'en';
   const originalPath = process.cwd();
   const jsonPath = path.resolve(originalPath, 'templates.json');
-  const cdnUrl = process.env.CDN_URL;
-  const blacklistedCategories = process.env.BLACKLIST_CATEGORIES
-    ? process.env.BLACKLIST_CATEGORIES.split(',')
-    : [];
-  const menuCount = Number(process.env.SIDEBAR_MENU_COUNT) || 10;
 
   try {
-    const templates = readTemplates(jsonPath, cdnUrl, blacklistedCategories, language);
+    const config = Config();
+    const templates = readTemplatesFromFile(
+      jsonPath,
+      config.template.cdnHost,
+      config.template.categories,
+      language
+    );
 
     const timestamp = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });
     console.log(`[${timestamp}] language: ${language}, templates count: ${templates.length}`);
@@ -38,15 +40,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       };
     });
 
-    const categories = templates.map((item: TemplateType) =>
-      item.spec?.categories ? item.spec.categories : []
-    );
-    const topKeys = findTopKeyWords(categories, menuCount);
+    const menuKeys = getCategorySlugs(config.template.categories).join(',');
 
     jsonRes(res, {
       data: {
         templates: simplifiedTemplates,
-        menuKeys: topKeys.join(',')
+        menuKeys
       },
       code: 200
     });

@@ -23,6 +23,8 @@ import (
 type Global struct {
 	CloudDomain    string `yaml:"cloudDomain"`
 	CloudPort      string `yaml:"cloudPort"`
+	HTTPPort       string `yaml:"httpPort"`
+	DisableHTTPS   bool   `yaml:"disableHttps"`
 	RegionUID      string `yaml:"regionUID"`
 	CertSecretName string `yaml:"certSecretName"`
 }

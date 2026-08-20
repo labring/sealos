@@ -13,11 +13,12 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
     if (!enableEmailSms()) {
       throw new Error('SMS is not enabled');
     }
-    await filterEmailVerifyParams(req, res, async ({ email, code }) => {
+    await filterEmailVerifyParams(req, res, async ({ email, code, challengeId }) => {
       await verifyCodeGuard(
         email,
         code,
-        'email_login'
+        'email_login',
+        challengeId
       )(
         res,
         async () =>

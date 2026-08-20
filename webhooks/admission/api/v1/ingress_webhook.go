@@ -91,10 +91,11 @@ func (m *IngressMutator) mutateUserIngressAnnotations(i *netv1.Ingress) {
 
 type IngressValidator struct {
 	client.Client
-	CnameDomains DomainList
-	DenyDomains  DomainList
-	cache        cache.Cache
-	IcpValidator *IcpValidator
+	CnameDomains      DomainList
+	DenyDomains       DomainList
+	CnameCheckEnabled bool
+	cache             cache.Cache
+	IcpValidator      *IcpValidator
 }
 
 const IngressHostIndex = "host"
@@ -116,7 +117,7 @@ func (v *IngressValidator) SetupWithManager(mgr ctrl.Manager) error {
 		IngressHostIndex,
 		func(obj client.Object) []string {
 			ingress := obj.(*netv1.Ingress) //nolint:errcheck // IndexField is registered for Ingress objects only
-			var hosts []string
+			hosts := make([]string, 0, len(ingress.Spec.Rules))
 			for _, rule := range ingress.Spec.Rules {
 				hosts = append(hosts, rule.Host)
 			}
@@ -218,16 +219,15 @@ func (v *IngressValidator) validate(ctx context.Context, i *netv1.Ingress) error
 		return nil
 	}
 
-	checks := []func(*netv1.Ingress, *netv1.IngressRule) error{
-		v.checkDeny,
-		v.checkCname,
-		v.checkOwner,
-		v.checkIcp,
+	checks := []func(context.Context, *netv1.Ingress, *netv1.IngressRule) error{v.checkDeny}
+	if v.CnameCheckEnabled {
+		checks = append(checks, v.checkCname)
 	}
+	checks = append(checks, v.checkOwner, v.checkIcp)
 
 	for _, rule := range i.Spec.Rules {
 		for _, check := range checks {
-			if err := check(i, &rule); err != nil {
+			if err := check(ctx, i, &rule); err != nil {
 				return err
 			}
 		}
@@ -241,7 +241,11 @@ func normalizeFQDN(s string) string {
 	return strings.TrimSuffix(s, ".")
 }
 
-func (v *IngressValidator) checkDeny(i *netv1.Ingress, rule *netv1.IngressRule) error {
+func (v *IngressValidator) checkDeny(
+	_ context.Context,
+	i *netv1.Ingress,
+	rule *netv1.IngressRule,
+) error {
 	if len(v.DenyDomains) == 0 {
 		return nil
 	}
@@ -273,7 +277,11 @@ func (v *IngressValidator) checkDeny(i *netv1.Ingress, rule *netv1.IngressRule) 
 	return nil
 }
 
-func (v *IngressValidator) checkCname(i *netv1.Ingress, rule *netv1.IngressRule) error {
+func (v *IngressValidator) checkCname(
+	ctx context.Context,
+	i *netv1.Ingress,
+	rule *netv1.IngressRule,
+) error {
 	ilog.Info(
 		"checking cname",
 		"ingress namespace",
@@ -285,7 +293,7 @@ func (v *IngressValidator) checkCname(i *netv1.Ingress, rule *netv1.IngressRule)
 	)
 	ilog.Info("domains:", "domains", strings.Join(v.CnameDomains, ","))
 	// get cname and check if it is cname to domain
-	cname, err := net.LookupCNAME(rule.Host)
+	cname, err := net.DefaultResolver.LookupCNAME(ctx, rule.Host)
 	if err != nil {
 		ilog.Error(err, "can not verify ingress host "+rule.Host+", lookup cname error")
 		return err
@@ -328,10 +336,14 @@ func (v *IngressValidator) checkCname(i *netv1.Ingress, rule *netv1.IngressRule)
 	)
 }
 
-func (v *IngressValidator) checkOwner(i *netv1.Ingress, rule *netv1.IngressRule) error {
+func (v *IngressValidator) checkOwner(
+	ctx context.Context,
+	i *netv1.Ingress,
+	rule *netv1.IngressRule,
+) error {
 	iList := &netv1.IngressList{}
 	if err := v.cache.List(
-		context.Background(),
+		ctx,
 		iList,
 		client.MatchingFields{IngressHostIndex: rule.Host},
 	); err != nil {
@@ -366,7 +378,11 @@ func (v *IngressValidator) checkOwner(i *netv1.Ingress, rule *netv1.IngressRule)
 	return nil
 }
 
-func (v *IngressValidator) checkIcp(i *netv1.Ingress, rule *netv1.IngressRule) error {
+func (v *IngressValidator) checkIcp(
+	ctx context.Context,
+	i *netv1.Ingress,
+	rule *netv1.IngressRule,
+) error {
 	if !v.IcpValidator.enabled {
 		ilog.Info(
 			"icp is disabled, skip check icp",
@@ -380,7 +396,7 @@ func (v *IngressValidator) checkIcp(i *netv1.Ingress, rule *netv1.IngressRule) e
 		return nil
 	}
 	// check rule.host icp
-	icpRep, err := v.IcpValidator.Query(rule)
+	icpRep, err := v.IcpValidator.Query(ctx, rule)
 	if err != nil {
 		ilog.Error(err, "can not verify ingress host "+rule.Host+", icp query error")
 		return fmt.Errorf(

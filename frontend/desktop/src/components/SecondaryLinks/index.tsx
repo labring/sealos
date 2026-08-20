@@ -38,7 +38,7 @@ const baseItemStyle = {
 };
 
 export default function SecondaryLinks() {
-  const { layoutConfig } = useConfigStore();
+  const { layoutConfig, commonConfig } = useConfigStore();
   const { t } = useTranslation();
   const { openGuideModal, setInitGuide } = useGuideModalStore();
   const { openDesktopApp } = useAppStore();
@@ -91,6 +91,11 @@ export default function SecondaryLinks() {
   });
 
   const { subscriptionInfo, fetchSubscriptionInfo } = useSubscriptionStore();
+  const subscription = subscriptionInfo?.subscription;
+  const isFreePlan = (subscription?.PlanName || '').toLowerCase() === 'free';
+  const isCancelled = !!subscription?.CancelAtPeriodEnd && !isFreePlan;
+  const isDebt = subscription?.Status?.toLowerCase() === 'debt';
+  const canManagePayment = subscription?.type === 'PAYG' || subscription?.role === 'OWNER';
 
   useEffect(() => {
     if (workspace) {
@@ -107,6 +112,7 @@ export default function SecondaryLinks() {
   }, [data]);
 
   const handleGuideClick = () => {
+    if (!commonConfig?.guideEnabled) return;
     openGuideModal();
     setInitGuide(false);
   };
@@ -122,7 +128,7 @@ export default function SecondaryLinks() {
       <Flex gap={'4px'} ml={'auto'}>
         <BalancePopover
           openCostCenterApp={() =>
-            layoutConfig?.common.subscriptionEnabled
+            layoutConfig?.common.subscriptionEnabled && canManagePayment
               ? openCostCenterApp('upgrade')
               : openCostCenterApp()
           }
@@ -131,21 +137,21 @@ export default function SecondaryLinks() {
           <Center
             mr={'12px'}
             borderRadius={'8px'}
-            bg={getPlanBackground(subscriptionInfo?.subscription)}
+            bg={isCancelled ? '#F4F4F5' : getPlanBackground(subscription)}
             h={'36px'}
             px={'12px'}
             py={'8px'}
-            color="#2563EB"
+            color={isCancelled ? 'var(--color-muted-foreground)' : '#2563EB'}
             fontSize={'14px'}
             fontWeight={'500'}
             cursor={'pointer'}
             onClick={() =>
-              layoutConfig?.common.subscriptionEnabled
+              layoutConfig?.common.subscriptionEnabled && canManagePayment
                 ? openCostCenterApp('upgrade')
                 : openCostCenterApp()
             }
           >
-            {subscriptionInfo?.subscription?.type === 'PAYG' ? (
+            {subscription?.type === 'PAYG' ? (
               <div className="flex items-center text-sm font-medium text-blue-600">
                 <Center
                   mr={'8px'}
@@ -191,43 +197,54 @@ export default function SecondaryLinks() {
               <>
                 <Center
                   mr={'8px'}
-                  bg={subscriptionInfo?.subscription?.Status === 'Debt' ? '#F87171' : '#34D399'}
+                  bg={isDebt ? '#F87171' : isCancelled ? '#E4E4E7' : '#34D399'}
                   w={'8px'}
                   h={'8px'}
                   borderRadius={'full'}
                 ></Center>
                 <Text textTransform="capitalize">
-                  {subscriptionInfo?.subscription?.PlanName || 'Free'}{' '}
-                  {t('common:nav_links.plan_suffix')}
+                  {subscription?.PlanName || 'Free'} {t('common:nav_links.plan_suffix')}
                 </Text>
-                {subscriptionInfo?.subscription?.Status === 'Debt' && (
+                {isDebt && (
                   <div className="text-red-600 bg-red-100 font-medium text-sm px-2 py-1 rounded-full leading-3.5 ml-2">
                     {t('common:nav_links.plan_expired')}
                   </div>
                 )}
+                {isCancelled && (
+                  <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-zinc-200 px-2 py-1 text-xs font-medium text-muted-foreground leading-3.5">
+                    {t('common:nav_links.cancelled')}
+                  </span>
+                )}
+
                 <Divider
                   orientation="vertical"
                   mx={'12px'}
                   borderColor={'rgba(0, 0, 0, 0.08)'}
                   height={'16px'}
                 />
-                <span>{t('common:nav_links.upgrade_plan')}</span>
-                <Sparkles className="ml-[2px]" size={16} />
+                <span className="text-blue-600 flex gap-2 items-center">
+                  <span>
+                    {isCancelled ? t('common:nav_links.renew') : t('common:nav_links.upgrade_plan')}
+                  </span>
+                  <Sparkles className="ml-[2px]" size={16} />
+                </span>
               </>
             )}
           </Center>
         </BalancePopover>
 
-        <Center
-          className="guide-button"
-          cursor={'pointer'}
-          {...baseItemStyle}
-          px={'8px'}
-          borderRadius={'8px'}
-          onClick={handleGuideClick}
-        >
-          {t('common:guide')}
-        </Center>
+        {commonConfig?.guideEnabled ? (
+          <Center
+            className="guide-button"
+            cursor={'pointer'}
+            {...baseItemStyle}
+            px={'8px'}
+            borderRadius={'8px'}
+            onClick={handleGuideClick}
+          >
+            {t('common:guide')}
+          </Center>
+        ) : null}
 
         {layoutConfig?.common.docsUrl && (
           <Center

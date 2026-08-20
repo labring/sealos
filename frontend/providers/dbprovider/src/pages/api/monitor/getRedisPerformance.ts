@@ -20,9 +20,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const startTime = endTime - 60 * 60 * 1000; // 前向推进1个小时的时间戳
 
     const queryType: Partial<MonitorQueryKey> = {
-      Redis_CommandLatency: `avg(irate(redis_commands_duration_seconds_total{$, app_kubernetes_io_instance="${dbName}"}[1m])) by (cmd) / avg(irate(redis_commands_total{$, app_kubernetes_io_instance="${dbName}"}[1m])) by (cmd)`,
-      Redis_KeyEvictions: `irate(redis_evicted_keys_total{$, app_kubernetes_io_instance="${dbName}"}[1m])`,
-      Redis_HitsRatio: `avg(irate(redis_keyspace_hits_total{$,app_kubernetes_io_instance="${dbName}"}[1m]) / (irate(redis_keyspace_misses_total{$,app_kubernetes_io_instance="${dbName}"}[1m]) + irate(redis_keyspace_hits_total{$,app_kubernetes_io_instance="${dbName}"}[1m]))) by (pod, app_kubernetes_io_instance)`
+      Redis_CommandLatency: `avg(irate(redis_commands_duration_seconds_total{$, workloads_kubeblocks_io_instance="${dbName}-${DBTypeEnum.redis}"}[1m])) by (cmd) / avg(irate(redis_commands_total{$, workloads_kubeblocks_io_instance="${dbName}-${DBTypeEnum.redis}"}[1m])) by (cmd)`,
+      Redis_KeyEvictions: `irate(redis_evicted_keys_total{$, workloads_kubeblocks_io_instance="${dbName}-${DBTypeEnum.redis}"}[1m])`,
+      Redis_HitsRatio: `avg(irate(redis_keyspace_hits_total{$,workloads_kubeblocks_io_instance="${dbName}-${DBTypeEnum.redis}"}[1m]) / (irate(redis_keyspace_misses_total{$,workloads_kubeblocks_io_instance="${dbName}-${DBTypeEnum.redis}"}[1m]) + irate(redis_keyspace_hits_total{$,workloads_kubeblocks_io_instance="${dbName}-${DBTypeEnum.redis}"}[1m]))) by (pod, app_kubernetes_io_instance)`
     };
 
     console.log(dbName, dbType, queryKey, queryType[queryKey as keyof MonitorQueryKey]);

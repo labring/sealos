@@ -1,7 +1,7 @@
 import { getRegionToken, initRegionToken } from '@/api/auth';
 import { nsListRequest, switchRequest } from '@/api/namespace';
 import { SwitchRegionType } from '@/constants/account';
-import useAppStore from '@/stores/app';
+import useAppStore, { BRAIN_APP_KEY } from '@/stores/app';
 import { useGuideModalStore } from '@/stores/guideModal';
 import { useInitWorkspaceStore } from '@/stores/initWorkspace';
 import useSessionStore from '@/stores/session';
@@ -16,10 +16,17 @@ import { isString } from 'lodash';
 import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import { useEffect } from 'react';
+import { track } from '@sealos/gtm';
+import {
+  appendMarketingQuery,
+  mergeMarketingQuery,
+  persistMarketingQuery,
+  resolveMarketingQuery
+} from '@/utils/marketing-attribution';
 
 const Callback: NextPage = () => {
   const router = useRouter();
-  const setToken = useSessionStore((s) => s.setToken);
+  const setGlobalToken = useSessionStore((s) => s.setGlobalToken);
   const delSession = useSessionStore((s) => s.delSession);
   const { token: curToken, session } = useSessionStore((s) => s);
   const { lastWorkSpaceId } = useSessionStore();
@@ -95,7 +102,8 @@ const Callback: NextPage = () => {
     const { query } = router;
     const { appkey, appQuery, appPath } = parseOpenappQuery((query?.openapp as string) || '');
     let workspaceUid: string | undefined;
-
+    const marketingQuery = resolveMarketingQuery(query);
+    persistMarketingQuery(marketingQuery);
     const switchRegionType = query.switchRegionType;
     const globalToken = router.query.token;
     if (!isString(globalToken)) throw new Error('failed to get globalToken');
@@ -108,10 +116,9 @@ const Callback: NextPage = () => {
           // const regionUid = query.regionUid as unknown as string;
           if (!!curToken) {
             delSession();
-            setToken('');
           }
           // console.log(query, globalToken);
-          setToken(globalToken);
+          setGlobalToken(globalToken); // Sets global token and cookie
           // await router.replace('/workspace');
           const initRegionTokenResult = await initMutation.mutateAsync({
             // regionUid: regionUid ,
@@ -121,11 +128,11 @@ const Callback: NextPage = () => {
             throw new Error('No result data');
           }
           await sessionConfig(initRegionTokenResult.data);
-          await router.replace('/');
+          await router.replace(appendMarketingQuery('/', marketingQuery));
           return;
         } catch (error) {
           console.error(error);
-          setToken('');
+          setGlobalToken('');
           await router.replace('/signin');
           return;
         }
@@ -133,15 +140,22 @@ const Callback: NextPage = () => {
     } else {
       if (isString(query?.workspaceUid)) workspaceUid = query.workspaceUid;
       if (appkey && (appQuery || appPath)) {
-        setAutoLaunch(appkey, { raw: appQuery, pathname: appPath }, workspaceUid);
+        setAutoLaunch(
+          appkey,
+          {
+            raw:
+              appkey === BRAIN_APP_KEY ? mergeMarketingQuery(appQuery, marketingQuery) : appQuery,
+            pathname: appPath
+          },
+          workspaceUid
+        );
       }
       (async () => {
         try {
           if (!!curToken) {
             delSession();
-            setToken('');
           }
-          setToken(globalToken);
+          setGlobalToken(globalToken); // Sets global token and cookie
           const regionTokenRes = await getRegionToken();
           if (regionTokenRes?.data) {
             await sessionConfig(regionTokenRes.data);
@@ -154,14 +168,17 @@ const Callback: NextPage = () => {
                 await mutation.mutateAsync(existNamespace.uid);
               }
             }
-            await router.replace('/');
+            track('workspace_switch', {
+              module: 'workspace'
+            });
+            await router.replace(appendMarketingQuery('/', marketingQuery));
             return;
           } else {
             throw new Error();
           }
         } catch (error) {
           console.error(error);
-          setToken('');
+          setGlobalToken('');
           await router.replace('/signin');
           return;
         }

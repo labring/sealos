@@ -43,6 +43,9 @@ const (
 	SubscriptionTransactionTypeCanceled   SubscriptionOperator = "canceled"
 	SubscriptionTransactionTypeDeleted    SubscriptionOperator = "deleted"
 	SubscriptionTransactionTypeRenewed    SubscriptionOperator = "renewed"
+
+	// SubscriptionResumed Resume Renewal (cancel subscription can be selected to cancel the cancel subscription status within a certain period before the end of the current cycle)
+	SubscriptionTransactionTypeResumed SubscriptionOperator = "resumed"
 	// 续订余额失败状态
 	SubscriptionTransactionTypeRenewFailed SubscriptionOperator = "renew_failed"
 
@@ -78,6 +81,22 @@ const (
 	PaymentMethodBalance          PaymentMethod = "balance"             // 余额支付
 	PaymentMethodStripe           PaymentMethod = "stripe"              // Stripe 支付
 )
+
+type PayApp string
+
+const (
+	PayAppCostcenter PayApp = "system-costcenter"
+	PayAppBrain      PayApp = "system-brain"
+)
+
+func (p PayApp) IsValid() bool {
+	switch p {
+	case PayAppCostcenter, PayAppBrain:
+		return true
+	default:
+		return false
+	}
+}
 
 type SubscriptionPayStatus string
 

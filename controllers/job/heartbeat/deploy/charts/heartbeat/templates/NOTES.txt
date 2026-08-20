@@ -1,0 +1,5 @@
+Heartbeat cronjob has been installed successfully!
+
+CronJob name: {{ include "heartbeat.fullname" . }}-cronjob
+Schedule: {{ .Values.schedule }}
+Namespace: {{ .Release.Namespace }}

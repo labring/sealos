@@ -2,6 +2,7 @@ package test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -32,7 +33,17 @@ func Test_Auth(t *testing.T) {
 	}
 
 	// #nosec G107
-	response, err := http.Post(url, "application/json", bytes.NewBuffer(jsonValue))
+	request, err := http.NewRequestWithContext(
+		context.Background(),
+		http.MethodPost,
+		url,
+		bytes.NewBuffer(jsonValue),
+	)
+	if err != nil {
+		t.Errorf("failed to create request: %v", err)
+	}
+	request.Header.Set("Content-Type", "application/json")
+	response, err := http.DefaultClient.Do(request)
 	if err != nil {
 		t.Errorf("failed to post request: %v", err)
 	}

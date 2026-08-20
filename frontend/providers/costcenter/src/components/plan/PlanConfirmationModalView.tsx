@@ -30,6 +30,7 @@ interface PlanConfirmationModalViewProps {
   onPaymentCancel?: () => void;
   isSubmitting?: boolean;
   isCancelingInvoice?: boolean;
+  isRenew?: boolean;
 }
 
 // ==================== Plan Display Component ====================
@@ -41,25 +42,7 @@ interface PlanDisplayProps {
 function PlanDisplay({ plan, monthlyPrice }: PlanDisplayProps) {
   const { t } = useTranslation();
 
-  const formatCpu = (cpu: string) => {
-    const cpuNum = parseFloat(cpu);
-    return `${cpuNum} vCPU`;
-  };
-
-  const formatMemory = (memory: string) => {
-    return memory.replace('Gi', 'GB RAM');
-  };
-
-  const formatStorage = (storage: string) => {
-    return storage.replace('Gi', 'GB Disk');
-  };
-
-  let planResources: any = {};
-  try {
-    planResources = JSON.parse(plan.MaxResources || '{}');
-  } catch (e) {
-    planResources = {};
-  }
+  const planResources = plan.MaxResources;
 
   return (
     <>
@@ -79,19 +62,25 @@ function PlanDisplay({ plan, monthlyPrice }: PlanDisplayProps) {
         {planResources.cpu && (
           <div className="flex items-center gap-2">
             <CheckCircle size={16} className="text-blue-600 shrink-0" />
-            <span className="text-sm text-zinc-500">{formatCpu(planResources.cpu)}</span>
+            <span className="text-sm text-zinc-500">
+              {planResources.cpu.formatForDisplay({ format: 'DecimalSI' })} vCPU
+            </span>
           </div>
         )}
         {planResources.memory && (
           <div className="flex items-center gap-2">
             <CheckCircle size={16} className="text-blue-600 shrink-0" />
-            <span className="text-sm text-zinc-500">{formatMemory(planResources.memory)}</span>
+            <span className="text-sm text-zinc-500">
+              {planResources.memory.formatForDisplay({ format: 'BinarySI' })} RAM
+            </span>
           </div>
         )}
         {planResources.storage && (
           <div className="flex items-center gap-2">
             <CheckCircle size={16} className="text-blue-600 shrink-0" />
-            <span className="text-sm text-zinc-500">{formatStorage(planResources.storage)}</span>
+            <span className="text-sm text-zinc-500">
+              {planResources.storage.formatForDisplay({ format: 'BinarySI' })} Disk
+            </span>
           </div>
         )}
         {plan.Traffic && (
@@ -103,7 +92,9 @@ function PlanDisplay({ plan, monthlyPrice }: PlanDisplayProps) {
         {planResources.nodeports && (
           <div className="flex items-center gap-2">
             <CheckCircle size={16} className="text-blue-600 shrink-0" />
-            <span className="text-sm text-zinc-500">{planResources.nodeports} Nodeport</span>
+            <span className="text-sm text-zinc-500">
+              {planResources.nodeports.formatForDisplay({ format: 'DecimalSI' })} Nodeport
+            </span>
           </div>
         )}
       </div>
@@ -631,6 +622,7 @@ function PaymentWaitingSection({
 // ==================== Action Button Component ====================
 interface ActionButtonProps {
   isCreateMode?: boolean;
+  isRenew?: boolean;
   amountLoading: boolean;
   onConfirm: () => void;
   isPaymentWaiting?: boolean;
@@ -639,6 +631,7 @@ interface ActionButtonProps {
 
 function ActionButton({
   isCreateMode = false,
+  isRenew = false,
   amountLoading,
   onConfirm,
   isPaymentWaiting = false,
@@ -694,9 +687,11 @@ function ActionButton({
     >
       {amountLoading || isSubmitting
         ? t('common:calculating')
+        : isRenew
+        ? t('common:renew_subscription')
         : isCreateMode
-          ? t('common:create_workspace')
-          : t('common:subscribe_and_pay')}
+        ? t('common:create_workspace')
+        : t('common:subscribe_and_pay')}
     </Button>
   );
 }
@@ -746,7 +741,8 @@ export function PlanConfirmationModalView({
   onPaymentSuccess,
   onPaymentCancel,
   isSubmitting,
-  isCancelingInvoice = false
+  isCancelingInvoice = false,
+  isRenew = false
 }: PlanConfirmationModalViewProps) {
   const { t } = useTranslation();
   const {
@@ -764,7 +760,10 @@ export function PlanConfirmationModalView({
     subscriptionData
   } = usePlanStore();
 
-  const isCreateMode = modalContext.isCreateMode ?? false;
+  const businessOperation = modalContext.businessOperation;
+  const isCreateMode =
+    businessOperation === 'create' || (!businessOperation && modalContext.operator === 'created');
+  const isRenewMode = businessOperation === 'renew' || isRenew;
   const paymentMethod = cardInfoData?.payment_method;
   const redeemCodeValidating = amountLoading;
 
@@ -786,6 +785,7 @@ export function PlanConfirmationModalView({
   ) : (
     <ActionButton
       isCreateMode={isCreateMode}
+      isRenew={isRenewMode}
       amountLoading={amountLoading ?? true}
       onConfirm={onConfirm}
       isPaymentWaiting={isPaymentWaiting}

@@ -2,30 +2,33 @@ import { DBTypeEnum } from '@/constants/db';
 import { ServiceLogConfigs } from '@/constants/log';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
-import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import { SupportReconfigureDBType } from '@/types/db';
 import { LogTypeEnum } from '@/constants/log';
 import { DatabaseLogService } from '@/utils/logParsers/LogParser';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { ResponseCode, ResponseMessages } from '@/types/response';
 import { logsDataSchemas } from '@/types/apis/v2alpha';
+import { sendError, sendValidationError, ErrorType, ErrorCode } from '@/types/v2alpha/error';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
     const kubeconfig = await authSession(req).catch(() => null);
     if (!kubeconfig) {
-      return jsonRes(res, {
-        code: ResponseCode.UNAUTHORIZED,
-        message: ResponseMessages[ResponseCode.UNAUTHORIZED]
+      return sendError(res, {
+        status: 401,
+        type: ErrorType.AUTHENTICATION_ERROR,
+        code: ErrorCode.AUTHENTICATION_REQUIRED,
+        message: 'Unauthorized, please login again.'
       });
     }
 
     const k8s = await getK8s({ kubeconfig }).catch(() => null);
     if (!k8s) {
-      return jsonRes(res, {
-        code: ResponseCode.UNAUTHORIZED,
-        message: ResponseMessages[ResponseCode.UNAUTHORIZED]
+      return sendError(res, {
+        status: 401,
+        type: ErrorType.AUTHENTICATION_ERROR,
+        code: ErrorCode.AUTHENTICATION_REQUIRED,
+        message: 'Unauthorized, please login again.'
       });
     }
     const { namespace, k8sExec, k8sCore } = k8s;
@@ -39,10 +42,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       pageSize: parseInt((req.query.pageSize as string) || '10')
     });
     if (!parseResult.success) {
-      return jsonRes(res, {
-        code: ResponseCode.BAD_REQUEST,
-        message: ResponseMessages[ResponseCode.BAD_REQUEST]
-      });
+      return sendValidationError(res, parseResult.error, 'Invalid query parameters.');
     }
     const { podName, dbType, logType, logPath, page = 0, pageSize = 10 } = parseResult.data;
 
@@ -64,11 +64,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       logType
     });
 
-    return jsonRes(res, { data: result });
+    return res.status(200).json({ code: 200, data: result } as any);
   } catch (err: any) {
-    jsonRes(res, {
-      code: 500,
-      error: err
+    return sendError(res, {
+      status: 500,
+      type: ErrorType.INTERNAL_ERROR,
+      code: ErrorCode.INTERNAL_ERROR,
+      message: 'Failed to retrieve log data.',
+      details: err?.message || String(err)
     });
   }
 }

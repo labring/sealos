@@ -21,6 +21,7 @@ metadata:
   name: aaaa0001
 spec:
   csrExpirationSeconds: 1000000000
+  kubeConfigRotateAt: "2026-01-19T14:55:00Z"
 ---
 # group
 apiVersion: user.sealos.io/v1

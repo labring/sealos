@@ -25,8 +25,8 @@ type QueryResult struct {
 		ResultType string `json:"resultType"`
 		Result     []struct {
 			Metric map[string]string `json:"metric"`
-			Values [][]interface{}   `json:"values"`
-			Value  []interface{}     `json:"value"`
+			Values [][]any           `json:"values"`
+			Value  []any             `json:"value"`
 		} `json:"result"`
 	} `json:"data"`
 }
@@ -37,6 +37,8 @@ type VMRequest struct {
 	NS            string
 	Type          string
 	LaunchPadName string
+	Service       string
+	Port          string
 	PvcName       string
 	Range         VMRange
 }
@@ -62,8 +64,8 @@ type Data struct {
 
 type Result struct {
 	Metric map[string]string `json:"metric"`
-	Value  []interface{}     `json:"value"`
-	Values [][]interface{}   `json:"values"`
+	Value  []any             `json:"value"`
+	Values [][]any           `json:"values"`
 }
 
 type Stats struct {
@@ -126,7 +128,7 @@ var (
 		"disk_used":     "(max by (persistentvolumeclaim,namespace) (kubelet_volume_stats_used_bytes {namespace=~\"#\", persistentvolumeclaim=~\"data-@-mysql-\\\\d\"}))",
 		"disk":          "round((max by (persistentvolumeclaim,namespace) (kubelet_volume_stats_used_bytes {namespace=~\"#\", persistentvolumeclaim=~\"data-@-mysql-\\\\d\"})) / (max by (persistentvolumeclaim,namespace) (kubelet_volume_stats_capacity_bytes {namespace=~\"#\", persistentvolumeclaim=~\"data-@-mysql-\\\\d\"})) * 100, 0.01)",
 		"uptime":        "sum(mysql_global_status_uptime{namespace=~\"#\", app_kubernetes_io_instance=~\"@\"}) by (namespace,app_kubernetes_io_instance,pod)",
-		"connections":   "sum(max_over_time(mysql_global_status_threads_connected{namespace=~\"#\", app_kubernetes_io_instance=~\"@\"}[1m])) by (namespace,app_kubernetes_io_instance,pod)",
+		"connections":   "sum(max_over_time(mysql_global_status_threads_connected{namespace=~\"#\", workloads_kubeblocks_io_instance=~\"@\"}[1m])) by (namespace,app_kubernetes_io_instance,pod)",
 		"commands":      "topk(5, rate(mysql_global_status_commands_total{namespace=~\"#\", app_kubernetes_io_instance=~\"@\"}[1m]) > 0)",
 
 		"innodb":       "sum(mysql_global_variables_innodb_buffer_pool_size{namespace=~\"#\", app_kubernetes_io_instance=~\"@\"}) by (namespace,app_kubernetes_io_instance,pod)",

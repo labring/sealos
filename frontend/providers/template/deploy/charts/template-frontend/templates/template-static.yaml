@@ -1,0 +1,52 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: template-static
+  labels:
+    {{- include "template-frontend.labels" . | nindent 4 }}
+spec:
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  schedule: "0 0 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: default
+          containers:
+            - name: template-static
+              image: bitnamilegacy/kubectl:latest
+              command:
+                - /bin/sh
+                - -c
+                - >
+                  echo "$(kubectl get instances -A -o=jsonpath='{range .items[*]}{.spec.title}{"\n"}{end}' | tr a-z A-Z | sort | uniq -c | sort -nr | sed 's/   *//g')" > /tmp/install-count &&
+                  kubectl create configmap -n {{ .Release.Namespace }} template-static --from-file=/tmp/install-count -o yaml --dry-run=client | kubectl apply -f -
+              imagePullPolicy: IfNotPresent
+          restartPolicy: OnFailure
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: template-frontend-static-role
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["create", "get", "list", "watch", "update", "delete", "patch"]
+  - apiGroups: ["app.sealos.io"]
+    resources: ["instances"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: template-frontend-static-role-binding
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: template-frontend-static-role
+  apiGroup: rbac.authorization.k8s.io

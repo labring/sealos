@@ -6,6 +6,7 @@ import {
   transformToLegacySchema,
   transformFromLegacySchema
 } from '@/types/request_schema';
+import { Config } from '@/config';
 import { createApp, createK8sContext, getAppByName } from '@/services/backend';
 import { adaptAppDetail } from '@/utils/adapt';
 import { DeployKindsType, AppDetailType } from '@/types/app';
@@ -25,8 +26,8 @@ async function processAppResponse(
     .flat() as DeployKindsType[];
 
   const appDetailData: AppDetailType = await adaptAppDetail(responseData, {
-    SEALOS_DOMAIN: global.AppConfig.cloud.domain,
-    SEALOS_USER_DOMAINS: global.AppConfig.cloud.userDomains
+    domain: Config().cloud.domain,
+    userDomains: Config().cloud.userDomains
   });
   const standardizedData = transformFromLegacySchema(appDetailData);
   const validatedData = LaunchpadApplicationSchema.parse(standardizedData);

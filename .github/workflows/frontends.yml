@@ -82,12 +82,8 @@ jobs:
               - 'frontend/tsconfig*.json'
               - '.github/workflows/frontend.yml'
               - '.github/workflows/frontends.yml'
-            aiproxy:
-              - 'frontend/providers/aiproxy/**'
             license:
               - 'frontend/providers/license/**'
-            cronjob:
-              - 'frontend/providers/cronjob/**'
             template:
               - 'frontend/providers/template/**'
             applaunchpad:
@@ -96,54 +92,45 @@ jobs:
               - 'frontend/providers/dbprovider/**'
             costcenter:
               - 'frontend/providers/costcenter/**'
-            objectstorage:
-              - 'frontend/providers/objectstorage/**'
-            kubepanel:
-              - 'frontend/providers/kubepanel/**'
-            workorder:
-              - 'frontend/providers/workorder/**'
-            devbox:
-              - 'frontend/providers/devbox/**'
             desktop:
               - 'frontend/desktop/**'
       - name: Generate build matrix
         id: set-matrix
+        env:
+          PACKAGES_CHANGED: ${{ steps.filter.outputs.packages }}
+          ROOT_CONFIG_CHANGED: ${{ steps.filter.outputs.root-config }}
+          FORCE_ALL: ${{ inputs.force_all }}
+          EVENT_NAME: ${{ github.event_name }}
+          LICENSE_CHANGED: ${{ steps.filter.outputs.license }}
+          TEMPLATE_CHANGED: ${{ steps.filter.outputs.template }}
+          APPLAUNCHPAD_CHANGED: ${{ steps.filter.outputs.applaunchpad }}
+          DBPROVIDER_CHANGED: ${{ steps.filter.outputs.dbprovider }}
+          COSTCENTER_CHANGED: ${{ steps.filter.outputs.costcenter }}
+          DESKTOP_CHANGED: ${{ steps.filter.outputs.desktop }}
         run: |
           modules=()
 
           # Check if we need to build all modules
-          if [[ "${{ steps.filter.outputs.packages }}" == "true" || \
-                "${{ steps.filter.outputs.root-config }}" == "true" || \
-                "${{ inputs.force_all }}" == "true" || \
-                "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          if [[ "$PACKAGES_CHANGED" == "true" || \
+                "$ROOT_CONFIG_CHANGED" == "true" || \
+                "$FORCE_ALL" == "true" || \
+                "$EVENT_NAME" == "workflow_dispatch" ]]; then
             modules=(
-              "providers/aiproxy"
               "providers/license"
-              "providers/cronjob"
               "providers/template"
               "providers/applaunchpad"
               "providers/dbprovider"
               "providers/costcenter"
-              "providers/objectstorage"
-              "providers/kubepanel"
-              "providers/workorder"
-              "providers/devbox"
               "desktop"
             )
           else
             # Only build changed modules
-            [[ "${{ steps.filter.outputs.aiproxy }}" == "true" ]] && modules+=("providers/aiproxy")
-            [[ "${{ steps.filter.outputs.license }}" == "true" ]] && modules+=("providers/license")
-            [[ "${{ steps.filter.outputs.cronjob }}" == "true" ]] && modules+=("providers/cronjob")
-            [[ "${{ steps.filter.outputs.template }}" == "true" ]] && modules+=("providers/template")
-            [[ "${{ steps.filter.outputs.applaunchpad }}" == "true" ]] && modules+=("providers/applaunchpad")
-            [[ "${{ steps.filter.outputs.dbprovider }}" == "true" ]] && modules+=("providers/dbprovider")
-            [[ "${{ steps.filter.outputs.costcenter }}" == "true" ]] && modules+=("providers/costcenter")
-            [[ "${{ steps.filter.outputs.objectstorage }}" == "true" ]] && modules+=("providers/objectstorage")
-            [[ "${{ steps.filter.outputs.kubepanel }}" == "true" ]] && modules+=("providers/kubepanel")
-            [[ "${{ steps.filter.outputs.workorder }}" == "true" ]] && modules+=("providers/workorder")
-            [[ "${{ steps.filter.outputs.devbox }}" == "true" ]] && modules+=("providers/devbox")
-            [[ "${{ steps.filter.outputs.desktop }}" == "true" ]] && modules+=("desktop")
+            [[ "$LICENSE_CHANGED" == "true" ]] && modules+=("providers/license")
+            [[ "$TEMPLATE_CHANGED" == "true" ]] && modules+=("providers/template")
+            [[ "$APPLAUNCHPAD_CHANGED" == "true" ]] && modules+=("providers/applaunchpad")
+            [[ "$DBPROVIDER_CHANGED" == "true" ]] && modules+=("providers/dbprovider")
+            [[ "$COSTCENTER_CHANGED" == "true" ]] && modules+=("providers/costcenter")
+            [[ "$DESKTOP_CHANGED" == "true" ]] && modules+=("desktop")
           fi
 
           # Convert to JSON array (compact format for GitHub Actions)
@@ -152,7 +139,7 @@ jobs:
           else
             json_modules=$(printf '%s\n' "${modules[@]}" | jq -R . | jq -s -c .)
           fi
-          echo "modules=$json_modules" >> $GITHUB_OUTPUT
+          echo "modules=$json_modules" >> "$GITHUB_OUTPUT"
           echo "Building modules: $json_modules"
 
   image-build:

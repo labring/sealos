@@ -97,8 +97,14 @@ export type LayoutConfigType = {
     emailAlertEnabled: boolean;
     phoneAlertEnabled: boolean;
     announcementEnabled: boolean;
+    kcRotationEnabled: boolean;
+    communityEnabled?: boolean;
+    communityQRCodeImage?: string;
+    communityLink?: string;
   };
   gtmId: string | null;
+  rybbitHost: string | null;
+  rybbitSiteId: string | null;
 };
 
 export type AuthConfigType = {
@@ -121,6 +127,9 @@ export type AuthConfigType = {
   billingUrl?: string;
   workorderUrl?: string;
   cloudVitrualMachineUrl: string;
+  oauth2idp: {
+    enabled: boolean;
+  };
   idp: {
     password?: {
       enabled: boolean;
@@ -143,6 +152,7 @@ export type AuthConfigType = {
       proxyAddress?: string;
       clientID: string;
       clientSecret?: string;
+      oneTapOrigins?: string[];
     };
     oauth2?: {
       enabled: boolean;
@@ -207,6 +217,8 @@ export type AuthClientConfigType = {
       'baiduToken',
       'bingAd',
       'signUpEnabled',
+      // OAuth2 IdP
+      'oauth2idp',
       'idp.password.salt',
       'idp.github.clientSecret',
       'idp.wechat.clientSecret',
@@ -232,6 +244,7 @@ export type JwtConfigType = {
   internal?: string;
   regional?: string;
   global?: string;
+  marketingConsent?: string;
 };
 
 export type DesktopConfigType<T = AuthConfigType> = {
@@ -325,9 +338,15 @@ export const DefaultLayoutConfig: LayoutConfigType = {
     guestModeEnabled: false,
     emailAlertEnabled: false,
     phoneAlertEnabled: false,
-    announcementEnabled: false
+    announcementEnabled: false,
+    kcRotationEnabled: true,
+    communityEnabled: true,
+    communityQRCodeImage: '',
+    communityLink: ''
   },
-  gtmId: null
+  gtmId: null,
+  rybbitHost: null,
+  rybbitSiteId: null
 };
 
 export const DefaultAuthClientConfig: AuthClientConfigType = {
@@ -350,7 +369,8 @@ export const DefaultAuthClientConfig: AuthClientConfigType = {
     google: {
       enabled: false,
       clientID: '',
-      proxyAddress: ''
+      proxyAddress: '',
+      oneTapOrigins: []
     },
     sms: {
       enabled: false

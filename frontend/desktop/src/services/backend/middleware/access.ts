@@ -1,8 +1,12 @@
-import { AccessTokenPayload, AuthenticationTokenPayload } from '@/types/token';
+import { AccessTokenPayload, GlobalTokenPayload } from '@/types/token';
 import { NextApiRequest, NextApiResponse } from 'next';
-import { verifyAccessToken, verifyAuthenticationToken } from '../auth';
+import { verifyAccessToken, verifyGlobalToken } from '../auth';
 import { jsonRes } from '../response';
 
+/**
+ * Enforces **regional token**.
+ * @todo Rename legacy `AccessToken` to `RegionalToken`
+ */
 export const filterAccessToken = async (
   req: NextApiRequest,
   res: NextApiResponse,
@@ -17,12 +21,16 @@ export const filterAccessToken = async (
   else await Promise.resolve(next(userData));
 };
 
+/**
+ * Enforces **global token**.
+ * @todo Rename legacy `AuthenticationToken` to `GlobalToken`
+ */
 export const filterAuthenticationToken = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  next: (data: AuthenticationTokenPayload) => Promise<void>
+  next: (data: GlobalTokenPayload) => Promise<void>
 ) => {
-  const userData = await verifyAuthenticationToken(req.headers);
+  const userData = await verifyGlobalToken(req.headers);
   if (!userData)
     return jsonRes(res, {
       code: 401,

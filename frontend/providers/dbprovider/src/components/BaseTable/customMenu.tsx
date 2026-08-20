@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Box, Portal } from '@chakra-ui/react';
 
 interface MenuItemProps {
@@ -13,12 +13,56 @@ interface CustomMenuProps {
   width: number;
   Button: React.ReactNode;
   menuList: MenuItemProps[];
+  isOpen?: boolean;
+  onOpen?: () => void;
+  onClose?: () => void;
 }
 
-export const CustomMenu = ({ width, Button, menuList }: CustomMenuProps) => {
-  const [isOpen, setIsOpen] = useState(false);
+export const CustomMenu = ({
+  width,
+  Button,
+  menuList,
+  isOpen: controlledIsOpen,
+  onOpen,
+  onClose
+}: CustomMenuProps) => {
+  const [uncontrolledIsOpen, setUncontrolledIsOpen] = useState(false);
+  const [position, setPosition] = useState({ top: 0, left: 0 });
   const buttonRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const isControlled = controlledIsOpen !== undefined;
+  const isOpen = controlledIsOpen ?? uncontrolledIsOpen;
+
+  const closeMenu = useCallback(() => {
+    if (isControlled) {
+      onClose?.();
+    } else {
+      setUncontrolledIsOpen(false);
+    }
+  }, [isControlled, onClose]);
+
+  const toggleMenu = useCallback(() => {
+    if (isOpen) {
+      closeMenu();
+      return;
+    }
+
+    if (isControlled) {
+      onOpen?.();
+    } else {
+      setUncontrolledIsOpen(true);
+    }
+  }, [closeMenu, isControlled, isOpen, onOpen]);
+
+  const updatePosition = useCallback(() => {
+    const rect = buttonRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    setPosition({
+      top: rect.bottom + 10,
+      left: rect.left - 10
+    });
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -28,18 +72,31 @@ export const CustomMenu = ({ width, Button, menuList }: CustomMenuProps) => {
         !menuRef.current.contains(event.target as Node) &&
         !buttonRef.current.contains(event.target as Node)
       ) {
-        setIsOpen(false);
+        closeMenu();
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [closeMenu]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    updatePosition();
+
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
+  }, [isOpen, updatePosition]);
 
   const handleItemClick = (item: MenuItemProps) => {
     if (!item.isDisabled) {
       item.onClick();
-      setIsOpen(false);
+      closeMenu();
     }
   };
 
@@ -58,15 +115,15 @@ export const CustomMenu = ({ width, Button, menuList }: CustomMenuProps) => {
 
   return (
     <Box position="relative" ref={buttonRef}>
-      <Box onClick={() => setIsOpen(!isOpen)}>{Button}</Box>
+      <Box onClick={toggleMenu}>{Button}</Box>
 
       {isOpen && (
         <Portal>
           <Box
             ref={menuRef}
             position="absolute"
-            top={`${(buttonRef.current?.getBoundingClientRect().bottom || 0) + 10}px`}
-            left={`${(buttonRef.current?.getBoundingClientRect().left || 0) - 10}px`}
+            top={`${position.top}px`}
+            left={`${position.left}px`}
             maxH="300px"
             overflowY="auto"
             borderRadius="md"

@@ -6,10 +6,11 @@ import { getWorkspaceQuota } from '@/api/workspace';
 import useSessionStore from '@/stores/session';
 import useBillingStore from '@/stores/billing';
 import usePlanStore from '@/stores/plan';
-import { UserQuotaItem } from '@/types/workspace';
+import { UserQuotaItem, WorkspaceQuotaResponseSchema } from '@/types/workspace';
 import { useQuery } from '@tanstack/react-query';
 import { formatTime } from '@/utils/format';
 import { useTranslation } from 'next-i18next';
+import { Quantity } from '@sealos/shared';
 
 interface DowngradeModalProps {
   targetPlan?: SubscriptionPlan;
@@ -44,49 +45,38 @@ const DowngradeModal = forwardRef<never, DowngradeModalProps>((props, _ref) => {
     staleTime: 30000 // Consider data fresh for 30 seconds
   });
 
-  const quotaData = quotaResponse?.data?.quota || [];
+  // Parse response data using Zod schema to ensure Quantity instances are created
+  const parsedQuotaResponse = quotaResponse?.data
+    ? WorkspaceQuotaResponseSchema.safeParse(quotaResponse.data)
+    : null;
+  const quotaData = parsedQuotaResponse?.success ? parsedQuotaResponse.data.quota : [];
 
   const checkResourceExceeded = useCallback(
     (quota: UserQuotaItem[]) => {
       if (!targetPlan) return false;
 
-      let targetResources: any = {};
-      try {
-        targetResources = JSON.parse(targetPlan.MaxResources);
-      } catch (e) {
-        return false;
-      }
+      const targetResources = targetPlan.MaxResources;
 
-      // Check if current usage exceeds target plan limits
       return quota.some((item) => {
-        let targetLimit = 0;
+        const used = item.used;
 
-        switch (item.type) {
-          case 'cpu':
-            // Convert from millicores to cores for comparison
-            targetLimit = parseInt(targetResources.cpu || '0') * 1000;
-            break;
-          case 'memory':
-            // Convert from Gi to bytes for comparison
-            const memoryGi = targetResources.memory?.replace('Gi', '') || '0';
-            targetLimit = parseInt(memoryGi) * 1024 * 1024 * 1024;
-            break;
-          case 'storage':
-            // Convert from Gi to bytes for comparison
-            const storageGi = targetResources.storage?.replace('Gi', '') || '0';
-            targetLimit = parseInt(storageGi) * 1024 * 1024 * 1024;
-            break;
-          case 'traffic':
-            targetLimit = targetPlan.Traffic * 1024 * 1024; // Convert GB to bytes
-            break;
-          case 'nodeport':
-            targetLimit = targetPlan.MaxSeats || 0;
-            break;
-          default:
-            return false;
+        if (item.type === 'cpu' || item.type === 'memory' || item.type === 'storage') {
+          const targetLimit = targetResources[item.type];
+          if (!targetLimit) return false;
+          return used.cmp(targetLimit) > 0;
         }
 
-        return item.used > targetLimit;
+        if (item.type === 'traffic') {
+          const targetLimit = Quantity.parse(`${targetPlan.Traffic}Gi`);
+          return used.cmp(targetLimit) > 0;
+        }
+
+        if (item.type === 'nodeport') {
+          const targetLimit = Quantity.newQuantity(BigInt(targetPlan.MaxSeats ?? 0), 'DecimalSI');
+          return used.cmp(targetLimit) > 0;
+        }
+
+        return false;
       });
     },
     [targetPlan]
@@ -104,71 +94,35 @@ const DowngradeModal = forwardRef<never, DowngradeModalProps>((props, _ref) => {
 
   if (!currentPlan || !targetPlan) return null;
 
-  // Helper function to format resource values
-  const formatResourceValue = (type: string, value: number, isLimit = false) => {
-    switch (type) {
-      case 'cpu':
-        return isLimit ? `${(value / 1000).toFixed(1)} Core` : `${(value / 1000).toFixed(1)} Core`;
-      case 'memory':
-        return isLimit
-          ? `${(value / (1024 * 1024 * 1024)).toFixed(0)} GB`
-          : `${(value / (1024 * 1024 * 1024)).toFixed(1)} GB`;
-      case 'storage':
-        return isLimit
-          ? `${(value / (1024 * 1024 * 1024)).toFixed(0)} GB`
-          : `${(value / (1024 * 1024 * 1024)).toFixed(1)} GB`;
-      case 'traffic':
-        return `${(value / (1024 * 1024)).toFixed(0)} GB`;
-      case 'nodeport':
-        return `${value} Port`;
-      default:
-        return `${value}`;
-    }
-  };
-
-  // Get resource comparison data
   const getResourceComparison = () => {
     if (!currentPlan || !targetPlan || !quotaData.length) return [];
 
-    let currentResources: any = {};
-    let targetResources: any = {};
-
-    try {
-      currentResources = JSON.parse(currentPlan.MaxResources);
-      targetResources = JSON.parse(targetPlan.MaxResources);
-    } catch (e) {
-      return [];
-    }
+    const currentResources = currentPlan.MaxResources;
+    const targetResources = targetPlan.MaxResources;
 
     const comparisons = [];
 
-    // CPU comparison
     const cpuQuota = quotaData.find((q: UserQuotaItem) => q.type === 'cpu');
     if (cpuQuota && currentResources.cpu && targetResources.cpu) {
-      const currentLimit = parseInt(currentResources.cpu) * 1000;
-      const targetLimit = parseInt(targetResources.cpu) * 1000;
+      const used = cpuQuota.used;
       comparisons.push({
         type: 'CPU',
-        current: formatResourceValue('cpu', currentLimit, true),
-        target: formatResourceValue('cpu', targetLimit, true),
-        used: formatResourceValue('cpu', cpuQuota.used),
-        exceeded: cpuQuota.used > targetLimit
+        current: currentResources.cpu.formatForDisplay(),
+        target: targetResources.cpu.formatForDisplay(),
+        used: used.formatForDisplay(),
+        exceeded: used.cmp(targetResources.cpu) > 0
       });
     }
 
-    // Memory comparison
     const memoryQuota = quotaData.find((q: UserQuotaItem) => q.type === 'memory');
     if (memoryQuota && currentResources.memory && targetResources.memory) {
-      const currentMemGi = parseInt(currentResources.memory.replace('Gi', ''));
-      const targetMemGi = parseInt(targetResources.memory.replace('Gi', ''));
-      const currentLimit = currentMemGi * 1024 * 1024 * 1024;
-      const targetLimit = targetMemGi * 1024 * 1024 * 1024;
+      const used = memoryQuota.used;
       comparisons.push({
         type: 'RAM',
-        current: formatResourceValue('memory', currentLimit, true),
-        target: formatResourceValue('memory', targetLimit, true),
-        used: formatResourceValue('memory', memoryQuota.used),
-        exceeded: memoryQuota.used > targetLimit
+        current: currentResources.memory.formatForDisplay(),
+        target: targetResources.memory.formatForDisplay(),
+        used: used.formatForDisplay(),
+        exceeded: used.cmp(targetResources.memory) > 0
       });
     }
 

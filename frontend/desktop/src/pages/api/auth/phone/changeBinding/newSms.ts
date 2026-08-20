@@ -20,7 +20,8 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
           sendNewSmsCodeGuard({
             codeUid: uid,
             smsId: phoneNumbers,
-            smsType: 'phone_change_new'
+            smsType: 'phone_change_new',
+            userUid
           })(req, res, () => sendPhoneCodeSvc(phoneNumbers, 'phone_change_new')(res))
         )
       )

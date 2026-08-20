@@ -15,8 +15,10 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"path"
+	"strings"
 
 	"github.com/labring/sealos/pkg/runtime"
 
@@ -32,6 +34,8 @@ import (
 
 func newCertCmd() *cobra.Command {
 	var altNames []string
+	var renewTargets []string
+	var groups []string
 
 	cmd := &cobra.Command{
 		Use:   "cert",
@@ -46,8 +50,19 @@ func newCertCmd() *cobra.Command {
     1. sealos cert --alt-names 39.105.169.253
     2. edit .kube/config, set the apiserver address as 39.105.169.253, (don't forget to open the security group port for 6443, if you using public cloud)
     3. kubectl get pod, to check if it works or not
-`,
+		`,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(renewTargets) != 0 {
+				if len(altNames) != 0 {
+					return errors.New("--alt-names and --renew cannot be used together")
+				}
+			} else if len(altNames) == 0 {
+				return errors.New("--alt-names is required unless --renew is set")
+			}
+			if cmd.Flags().Changed("groups") && len(renewTargets) == 0 {
+				return errors.New("--groups requires --renew")
+			}
+
 			processor.SyncNewVersionConfig(clusterName)
 
 			clusterPath := constants.Clusterfile(clusterName)
@@ -84,15 +99,44 @@ func newCertCmd() *cobra.Command {
 				return fmt.Errorf("create runtime failed: %v", err)
 			}
 			if cm, ok := rt.(runtime.CertManager); ok {
+				if len(renewTargets) != 0 {
+					renewOpts := runtime.CertRenewOptions{Targets: renewTargets}
+					if cmd.Flags().Changed("groups") {
+						renewOpts.Groups = normalizeFlagValues(groups)
+					}
+					logger.Info("using %s cert renew implement on targets %v", cf.GetCluster().GetDistribution(), renewTargets)
+					return cm.Renew(renewOpts)
+				}
 				logger.Info("using %s cert update implement", cf.GetCluster().GetDistribution())
 				return cm.UpdateCertSANs(altNames)
+			}
+			if len(renewTargets) != 0 {
+				return fmt.Errorf("renew targets %v are not supported for distribution %s", renewTargets, cf.GetCluster().GetDistribution())
 			}
 			return nil
 		},
 	}
 	cmd.Flags().StringVarP(&clusterName, "cluster", "c", "default", "name of cluster to applied exec action")
 	cmd.Flags().StringSliceVar(&altNames, "alt-names", []string{}, "add extra Subject Alternative Names for certs, domain or ip, eg. sealos.io or 10.103.97.2")
-	_ = cmd.MarkFlagRequired("alt-names")
+	cmd.Flags().StringSliceVar(&renewTargets, "renew", nil, "renew local cert targets; local admin.conf is synced to node $HOME/.kube/config, super-admin.conf stays local only")
+	cmd.Flags().StringSliceVar(&groups, "groups", nil, "override admin kubeconfig certificate groups when renewing admin.conf or all")
 
 	return cmd
+}
+
+func normalizeFlagValues(values []string) []string {
+	normalized := make([]string, 0, len(values))
+	seen := make(map[string]struct{}, len(values))
+	for _, value := range values {
+		value = strings.TrimSpace(value)
+		if value == "" {
+			continue
+		}
+		if _, ok := seen[value]; ok {
+			continue
+		}
+		seen[value] = struct{}{}
+		normalized = append(normalized, value)
+	}
+	return normalized
 }

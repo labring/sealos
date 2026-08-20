@@ -37,10 +37,13 @@
   "avatar": "头像",
   "balance_popover": {
     "balance": "余额",
+    "cancelled_notice": "您的订阅已取消。资源将在 {{date}} 后删除。请及时备份数据或恢复订阅以避免损失。",
     "check_costcenter_tip": "到费用中心查看详细信息",
     "expired_at": "过期时间：",
+    "expires_on": "到期时间：",
     "payg_plan": "按量付费",
     "plan_suffix": "套餐",
+    "renew_subscription_button": "恢复订阅",
     "subscription_status": {
       "expired": "过期",
       "limited_trial": "限时试用"
@@ -51,7 +54,8 @@
     "trial_expiry_upgrade_tip_one": "你的试用将在 {{count}} 天后过期. 升级套餐以保证服务在线.",
     "trial_expiry_upgrade_tip_other": "你的试用将在 {{count}} 天后过期. 升级套餐以保证服务在线.",
     "upgrade_button": "升级套餐",
-    "upgrade_tip": "跳转到费用中心以升级套餐"
+    "upgrade_tip": "跳转到费用中心以升级套餐",
+    "can_not_manage_payments": "请联系空间管理员执行取消或升级订阅操作"
   },
   "balance_text": "余额",
   "bank_name": "开户银行",
@@ -86,8 +90,22 @@
   "click_on_any_shadow_to_skip": "点击任意阴影跳过",
   "click_to_upload_file": "点击上传文件",
   "completed": "完成",
+  "community": {
+    "menu": {
+      "title": "加入 Sealos 生态群",
+      "badge": "推荐",
+      "description": "产品更新 • 活动福利 • 案例共创"
+    },
+    "modal": {
+      "title": "加入 Sealos 生态群",
+      "description": "与 Sealos 官方共建产品形态！",
+      "button": "即刻入群",
+      "qr_alt": "Sealos 生态群二维码"
+    }
+  },
   "completed_the_deployment_of_an_nginx_for_the_first_time": "部署一个 nginx ，首次完成 将",
   "confirm": "确认",
+  "copy": "复制",
   "confirm_again": "再次确认",
   "confirmnewpassword": "确认新密码",
   "contact_info": "联系方式 (手机号码)",
@@ -181,6 +199,8 @@
   "invalid_username_or_password": "用户名或密码错误",
   "invalid_verification_amount": "验证金额格式不合法",
   "invalid_verification_code": "输入的验证码不正确，请检查是否输入错误。",
+  "invalid_verification_code_with_attempts_one": "验证码不正确，还可尝试 {{count}} 次。",
+  "invalid_verification_code_with_attempts_other": "验证码不正确，还可尝试 {{count}} 次。",
   "invitation_reminder": "受邀提醒",
   "invite_member": "邀请成员",
   "invite_members_to_workspace": "邀请成员至工作空间 {{workspace}}",
@@ -217,8 +237,10 @@
   "name_of_team": "工作空间名称",
   "nav_links": {
     "balance": "余额",
+    "cancelled": "已取消",
     "plan_expired": "已过期",
     "plan_suffix": "套餐",
+    "renew": "续费",
     "subscribe": "订阅套餐",
     "upgrade_plan": "升级"
   },
@@ -289,6 +311,7 @@
   "recharge_amount": "充值金额",
   "redirecting_to_homepage_in_3_seconds": "3秒后跳回主页",
   "refresh_qr_code": "刷新二维码",
+  "regenerate_link": "重新生成",
   "region": "可用区",
   "reject": "拒绝",
   "remain_app_tips": "您的账户中仍有未删除的应用资源，为了帮助您顺利完成账户注销流程，请您手动删除所有应用资源，以避免数据丢失",
@@ -357,6 +380,10 @@
   "verification_amount_required": "验证金额不能为空",
   "verification_amount_tips": "验证金额将由上海银联打入你提交的对公账号, 金额随机, 一般实时到账。若三个工作日内未收到, 请",
   "verification_amount_tips2": "请联系公司财务确认企业银行账户收到的验证金额, 一般实时到账, 长期有效。",
+  "verification_attempts_exhausted": "尝试次数过多，请重新获取验证码。",
+  "verification_attempts_exhausted_with_retry": "尝试次数过多，请在 {{countdown}} 秒后重新获取验证码。",
+  "verification_code_expired": "验证码已失效，请重新获取验证码。",
+  "verification_send_rate_limited": "请求过于频繁，请在 {{countdown}} 秒后重试。",
   "verification_code_login": "手机号登录",
   "verify_code_tips": "请输入6位验证码",
   "verify_password": "确认密码",
@@ -438,5 +465,22 @@
       "update_success": "更新成功",
       "update_failed": "更新失败"
     }
-  }
+  },
+  "refresh_kubeconfig": "刷新 Kubeconfig",
+  "kubeconfig_rotating": "正在刷新 Kubeconfig...",
+  "kubeconfig_rotated_successfully": "Kubeconfig 刷新成功",
+  "kubeconfig_rotation_failed": "Kubeconfig 刷新失败",
+  "delete_account_subscription_warning_title": "警告：",
+  "delete_account_subscription_warning": "您的账号中发现了仍在生效的订阅和资源。我们建议您先前往 Cost Center 取消订阅，并先删除当前资源。如果您已经确认无误，也可以继续直接注销账号，相关工作空间和订阅届时将一并被取消：",
+  "delete_account_open_cost_center": "打开费用中心",
+  "delete_account_delete_immediately": "立即注销",
+  "delete_account_pending_title": "账号注销处理中",
+  "delete_account_pending_description": "我们已经开始注销您的账号。请保持此窗口开启，等待最终结果。",
+  "delete_account_pending_hint": "注销成功后，系统将自动为您退出登录。",
+  "delete_account_success_title": "账号已成功注销",
+  "delete_account_success_description": "您的账号注销流程已成功完成。",
+  "delete_account_success_hint": "正在为您退出登录…",
+  "delete_account_failed_description": "账号注销未能完成，请查看下方失败的工作空间。",
+  "delete_account_failed_hint": "系统在注销账号前取消工作空间订阅失败。",
+  "delete_account_failed_no_details": "未返回工作空间失败详情。"
 }

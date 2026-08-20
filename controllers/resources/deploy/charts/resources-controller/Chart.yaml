@@ -1,0 +1,6 @@
+apiVersion: v2
+name: resources
+description: Helm chart for the sealos resources controller
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

@@ -22,7 +22,7 @@ const nextConfig = {
     }
     return config;
   },
-  transpilePackages: ['@sealos/driver', '@sealos/ui'],
+  transpilePackages: ['@sealos/driver', '@sealos/ui', '@sealos/shadcn-ui', 'geist'],
   experimental: {
     outputFileTracingRoot: path.join(__dirname, '../../'),
     instrumentationHook: true
@@ -30,8 +30,8 @@ const nextConfig = {
   async rewrites() {
     return [
       {
-        source: '/api/v2alpha/doc',
-        destination: '/doc/v2alpha'
+        source: '/api/v2alpha/openapi.json',
+        destination: '/api/v2alpha/openapi'
       }
     ];
   }

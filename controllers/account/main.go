@@ -216,7 +216,10 @@ func main() {
 			setupLog.Error(err, "unable to disconnect from cockroach")
 		}
 	}()
-	if err = database.InitRegionEnv(v2Account.GetGlobalDB(), v2Account.GetLocalRegion().Domain); err != nil {
+	if err = database.InitRegionEnv(
+		v2Account.GetGlobalDB(),
+		v2Account.GetLocalRegion().Domain,
+	); err != nil {
 		setupLog.Error(err, "unable to init region env")
 		os.Exit(1)
 	}
@@ -247,7 +250,15 @@ func main() {
 	if err != nil {
 		setupLog.Error(err, "parse recharge config failed")
 	} else {
-		setupLog.Info("parse recharge config success", "activities", activities, "discountSteps", discountSteps, "discountRatios", discountRatios)
+		setupLog.Info(
+			"parse recharge config success",
+			"activities",
+			activities,
+			"discountSteps",
+			discountSteps,
+			"discountRatios",
+			discountRatios,
+		)
 		accountReconciler.Activities = activities
 		accountReconciler.DefaultDiscount = types.RechargeDiscount{
 			DiscountRates: discountRatios,
@@ -302,7 +313,8 @@ func main() {
 	if os.Getenv("DISABLE_WEBHOOKS") == _true {
 		setupLog.Info("disable all webhooks")
 	} else {
-		mgr.GetWebhookServer().Register("/validate-v1-sealos-cloud", &webhook.Admission{Handler: &accountv1.DebtValidate{Client: mgr.GetClient(), AccountV2: v2Account, TTLUserMap: maps.New[*types.UsableBalanceWithCredits](env.GetIntEnvWithDefault("DEBT_WEBHOOK_CACHE_USER_TTL", 15))}})
+		mgr.GetWebhookServer().
+			Register("/validate-v1-sealos-cloud", &webhook.Admission{Handler: &accountv1.DebtValidate{Client: mgr.GetClient(), AccountV2: v2Account, TTLUserMap: maps.New[*types.UsableBalanceWithCredits](env.GetIntEnvWithDefault("DEBT_WEBHOOK_CACHE_USER_TTL", 15))}})
 		// Start HTTP server for property reload handler (without TLS)
 		jwtSecret := os.Getenv("ACCOUNT_API_JWT_SECRET")
 		reloadHandler := &controllers.PropertyReloadHandler{
@@ -312,7 +324,12 @@ func main() {
 		}
 		go func() {
 			setupLog.Info("starting property reload HTTP server", "port", 9444)
-			if err := http.ListenAndServe(":9444", reloadHandler); err != nil {
+			server := &http.Server{
+				Addr:              ":9444",
+				Handler:           reloadHandler,
+				ReadHeaderTimeout: 10 * time.Second,
+			}
+			if err := server.ListenAndServe(); err != nil {
 				setupLog.Error(err, "failed to start property reload HTTP server")
 			}
 		}()

@@ -1,6 +1,0 @@
-**/dist
-**/.vscode
-**/.DS_Store
-node_modules
-.next
-public/scalar/cdn.js

@@ -1,9 +1,5 @@
-
-SERVICE_NAME=zhujingyang/sealos-cost-center
-# Image URL to use all building/pushing image targets
-IMG ?= $(SERVICE_NAME):1.0.0
 .PHONY: all
-all: docker-build-and-push
+all: build
 
 ##@ General
 
@@ -31,16 +27,3 @@ build: ## Build desktop-frontend binary.
 .PHONY: run
 run: ## Run a dev service from host.
 	pnpm run start
-
-.PHONY: docker-build
-docker-build: ## Build docker image with the desktop-frontend.
-	sudo docker build -t $(IMG) .
-
-##@ Deployment
-
-.PHONY: docker-push-image
-docker-push-image: ## Push docker image to Docker Hub.
-	docker push $(IMG)
-	
-.PHONY: docker-build-and-push
-docker-build-and-push: docker-build docker-push-image ## Build and push docker image with the desktop-frontend.

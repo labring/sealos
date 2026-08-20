@@ -12,6 +12,8 @@ export type UserInfo = {
   readonly realName?: string;
   readonly enterpriseRealName?: string;
   readonly k8s_username: string;
+  readonly username?: string;
+  readonly email?: string;
   readonly name: string;
   readonly avatar: string;
   readonly nsid: string;

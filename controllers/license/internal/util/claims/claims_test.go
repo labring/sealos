@@ -27,22 +27,35 @@ func TestClaimData_SwitchToClusterData(t *testing.T) {
 		c       ClaimData
 		args    args
 		wantErr bool
+		want    ClusterClaimData
 	}{
 		{
 			name: "test",
 			c: ClaimData{
-				"amount": 100,
+				"nodeCount":   3,
+				"totalCPU":    6,
+				"totalMemory": 12,
+				"userCount":   5,
 			},
 			args: args{
 				data: &ClusterClaimData{},
 			},
 			wantErr: false,
+			want: ClusterClaimData{
+				NodeCount:   3,
+				TotalCPU:    6,
+				TotalMemory: 12,
+				UserCount:   5,
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.c.SwitchToClusterData(tt.args.data); (err != nil) != tt.wantErr {
 				t.Errorf("SwitchToClusterData() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if !tt.wantErr && *tt.args.data != tt.want {
+				t.Fatalf("SwitchToClusterData() got = %+v, want = %+v", *tt.args.data, tt.want)
 			}
 		})
 	}

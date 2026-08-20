@@ -2,6 +2,7 @@ export * from './lib/utils';
 export * from './components/ui/alert';
 export * from './components/ui/alert-dialog';
 export * from './components/ui/badge';
+export * from './components/ui/breadcrumb';
 export * from './components/ui/skeleton';
 export * from './components/ui/separator';
 export * from './components/ui/loading';

@@ -196,6 +196,7 @@
     "Used": "Used"
   },
   "cpu": "CPU",
+  "pod": "Pod",
   "cronjob": "CronJob",
   "database": "DataBase",
   "delete message": "Are you sure you want to delete this app? If you proceed, all project data will be permanently deleted.",

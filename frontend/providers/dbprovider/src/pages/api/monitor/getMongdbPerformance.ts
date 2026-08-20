@@ -20,9 +20,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const startTime = endTime - 60 * 60 * 1000; // 前向推进1个小时的时间戳
 
     const queryType: Partial<MonitorQueryKey> = {
-      Mongodb_DocumentOperations: `rate(mongodb_mongod_metrics_document_total{$, app_kubernetes_io_instance="${dbName}"}[1m])`,
-      Mongodb_QueryOperations: `rate(mongodb_op_counters_total{$, app_kubernetes_io_instance="${dbName}"}[5m]) or irate(mongodb_op_counters_total{$, app_kubernetes_io_instance="${dbName}"}[5m])`,
-      Mongodb_PageFaults: `rate(mongodb_extra_info_page_faults_total{$, app_kubernetes_io_instance="${dbName}"}[5m]) or irate(mongodb_extra_info_page_faults_total{$, app_kubernetes_io_instance="${dbName}"}[5m])`
+      Mongodb_DocumentOperations: `rate(mongodb_mongod_metrics_document_total{$, workloads_kubeblocks_io_instance="${dbName}-${DBTypeEnum.mongodb}"}[1m])`,
+      Mongodb_QueryOperations: `rate(mongodb_op_counters_total{$, workloads_kubeblocks_io_instance="${dbName}-${DBTypeEnum.mongodb}"}[5m]) or irate(mongodb_op_counters_total{$, workloads_kubeblocks_io_instance="${dbName}-${DBTypeEnum.mongodb}"}[5m])`,
+      Mongodb_PageFaults: `rate(mongodb_extra_info_page_faults_total{$, workloads_kubeblocks_io_instance="${dbName}-${DBTypeEnum.mongodb}"}[5m]) or irate(mongodb_extra_info_page_faults_total{$, workloads_kubeblocks_io_instance="${dbName}-${DBTypeEnum.mongodb}"}[5m])`
     };
 
     console.log(dbName, dbType, queryKey, queryType[queryKey as keyof MonitorQueryKey]);

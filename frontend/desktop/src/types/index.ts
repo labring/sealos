@@ -18,6 +18,7 @@ export * from './region';
 export * from './session';
 export * from './system';
 export * from './tools';
+export * from './verification';
 export * from './loginFailureMesage';
 declare global {
   var mongodb: MongoClient | null;

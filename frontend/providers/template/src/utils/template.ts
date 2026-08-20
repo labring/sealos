@@ -1,7 +1,28 @@
 import { EnvResponse, YamlItemType } from '@/types';
 import { TemplateSourceType } from '@/types/app';
+import type { TemplateCategory } from '@/types/config';
 import { reduce, mapValues } from 'lodash';
+import type { ExtraResourceLabels } from './common';
 import { developGenerateYamlList, generateYamlList, parseTemplateString } from './json-yaml';
+
+export function getCategorySlugs(categories: readonly TemplateCategory[] = []) {
+  return categories.map((category) => category.slug).filter(Boolean);
+}
+
+export function filterConfiguredCategorySlugs(
+  templateCategories: readonly string[] | undefined,
+  configuredCategories: readonly TemplateCategory[] = []
+) {
+  if (!templateCategories?.length || !configuredCategories.length) return [];
+
+  const configuredSlugSet = new Set(getCategorySlugs(configuredCategories));
+  return templateCategories.filter((category) => configuredSlugSet.has(category));
+}
+
+export function getCategoryLabel(category: TemplateCategory, language?: string) {
+  if (language && category.i18n[language]) return category.i18n[language];
+  return category.i18n.en || category.i18n.zh || category.slug;
+}
 
 export const getTemplateInputDefaultValues = (templateSource: TemplateSourceType | undefined) => {
   const inputs = templateSource?.source?.inputs;
@@ -27,28 +48,12 @@ export const getTemplateValues = (templateSource: TemplateSourceType | undefined
   };
 };
 
-export function findTopKeyWords(keywordsList: string[][], topCount: number) {
-  const flatKeywordsList = keywordsList.filter(Boolean).flat();
-
-  const keywordCountMap = new Map();
-
-  flatKeywordsList.forEach((keyword) => {
-    const count = keywordCountMap.get(keyword) || 0;
-    keywordCountMap.set(keyword, count + 1);
-  });
-
-  const sortedKeywords = Array.from(keywordCountMap.entries()).sort((a, b) => b[1] - a[1]);
-
-  const topKeywords = sortedKeywords.slice(0, topCount).map((entry) => entry[0]);
-
-  return topKeywords;
-}
-
 export const generateYamlData = (
   templateSource: TemplateSourceType,
   inputs: Record<string, string>,
   platformEnvs?: EnvResponse,
-  isDevelop: boolean = false
+  isDevelop: boolean = false,
+  extraLabels: ExtraResourceLabels = {}
 ): YamlItemType[] => {
   if (!templateSource) return [];
 
@@ -68,6 +73,6 @@ export const generateYamlData = (
   const generateStr = parseTemplateString(templateSource.appYaml, data);
 
   return isDevelop
-    ? developGenerateYamlList(generateStr, app_name)
-    : generateYamlList(generateStr, app_name);
+    ? developGenerateYamlList(generateStr, app_name, extraLabels)
+    : generateYamlList(generateStr, app_name, extraLabels);
 };

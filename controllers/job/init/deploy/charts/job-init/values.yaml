@@ -1,0 +1,50 @@
+image: ghcr.io/labring/sealos-job-init-controller:latest
+imagePullPolicy: Always
+
+imagePullSecrets: []
+fullnameOverride: "init-job"
+
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - "ALL"
+
+ttlSecondsAfterFinished: 86400
+backoffLimit: 10
+restartPolicy: OnFailure
+
+# Environment variables (auto-configured by entrypoint.sh)
+# These values are set dynamically via --set-string flags:
+# - PASSWORD_SALT: from env.passwordSalt (or env var PASSWORD_SALT)
+# - ADMIN_PASSWORD: from env.adminPassword (from ConfigMap or generated)
+# - ADMIN_USER_NAME: from env.adminUserName (or env var ADMIN_USER_NAME)
+# - WORKSPACE_PREFIX: from env.workspacePrefix (or env var WORKSPACE_PREFIX)
+# - envFromConfigMap: from env.envFromConfigMap (or env var ENV_FROM_CONFIGMAP)
+env:
+  passwordSalt: ""
+  adminPassword: "sealos2023"
+  adminUserName: "admin"
+  workspacePrefix: "ns-"
+  domain: ""
+  globalCockroachUri: ""
+  localCockroachUri: ""
+  localRegion: ""
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

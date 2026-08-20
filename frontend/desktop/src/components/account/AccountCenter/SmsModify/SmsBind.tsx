@@ -14,7 +14,7 @@ import { useTranslation } from 'next-i18next';
 import { useForm } from 'react-hook-form';
 import { getSmsBindCodeRequest, verifySmsBindRequest } from '@/api/auth';
 import { SettingInput } from '../SettingInput';
-import { MouseEventHandler } from 'react';
+import { MouseEventHandler, useState } from 'react';
 
 import { SettingInputGroup } from '../SettingInputGroup';
 import { SettingInputRightElement } from '../SettingInputRightElement';
@@ -30,6 +30,7 @@ const smsBindGen = (smsType: SmsType) =>
   function SmsBindCore({ onClose }: { onClose: () => void }) {
     const { t } = useTranslation();
     const { toast } = useCustomToast({ status: 'error' });
+    const [challengeId, setChallengeId] = useState('');
 
     const { register, handleSubmit, trigger, getValues, reset, formState } = useForm<{
       id: string;
@@ -45,6 +46,7 @@ const smsBindGen = (smsType: SmsType) =>
         return getSmsBindCodeRequest(smsType)({ id });
       },
       onSuccess(data) {
+        setChallengeId(data.data?.challengeId || '');
         startTimer();
         toast({
           status: 'success',
@@ -84,7 +86,15 @@ const smsBindGen = (smsType: SmsType) =>
     };
     const queryClient = useQueryClient();
     const mutation = useMutation({
-      async mutationFn({ smsType, ...data }: { id: string; code: string; smsType: SmsType }) {
+      async mutationFn({
+        smsType,
+        ...data
+      }: {
+        id: string;
+        code: string;
+        challengeId: string;
+        smsType: SmsType;
+      }) {
         return verifySmsBindRequest(smsType)(data);
       },
       async onSuccess(data) {
@@ -95,6 +105,7 @@ const smsBindGen = (smsType: SmsType) =>
             title: t('common:bind_success')
           });
           reset();
+          setChallengeId('');
           await queryClient.invalidateQueries();
           onClose?.();
         } else if (Object.values(MERGE_USER_READY).includes(status as MERGE_USER_READY)) {
@@ -127,6 +138,7 @@ const smsBindGen = (smsType: SmsType) =>
               mutation.mutate({
                 id: data.id,
                 code: data.verifyCode,
+                challengeId,
                 smsType
               });
             },

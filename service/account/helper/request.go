@@ -3,6 +3,7 @@ package helper
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -157,7 +158,7 @@ type AppCostsReq struct {
 	Namespace string `json:"namespace,omitempty" bson:"namespace" example:"ns-admin"`
 	// @Summary App type
 	// @Description App type
-	AppType string `json:"appType,omitempty"   bson:"appType"   example:"app"`
+	AppType string `json:"appType,omitempty" bson:"appType" example:"app"`
 
 	// @Summary App Name
 	// @Description App Name
@@ -674,10 +675,11 @@ func ParseAdminFlushSubscriptionQuotaReq(c *gin.Context) (*AdminFlushSubscriptio
 }
 
 type AdminFlushDebtResourceStatusReq struct {
-	UserUID           uuid.UUID            `json:"userUID"           bson:"userUID"`
-	LastDebtStatus    types.DebtStatusType `json:"lastDebtStatus"    bson:"lastDebtStatus"`
-	CurrentDebtStatus types.DebtStatusType `json:"currentDebtStatus" bson:"currentDebtStatus"`
-	IsBasicUser       bool                 `json:"isBasicUser"       bson:"isBasicUser"`
+	UserUID             uuid.UUID            `json:"userUID"                       bson:"userUID"`
+	LastDebtStatus      types.DebtStatusType `json:"lastDebtStatus"                bson:"lastDebtStatus"`
+	CurrentDebtStatus   types.DebtStatusType `json:"currentDebtStatus"             bson:"currentDebtStatus"`
+	IsBasicUser         bool                 `json:"isBasicUser"                   bson:"isBasicUser"`
+	ReplayFinalDeletion bool                 `json:"replayFinalDeletion,omitempty" bson:"replayFinalDeletion,omitempty"`
 }
 
 func ParseAdminFlushDebtResourceStatusReq(
@@ -704,9 +706,9 @@ type WorkspaceSubscriptionOperatorReq struct {
 	AuthBase `json:",inline" bson:",inline"`
 
 	// @Summary Workspace name
-	// @Description Workspace name
-	// @JSONSchema required
-	Workspace string `json:"workspace" bson:"workspace" binding:"required" example:"my-workspace"`
+	// @Description Workspace name (optional for price preview, required for actual subscription)
+	// @JSONSchema optional
+	Workspace string `json:"workspace,omitempty" bson:"workspace" example:"my-workspace"`
 
 	// @Summary Region domain
 	// @Description Region domain
@@ -721,11 +723,11 @@ type WorkspaceSubscriptionOperatorReq struct {
 	// @Summary Subscription period
 	// @Description Subscription period (1m for monthly, 1y for yearly)
 	// @JSONSchema required
-	Period types.SubscriptionPeriod `json:"period"        bson:"period"        binding:"required" example:"1m"`
+	Period types.SubscriptionPeriod `json:"period" bson:"period" example:"1m"`
 	// @Summary Promotion code
 	// @Description Promotion code for applying discount to the upgrade payment
 	// @JSONSchema optional
-	PromotionCode string `json:"promotionCode" bson:"promotionCode"                    example:"SAVE20"`
+	PromotionCode string `json:"promotionCode" bson:"promotionCode" example:"SAVE20"`
 
 	// @Summary Payment method
 	// @Description Payment method (STRIPE, BALANCE)
@@ -739,6 +741,11 @@ type WorkspaceSubscriptionOperatorReq struct {
 	// @Summary Card ID (optional for stripe payments)
 	// @Description Card ID for stripe payments
 	CardID *uuid.UUID `json:"cardId,omitempty" bson:"cardId,omitempty"`
+
+	// @Summary Stripe return app
+	// @Description Desktop app opened after returning from Stripe Checkout
+	// @JSONSchema optional
+	PayApp types.PayApp `json:"payApp,omitempty" bson:"payApp,omitempty" example:"system-costcenter"`
 }
 
 type WorkspaceSubscriptionInfoReq struct {
@@ -812,9 +819,10 @@ func ParseWorkspaceSubscriptionOperatorReq(
 	if err := c.ShouldBindJSON(req); err != nil {
 		return nil, fmt.Errorf("bind json error: %w", err)
 	}
-	if req.Workspace == "" {
-		return nil, errors.New("workspace cannot be empty")
-	}
+	// Workspace is optional for price preview scenarios
+	// if req.Workspace == "" {
+	// 	return nil, errors.New("workspace cannot be empty")
+	// }
 	if req.RegionDomain == "" {
 		return nil, errors.New("regionDomain cannot be empty")
 	}
@@ -837,11 +845,12 @@ func ParseWorkspaceSubscriptionOperatorReq(
 		types.SubscriptionTransactionTypeUpgraded,
 		types.SubscriptionTransactionTypeDowngraded,
 		types.SubscriptionTransactionTypeCanceled,
-		types.SubscriptionTransactionTypeRenewed:
+		types.SubscriptionTransactionTypeRenewed,
+		types.SubscriptionTransactionTypeResumed:
 		// Valid operations
 	default:
 		return nil, fmt.Errorf(
-			"invalid operator: %s. Allowed: created, upgraded, downgraded, canceled, renewed",
+			"invalid operator: %s. Allowed: created, upgraded, downgraded, canceled, renewed, resumed",
 			req.Operator,
 		)
 	}
@@ -1039,10 +1048,8 @@ func ParseWorkspaceSubscriptionPlansReq(c *gin.Context) (*WorkspaceSubscriptionP
 	}
 
 	// Validate each namespace is not empty
-	for _, ns := range req.Namespaces {
-		if ns == "" {
-			return nil, errors.New("namespace cannot be empty")
-		}
+	if slices.Contains(req.Namespaces, "") {
+		return nil, errors.New("namespace cannot be empty")
 	}
 
 	return req, nil

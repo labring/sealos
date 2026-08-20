@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
@@ -50,35 +51,124 @@ type kubeConfigSpec struct {
 	ClientCertAuth *clientCertAuth
 }
 
+const adminKubeConfigFileName = "admin.conf"
+const (
+	controllerManagerKubeConfigFileName = "controller-manager.conf"
+	schedulerKubeConfigFileName         = "scheduler.conf"
+	kubeletKubeConfigFileName           = "kubelet.conf"
+	superAdminKubeConfigFileName        = "super-admin.conf"
+)
+
 // CreateJoinControlPlaneKubeConfigFiles will create and write to disk the kubeconfig files required by kubeadm
 // join --control-plane workflow, plus the admin kubeconfig file used by the administrator and kubeadm itself; the
 // kubelet.conf file must not be created because it will be created and signed by the kubelet TLS bootstrap process.
 // If any kubeconfig files already exists, it used only if evaluated equal; otherwise an error is returned.
 func CreateJoinControlPlaneKubeConfigFiles(outDir string, cfg Config, nodeName, controlPlaneEndpoint, clusterName string) error {
+	return CreateJoinControlPlaneKubeConfigFilesForKubeVersion(outDir, cfg, nodeName, controlPlaneEndpoint, clusterName, "")
+}
+
+func CreateJoinControlPlaneKubeConfigFilesForKubeVersion(outDir string, cfg Config, nodeName, controlPlaneEndpoint, clusterName, kubeVersion string) error {
+	identity := resolveLocalIdentityModel(kubeVersion)
+	kubeConfigFileNames := []string{
+		adminKubeConfigFileName,
+		controllerManagerKubeConfigFileName,
+		schedulerKubeConfigFileName,
+		kubeletKubeConfigFileName,
+	}
+	if identity.IncludeSuperAdminKubeConfig {
+		kubeConfigFileNames = append(kubeConfigFileNames, superAdminKubeConfigFileName)
+	}
 	return createKubeConfigFiles(
 		outDir,
 		cfg,
 		nodeName,
 		controlPlaneEndpoint,
 		clusterName,
-		"admin.conf",
-		"controller-manager.conf",
-		"scheduler.conf",
-		"kubelet.conf", //master1上的kubeconfig跟随三个组件一起生成
+		identity,
+		kubeConfigFileNames...,
 	)
+}
+
+// RenewAdminKubeConfigFile re-signs and overwrites the local admin kubeconfig used by sealos.
+func RenewAdminKubeConfigFile(outDir string, cfg Config, controlPlaneEndpoint, clusterName string, organizations []string) error {
+	return RenewAdminKubeConfigFileForKubeVersion(outDir, cfg, controlPlaneEndpoint, clusterName, organizations, "")
+}
+
+func RenewAdminKubeConfigFileForKubeVersion(outDir string, cfg Config, controlPlaneEndpoint, clusterName string, organizations []string, kubeVersion string) error {
+	spec, err := getAdminKubeConfigSpec(cfg, controlPlaneEndpoint, organizations, resolveLocalIdentityModel(kubeVersion))
+	if err != nil {
+		return err
+	}
+
+	config, err := buildKubeConfigFromSpec(spec, clusterName)
+	if err != nil {
+		return err
+	}
+
+	if err = os.MkdirAll(outDir, 0o700); err != nil {
+		return fmt.Errorf("failed to create kubeconfig output directory %q: %w", outDir, err)
+	}
+
+	kubeConfigFilePath := filepath.Join(outDir, adminKubeConfigFileName)
+	logger.Debug("[kubeconfig] Renewing %q kubeconfig file\n", kubeConfigFilePath)
+	if err = WriteToDisk(kubeConfigFilePath, config); err != nil {
+		return fmt.Errorf("failed to save kubeconfig file %q on disk: %w", kubeConfigFilePath, err)
+	}
+
+	return nil
+}
+
+// RenewKubeConfigFiles re-signs and overwrites the selected local kubeconfig files used by sealos.
+func RenewKubeConfigFiles(outDir string, cfg Config, nodeName, controlPlaneEndpoint, clusterName string, adminOrganizations []string, kubeConfigFileNames ...string) error {
+	return RenewKubeConfigFilesForKubeVersion(outDir, cfg, nodeName, controlPlaneEndpoint, clusterName, adminOrganizations, "", kubeConfigFileNames...)
+}
+
+func RenewKubeConfigFilesForKubeVersion(outDir string, cfg Config, nodeName, controlPlaneEndpoint, clusterName string, adminOrganizations []string, kubeVersion string, kubeConfigFileNames ...string) error {
+	if len(kubeConfigFileNames) == 0 {
+		return errors.New("at least one kubeconfig file must be specified")
+	}
+
+	specs, err := getKubeConfigSpecs(cfg, nodeName, controlPlaneEndpoint, adminOrganizations, resolveLocalIdentityModel(kubeVersion))
+	if err != nil {
+		return err
+	}
+
+	if err = os.MkdirAll(outDir, 0o700); err != nil {
+		return fmt.Errorf("failed to create kubeconfig output directory %q: %w", outDir, err)
+	}
+
+	for _, kubeConfigFileName := range kubeConfigFileNames {
+		spec, exists := specs[kubeConfigFileName]
+		if !exists {
+			return fmt.Errorf("couldn't retrieve KubeConfigSpec for %s", kubeConfigFileName)
+		}
+
+		config, err := buildKubeConfigFromSpec(spec, clusterName)
+		if err != nil {
+			return err
+		}
+
+		kubeConfigFilePath := filepath.Join(outDir, kubeConfigFileName)
+		logger.Debug("[kubeconfig] Renewing %q kubeconfig file\n", kubeConfigFilePath)
+		if err = WriteToDisk(kubeConfigFilePath, config); err != nil {
+			return fmt.Errorf("failed to save kubeconfig file %q on disk: %w", kubeConfigFilePath, err)
+		}
+	}
+
+	return nil
 }
 
 // 方法没有被 ↑ 的方法调用，而是在cmd/kubeadm/app/cmd/phases/init/kubeconfig.go里调用
 // cmd/kubeadm/app/phases/kubeconfig/kubeconfig.go
 func CreateKubeConfigFile(kubeConfigFileName string, outDir string, cfg Config, nodeName, controlPlaneEndpoint, clusterName string) error {
 	logger.Info("creating kubeconfig file for %s", kubeConfigFileName)
-	return createKubeConfigFiles(outDir, cfg, kubeConfigFileName, nodeName, controlPlaneEndpoint, clusterName)
+	return createKubeConfigFiles(outDir, cfg, nodeName, controlPlaneEndpoint, clusterName, resolveLocalIdentityModel(""), kubeConfigFileName)
 }
 
 // createKubeConfigFiles creates all the requested kubeconfig files.
 // If kubeconfig files already exists, they are used only if evaluated equal; otherwise an error is returned.
-func createKubeConfigFiles(outDir string, cfg Config, nodeName, controlPlaneEndpoint, clusterName string, kubeConfigFileNames ...string) error { // gets the KubeConfigSpecs, actualized for the current InitConfiguration
-	specs, err := getKubeConfigSpecs(cfg, nodeName, controlPlaneEndpoint)
+func createKubeConfigFiles(outDir string, cfg Config, nodeName, controlPlaneEndpoint, clusterName string, identity localIdentityModel, kubeConfigFileNames ...string) error { // gets the KubeConfigSpecs, actualized for the current InitConfiguration
+	specs, err := getKubeConfigSpecs(cfg, nodeName, controlPlaneEndpoint, nil, identity)
 	if err != nil {
 		return err
 	}
@@ -105,9 +195,32 @@ func createKubeConfigFiles(outDir string, cfg Config, nodeName, controlPlaneEndp
 	return nil
 }
 
+func getAdminKubeConfigSpec(cfg Config, controlPlaneEndpoint string, organizations []string, identity localIdentityModel) (*kubeConfigSpec, error) {
+	caCert, caKey, err := LoadCaCertAndKeyFromDisk(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't create a kubeconfig; the CA files couldn't be loaded: %w", err)
+	}
+
+	if len(controlPlaneEndpoint) == 0 {
+		return nil, errors.New("controlPlaneEndpoint can not be empty")
+	}
+
+	adminOrganizations := normalizeOrganizations(organizations, identity.DefaultAdminOrganizations)
+
+	return &kubeConfigSpec{
+		CACert:     caCert,
+		APIServer:  controlPlaneEndpoint,
+		ClientName: "kubernetes-admin",
+		ClientCertAuth: &clientCertAuth{
+			CAKey:         caKey,
+			Organizations: adminOrganizations,
+		},
+	}, nil
+}
+
 // getKubeConfigSpecs returns all KubeConfigSpecs actualized to the context of the current InitConfiguration
 // NB. this methods holds the information about how kubeadm creates kubeconfig files.
-func getKubeConfigSpecs(cfg Config, nodeName, controlPlaneEndpoint string) (map[string]*kubeConfigSpec, error) {
+func getKubeConfigSpecs(cfg Config, nodeName, controlPlaneEndpoint string, adminOrganizations []string, identity localIdentityModel) (map[string]*kubeConfigSpec, error) {
 	caCert, caKey, err := LoadCaCertAndKeyFromDisk(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't create a kubeconfig; the CA files couldn't be loaded: %w", err)
@@ -121,14 +234,16 @@ func getKubeConfigSpecs(cfg Config, nodeName, controlPlaneEndpoint string) (map[
 		return nil, errors.New("controlPlaneEndpoint  can not be empty")
 	}
 
-	var kubeConfigSpec = map[string]*kubeConfigSpec{
+	normalizedAdminOrganizations := normalizeOrganizations(adminOrganizations, identity.DefaultAdminOrganizations)
+
+	specs := map[string]*kubeConfigSpec{
 		"admin.conf": {
 			CACert:     caCert,
 			APIServer:  controlPlaneEndpoint,
 			ClientName: "kubernetes-admin",
 			ClientCertAuth: &clientCertAuth{
 				CAKey:         caKey,
-				Organizations: []string{"system:masters"},
+				Organizations: normalizedAdminOrganizations,
 			},
 		},
 		"kubelet.conf": {
@@ -140,7 +255,7 @@ func getKubeConfigSpecs(cfg Config, nodeName, controlPlaneEndpoint string) (map[
 				Organizations: []string{"system:nodes"},
 			},
 		},
-		"controller-manager.conf": {
+		controllerManagerKubeConfigFileName: {
 			CACert:     caCert,
 			APIServer:  controlPlaneEndpoint,
 			ClientName: "system:kube-controller-manager",
@@ -148,7 +263,7 @@ func getKubeConfigSpecs(cfg Config, nodeName, controlPlaneEndpoint string) (map[
 				CAKey: caKey,
 			},
 		},
-		"scheduler.conf": {
+		schedulerKubeConfigFileName: {
 			CACert:     caCert,
 			APIServer:  controlPlaneEndpoint,
 			ClientName: "system:kube-scheduler",
@@ -157,8 +272,40 @@ func getKubeConfigSpecs(cfg Config, nodeName, controlPlaneEndpoint string) (map[
 			},
 		},
 	}
+	if identity.IncludeSuperAdminKubeConfig {
+		specs[superAdminKubeConfigFileName] = &kubeConfigSpec{
+			CACert:     caCert,
+			APIServer:  controlPlaneEndpoint,
+			ClientName: identity.SuperAdminClientName,
+			ClientCertAuth: &clientCertAuth{
+				CAKey:         caKey,
+				Organizations: identity.SuperAdminOrganizations,
+			},
+		}
+	}
 
-	return kubeConfigSpec, nil
+	return specs, nil
+}
+
+func normalizeOrganizations(organizations []string, defaultOrganizations []string) []string {
+	if organizations == nil {
+		return append([]string(nil), defaultOrganizations...)
+	}
+
+	normalized := make([]string, 0, len(organizations))
+	seen := make(map[string]struct{}, len(organizations))
+	for _, organization := range organizations {
+		organization = strings.TrimSpace(organization)
+		if organization == "" {
+			continue
+		}
+		if _, ok := seen[organization]; ok {
+			continue
+		}
+		seen[organization] = struct{}{}
+		normalized = append(normalized, organization)
+	}
+	return normalized
 }
 
 // buildKubeConfigFromSpec creates a kubeconfig object for the given kubeConfigSpec

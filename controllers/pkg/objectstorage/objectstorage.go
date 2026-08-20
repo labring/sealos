@@ -24,12 +24,32 @@ import (
 	"time"
 
 	"github.com/labring/sealos/controllers/pkg/utils/env"
+	"github.com/minio/madmin-go/v3"
 	"github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/prometheus/client_golang/api"
 	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prom2json"
 )
+
+func NewOSAdminClient(endpoint, accessKey, secretKey string) (*madmin.AdminClient, error) {
+	opts := &madmin.Options{
+		Creds:  credentials.NewStaticV4(accessKey, secretKey, ""),
+		Secure: false,
+	}
+
+	return madmin.NewWithOptions(endpoint, opts)
+}
+
+func NewOSClient(endpoint, accessKey, secretKey string) (*minio.Client, error) {
+	opts := &minio.Options{
+		Creds:  credentials.NewStaticV4(accessKey, secretKey, ""),
+		Secure: false,
+	}
+
+	return minio.New(endpoint, opts)
+}
 
 func ListUserObjectStorageBucket(client *minio.Client, username string) ([]string, error) {
 	buckets, err := client.ListBuckets(context.Background())

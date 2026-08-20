@@ -30,6 +30,41 @@ import (
 
 var testTime = time.Date(2023, time.May, 9, 5, 0, 0, 0, time.UTC)
 
+func TestGenerateBillingDataPreservesTypedGroupKey(t *testing.T) {
+	start := time.Date(2026, time.July, 29, 1, 0, 0, 0, time.UTC)
+	end := start.Add(time.Hour)
+	properties := resources.NewPropertyTypeLS([]resources.PropertyType{
+		{
+			Name: "cpu", Enum: 0, PriceType: resources.AVG, UnitPrice: 1,
+		},
+	})
+	records := []resources.Monitor{
+		{
+			Time: start, Category: "ns-owner", Type: 1,
+			ParentType: 255, ParentName: "parent/name", Name: "child",
+			Used: resources.EnumUsedMap{0: 60},
+		},
+	}
+
+	billings, err := GenerateBillingDataFromRecords(
+		records, properties, start, end, "owner",
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(billings) != 1 {
+		t.Fatalf("billing count = %d, want 1", len(billings))
+	}
+	if billings[0].AppType != 255 || billings[0].AppName != "parent/name" {
+		t.Fatalf(
+			"billing group = (%d, %q), want (255, %q)",
+			billings[0].AppType,
+			billings[0].AppName,
+			"parent/name",
+		)
+	}
+}
+
 func TestMongoDB_SaveBillingsWithAccountBalance(t *testing.T) {
 	type fields struct {
 		URL          string

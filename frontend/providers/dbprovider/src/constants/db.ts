@@ -11,6 +11,7 @@ import {
 } from '@/types/db';
 import { I18nCommonKey } from '@/types/i18next';
 import { CpuSlideMarkList, MemorySlideMarkList } from './editApp';
+import type { SecretResponse } from '@/pages/api/getSecretByName';
 
 export const crLabelKey = 'sealos-db-provider-cr';
 export const CloudMigraionLabel = 'sealos-db-provider-cr-migrate';
@@ -25,13 +26,15 @@ export const DBReconfigureKey = 'ops.kubeblocks.io/ops-type=Reconfiguring';
 export const DBSwitchRoleKey = 'ops.kubeblocks.io/ops-type=Switchover';
 
 export const DBNameLabel = 'app.kubernetes.io/instance';
+export const BackupClusterUidLabel = 'dataprotection.kubeblocks.io/cluster-uid';
+
+export const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export enum DBTypeEnum {
   postgresql = 'postgresql',
   mongodb = 'mongodb',
   mysql = 'apecloud-mysql',
-  // ! Uncomment this after KB 0.9 upgrade!
-  // notapemysql = 'mysql',
+  notapemysql = 'mysql',
   redis = 'redis',
   kafka = 'kafka',
   qdrant = 'qdrant',
@@ -60,6 +63,23 @@ export enum DBStatusEnum {
   UnKnow = 'UnKnow',
   Deleting = 'Deleting'
 }
+
+export const DB_OPERATION_LOCKED_STATUSES = new Set<`${DBStatusEnum}`>([
+  DBStatusEnum.Creating,
+  DBStatusEnum.Starting,
+  DBStatusEnum.Stopping,
+  DBStatusEnum.Updating,
+  DBStatusEnum.SpecUpdating,
+  DBStatusEnum.Rebooting,
+  DBStatusEnum.Upgrade,
+  DBStatusEnum.VerticalScaling,
+  DBStatusEnum.VolumeExpanding,
+  DBStatusEnum.UnKnow,
+  DBStatusEnum.Deleting
+]);
+
+export const isDBOperationLocked = (status?: `${DBStatusEnum}`) =>
+  !!status && DB_OPERATION_LOCKED_STATUSES.has(status);
 
 export enum ReconfigStatus {
   Deleting = 'Deleting',
@@ -230,20 +250,22 @@ export const DBTypeList = [
   { id: DBTypeEnum.postgresql, label: 'PostgreSQL' },
   { id: DBTypeEnum.mongodb, label: 'MongoDB' },
   { id: DBTypeEnum.mysql, label: 'MySQL' },
+  { id: DBTypeEnum.notapemysql, label: 'MySQL' },
   { id: DBTypeEnum.redis, label: 'Redis' },
   { id: DBTypeEnum.kafka, label: 'Kafka' },
   { id: DBTypeEnum.milvus, label: 'Milvus' },
-  { id: DBTypeEnum.weaviate, label: 'Weaviate' }
-  // { id: DBTypeEnum.qdrant, label: 'Qdrant' },
-  // { id: DBTypeEnum.pulsar, label: 'Pulsar' },
-  // { id: DBTypeEnum.clickhouse, label: 'ClickHouse' },
-  // { id: DBTypeEnum.nebula, label: 'Nebula' }
+  // { id: DBTypeEnum.qdrant, label: 'qdrant' },
+  // { id: DBTypeEnum.pulsar, label: 'pulsar' },
+  { id: DBTypeEnum.clickhouse, label: 'clickhouse' }
+  // { id: DBTypeEnum.nebula, label: 'nebula' },
+  // { id: DBTypeEnum.weaviate, label: 'weaviate' }
 ];
 
 export const DBComponentNameMap: Record<DBType, Array<DBComponentsName>> = {
   [DBTypeEnum.postgresql]: ['postgresql'],
   [DBTypeEnum.mongodb]: ['mongodb'],
   [DBTypeEnum.mysql]: ['mysql'],
+  [DBTypeEnum.notapemysql]: ['mysql'],
   [DBTypeEnum.redis]: ['redis', 'redis-sentinel'],
   [DBTypeEnum.kafka]: ['kafka-server', 'kafka-broker', 'controller', 'kafka-exporter'],
   [DBTypeEnum.qdrant]: ['qdrant'],
@@ -258,6 +280,7 @@ export const DBBackupPolicyNameMap = {
   [DBTypeEnum.postgresql]: 'postgresql',
   [DBTypeEnum.mongodb]: 'mongodb',
   [DBTypeEnum.mysql]: 'mysql',
+  [DBTypeEnum.notapemysql]: 'mysql',
   [DBTypeEnum.redis]: 'redis',
   [DBTypeEnum.kafka]: 'kafka',
   [DBTypeEnum.qdrant]: 'qdrant',
@@ -272,6 +295,7 @@ export const DBBackupMethodNameMap = {
   [DBTypeEnum.postgresql]: 'pg-basebackup',
   [DBTypeEnum.mongodb]: 'dump',
   [DBTypeEnum.mysql]: 'xtrabackup',
+  [DBTypeEnum.notapemysql]: 'xtrabackup',
   [DBTypeEnum.redis]: 'datafile',
   // not support
   [DBTypeEnum.kafka]: 'kafka',
@@ -281,6 +305,52 @@ export const DBBackupMethodNameMap = {
   [DBTypeEnum.milvus]: 'milvus',
   [DBTypeEnum.pulsar]: 'pulsar',
   [DBTypeEnum.clickhouse]: 'clickhouse'
+};
+
+export type DBExecInfo = {
+  component: DBComponentsName;
+  container: DBComponentsName;
+  getCommand: (secret: SecretResponse) => string | string[];
+};
+
+export type DBExecInfoEntry = DBExecInfo | null;
+
+export const DBExecInfoMap: Record<DBType, DBExecInfoEntry> = {
+  [DBTypeEnum.postgresql]: {
+    component: 'postgresql',
+    container: 'postgresql',
+    getCommand: (secret: SecretResponse) => `psql '${secret.connection}'`
+  },
+  [DBTypeEnum.mongodb]: {
+    component: 'mongodb',
+    container: 'mongodb',
+    getCommand: (secret: SecretResponse) => `mongosh '${secret.connection}'`
+  },
+  [DBTypeEnum.mysql]: {
+    component: 'mysql',
+    container: 'mysql',
+    getCommand: (secret: SecretResponse) =>
+      `mysql -h ${secret.host} -P ${secret.port} -u ${secret.username} -p${secret.password}`
+  },
+  [DBTypeEnum.notapemysql]: {
+    component: 'mysql',
+    container: 'mysql',
+    getCommand: (secret: SecretResponse) =>
+      `mysql -h ${secret.host} -P ${secret.port} -u ${secret.username} -p${secret.password}`
+  },
+  [DBTypeEnum.redis]: {
+    component: 'redis',
+    container: 'redis',
+    getCommand: (secret: SecretResponse) =>
+      `redis-cli -u redis://${secret.username}:${secret.password}@${secret.host}:${secret.port}`
+  },
+  [DBTypeEnum.kafka]: null,
+  [DBTypeEnum.qdrant]: null,
+  [DBTypeEnum.nebula]: null,
+  [DBTypeEnum.weaviate]: null,
+  [DBTypeEnum.milvus]: null,
+  [DBTypeEnum.pulsar]: null,
+  [DBTypeEnum.clickhouse]: null
 };
 
 export const defaultDBEditValue: DBEditType = {
@@ -305,7 +375,6 @@ export const defaultDBEditValue: DBEditType = {
   parameterConfig: {
     maxConnections: undefined,
     timeZone: 'UTC',
-    lowerCaseTableNames: '0',
     isMaxConnectionsCustomized: false
   }
 };
@@ -329,7 +398,6 @@ export const RedisHAConfig = (ha = true) => {
 
 export const defaultDBDetail: DBDetailType = {
   ...defaultDBEditValue,
-  rawDbType: DBTypeEnum.postgresql,
   id: '',
   createTime: '2022/1/22',
   status: dbStatusMap.Creating,
@@ -374,6 +442,9 @@ export const DBTypeSecretMap = {
     connectKey: 'mongodb'
   },
   'apecloud-mysql': {
+    connectKey: 'mysql'
+  },
+  mysql: {
     connectKey: 'mysql'
   },
   redis: {
@@ -430,6 +501,13 @@ export const DBReconfigureMap: {
     configMapName: '-mysql-mysql-consensusset-config',
     configMapKey: 'my.cnf',
     reconfigureName: 'mysql-consensusset-config',
+    reconfigureKey: 'my.cnf'
+  },
+  mysql: {
+    type: 'ini',
+    configMapName: '-mysql-mysql-replication-config',
+    configMapKey: 'my.cnf',
+    reconfigureName: 'mysql-replication-config',
     reconfigureKey: 'my.cnf'
   },
   redis: {
@@ -520,6 +598,7 @@ export const BackupSupportedDBTypeList: DBType[] = [
   'postgresql',
   'mongodb',
   'apecloud-mysql',
+  'mysql',
   'redis'
 ];
 
@@ -546,6 +625,15 @@ export const ParameterFieldOverrides: Partial<
     ]
   },
   'apecloud-mysql': {
+    default: [
+      {
+        name: 'mysqld.default-time-zone',
+        type: 'enum',
+        values: ['UTC', 'Asia/Shanghai']
+      }
+    ]
+  },
+  mysql: {
     default: [
       {
         name: 'mysqld.default-time-zone',
@@ -596,6 +684,32 @@ export const ParameterFieldMetadataMap: Partial<
       'mysqld.table_open_cache': { editable: true },
       'mysqld.thread_cache_size': { editable: true },
       'mysqld.default-time-zone': { editable: true }
+    }
+  },
+  mysql: {
+    default: {
+      'mysqld.long_query_time': { editable: true },
+      'mysqld.max_connections': { editable: true },
+      'mysqld.table_open_cache': { editable: true },
+      'mysqld.max_prepared_stmt_count': { editable: true },
+      'mysqld.read_buffer_size': { editable: true },
+      'mysqld.read_rnd_buffer_size': { editable: true },
+      'mysqld.join_buffer_size': { editable: true },
+      'mysqld.sort_buffer_size': { editable: true },
+      'mysqld.host_cache_size': { editable: true },
+      'mysqld.connect_timeout': { editable: true },
+      'mysqld.log_statements_unsafe_for_binlog': { editable: true },
+      'mysqld.log_error_verbosity': { editable: true },
+      'mysqld.innodb_io_capacity': { editable: true },
+      'mysqld.innodb_io_capacity_max': { editable: true },
+      'mysqld.innodb_purge_threads': { editable: true },
+      'mysqld.innodb_read_io_threads': { editable: true },
+      'mysqld.key_buffer_size': { editable: true },
+      'mysqld.binlog_cache_size': { editable: true },
+      'mysqld.binlog_format': { editable: true },
+      'mysqld.binlog_row_image': { editable: true },
+      'mysqld.binlog_order_commits': { editable: true },
+      'mysqld.relay_log_recovery': { editable: true }
     }
   },
   postgresql: {

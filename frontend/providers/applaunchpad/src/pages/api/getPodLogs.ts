@@ -14,6 +14,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   const {
     appName,
     podName,
+    containerName,
     stream = false,
     logSize,
     previous,
@@ -21,6 +22,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   } = req.body as {
     appName: string;
     podName: string;
+    containerName?: string;
     stream: boolean;
     logSize?: number;
     previous?: boolean;
@@ -31,6 +33,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     throw new Error('podName is empty');
   }
 
+  const logContainerName =
+    containerName || (await getFirstPodContainerName(k8sCore, podName, namespace)) || appName;
+
   if (!stream) {
     const sinceSeconds =
       sinceTime && !!!previous ? Math.floor((Date.now() - sinceTime) / 1000) : undefined;
@@ -38,7 +43,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       const { body: data } = await k8sCore.readNamespacedPodLog(
         podName,
         namespace,
-        appName,
+        logContainerName,
         undefined,
         undefined,
         undefined,
@@ -107,7 +112,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     streamResponse = await logs.log(
       namespace,
       podName,
-      appName,
+      logContainerName,
       logStream,
       (err) => {
         if (err) {
@@ -123,4 +128,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
 function timestampToRFC3339(timestamp: number) {
   return new Date(timestamp).toISOString();
+}
+
+async function getFirstPodContainerName(k8sCore: any, podName: string, namespace: string) {
+  try {
+    const { body } = await k8sCore.readNamespacedPod(podName, namespace);
+    return body.spec?.containers?.[0]?.name;
+  } catch {
+    return '';
+  }
 }

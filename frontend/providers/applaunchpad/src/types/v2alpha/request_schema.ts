@@ -15,11 +15,33 @@ import {
   PortConfigSchema,
   LaunchpadApplicationSchema,
   LaunchCommandSchema,
-  ImageSchema,
-  resourceConverters
+  ImageSchema
 } from './schema';
+import { buildExternalUrl } from '@/utils/network-url';
+import {
+  parseK8sQuantityOrZero,
+  publicCpuCoresToQuantity,
+  publicMemoryGiToQuantity,
+  quantityToPublicCpuCores,
+  quantityToPublicMemoryGi
+} from '@/utils/resourceQuantity';
+import {
+  APP_NAME_BASE_MAX_LENGTH,
+  APP_GENERATED_NAME_PATTERN
+} from '@/utils/appNameValidation';
 
 export const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
+
+const AppCreateNameSchema = z
+  .string()
+  .min(1, { message: 'App name cannot be empty' })
+  .max(APP_NAME_BASE_MAX_LENGTH, {
+    message: `App name must be ${APP_NAME_BASE_MAX_LENGTH} characters or less`
+  })
+  .regex(APP_GENERATED_NAME_PATTERN, {
+    message:
+      'App name must start with a lowercase letter, contain only lowercase letters, digits, or hyphens, and end with a lowercase letter or digit'
+  });
 
 function parseCreateTimeToDate(createTime: string): Date | null {
   // Common formats in this repo: 'YYYY/MM/DD HH:mm' or 'YYYY-MM-DD HH:mm' (sometimes with seconds).
@@ -56,12 +78,21 @@ function formatUptimeFromCreateTime(createTime?: string): string {
   return `${seconds}s`;
 }
 
+export const k8sAppNameSchema = z
+  .string()
+  .min(1, { message: 'name cannot be empty' })
+  .max(63, { message: 'name must be 63 characters or less' })
+  .regex(/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/, {
+    message:
+      'name must consist of lowercase alphanumeric characters or hyphens, and must start and end with an alphanumeric character'
+  });
+
 export const GetAppByAppNameQuerySchema = z.object({
-  name: z.string().min(1, { message: 'name cannot be empty' })
+  name: k8sAppNameSchema
 });
 
 export const DeleteAppByNameQuerySchema = z.object({
-  name: z.string().min(1, { message: 'name cannot be empty' })
+  name: k8sAppNameSchema
 });
 
 export const SimpleStorageSchema = z
@@ -296,7 +327,7 @@ export const UpdateAppResourcesSchema = z
 
 export const CreateLaunchpadRequestSchema = z
   .object({
-    name: z.string().default('hello-world').openapi({
+    name: AppCreateNameSchema.default('hello-world').openapi({
       description: 'Application name (must be unique) - was: appName'
     }),
     image: ImageSchema.default({
@@ -347,8 +378,8 @@ export const CreateLaunchpadRequestSchema = z
 export function transformToLegacySchema(
   standardRequest: z.infer<typeof CreateLaunchpadRequestSchema>
 ): AppEditType {
-  const cpuValue = resourceConverters.cpuToMillicores(standardRequest.quota.cpu);
-  const memoryValue = resourceConverters.memoryToMB(standardRequest.quota.memory);
+  const cpuValue = publicCpuCoresToQuantity(standardRequest.quota.cpu);
+  const memoryValue = publicMemoryGiToQuantity(standardRequest.quota.memory);
 
   const ports = standardRequest.ports || [];
   const defaultPort = ports.length > 0 ? ports[0].number : 80;
@@ -368,7 +399,7 @@ export function transformToLegacySchema(
             appProtocol: (isApplicationProtocol
               ? protocolUpper
               : 'HTTP') as ApplicationProtocolType,
-            openPublicDomain: isApplicationProtocol ? (port.isPublic ?? true) : false,
+            openPublicDomain: isApplicationProtocol ? port.isPublic ?? true : false,
             publicDomain: isApplicationProtocol ? nanoid() : '',
             customDomain: '',
             domain: '',
@@ -445,13 +476,9 @@ export function transformToLegacySchema(
 
   const storeList =
     standardRequest.storage?.map((storage) => {
-      let sizeValue = 1;
-      if (storage.size) {
-        const match = storage.size.match(/^(\d+)/);
-        if (match) {
-          sizeValue = parseInt(match[1]);
-        }
-      }
+      const sizeValue = storage.size
+        ? parseK8sQuantityOrZero(storage.size)
+        : parseK8sQuantityOrZero('1Gi');
       return {
         name: storage.name,
         path: storage.path,
@@ -465,7 +492,9 @@ export function transformToLegacySchema(
     appName: standardRequest.name,
     imageName: standardRequest.image.imageName,
     runCMD: standardRequest.launchCommand?.command || '',
-    cmdParam: standardRequest.launchCommand?.args || '',
+    cmdParam: standardRequest.launchCommand?.args?.length
+      ? JSON.stringify(standardRequest.launchCommand.args)
+      : '',
     replicas: standardRequest.quota.replicas || 1,
     cpu: cpuValue,
     memory: memoryValue,
@@ -507,12 +536,20 @@ export function transformFromLegacySchema(
     },
     launchCommand: {
       command: legacyData.runCMD,
-      args: legacyData.cmdParam
+      args: (() => {
+        if (!legacyData.cmdParam) return undefined;
+        try {
+          const p = JSON.parse(legacyData.cmdParam);
+          return Array.isArray(p) ? p : [legacyData.cmdParam];
+        } catch {
+          return [legacyData.cmdParam];
+        }
+      })()
     },
     quota: {
       replicas: legacyData.hpa?.use ? undefined : legacyData.replicas || 1,
-      cpu: resourceConverters.millicoresToCpu(legacyData.cpu || 200),
-      memory: resourceConverters.mbToMemory(legacyData.memory || 256),
+      cpu: quantityToPublicCpuCores(legacyData.cpu),
+      memory: quantityToPublicMemoryGi(legacyData.memory),
       hpa: legacyData.hpa?.use
         ? {
             target: legacyData.hpa.target,
@@ -526,6 +563,12 @@ export function transformFromLegacySchema(
       legacyData.networks?.map((network) => {
         const protocol = network.openNodePort ? network.protocol : network.appProtocol || 'HTTP';
         const protocolLower = protocol.toLowerCase();
+        const appConfig = globalThis.__APP_CONFIG__;
+        const externalAccessConfig = {
+          disableHttps: !!appConfig?.cloud?.disableHttps,
+          cloudPort: appConfig?.cloud?.port,
+          httpPort: appConfig?.cloud?.httpPort
+        };
 
         let privateAddress: string | undefined;
         if (network.serviceName && namespace) {
@@ -536,33 +579,25 @@ export function transformFromLegacySchema(
         let publicAddress: string | undefined;
         if (network.openPublicDomain) {
           if (network.customDomain) {
-            const publicScheme =
-              protocolLower === 'grpc'
-                ? 'grpcs'
-                : protocolLower === 'ws'
-                  ? 'wss'
-                  : protocolLower === 'udp'
-                    ? 'udp'
-                    : 'https';
-            publicAddress = `${publicScheme}://${network.customDomain}`;
+            publicAddress = buildExternalUrl({
+              protocol,
+              host: network.customDomain,
+              config: externalAccessConfig
+            });
           } else if (network.publicDomain && network.domain) {
-            const publicScheme =
-              protocolLower === 'grpc'
-                ? 'grpcs'
-                : protocolLower === 'ws'
-                  ? 'wss'
-                  : protocolLower === 'udp'
-                    ? 'udp'
-                    : 'https';
-            if (network.openNodePort && network.nodePort) {
-              publicAddress = `${publicScheme}://${network.publicDomain}.${network.domain}:${network.nodePort}`;
-            } else {
-              publicAddress = `${publicScheme}://${network.publicDomain}.${network.domain}`;
-            }
+            publicAddress = buildExternalUrl({
+              protocol,
+              host: `${network.publicDomain}.${network.domain}`,
+              nodePort: network.openNodePort ? network.nodePort : undefined,
+              config: network.openNodePort ? undefined : externalAccessConfig
+            });
           }
         } else if (network.openNodePort && network.nodePort && network.domain) {
-          const publicScheme = protocolLower === 'udp' ? 'udp' : protocolLower;
-          publicAddress = `${publicScheme}://${protocolLower}.${network.domain}:${network.nodePort}`;
+          publicAddress = buildExternalUrl({
+            protocol,
+            host: `${protocolLower}.${network.domain}`,
+            nodePort: network.nodePort
+          });
         }
 
         return {
@@ -591,7 +626,11 @@ export function transformFromLegacySchema(
       legacyData.storeList?.map((store) => ({
         name: store.name,
         path: store.path,
-        size: `${store.value || 1}Gi`
+        size: (store.value || parseK8sQuantityOrZero('1Gi')).formatForDisplay({
+          format: 'BinarySI',
+          scale: 'auto',
+          digits: 4
+        })
       })) || [],
     resourceType: 'launchpad',
     kind: legacyData.kind,

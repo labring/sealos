@@ -18,6 +18,9 @@ package kubernetes
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
 	"path/filepath"
 
 	"golang.org/x/sync/errgroup"
@@ -44,4 +47,48 @@ func (k *KubeadmRuntime) copyKubeConfigFileToNodes(hosts ...string) error {
 
 func (k *KubeadmRuntime) copyMasterKubeConfig(host string) error {
 	return k.sshCmdAsync(host, copyKubeAdminConfigCommand)
+}
+
+func (k *KubeadmRuntime) syncLocalAdminKubeConfigCopies() error {
+	hosts := append([]string{}, k.getMasterIPAndPortList()...)
+	hosts = append(hosts, k.getNodeIPAndPortList()...)
+	if len(hosts) == 0 {
+		return nil
+	}
+	return k.copyKubeConfigFileToNodes(hosts...)
+}
+
+func (k *KubeadmRuntime) deleteStaticPod(component string) error {
+	podIDSh := fmt.Sprintf("crictl ps -a --name %s -o json", component)
+	type crictlPS struct {
+		Containers []struct {
+			ID           string `json:"id"`
+			PodSandboxID string `json:"podSandboxId"`
+		} `json:"containers"`
+	}
+
+	eg, _ := errgroup.WithContext(context.Background())
+	for _, master := range k.getMasterIPAndPortList() {
+		m := master
+		eg.Go(func() error {
+			podIDJSON, err := k.sshCmdToString(m, podIDSh)
+			if err != nil {
+				return err
+			}
+			ps := &crictlPS{}
+			if err = json.Unmarshal([]byte(podIDJSON), ps); err != nil {
+				return err
+			}
+			if len(ps.Containers) == 0 {
+				return errors.New("not found static pod running")
+			}
+
+			podID := ps.Containers[0].PodSandboxID[:13]
+			if err = k.sshCmdAsync(m, fmt.Sprintf("crictl --timeout=10s stopp %s", podID)); err != nil {
+				return err
+			}
+			return k.sshCmdAsync(m, fmt.Sprintf("crictl rmp %s", podID))
+		})
+	}
+	return eg.Wait()
 }

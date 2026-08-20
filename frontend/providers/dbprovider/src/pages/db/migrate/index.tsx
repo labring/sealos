@@ -22,7 +22,7 @@ import Form from './components/Form';
 import Header from './components/Header';
 import Yaml from './components/Yaml';
 import { useQuotaGuarded } from '@sealos/shared';
-import useEnvStore from '@/store/env';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
@@ -47,7 +47,7 @@ const EditApp = ({
   });
   const { loadDBDetail } = useDBStore();
   const { screenWidth } = useGlobalStore();
-  const { SystemEnv } = useEnvStore();
+  const config = useClientAppConfig();
 
   const pxVal = useMemo(() => {
     const val = Math.floor((screenWidth - 1050) / 2);
@@ -200,8 +200,8 @@ const EditApp = ({
   const handleCreateApp = useQuotaGuarded(
     {
       requirements: {
-        cpu: SystemEnv.MIGRATION_JOB_CPU_REQUIREMENT,
-        memory: SystemEnv.MIGRATION_JOB_MEMORY_REQUIREMENT,
+        cpu: config.migrationJobCpuMillicores,
+        memory: config.migrationJobMemoryMiB,
         traffic: true
       },
       immediate: false,

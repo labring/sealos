@@ -9,6 +9,10 @@ export enum APPTYPE {
 
 export type WindowSize = 'maximize' | 'maxmin' | 'minimize';
 export type displayType = 'normal' | 'hidden' | 'more';
+export type TForcedIconStyle = 'contain' | 'fill';
+export type TRepresentativeMeta = {
+  forcedIconStyle: TForcedIconStyle;
+};
 
 export type TAppFront = {
   isShow: boolean;
@@ -53,7 +57,9 @@ export type TAppConfig = {
       name: string;
     };
   };
+  representativeMeta: TRepresentativeMeta;
   displayType: displayType;
+  position?: number;
   creationTimestamp?: string;
 };
 
@@ -72,6 +78,8 @@ export type TOSState = {
     raw?: string;
     pathname?: string;
   };
+  autoDeployTemplate: string;
+  autoDeployTemplateForm?: Record<string, any>;
   // store deploy template
   setAutoLaunch: (
     autolaunch: string,
@@ -82,6 +90,8 @@ export type TOSState = {
     autolaunchWorkspaceId?: string
   ) => void;
   cancelAutoLaunch: () => void;
+  setAutoDeployTemplate: (templateName: string, templateForm: Record<string, any>) => void;
+  cancelAutoDeployTemplate: () => void;
   // init desktop
   init(): Promise<TOSState>;
   // open app

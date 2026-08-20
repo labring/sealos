@@ -12,6 +12,7 @@
   "confirm_password": "Confirm Password",
   "continue": "Continue",
   "copy_kubeconfig": "Copy Kubeconfig",
+  "copy_failed": "Copy failed",
   "copy_success": "Copied!",
   "create_workspace": "Create Workspace",
   "database_create_desc": "Open database app to deploy a database",

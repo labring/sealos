@@ -3,10 +3,16 @@
   "version": "0.1.1",
   "private": true,
   "scripts": {
-    "dev": "next dev --port 3001",
+    "dev": "pnpm run config:gen-json-schema && next dev --port 3001",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "config:gen-json-schema": "pnpm --silent dlx tsx -e \"import { z } from 'zod'; import { AppConfigSchema as s } from './src/types/config'; console.log(JSON.stringify(z.toJSONSchema(s)));\" > ./data/config.schema.json",
+    "test": "vitest --project unit",
+    "test:watch": "vitest --project unit --watch",
+    "test:ci": "vitest run --project unit",
+    "test:components": "vitest --project components",
+    "test:components:ci": "vitest run --project components"
   },
   "dependencies": {
     "@alicloud/dysmsapi20170525": "^2.0.24",
@@ -21,6 +27,7 @@
     "@emotion/styled": "^11.11.0",
     "@kubernetes/client-node": "0.18.0",
     "@sealos/shadcn-ui": "workspace:^",
+    "@sealos/shared": "workspace:^",
     "@sealos/ui": "workspace:^",
     "@stripe/stripe-js": "^1.54.2",
     "@tailwindcss/postcss": "^4.1.10",
@@ -47,7 +54,7 @@
     "next-i18next": "^15.3.0",
     "nprogress": "^0.2.0",
     "postcss": "^8.5.6",
-    "qrcode.react": "^3.1.0",
+    "qrcode.react": "^4.2.0",
     "react": "18.3.1",
     "react-activation": "^0.12.4",
     "react-day-picker": "^8.8.2",
@@ -58,7 +65,7 @@
     "sonner": "^2.0.7",
     "tailwindcss": "^4.1.12",
     "typescript": "^5.2.2",
-    "zod": "^4.0.17",
+    "zod": "^4.3.5",
     "zustand": "^4.4.1"
   },
   "devDependencies": {
@@ -70,9 +77,15 @@
     "@types/nprogress": "^0.2.1",
     "@types/react": "18.3.27",
     "@types/react-dom": "18.3.7",
+    "@vitejs/plugin-react": "^5.1.1",
     "eslint": "8.36.0",
     "eslint-config-next": "13.5.9",
     "prettier": "^2.8.8",
-    "sass": "^1.68.0"
+    "sass": "^1.68.0",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^4.0.12",
+    "@playwright/test": "^1.58.1",
+    "@vitest/browser": "4.0.15",
+    "@vitest/browser-playwright": "4.0.15"
   }
 }

@@ -3,26 +3,27 @@ import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
-import { serverLoadInitData } from '@/store/static';
 import { AppEditType } from '@/types/app';
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { Config } from '@/config';
+import { hydrateLegacyAppForm } from '@/utils/hydrateLegacyAppForm';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
     const { appForm } = req.body as { appForm: AppEditType };
-    // important load env
-    serverLoadInitData();
 
     const { kc, applyYamlList } = await getK8s({
       kubeconfig: await authSession(req.headers)
     });
 
-    appForm.networks = appForm.networks.map((network) => ({
+    const hydratedAppForm = hydrateLegacyAppForm(appForm);
+
+    hydratedAppForm.networks = hydratedAppForm.networks.map((network) => ({
       ...network,
-      domain: global.AppConfig.cloud.domain
+      domain: Config().cloud.domain
     }));
 
-    const parseYamls = formData2Yamls(appForm);
+    const parseYamls = formData2Yamls(hydratedAppForm, Config().cloud.userDomains);
 
     const yamls = parseYamls.map((item) => item.value);
 

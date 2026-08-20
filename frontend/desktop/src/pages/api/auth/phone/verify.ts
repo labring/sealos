@@ -13,11 +13,12 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
     await filterPhoneVerifyParams(
       req,
       res,
-      async ({ phoneNumbers, code, semData, adClickData }) => {
+      async ({ phoneNumbers, code, challengeId, semData, adClickData }) => {
         await verifyCodeGuard(
           phoneNumbers,
           code,
-          'phone_login'
+          'phone_login',
+          challengeId
         )(res, async ({ smsInfo: phoneInfo }) => {
           await getGlobalTokenSvc({
             avatar_url: '',

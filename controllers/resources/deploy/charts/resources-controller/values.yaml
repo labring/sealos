@@ -1,0 +1,111 @@
+# Default values for resources controller helm chart.
+
+replicaCount: 1
+
+image: ghcr.io/labring/sealos-resources-controller:latest
+imagePullPolicy: Always
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: "resources"
+
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: "resources-controller-manager"
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+
+securityContext:
+  allowPrivilegeEscalation: false
+  runAsNonRoot: true
+
+service:
+  metrics:
+    port: 8443
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1280Mi
+  requests:
+    cpu: 10m
+    memory: 64Mi
+
+# ============================================================================
+# Auto-configured values (from sealos-system ConfigMaps)
+# ============================================================================
+# The following configmap values are automatically fetched from ConfigMaps
+# by the entrypoint script and will override any values set here.
+# These are provided as reference defaults.
+#
+# To override these auto-configured values, use HELM_OPTIONS or modify the
+# ConfigMaps directly.
+# ============================================================================
+# Sources:
+# - sealos-system/sealos-config ConfigMap: databaseMongodbURI
+# - sealos-system/nm-agent-config ConfigMap: MONGO_URI (for trafficMongoURI)
+# - sealos-system/objectstorage-config ConfigMap: MINIO_ROOT_USER, MINIO_ROOT_PASSWORD
+# ============================================================================
+
+configmap:
+  name: "resources-config"
+  # Database URIs (auto-configured from sealos-config)
+  mongoURI: "mongodb://mongo:27017/resources"  # Auto-fetched from sealos-config.databaseMongodbURI
+  trafficMongoURI: "mongodb://mongo:27017/traffic"  # Auto-fetched from nm-agent-config.MONGO_URI or sealos-config
+  trafficsServiceConnectAddress: ""
+
+  # MinIO configuration (auto-configured from objectstorage-config)
+  minioEndpoint: "object-storage.objectstorage-system.svc:80"
+  minioAK: ""  # Auto-fetched from objectstorage-config.MINIO_ROOT_USER
+  minioSK: ""  # Auto-fetched from objectstorage-config.MINIO_ROOT_PASSWORD
+  minioMetricsAddr: "object-storage.objectstorage-system.svc:80"
+  minioMetricsSecure: "false"
+
+  # Monitoring configuration
+  promURL: "http://vmselect-vm-stack-victoria-metrics-k8s-stack.vm.svc:8481/select/0/prometheus/"
+  objectStorageInstance: "object-storage.objectstorage-system.svc:80"
+
+  # Resource quota configuration
+  enableAutoResourceQuota: "false"
+  concurrentLimit: "1000"
+  ephemeralStorageChargeThreshold: "10Gi"
+  limitQuotaExpansionCycle: "24h"
+
+# End of auto-configured values
+# ============================================================================
+
+extraEnv: []
+
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: 8081
+  initialDelaySeconds: 15
+  periodSeconds: 20
+
+readinessProbe:
+  httpGet:
+    path: /readyz
+    port: 8081
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
+metrics:
+  enabled: false
+  certPath: /tmp/k8s-metrics-server/metrics-certs
+  secretName: metrics-server-cert
+
+volumes: []
+volumeMounts: []
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

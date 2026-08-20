@@ -1,5 +1,6 @@
 import { AppListItemType, AppDetailType, PodDetailType, AppEditSyncedFields } from '@/types/app';
 import { appStatusMap, podStatusMap } from '@/constants/app';
+import { cpuMillicoresToQuantity, memoryMiToQuantity } from '@/utils/resourceQuantity';
 import { customAlphabet } from 'nanoid';
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
@@ -9,8 +10,8 @@ export const MOCK_APPS: AppListItemType[] = [
     name: 'string',
     status: appStatusMap.running,
     createTime: 'string',
-    cpu: 100,
-    memory: 100,
+    cpu: cpuMillicoresToQuantity(100),
+    memory: memoryMiToQuantity(100),
     usedCpu: {
       name: '',
       xData: new Array(30).fill(0),
@@ -38,8 +39,8 @@ export const MOCK_APPS: AppListItemType[] = [
     name: 'string',
     status: appStatusMap.running,
     createTime: 'string',
-    cpu: 100,
-    memory: 100,
+    cpu: cpuMillicoresToQuantity(100),
+    memory: memoryMiToQuantity(100),
     isPause: false,
     usedCpu: {
       name: '',
@@ -68,8 +69,8 @@ export const MOCK_APPS: AppListItemType[] = [
     status: appStatusMap.running,
     createTime: 'string',
     isPause: false,
-    cpu: 100,
-    memory: 100,
+    cpu: cpuMillicoresToQuantity(100),
+    memory: memoryMiToQuantity(100),
     usedCpu: {
       name: '',
       xData: new Array(30).fill(0),
@@ -210,8 +211,8 @@ export const MOCK_PODS: PodDetailType[] = [
       xData: new Array(30).fill(0),
       yData: new Array(30).fill('0')
     },
-    cpu: 0,
-    memory: 0,
+    cpu: cpuMillicoresToQuantity(0),
+    memory: memoryMiToQuantity(0),
     containerStatuses: [
       {
         name: 'hello-world',
@@ -236,8 +237,8 @@ export const MOCK_PODS: PodDetailType[] = [
       xData: new Array(30).fill(0),
       yData: new Array(30).fill('0')
     },
-    cpu: 0,
-    memory: 0,
+    cpu: cpuMillicoresToQuantity(0),
+    memory: memoryMiToQuantity(0),
     containerStatuses: [
       {
         name: 'hello-world',
@@ -261,8 +262,8 @@ export const MOCK_APP_DETAIL: AppDetailType = {
   runCMD: '',
   cmdParam: '',
   replicas: 1,
-  cpu: 200,
-  memory: 256,
+  cpu: cpuMillicoresToQuantity(200),
+  memory: memoryMiToQuantity(256),
   gpu: {
     type: '',
     amount: 1,
@@ -323,8 +324,8 @@ export const MockAppEditSyncedFields: AppEditSyncedFields = {
   imageName: 'nginx',
   appName: 'hello-world-test',
   replicas: 1,
-  cpu: 4000,
-  memory: 64,
+  cpu: cpuMillicoresToQuantity(4000),
+  memory: memoryMiToQuantity(64),
   networks: [
     {
       networkName: 'network-atyjahgvtzqm',

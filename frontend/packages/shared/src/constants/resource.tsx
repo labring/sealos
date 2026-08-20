@@ -3,6 +3,7 @@ import {
   CircuitBoardIcon,
   HardDriveIcon,
   HdmiPortIcon,
+  LayersIcon,
   MemoryStickIcon,
   NetworkIcon
 } from 'lucide-react';
@@ -35,6 +36,13 @@ export const resourcePropertyMap: Record<
     ),
     scale: 1024
   },
+  pod: {
+    unit: '',
+    icon: ({ className, size = 20 }: ResourceIconProps) => (
+      <LayersIcon className={className} size={size} />
+    ),
+    scale: 1
+  },
   nodeport: {
     unit: '',
     icon: ({ className, size = 20 }: ResourceIconProps) => (
@@ -63,4 +71,10 @@ export const resourcePropertyMap: Record<
     ),
     scale: 1024 * 1024 * 1024
   }
+};
+
+export const formatResourceQuotaValue = (value: number, type: WorkspaceQuotaItemType) => {
+  const scale = resourcePropertyMap[type].scale;
+
+  return (value / scale).toFixed(2);
 };

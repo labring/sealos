@@ -17,13 +17,11 @@ limitations under the License.
 package config
 
 import (
-	"fmt"
 	"os"
 	"strings"
 
-	rbacv1 "k8s.io/api/rbac/v1"
-
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 )
 
 func GetUserSystemNamespace() string {
@@ -49,11 +47,11 @@ func GetUserNameByNamespace(namespace string) string {
 }
 
 func GetUsersNamespace(user string) string {
-	return fmt.Sprintf("ns-%s", user)
+	return "ns-" + user
 }
 
 func GetGroupRoleBindingName(user string) string {
-	return fmt.Sprintf("rb-%s", user)
+	return "rb-" + user
 }
 
 func GetUserRole(roleType userv1.RoleType) []rbacv1.PolicyRule {

@@ -27,7 +27,6 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 	//+kubebuilder:scaffold:imports
 	"k8s.io/apimachinery/pkg/runtime"
@@ -41,10 +40,12 @@ import (
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
 
-var k8sClient client.Client
-var testEnv *envtest.Environment
-var ctx context.Context
-var cancel context.CancelFunc
+var (
+	k8sClient client.Client
+	testEnv   *envtest.Environment
+	ctx       context.Context
+	cancel    context.CancelFunc
+)
 
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -57,6 +58,7 @@ func TestAPIs(t *testing.T) {
 var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
+	//nolint:fatcontext
 	ctx, cancel = context.WithCancel(context.TODO())
 
 	By("bootstrapping test environment")
@@ -94,12 +96,9 @@ var _ = BeforeSuite(func() {
 	// start webhook server using Manager
 	webhookInstallOptions := &testEnv.WebhookInstallOptions
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme: scheme,
-		//Host:               webhookInstallOptions.LocalServingHost,
-		//Port:               webhookInstallOptions.LocalServingPort,
-		//CertDir:            webhookInstallOptions.LocalServingCertDir,
+		Scheme:         scheme,
 		LeaderElection: false,
-		//MetricsBindAddress: "0",
+		// MetricsBindAddress: "0",
 	})
 	Expect(err).NotTo(HaveOccurred())
 
@@ -119,16 +118,24 @@ var _ = BeforeSuite(func() {
 
 	// wait for the webhook server to get ready
 	dialer := &net.Dialer{Timeout: time.Second}
-	addrPort := fmt.Sprintf("%s:%d", webhookInstallOptions.LocalServingHost, webhookInstallOptions.LocalServingPort)
+	addrPort := fmt.Sprintf(
+		"%s:%d",
+		webhookInstallOptions.LocalServingHost,
+		webhookInstallOptions.LocalServingPort,
+	)
 	Eventually(func() error {
-		conn, err := tls.DialWithDialer(dialer, "tcp", addrPort, &tls.Config{InsecureSkipVerify: true})
+		conn, err := tls.DialWithDialer(
+			dialer,
+			"tcp",
+			addrPort,
+			&tls.Config{InsecureSkipVerify: true},
+		)
 		if err != nil {
 			return err
 		}
 		conn.Close()
 		return nil
 	}).Should(Succeed())
-
 }, 60)
 
 var _ = AfterSuite(func() {

@@ -20,12 +20,10 @@ import (
 	"strconv"
 	"testing"
 	"time"
-
-	objectstoragev1 "github/labring/sealos/controllers/objectstorage/api/v1"
 )
 
 func TestGetUserObjectStorageFlow(t *testing.T) {
-	cli, err := objectstoragev1.NewOSClient(
+	cli, err := NewOSClient(
 		os.Getenv("MINIO_ENDPOINT"),
 		os.Getenv("MINIO_ACCESS_KEY"),
 		os.Getenv("MINIO_SECRET_KEY"),

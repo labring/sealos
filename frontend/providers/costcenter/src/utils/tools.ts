@@ -1,3 +1,4 @@
+import { Config } from '@/config';
 import { NextApiRequest } from 'next';
 import { AxiosInstance } from 'axios';
 import crypto from 'crypto';
@@ -40,20 +41,13 @@ export const isValidEmail = (email: string) => {
   return regExp.test(email);
 };
 export function getClientIPFromRequest(req: NextApiRequest) {
-  // try to get ip from x-forwarded-for
-  const ips_str = req.headers['x-forwarded-for'] as string;
-  if (ips_str) {
-    const ips = ips_str.split(',');
-    return ips[0];
-  }
+  // Higress `addXRealIpHeader` replaces X-Real-IP with one downstream peer
+  // address, so there is no left/right selection as there is with XFF. This
+  // header is trustworthy only when untrusted callers cannot bypass Higress.
+  const realIp = req.headers['x-real-ip'];
+  const trustedIp = Array.isArray(realIp) ? realIp[0]?.trim() : realIp?.trim();
 
-  // try to get ip from x-real-ip
-  const ip = req.headers['x-real-ip'] as string;
-  if (ip) {
-    return ip;
-  }
-
-  return undefined;
+  return trustedIp || req.socket.remoteAddress;
 }
 
 type RealNameInfoResponse = {
@@ -67,7 +61,7 @@ type RealNameInfoResponse = {
 
 export const checkSealosUserIsRealName = async (client: AxiosInstance): Promise<boolean> => {
   try {
-    if (!global.AppConfig.costCenter.realNameRechargeLimit) {
+    if (!Config().costCenter.features.rechargeRequiresRealName) {
       return true;
     }
 

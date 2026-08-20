@@ -5,7 +5,9 @@ export const codeTheme = {
     color: '#2f3337'
   },
   linenumber: {
-    minWidth: '2em'
+    minWidth: '1.75em',
+    paddingRight: '0px',
+    marginRight: '20px'
   },
   'hljs-comment': {
     color: '#656e77'

@@ -188,9 +188,20 @@ func (wdp *WorkspaceSubscriptionDebtProcessor) processExpiredWorkspaces(
 		)
 	}
 
-	subscriptions := append(
-		append(normalExpiredSubscriptions, debtExpiredSubscriptions...),
-		preDeletionExpiredSubscriptions...)
+	subscriptions := make(
+		[]types.WorkspaceSubscription,
+		0,
+		len(
+			normalExpiredSubscriptions,
+		)+len(
+			debtExpiredSubscriptions,
+		)+len(
+			preDeletionExpiredSubscriptions,
+		),
+	)
+	subscriptions = append(subscriptions, normalExpiredSubscriptions...)
+	subscriptions = append(subscriptions, debtExpiredSubscriptions...)
+	subscriptions = append(subscriptions, preDeletionExpiredSubscriptions...)
 
 	for i := range subscriptions {
 		if subscriptions[i].Status == types.SubscriptionStatusDeleted {
@@ -205,7 +216,7 @@ func (wdp *WorkspaceSubscriptionDebtProcessor) processExpiredWorkspaces(
 		}
 
 		// 处理状态变更
-		if err := wdp.processExpiredWorkspace(ctx, subscription, now); err != nil {
+		if err := wdp.processExpiredWorkspace(ctx, subscription, currentStatus); err != nil {
 			wdp.Logger.Error(fmt.Errorf("failed to process workspace: %w", err),
 				"", "workspace", subscription.Workspace)
 			continue
@@ -220,9 +231,9 @@ func (wdp *WorkspaceSubscriptionDebtProcessor) processExpiredWorkspaces(
 func (wdp *WorkspaceSubscriptionDebtProcessor) processExpiredWorkspace(
 	ctx context.Context,
 	subscription *types.WorkspaceSubscription,
-	now time.Time,
+	currentStatus types.SubscriptionStatus,
 ) error {
-	currentStatus, lastStatus := wdp.determineCurrentStatus(now), subscription.Status
+	lastStatus := subscription.Status
 	if lastStatus == currentStatus {
 		return nil
 	}
@@ -257,23 +268,49 @@ func (wdp *WorkspaceSubscriptionDebtProcessor) flushWorkspaceDebtStatus(
 		return fmt.Errorf("failed to get namespace %s: %w", subscription.Workspace, err)
 	} else if apierrors.IsNotFound(err) || ns.DeletionTimestamp != nil || ns.Status.Phase == corev1.NamespaceTerminating {
 		if subscription.CreateAt.After(time.Now().Add(-24 * time.Hour)) {
-			wdp.Logger.Info("Namespace not found or terminating, but subscription is new, skip", "namespace", subscription.Workspace, "currentStatus", currentDebtStatus)
+			wdp.Logger.Info(
+				"Namespace not found or terminating, but subscription is new, skip",
+				"namespace",
+				subscription.Workspace,
+				"currentStatus",
+				currentDebtStatus,
+			)
 			return nil
 		}
 		// currentDebtStatus = types.SubscriptionStatusDeleted
-		wdp.Logger.Info("Namespace is terminating, set to Deleted", "namespace", subscription.Workspace, "currentStatus", currentDebtStatus)
+		wdp.Logger.Info(
+			"Namespace is terminating, set to Deleted",
+			"namespace",
+			subscription.Workspace,
+			"currentStatus",
+			currentDebtStatus,
+		)
 		return wdp.updateSubscriptionStatus(ctx, subscription, types.SubscriptionStatusDeleted)
 	}
 
-	userUID := subscription.UserUID
-	nr, err := wdp.AccountV2.GetNotificationRecipient(subscription.UserUID)
-	if err != nil {
-		// logrus.Errorf("failed to get notification recipient for user %s: %v", userUID, err)
-		wdp.VLogger.Errorf("failed to get notification recipient for user %s: %v", userUID, err)
+	if err := wdp.syncWorkspaceDebtStatus(
+		ctx,
+		subscription,
+		lastDebtStatus,
+		currentDebtStatus,
+		namespaces,
+	); err != nil {
+		return err
 	}
-	wdp.UserContactProvider.SetUserContact(userUID, nr)
-	defer wdp.UserContactProvider.RemoveUserContact(userUID)
+	if err := wdp.updateSubscriptionStatus(ctx, subscription, currentDebtStatus); err != nil {
+		return fmt.Errorf("update subscription status error: %w", err)
+	}
 
+	return nil
+}
+
+func (wdp *WorkspaceSubscriptionDebtProcessor) syncWorkspaceDebtStatus(
+	ctx context.Context,
+	subscription *types.WorkspaceSubscription,
+	lastDebtStatus,
+	currentDebtStatus types.SubscriptionStatus,
+	namespaces []string,
+) error {
 	eventData := &usernotify.WorkspaceSubscriptionDebtEventData{
 		Type:          usernotify.EventTypeWorkspaceSubscriptionDebt,
 		PlanName:      subscription.PlanName,
@@ -298,24 +335,25 @@ func (wdp *WorkspaceSubscriptionDebtProcessor) flushWorkspaceDebtStatus(
 		}
 
 		// 更新工作空间状态
-		if err := wdp.updateWorkspaceDebtStatus(ctx, types.SuspendDebtNamespaceAnnoStatus, namespaces); err != nil {
+		if err := wdp.updateWorkspaceDebtStatus(
+			ctx,
+			types.SuspendDebtNamespaceAnnoStatus,
+			namespaces,
+		); err != nil {
 			return fmt.Errorf("update workspace debt status error: %w", err)
 		}
-		if _, err = wdp.UserNotificationService.HandleWorkspaceSubscriptionEvent(context.Background(), userUID, eventData, types.SubscriptionTransactionTypeDebt, []usernotify.NotificationMethod{usernotify.NotificationMethodEmail}); err != nil {
-			wdp.VLogger.Errorf(
-				"failed to send subscription success notification for user %s: %v",
-				userUID,
-				err,
-			)
-			// return fmt.Errorf("failed to send subscription success notification to user %s: %w", userUID, err)
-		}
+		wdp.sendWorkspaceDebtEmail(subscription, eventData)
 
 	case types.SubscriptionStatusDebtPreDeletion:
 		if err := wdp.sendWorkspaceDesktopNotice(ctx, currentDebtStatus, namespaces); err != nil {
 			return fmt.Errorf("send workspace desktop notice error: %w", err)
 		}
 
-		if err := wdp.updateWorkspaceDebtStatus(ctx, types.SuspendDebtNamespaceAnnoStatus, namespaces); err != nil {
+		if err := wdp.updateWorkspaceDebtStatus(
+			ctx,
+			types.SuspendDebtNamespaceAnnoStatus,
+			namespaces,
+		); err != nil {
 			return fmt.Errorf("suspend workspace service error: %w", err)
 		}
 
@@ -324,19 +362,66 @@ func (wdp *WorkspaceSubscriptionDebtProcessor) flushWorkspaceDebtStatus(
 			return fmt.Errorf("send workspace desktop notice error: %w", err)
 		}
 
-		if err := wdp.updateWorkspaceDebtStatus(ctx, types.FinalDeletionDebtNamespaceAnnoStatus, namespaces); err != nil {
+		if err := wdp.updateWorkspaceDebtStatus(
+			ctx,
+			types.FinalDeletionDebtNamespaceAnnoStatus,
+			namespaces,
+		); err != nil {
 			return fmt.Errorf("update workspace final deletion status error: %w", err)
 		}
 	}
 
-	if err := wdp.readWorkspaceNotices(ctx, namespaces, wdp.getWorkspaceStatusesGreaterThan(currentDebtStatus)...); err != nil {
+	if err := wdp.readWorkspaceNotices(
+		ctx,
+		namespaces,
+		wdp.getWorkspaceStatusesGreaterThan(currentDebtStatus)...); err != nil {
 		return fmt.Errorf("read workspace notices error: %w", err)
-	}
-	if err := wdp.updateSubscriptionStatus(ctx, subscription, currentDebtStatus); err != nil {
-		return fmt.Errorf("update subscription status error: %w", err)
 	}
 
 	return nil
+}
+
+func (wdp *WorkspaceSubscriptionDebtProcessor) sendWorkspaceDebtEmail(
+	subscription *types.WorkspaceSubscription,
+	eventData usernotify.EventData,
+) {
+	if wdp.AccountV2 == nil || wdp.UserContactProvider == nil ||
+		wdp.UserNotificationService == nil {
+		return
+	}
+
+	userUID := subscription.UserUID
+	nr, err := wdp.AccountV2.GetNotificationRecipient(userUID)
+	if err != nil {
+		wdp.logWorkspaceDebtErrorf(
+			"failed to get notification recipient for user %s: %v",
+			userUID,
+			err,
+		)
+		return
+	}
+	wdp.UserContactProvider.SetUserContact(userUID, nr)
+	defer wdp.UserContactProvider.RemoveUserContact(userUID)
+
+	if _, err = wdp.UserNotificationService.HandleWorkspaceSubscriptionEvent(
+		context.Background(),
+		userUID,
+		eventData,
+		types.SubscriptionTransactionTypeDebt,
+		[]usernotify.NotificationMethod{usernotify.NotificationMethodEmail},
+	); err != nil {
+		wdp.logWorkspaceDebtErrorf(
+			"failed to send workspace debt notification for user %s: %v",
+			userUID,
+			err,
+		)
+	}
+}
+
+func (wdp *WorkspaceSubscriptionDebtProcessor) logWorkspaceDebtErrorf(format string, args ...any) {
+	if wdp.VLogger != nil {
+		wdp.VLogger.Errorf(format, args...)
+	}
 }
 
 // updateSubscriptionStatus 更新订阅状态
@@ -364,7 +449,7 @@ func (wdp *WorkspaceSubscriptionDebtProcessor) updateWorkspaceDebtStatus(
 		if err := wdp.Get(ctx, types2.NamespacedName{Name: nsName}, ns); err != nil {
 			return fmt.Errorf("failed to get namespace %s: %w", nsName, err)
 		}
-
+		original := ns.DeepCopy()
 		if ns.Annotations == nil {
 			ns.Annotations = make(map[string]string)
 		}
@@ -379,7 +464,6 @@ func (wdp *WorkspaceSubscriptionDebtProcessor) updateWorkspaceDebtStatus(
 			ns.Annotations[types.DebtNamespaceAnnoStatusKey] = status
 		}
 
-		original := ns.DeepCopy()
 		ns.Annotations[types.WorkspaceSubscriptionStatusAnnoKey] = status
 		ns.Annotations[types.WorkspaceSubscriptionStatusUpdateTimeAnnoKey] = time.Now().
 			Format(time.RFC3339)
@@ -391,6 +475,10 @@ func (wdp *WorkspaceSubscriptionDebtProcessor) updateWorkspaceDebtStatus(
 	return nil
 }
 
+func workspaceDebtNoticeName(status types.SubscriptionStatus) string {
+	return workspaceDebtNoticePrefix + strings.ReplaceAll(strings.ToLower(string(status)), "_", "-")
+}
+
 // sendWorkspaceDesktopNotice 发送工作空间桌面通知
 func (wdp *WorkspaceSubscriptionDebtProcessor) sendWorkspaceDesktopNotice(
 	ctx context.Context,
@@ -400,7 +488,7 @@ func (wdp *WorkspaceSubscriptionDebtProcessor) sendWorkspaceDesktopNotice(
 	now := time.Now().UTC().Unix()
 	ntfTmp := &notificationv1.Notification{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: workspaceDebtNoticePrefix + strings.ToLower(string(debtStatus)),
+			Name: workspaceDebtNoticeName(debtStatus),
 		},
 	}
 
@@ -448,7 +536,7 @@ func (wdp *WorkspaceSubscriptionDebtProcessor) readWorkspaceNotices(
 	for _, nsName := range namespaces {
 		for _, noticeStatus := range noticeTypes {
 			ntf := &notificationv1.Notification{}
-			notificationName := workspaceDebtNoticePrefix + strings.ToLower(string(noticeStatus))
+			notificationName := workspaceDebtNoticeName(noticeStatus)
 
 			if err := wdp.Get(ctx, types2.NamespacedName{
 				Name:      notificationName,

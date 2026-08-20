@@ -14,12 +14,13 @@
   },
   "include": [
     "next-env.d.ts",
+    "global.d.ts",
     "src/**/*.ts",
     "src/**/*.tsx",
     "src/**/*.d.ts",
     ".next/types/**/*.ts",
-    "__tests__/**/*.ts",
-    "__tests__/**/*.tsx"
+    "__tests__/unit/**/*.ts",
+    "__tests__/unit/**/*.tsx"
   ],
   "extends": "../../tsconfig.web.json"
 }

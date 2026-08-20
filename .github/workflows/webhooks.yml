@@ -99,7 +99,7 @@ jobs:
       - name: Run Linter
         uses: golangci/golangci-lint-action@v8
         with:
-          version: v2.5.0
+          version: v2.12.2
           working-directory: ${{ matrix.workdir }}
           # args between =, not space
           args: --color=always --config=${{ github.workspace }}/.golangci.yml
@@ -111,7 +111,13 @@ jobs:
       packages: write
     strategy:
       matrix:
-        module: [admission]
+        include:
+          - module: admission
+            binary: manager
+            ghcr_repository: sealos-admission-webhook
+          - module: stargz
+            binary: stargz-webhook
+            ghcr_repository: sealos/stargz-webhook
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -127,26 +133,29 @@ jobs:
         working-directory: webhooks/${{ matrix.module }}
         env:
           MODULE: ${{ matrix.module }}
+          BINARY: ${{ matrix.binary }}
         run: |
           GOARCH=amd64 make build
-          mv bin/manager "bin/webhook-${MODULE}-amd64"
+          mv "bin/${BINARY}" "bin/webhook-${MODULE}-amd64"
           chmod +x "bin/webhook-${MODULE}-amd64"
 
       - name: Build ${{ matrix.module }} arm64
         working-directory: webhooks/${{ matrix.module }}
         env:
           MODULE: ${{ matrix.module }}
+          BINARY: ${{ matrix.binary }}
         run: |
           GOARCH=arm64 make build
-          mv bin/manager "bin/webhook-${MODULE}-arm64"
+          mv "bin/${BINARY}" "bin/webhook-${MODULE}-arm64"
           chmod +x "bin/webhook-${MODULE}-arm64"
 
       - name: Set image repo
         env:
           REPO_OWNER: ${{ github.repository_owner }}
           MODULE_NAME: ${{ matrix.module }}
+          GHCR_REPOSITORY: ${{ matrix.ghcr_repository }}
         run: |
-          echo "GHCR_REPO=ghcr.io/${REPO_OWNER}/sealos-${MODULE_NAME}-webhook" >> $GITHUB_ENV
+          echo "GHCR_REPO=ghcr.io/${REPO_OWNER}/${GHCR_REPOSITORY}" >> $GITHUB_ENV
           if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then
             echo "ALIYUN_REPO=${{ env.ALIYUN_REPO_PREFIX }}/sealos-${MODULE_NAME}-webhook" >> $GITHUB_ENV
           fi

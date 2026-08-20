@@ -1,12 +1,15 @@
+'use client';
+
 import { useCallback } from 'react';
 import { useQuotaStore } from '../store/quota';
-import type { WorkspaceQuotaItemType, WorkspaceQuotaItem } from '../types/workspace';
-import type { SessionV1 } from 'sealos-desktop-sdk';
-import { useQuotaGuardConfig } from './QuotaGuardProvider';
+import type { WorkspaceQuotaItemType } from '../types/workspace';
+import { useQuotaGuardConfig, type UseQuotaGuardedConfig } from './QuotaGuardProvider';
 
 export type QuotaGuardedOptions = {
   /** Resource requirements to check */
-  requirements: Partial<Record<'cpu' | 'memory' | 'gpu' | 'nodeport' | 'storage', number>> & {
+  requirements: Partial<
+    Record<'cpu' | 'memory' | 'gpu' | 'nodeport' | 'pod' | 'storage', number>
+  > & {
     traffic?: boolean | number;
   };
   /** Whether to check immediately */
@@ -19,6 +22,8 @@ export type QuotaGuardedOptions = {
   disallowClosing?: boolean;
 };
 
+type QuotaGuardedCallback = () => void | Promise<void>;
+
 /**
  * Hook that returns a function to guard actions with quota checking.
  *
@@ -27,25 +32,25 @@ export type QuotaGuardedOptions = {
  * @returns Guarded action function
  * @throws {Error} If not used within QuotaGuardProvider
  */
-export function useQuotaGuarded(options: QuotaGuardedOptions, callback: () => void) {
-  const { getSession } = useQuotaGuardConfig();
+export function useQuotaGuarded(options: QuotaGuardedOptions, callback: QuotaGuardedCallback) {
+  const quotaGuardConfig = useQuotaGuardConfig();
 
-  return useCallback(() => {
+  return useCallback(async (): Promise<void> => {
     // Skip quota checking during SSR/pre-rendering
     if (typeof window === 'undefined') {
-      callback();
+      await Promise.resolve().then(() => callback());
       return;
     }
 
-    executeQuotaCheck({ getSession }, options, callback);
-  }, [getSession, options, callback]);
+    await executeQuotaCheck(quotaGuardConfig, options, callback);
+  }, [quotaGuardConfig, options, callback]);
 }
 
-function executeQuotaCheck(
-  config: { getSession: () => SessionV1 | null },
+async function executeQuotaCheck(
+  config: UseQuotaGuardedConfig,
   options: QuotaGuardedOptions,
-  callback: () => void
-) {
+  callback: QuotaGuardedCallback
+): Promise<boolean> {
   const quotaStore = useQuotaStore.getState();
   const session = config.getSession();
   const requirements = {
@@ -63,30 +68,23 @@ function executeQuotaCheck(
   };
 
   // [TODO] Add support for 'immediate' option
-  quotaStore
-    .fetchUserQuota()
-    .then((quota: WorkspaceQuotaItem[]) => {
-      quotaStore.setUserQuota(quota);
+  const quota = await quotaStore.fetchUserQuota(config.sealosApp);
+  quotaStore.setUserQuota(quota);
 
-      const exceededQuotas = quotaStore.checkExceededQuotas(requirements);
+  const exceededQuotas = quotaStore.checkExceededQuotas(requirements);
+  const exceeded = exceededQuotas.length > 0;
 
-      if (exceededQuotas.length > 0) {
-        quotaStore.setExceededQuotas(exceededQuotas);
-        quotaStore.setExceededPromptControls(options.allowContinue);
-        quotaStore.setShowRequirements(options.showRequirements || []);
-        quotaStore.setDisallowClosing(options.disallowClosing || false);
-        quotaStore.setExceededPromptCallback(options.allowContinue ? callback : null);
-        return true;
-      }
+  if (exceeded) {
+    quotaStore.setExceededQuotas(exceededQuotas);
+    quotaStore.setExceededPromptControls(options.allowContinue);
+    quotaStore.setShowRequirements(options.showRequirements || []);
+    quotaStore.setDisallowClosing(options.disallowClosing || false);
+    quotaStore.setExceededPromptCallback(options.allowContinue ? callback : null);
+  } else {
+    quotaStore.setExceededPromptCallback(null);
+    await Promise.resolve().then(() => callback());
+  }
 
-      quotaStore.setExceededPromptCallback(null);
-      return false;
-    })
-    .then((exceeded: boolean) => {
-      quotaStore.setExceededPromptOpen(exceeded);
-
-      if (!exceeded) {
-        callback();
-      }
-    });
+  quotaStore.setExceededPromptOpen(exceeded);
+  return exceeded;
 }

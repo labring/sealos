@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { jsonRes } from '@/services/backend/response';
-import { generateAuthenticationToken, verifyAccessToken } from '@/services/backend/auth';
+import { generateGlobalAccessToken, verifyAccessToken } from '@/services/backend/auth';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -15,9 +15,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       code: 200,
       message: 'Successfully',
       data: {
-        token: generateAuthenticationToken({
-          userUid: regionUserData.userUid,
-          userId: regionUserData.userId
+        token: generateGlobalAccessToken({
+          sub: regionUserData.userUid,
+          user_id: regionUserData.userId
         })
       }
     });

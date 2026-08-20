@@ -9,6 +9,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 export type TSystemInfo = {
   systemId: string;
   nodeCount: number;
+  totalWorkspaces: number;
   totalCpu: string;
   totalMemory: string;
 };
@@ -22,6 +23,34 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     const nodesResult = await defaultKc.makeApiClient(k8s.CoreV1Api).listNode();
     const nodeCount = nodesResult.body.items.length;
+
+    // Fetch users (workspaces) count, requesting only metadata to avoid large status payloads
+    // @ts-ignore
+    const usersResult = await defaultKc
+      .makeApiClient(k8s.CustomObjectsApi)
+      .listClusterCustomObject(
+        'user.sealos.io',
+        'v1',
+        'users',
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        {
+          headers: {
+            Accept:
+              'application/json;as=PartialObjectMetadataList;v=v1;g=meta.k8s.io,application/json'
+          }
+        }
+      );
+    // @ts-ignore
+    const totalWorkspaces = usersResult?.body?.items?.length || 0;
 
     let totalCpu = new Decimal(0);
     let totalMemoryKi = new Decimal(0);
@@ -39,6 +68,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       data: {
         systemId: systemId,
         nodeCount: nodeCount,
+        totalWorkspaces: totalWorkspaces,
         totalCpu: totalCpu.toString(),
         totalMemory: totalMemoryGB.toString()
       }

@@ -19,11 +19,10 @@ import (
 	"errors"
 	"os"
 
-	"gorm.io/gorm"
-
 	"github.com/labring/sealos/controllers/job/init/internal/util/controller"
 	"github.com/labring/sealos/controllers/job/init/internal/util/database"
 	"github.com/labring/sealos/controllers/pkg/utils/logger"
+	"gorm.io/gorm"
 )
 
 func main() {

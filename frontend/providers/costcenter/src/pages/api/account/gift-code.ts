@@ -1,3 +1,4 @@
+import { Config } from '@/config';
 import { makeAPIClientByHeader } from '@/service/backend/region';
 import { jsonRes } from '@/service/backend/response';
 import { checkSealosUserIsRealName } from '@/utils/tools';
@@ -5,7 +6,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
   try {
-    if (!global.AppConfig.costCenter.giftCodeEnabled) {
+    if (!Config().costCenter.features.giftCode) {
       throw new Error('gift code is not enabled');
     }
     const { code } = req.body;

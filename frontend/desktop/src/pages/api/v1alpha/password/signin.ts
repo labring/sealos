@@ -4,7 +4,7 @@ import { ApiSession } from '@/types/session';
 import { enableApi, enablePassword } from '@/services/enable';
 import { signInByPassword } from '@/services/backend/globalAuth';
 import { getRegionToken } from '@/services/backend/regionAuth';
-import { verifyAccessToken, verifyJWT } from '@/services/backend/auth';
+import { verifyRegionalJwt } from '@/services/backend/auth';
 import { AccessTokenPayload } from '@/types/token';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -34,7 +34,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         code: 401,
         message: 'Unauthorized'
       });
-    const regionUser = (await verifyJWT<AccessTokenPayload>(data.token))!;
+    const regionUser = (await verifyRegionalJwt<AccessTokenPayload>(data.token))!;
 
     return jsonRes<ApiSession>(res, {
       data: {

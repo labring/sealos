@@ -4,6 +4,7 @@ import { jsonRes } from '@/services/backend/response';
 import { withErrorHandler } from '@/services/backend/middleware';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { ResponseCode } from '@/types/response';
+import { applyWithInstanceOwnerReferences } from '@/services/backend/instanceOwnerReferencesApply';
 
 export default withErrorHandler(async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { yamlList, type = 'create' } = req.body as {
@@ -18,11 +19,15 @@ export default withErrorHandler(async function handler(req: NextApiRequest, res:
     });
   }
 
-  const { applyYamlList } = await getK8s({
+  const { applyYamlList, k8sCustomObjects, namespace } = await getK8s({
     kubeconfig: await authSession(req.headers)
   });
 
-  const applyRes = await applyYamlList(yamlList, type);
+  const { appliedKinds } = await applyWithInstanceOwnerReferences(
+    { applyYamlList, k8sCustomObjects, namespace },
+    yamlList,
+    type
+  );
 
-  jsonRes(res, { data: applyRes.map((item) => item.kind) });
+  jsonRes(res, { data: appliedKinds });
 });

@@ -2,11 +2,12 @@ import { Info } from 'lucide-react';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useTranslation } from 'next-i18next';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { SubscriptionPlan, SubscriptionPayRequest } from '@/types/plan';
+import { SubscriptionPlan, SubscriptionPayRequest, MaxResourcesRecord } from '@/types/plan';
 import useSessionStore from '@/stores/session';
 import useBillingStore from '@/stores/billing';
-import useEnvStore from '@/stores/env';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import usePlanStore from '@/stores/plan';
+import { loadStripe } from '@stripe/stripe-js';
 import {
   getPlanList,
   getSubscriptionInfo,
@@ -17,6 +18,9 @@ import { AllPlansSection } from '@/components/plan/AllPlansSection';
 import { PlanHeader } from '@/components/plan/PlanHeader';
 import { BalanceSection } from '@/components/plan/BalanceSection';
 import { CardInfoSection } from '@/components/plan/CardInfoSection';
+import { InvoicePaymentBanner } from '@/components/plan/InvoicePaymentBanner';
+import { BeingCancelledBanner } from '@/components/plan/BeingCancelledBanner';
+import { FreePlanExpiryBanner } from '@/components/plan/FreePlanExpiryBanner';
 import { getAccountBalance } from '@/api/account';
 import request from '@/service/request';
 import RechargeModal from '@/components/RechargeModal';
@@ -38,10 +42,11 @@ export default function Plan() {
   const { t } = useTranslation();
   const { session } = useSessionStore();
   const { getRegion } = useBillingStore();
-  const transferEnabled = useEnvStore((state) => state.transferEnabled);
-  const rechargeEnabled = useEnvStore((state) => state.rechargeEnabled);
-  const subscriptionEnabled = useEnvStore((state) => state.subscriptionEnabled);
-  const stripePromise = useEnvStore((s) => s.stripePromise);
+  const config = useClientAppConfig();
+  const stripePromise = useMemo(
+    () => loadStripe(config.recharge.payMethods.stripe.publicKey),
+    [config.recharge.payMethods.stripe.publicKey]
+  );
   const region = getRegion();
   const { toast } = useCustomToast();
 
@@ -70,13 +75,21 @@ export default function Plan() {
     setDefaultShowPaymentConfirmation,
     setDefaultWorkspaceName,
     clearModalDefaults,
-    clearRedeemCode
+    clearRedeemCode,
+    invoicePaymentUrl,
+    setInvoicePaymentUrl
   } = usePlanStore();
 
   // Check if we're in create mode - use state to persist across re-renders
   const [isCreateMode, setIsCreateMode] = useState(false);
   const [isUpgradeMode, setIsUpgradeMode] = useState(false);
   const [showCongratulations, setShowCongratulations] = useState(false);
+  const [congratulationsMode, setCongratulationsMode] = useState<'upgrade' | 'renew'>('upgrade');
+  const [congratulationsOverride, setCongratulationsOverride] = useState<{
+    planName?: string;
+    maxResources?: MaxResourcesRecord;
+    traffic?: number;
+  } | null>(null);
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [workspaceId, setWorkspaceId] = useState('');
   // Track if Stripe success has been tracked to prevent duplicates
@@ -107,6 +120,35 @@ export default function Plan() {
     },
     [router, clearModalDefaults, clearRedeemCode]
   );
+
+  const queryClient = useQueryClient();
+
+  // Refetch all post-payment-affected queries. We await + throwOnError so that
+  // a transient backend failure surfaces as a toast rather than silently leaving
+  // the UI showing pre-payment state after Stripe reports success.
+  const refetchAfterPayment = useCallback(async () => {
+    try {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['subscription-info'] }, { throwOnError: true }),
+        queryClient.invalidateQueries({ queryKey: ['last-transaction'] }, { throwOnError: true }),
+        queryClient.invalidateQueries({ queryKey: ['upgrade-amount'] }, { throwOnError: true }),
+        queryClient.invalidateQueries({ queryKey: ['card-info'] }, { throwOnError: true }),
+        queryClient.invalidateQueries(
+          { queryKey: ['payment-waiting-transaction'] },
+          { throwOnError: true }
+        )
+      ]);
+    } catch (err) {
+      console.error('[plan] post-payment refetch failed', err);
+      toast({
+        status: 'error',
+        title: t(
+          'common:plan.refetch_after_payment_failed',
+          'Payment succeeded, but refreshing subscription data failed. Please refresh the page.'
+        )
+      });
+    }
+  }, [queryClient, toast, t]);
 
   // useEffect to handle the router query
   useEffect(() => {
@@ -182,18 +224,19 @@ export default function Plan() {
 
     // Check for success state from Stripe callback (set by desktop)
     if (router.query.stripeState === 'success' && router.query.payId) {
-      // Invalidate queries to refresh subscription data after payment success
-      queryClient.invalidateQueries({ queryKey: ['subscription-info'] });
-      queryClient.invalidateQueries({ queryKey: ['last-transaction'] });
-      queryClient.invalidateQueries({ queryKey: ['upgrade-amount'] });
-      queryClient.invalidateQueries({ queryKey: ['card-info'] });
-      queryClient.invalidateQueries({ queryKey: ['payment-waiting-transaction'] });
-      hideModal();
-      // Close UpgradePlanDialog to prevent focus fighting
-      setSubscriptionModalOpen(false);
-      setShowCongratulations(true);
-      setHasTrackedStripeSuccess(false); // Reset to allow tracking for this payment
-      isStripeCallbackRef.current = true; // Save flag, persists even if router.query is cleared
+      // Wait for the post-payment refetch to settle before showing the
+      // congratulations modal, so the underlying balance/subscription data
+      // is up-to-date by the time the user sees it. Errors surface via toast.
+      void (async () => {
+        await refetchAfterPayment();
+        hideModal();
+        // Close UpgradePlanDialog to prevent focus fighting
+        setSubscriptionModalOpen(false);
+        setCongratulationsMode('upgrade');
+        setShowCongratulations(true);
+        setHasTrackedStripeSuccess(false); // Reset to allow tracking for this payment
+        isStripeCallbackRef.current = true; // Save flag, persists even if router.query is cleared
+      })();
       return;
     }
   }, [
@@ -203,10 +246,10 @@ export default function Plan() {
     hideModal,
     setDefaultSelectedPlan,
     setDefaultShowPaymentConfirmation,
-    setDefaultWorkspaceName
+    setDefaultWorkspaceName,
+    refetchAfterPayment
   ]);
 
-  const queryClient = useQueryClient();
   const rechargeRef = useRef<any>();
   const transferRef = useRef<any>();
 
@@ -237,9 +280,13 @@ export default function Plan() {
 
       if (targetPlan) {
         const workspaceName = isCreateMode ? defaultWorkspaceName : '';
+        // Determine operator based on mode: create mode uses 'created', otherwise 'upgraded'
+        const operator = isCreateMode ? 'created' : 'upgraded';
+        const businessOperation = isCreateMode ? 'create' : 'upgrade';
         showConfirmationModal(targetPlan, {
           workspaceName,
-          isCreateMode
+          operator,
+          businessOperation
         });
       }
     }
@@ -264,14 +311,19 @@ export default function Plan() {
         regionDomain: region?.domain || ''
       }),
     enabled: !!(session?.user?.nsid && region?.uid),
-    onSuccess: (data) => setSubscriptionData(data.data || null),
+    onSuccess: (data) => {
+      setSubscriptionData(data.data || null);
+      // Check if InvoiceInfo has PaymentUrl
+      const paymentUrl = data.data?.subscription?.InvoiceInfo?.PaymentUrl;
+      setInvoicePaymentUrl(paymentUrl || null);
+    },
     refetchOnMount: true,
     retry: 5
   });
 
   // Get specific workspace subscription info for congratulations modal
   const { data: workspaceSubscriptionData } = useQuery({
-    queryKey: ['workspace-subscription', workspaceId, region?.uid],
+    queryKey: ['subscription-info', workspaceId, region?.uid],
     queryFn: () =>
       getSubscriptionInfo({
         workspace: workspaceId || '',
@@ -404,8 +456,8 @@ export default function Plan() {
               variables.operator === 'created'
                 ? 'new'
                 : variables.operator === 'downgraded'
-                  ? 'downgrade'
-                  : 'upgrade';
+                ? 'downgrade'
+                : 'upgrade';
 
             gtmSubscribeSuccess({
               amount: monthlyPrice,
@@ -542,7 +594,10 @@ export default function Plan() {
     const currentPlanObj = plansData?.plans?.find(
       (p) => p.Name === subscriptionData?.subscription?.PlanName
     );
+    const inDebt = subscriptionData?.subscription?.Status?.toLowerCase() === 'debt';
     const getOperator = () => {
+      // If in debt state, always use 'created' operation
+      if (inDebt) return 'created';
       if (!currentPlanObj) return 'created';
       if (currentPlanObj.UpgradePlanList?.includes(plan.Name)) return 'upgraded';
       if (currentPlanObj.DowngradePlanList?.includes(plan.Name)) return 'downgraded';
@@ -633,7 +688,38 @@ export default function Plan() {
       {isPaygTypeValue ? (
         <div className="flex gap-4">
           <div className="flex-2/3">
-            <PlanHeader>
+            {invoicePaymentUrl && (
+              <div className="mb-4">
+                <InvoicePaymentBanner
+                  paymentUrl={invoicePaymentUrl}
+                  inDebt={subscriptionData?.subscription?.Status?.toLowerCase() === 'debt'}
+                />
+              </div>
+            )}
+            {subscriptionData?.subscription?.CancelAtPeriodEnd &&
+              subscriptionData?.subscription?.PlanName?.toLowerCase() !== 'free' &&
+              subscriptionData?.subscription?.CurrentPeriodEndAt && (
+                <div className="mb-4">
+                  <BeingCancelledBanner
+                    currentPeriodEndAt={subscriptionData.subscription.CurrentPeriodEndAt}
+                  />
+                </div>
+              )}
+            {subscriptionData?.subscription?.PlanName?.toLowerCase() === 'free' &&
+              subscriptionData?.subscription?.CurrentPeriodEndAt && (
+                <div className="mb-4">
+                  <FreePlanExpiryBanner
+                    currentPeriodEndAt={subscriptionData.subscription.CurrentPeriodEndAt}
+                  />
+                </div>
+              )}
+            <PlanHeader
+              onRenewSuccess={() => {
+                setWorkspaceId(session?.user?.nsid || '');
+                setCongratulationsMode('renew');
+                setShowCongratulations(true);
+              }}
+            >
               {({ trigger }) => (
                 <UpgradePlanDialog
                   onSubscribe={handleSubscribe}
@@ -653,31 +739,58 @@ export default function Plan() {
           <div className="flex-1/3">
             <BalanceSection
               balance={balance}
-              rechargeEnabled={rechargeEnabled}
-              subscriptionEnabled={subscriptionEnabled}
+              rechargeEnabled={config.recharge.enabled}
+              subscriptionEnabled={config.features.subscriptionEnabled}
               onTopUpClick={() => rechargeRef?.current?.onOpen()}
             />
           </div>
         </div>
       ) : (
         <>
-          {lastTransactionData?.transaction?.Operator === 'downgraded' && (
-            <div className="p-4 bg-orange-50 border border-orange-200 rounded-xl flex items-start gap-3">
-              <div className="size-5 rounded-full flex items-center justify-center flex-shrink-0">
-                <Info className="text-orange-600" />
+          {lastTransactionData?.transaction?.Operator === 'downgraded' &&
+            lastTransactionData?.transaction?.Status === 'pending' && (
+              <div className="p-4 bg-orange-50 border border-orange-200 rounded-xl flex items-start gap-3">
+                <div className="size-5 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Info className="text-orange-600" />
+                </div>
+                <div className="text-orange-600 text-sm leading-5">
+                  {t('common:downgrade_warning_message', {
+                    planName: lastTransactionData?.transaction?.NewPlanName,
+                    date: new Date(
+                      lastTransactionData?.transaction?.StartAt || ''
+                    ).toLocaleDateString()
+                  })}
+                </div>
               </div>
-              <div className="text-orange-600 text-sm leading-5">
-                {t('common:downgrade_warning_message', {
-                  planName: lastTransactionData?.transaction?.NewPlanName,
-                  date: new Date(
-                    lastTransactionData?.transaction?.StartAt || ''
-                  ).toLocaleDateString()
-                })}
-              </div>
-            </div>
-          )}
+            )}
 
-          <PlanHeader>
+          {invoicePaymentUrl && (
+            <InvoicePaymentBanner
+              paymentUrl={invoicePaymentUrl}
+              inDebt={subscriptionData?.subscription?.Status?.toLowerCase() === 'debt'}
+            />
+          )}
+          {subscriptionData?.subscription?.CancelAtPeriodEnd &&
+            subscriptionData?.subscription?.PlanName?.toLowerCase() !== 'free' &&
+            subscriptionData?.subscription?.CurrentPeriodEndAt && (
+              <BeingCancelledBanner
+                currentPeriodEndAt={subscriptionData.subscription.CurrentPeriodEndAt}
+              />
+            )}
+          {subscriptionData?.subscription?.PlanName?.toLowerCase() === 'free' &&
+            subscriptionData?.subscription?.CurrentPeriodEndAt && (
+              <FreePlanExpiryBanner
+                currentPeriodEndAt={subscriptionData.subscription.CurrentPeriodEndAt}
+              />
+            )}
+
+          <PlanHeader
+            onRenewSuccess={() => {
+              setWorkspaceId(session?.user?.nsid || '');
+              setCongratulationsMode('renew');
+              setShowCongratulations(true);
+            }}
+          >
             {({ trigger }) => (
               <UpgradePlanDialog
                 onSubscribe={handleSubscribe}
@@ -696,8 +809,8 @@ export default function Plan() {
 
           <BalanceSection
             balance={balance}
-            rechargeEnabled={rechargeEnabled}
-            subscriptionEnabled={subscriptionEnabled}
+            rechargeEnabled={config.recharge.enabled}
+            subscriptionEnabled={config.features.subscriptionEnabled}
             onTopUpClick={() => rechargeRef?.current!.onOpen()}
           />
         </>
@@ -705,9 +818,15 @@ export default function Plan() {
 
       <CardInfoSection workspace={session?.user?.nsid} regionDomain={region?.domain} />
 
-      <AllPlansSection />
+      <AllPlansSection
+        onRenewSuccess={(payload) => {
+          setCongratulationsOverride(payload);
+          setCongratulationsMode('renew');
+          setShowCongratulations(true);
+        }}
+      />
       {/* Modals */}
-      {rechargeEnabled && (
+      {config.recharge.enabled && (
         <RechargeModal
           ref={rechargeRef}
           balance={balance}
@@ -721,7 +840,7 @@ export default function Plan() {
         />
       )}
 
-      {transferEnabled && (
+      {config.features.transferEnabled && (
         <TransferModal
           ref={transferRef}
           balance={balance}
@@ -736,18 +855,23 @@ export default function Plan() {
 
       <CongratulationsModal
         isOpen={showCongratulations}
-        planName={workspaceSubscriptionData?.data?.subscription?.PlanName || 'Pro Plan'}
+        mode={congratulationsMode}
+        planName={
+          congratulationsOverride?.planName ||
+          workspaceSubscriptionData?.data?.subscription?.PlanName ||
+          'Pro Plan'
+        }
         maxResources={
-          workspaceSubscriptionData?.data?.subscription?.PlanName
-            ? JSON.parse(
-                plansData?.plans?.find(
-                  (p: SubscriptionPlan) =>
-                    p.Name === workspaceSubscriptionData?.data?.subscription?.PlanName
-                )?.MaxResources || '{}'
-              )
-            : undefined
+          congratulationsOverride?.maxResources ||
+          (workspaceSubscriptionData?.data?.subscription?.PlanName
+            ? plansData?.plans?.find(
+                (p: SubscriptionPlan) =>
+                  p.Name === workspaceSubscriptionData?.data?.subscription?.PlanName
+              )?.MaxResources
+            : undefined)
         }
         traffic={
+          congratulationsOverride?.traffic ||
           plansData?.plans?.find(
             (p: SubscriptionPlan) =>
               p.Name === workspaceSubscriptionData?.data?.subscription?.PlanName
@@ -756,6 +880,7 @@ export default function Plan() {
         onClose={() => {
           setShowCongratulations(false);
           setWorkspaceId('');
+          setCongratulationsOverride(null);
           // Clean up URL parameters after closing the modal
           const url = new URL(window.location.href);
           url.searchParams.delete('stripeState');
@@ -771,9 +896,9 @@ export default function Plan() {
       <PlanConfirmationModal
         plan={pendingPlan || undefined}
         workspaceName={modalContext.workspaceName}
-        isCreateMode={modalContext.isCreateMode || false}
         isOpen={modalType === 'confirmation'}
         isSubmitting={subscriptionMutation.isLoading}
+        isRenew={modalContext.businessOperation === 'renew'}
         onConfirm={() => {
           if (pendingPlan) {
             handleSubscribe(pendingPlan, modalContext.workspaceName, false);
@@ -787,12 +912,7 @@ export default function Plan() {
           clearRedeemCode();
         }}
         onPaymentSuccess={async () => {
-          // Invalidate queries to refresh subscription data after payment success
-          queryClient.invalidateQueries({ queryKey: ['subscription-info'] });
-          queryClient.invalidateQueries({ queryKey: ['last-transaction'] });
-          queryClient.invalidateQueries({ queryKey: ['upgrade-amount'] });
-          queryClient.invalidateQueries({ queryKey: ['card-info'] });
-          queryClient.invalidateQueries({ queryKey: ['payment-waiting-transaction'] });
+          await refetchAfterPayment();
           // Close all modals before showing congratulations modal
           hideModal();
           // Close UpgradePlanDialog to prevent focus fighting
@@ -802,6 +922,7 @@ export default function Plan() {
             // Set workspace ID for congratulations modal
             const targetWorkspace = session?.user?.nsid || '';
             setWorkspaceId(targetWorkspace);
+            setCongratulationsMode('upgrade');
             setShowCongratulations(true);
           }
         }}

@@ -2,6 +2,7 @@ import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { applyWithInstanceOwnerReferences } from '@/services/backend/instanceOwnerReferencesApply';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { yamlList } = req.body as {
@@ -16,13 +17,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const { applyYamlList } = await getK8s({
+    const { applyYamlList, k8sCustomObjects, namespace } = await getK8s({
       kubeconfig: await authSession(req.headers)
     });
 
-    const applyRes = await applyYamlList(yamlList, 'create');
+    const { appliedKinds } = await applyWithInstanceOwnerReferences(
+      { applyYamlList, k8sCustomObjects, namespace },
+      yamlList,
+      'create'
+    );
 
-    jsonRes(res, { data: applyRes.map((item) => item.kind), message: 'success' });
+    jsonRes(res, { data: appliedKinds, message: 'success' });
   } catch (err: any) {
     jsonRes(res, {
       code: 500,

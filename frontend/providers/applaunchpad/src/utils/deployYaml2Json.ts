@@ -7,13 +7,18 @@ import {
   minReplicasKey,
   publicDomainKey
 } from '@/constants/app';
-import { SEALOS_USER_DOMAINS } from '@/store/static';
 import type { AppEditType } from '@/types/app';
 import { str2Num, strToBase64 } from '@/utils/tools';
 import dayjs from 'dayjs';
 import yaml from 'js-yaml';
 import { customAlphabet, customRandom } from 'nanoid';
 import crypto from 'crypto';
+import {
+  cpuRequestQuantity,
+  memoryRequestQuantity,
+  quantityToStorageGi,
+  storageGiToQuantity
+} from '@/utils/resourceQuantity';
 
 // Create deterministic nanoid based on seed
 const createDeterministicNanoid = (seed: string): string => {
@@ -55,7 +60,10 @@ export const yamlString2Objects = (yamlString: string): object[] => {
 };
 
 export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefulset') => {
-  const totalStorage = data.storeList.reduce((acc, item) => acc + item.value, 0);
+  const totalStorage = data.storeList.reduce(
+    (acc, item) => acc + quantityToStorageGi(item.value),
+    0
+  );
 
   const metadata = {
     name: data.appName,
@@ -63,7 +71,11 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
       originImageName: data.imageName,
       [minReplicasKey]: `${data.hpa.use ? data.hpa.minReplicas : data.replicas}`,
       [maxReplicasKey]: `${data.hpa.use ? data.hpa.maxReplicas : data.replicas}`,
-      [deployPVCResizeKey]: `${totalStorage}Gi`
+      [deployPVCResizeKey]: storageGiToQuantity(totalStorage).formatForDisplay({
+        format: 'BinarySI',
+        scale: 'auto',
+        digits: 4
+      })
     },
     labels: {
       ...(data.labels || {}),
@@ -106,13 +118,13 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
         : [],
     resources: {
       requests: {
-        cpu: `${str2Num(Math.floor(data.cpu * 0.1))}m`,
-        memory: `${str2Num(Math.floor(data.memory * 0.1))}Mi`,
+        cpu: cpuRequestQuantity(data.cpu).withFormat('DecimalSI').toString(),
+        memory: memoryRequestQuantity(data.memory).withFormat('BinarySI').toString(),
         ...(!!data.gpu?.type ? { [gpuResourceKey]: data.gpu.amount } : {})
       },
       limits: {
-        cpu: `${str2Num(data.cpu)}m`,
-        memory: `${str2Num(data.memory)}Mi`,
+        cpu: data.cpu.withFormat('DecimalSI').toString(),
+        memory: data.memory.withFormat('BinarySI').toString(),
         ...(!!data.gpu?.type ? { [gpuResourceKey]: data.gpu.amount } : {})
       }
     },
@@ -169,7 +181,11 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
     metadata: {
       annotations: {
         path: store.path,
-        value: `${store.value}`
+        value: store.value.formatForDisplay({
+          format: 'BinarySI',
+          scale: 'auto',
+          digits: 4
+        })
       },
       name: store.name
     },
@@ -177,7 +193,7 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
       accessModes: ['ReadWriteOnce'],
       resources: {
         requests: {
-          storage: `${store.value}Gi`
+          storage: store.value.withFormat('BinarySI').toString()
         }
       }
     }
@@ -340,11 +356,17 @@ export const json2Service = (data: AppEditType) => {
     : `${clusterIpYaml}${nodePortYaml}`;
 };
 
-export const json2Ingress = (data: AppEditType) => {
+export const json2Ingress = (
+  data: AppEditType,
+  userDomains: { name: string; secretName: string }[],
+  options: {
+    disableHttps?: boolean;
+  } = {}
+) => {
+  const disableHttps = options.disableHttps ?? false;
   // different protocol annotations
   const map = {
     HTTP: {
-      'nginx.ingress.kubernetes.io/ssl-redirect': 'false',
       'nginx.ingress.kubernetes.io/backend-protocol': 'HTTP',
       'nginx.ingress.kubernetes.io/client-body-buffer-size': '64k',
       'nginx.ingress.kubernetes.io/proxy-buffer-size': '64k',
@@ -354,7 +376,6 @@ export const json2Ingress = (data: AppEditType) => {
         'client_header_buffer_size 64k;\nlarge_client_header_buffers 4 128k;\n'
     },
     GRPC: {
-      'nginx.ingress.kubernetes.io/ssl-redirect': 'false',
       'nginx.ingress.kubernetes.io/backend-protocol': 'GRPC'
     },
     WS: {
@@ -373,12 +394,12 @@ export const json2Ingress = (data: AppEditType) => {
 
       const secretName = network.customDomain
         ? network.networkName
-        : SEALOS_USER_DOMAINS.find((domain) => domain.name === network.domain)?.secretName ||
+        : userDomains.find((domain) => domain.name === network.domain)?.secretName ||
           'wildcard-cert';
       // Ingress only uses ClusterIP services, not NodePort
       const serviceName = getServiceName(data, false);
 
-      const ingress = {
+      const ingress: any = {
         apiVersion: 'networking.k8s.io/v1',
         kind: 'Ingress',
         metadata: {
@@ -414,15 +435,17 @@ export const json2Ingress = (data: AppEditType) => {
                 ]
               }
             }
-          ],
-          tls: [
-            {
-              hosts: [host],
-              secretName
-            }
           ]
         }
       };
+      if (!disableHttps) {
+        ingress.spec.tls = [
+          {
+            hosts: [host],
+            secretName
+          }
+        ];
+      }
       const issuer = {
         apiVersion: 'cert-manager.io/v1',
         kind: 'Issuer',
@@ -472,7 +495,7 @@ export const json2Ingress = (data: AppEditType) => {
       };
 
       let resYaml = yaml.dump(ingress);
-      if (network.customDomain) {
+      if (network.customDomain && !disableHttps) {
         resYaml += `\n---\n${yaml.dump(issuer)}\n---\n${yaml.dump(certificate)}`;
       }
       return resYaml;
@@ -485,8 +508,14 @@ export const json2ServiceObjects = (data: AppEditType): object[] => {
   return yamlString2Objects(json2Service(data));
 };
 
-export const json2IngressObjects = (data: AppEditType): object[] => {
-  return yamlString2Objects(json2Ingress(data));
+export const json2IngressObjects = (
+  data: AppEditType,
+  userDomains: { name: string; secretName: string }[],
+  options: {
+    disableHttps?: boolean;
+  } = {}
+): object[] => {
+  return yamlString2Objects(json2Ingress(data, userDomains, options));
 };
 
 export const json2ConfigMap = (data: AppEditType) => {

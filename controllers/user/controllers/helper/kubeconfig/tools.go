@@ -17,15 +17,15 @@ limitations under the License.
 package kubeconfig
 
 import (
-	"crypto/rand"
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
 	"fmt"
 )
 
 // DecodeX509CertificateChainBytes will decode a PEM encoded x509 Certificate chain.
 func DecodeX509CertificateChainBytes(certBytes []byte) ([]*x509.Certificate, error) {
-	var certs []*x509.Certificate
+	certs := make([]*x509.Certificate, 0, 1)
 
 	var block *pem.Block
 
@@ -45,7 +45,7 @@ func DecodeX509CertificateChainBytes(certBytes []byte) ([]*x509.Certificate, err
 	}
 
 	if len(certs) == 0 {
-		return nil, fmt.Errorf("error decoding certificate PEM block")
+		return nil, errors.New("error decoding certificate PEM block")
 	}
 
 	return certs, nil
@@ -59,16 +59,4 @@ func DecodeX509CertificateBytes(certBytes []byte) (*x509.Certificate, error) {
 	}
 
 	return certs[0], nil
-}
-
-func GetRandomString(n int) string {
-	randBytes := make([]byte, n/2)
-	if _, err := rand.Read(randBytes); err != nil {
-		return ""
-	}
-	return fmt.Sprintf("%x", randBytes)
-}
-
-func SecretName(name string) string {
-	return fmt.Sprintf("sealos-token-%s-%s", name, GetRandomString(5))
 }

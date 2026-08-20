@@ -2,11 +2,13 @@ import { authAppToken } from '@/services/backend/auth';
 import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import { UserTask } from '@/types/user';
+import { buildExternalUrl } from '@/utils/network-url';
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { Config } from '@/config';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
-    if (!global.AppConfig.common.guideEnabled)
+    if (!Config().launchpad.features.guide)
       return jsonRes(res, {
         data: {
           needGuide: false
@@ -18,9 +20,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       return jsonRes(res, { code: 401, message: 'token is valid' });
     }
 
-    const domain = global.AppConfig.cloud.desktopDomain;
+    const config = Config();
+    const desktopUrl = buildExternalUrl({
+      protocol: 'HTTP',
+      host: config.cloud.desktopDomain,
+      config: {
+        disableHttps: config.cloud.disableHttps,
+        cloudPort: config.cloud.port,
+        httpPort: config.cloud.httpPort
+      }
+    });
 
-    const response = await fetch(`https://${domain}/api/account/getTasks`, {
+    const response = await fetch(`${desktopUrl}/api/account/getTasks`, {
       method: 'GET',
       headers: {
         Authorization: token

@@ -1,12 +1,12 @@
-import { getSystemConfig, getTemplates } from '@/api/platform';
+import { getTemplates } from '@/api/platform';
 import Banner from '@/components/Banner';
 import MyIcon from '@/components/Icon';
 import { useCachedStore } from '@/store/cached';
-import { useSystemConfigStore } from '@/store/config';
 import { useSearchStore } from '@/store/search';
-import { SystemConfigType, TemplateType } from '@/types/app';
+import { TemplateType } from '@/types/app';
 import { serviceSideProps } from '@/utils/i18n';
 import { compareFirstLanguages, formatStarNumber } from '@/utils/tools';
+import { getCategoryLabel } from '@/utils/template';
 import {
   Avatar,
   AvatarGroup,
@@ -29,6 +29,8 @@ import Head from 'next/head';
 import { ShareIcon } from '@/components/icons';
 import { useGuideStore } from '@/store/guide';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
+import { Config } from '@/config';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
 
@@ -45,7 +47,6 @@ export default function AppList({
   const router = useRouter();
   const { searchValue, appType } = useSearchStore();
   const { setInsideCloud } = useCachedStore();
-  const { envs } = useSystemConfigStore();
 
   const { data } = useQuery(['listTemplate', i18n.language], () => getTemplates(i18n.language), {
     refetchInterval: 5 * 60 * 1000,
@@ -53,10 +54,12 @@ export default function AppList({
     retry: 3
   });
 
-  const { data: systemConfig } = useQuery(['systemConfig'], getSystemConfig, {
-    staleTime: 10 * 60 * 1000,
-    retry: 3
-  });
+  const clientAppConfig = useClientAppConfig();
+
+  const categoryBySlug = useMemo(
+    () => new Map(clientAppConfig.categories.map((category) => [category.slug, category])),
+    [clientAppConfig.categories]
+  );
 
   const filterData = useMemo(() => {
     const typeFilteredResults = data?.templates?.filter((item: TemplateType) => {
@@ -152,7 +155,7 @@ export default function AppList({
 
       {!!data?.templates?.length ? (
         <>
-          {systemConfig?.showCarousel && <Banner />}
+          {clientAppConfig.carousel.enabled && <Banner />}
           {filterData?.length && filterData?.length > 0 ? (
             <Grid
               justifyContent={'center'}
@@ -213,7 +216,7 @@ export default function AppList({
                         >
                           {item.spec.i18n?.[i18n.language]?.title ?? item.spec.title}
                         </Text>
-                        {envs?.SHOW_AUTHOR === 'true' && (
+                        {clientAppConfig.showAuthor && (
                           <Text fontSize={'12px'} fontWeight={400} color={'#5A646E'}>
                             By {item.spec.author}
                           </Text>
@@ -259,19 +262,24 @@ export default function AppList({
                       gap={'20px'}
                     >
                       <Flex alignItems={'center'} gap={'10px'} overflow={'hidden'}>
-                        {item?.spec?.categories?.map((i) => (
-                          <Tag
-                            flexShrink={0}
-                            key={i}
-                            bg="#F4F4F7"
-                            border={'1px solid #E8EBF0'}
-                            fontSize={'10px'}
-                            color={'5A646E'}
-                            fontWeight={400}
-                          >
-                            {t(`SideBar.${i}`)}
-                          </Tag>
-                        ))}
+                        {item?.spec?.categories
+                          ?.flatMap((slug) => {
+                            const category = categoryBySlug.get(slug);
+                            return category ? [category] : [];
+                          })
+                          .map((category) => (
+                            <Tag
+                              flexShrink={0}
+                              key={category.slug}
+                              bg="#F4F4F7"
+                              border={'1px solid #E8EBF0'}
+                              fontSize={'10px'}
+                              color={'5A646E'}
+                              fontWeight={400}
+                            >
+                              {getCategoryLabel(category, i18n.language)}
+                            </Tag>
+                          ))}
                       </Flex>
                       <Center
                         cursor={'pointer'}
@@ -307,8 +315,8 @@ export default function AppList({
 }
 
 export async function getServerSideProps(content: any) {
-  const forcedLanguage = process.env.FORCED_LANGUAGE;
-  const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || 'Sealos';
+  const forcedLanguage = Config().template.ui.forcedLanguage;
+  const brandName = Config().template.ui.brandName;
 
   const local: string =
     forcedLanguage ||
@@ -339,7 +347,7 @@ export async function getServerSideProps(content: any) {
       ...(await serviceSideProps(content)),
       brandName,
       seoData: seoData[local] || seoData.en,
-      canonicalUrl: process.env.NEXT_PUBLIC_CANONICAL_URL || `https://template.cloud.sealos.io`
+      canonicalUrl: Config().template.ui.meta.canonicalUrl
     }
   };
 }

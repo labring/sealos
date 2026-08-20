@@ -9,7 +9,7 @@ import {
 import JsYaml from 'js-yaml';
 import { clone, cloneDeep, mapValues } from 'lodash';
 import { customAlphabet } from 'nanoid';
-import { processEnvValue } from './common';
+import { ExtraResourceLabels, processEnvValue } from './common';
 import { EnvResponse } from '@/types/index';
 import Interpreter from 'js-interpreter';
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz');
@@ -17,11 +17,15 @@ function base64(str: string) {
   return Buffer.from(str).toString('base64');
 }
 
-export const generateYamlList = (value: string, labelName: string): YamlItemType[] => {
+export const generateYamlList = (
+  value: string,
+  labelName: string,
+  extraLabels: ExtraResourceLabels = {}
+): YamlItemType[] => {
   try {
     let _value = JsYaml.loadAll(value)
       .filter((i) => i)
-      .map((item: any) => JsYaml.dump(processEnvValue(item, labelName)));
+      .map((item: any) => JsYaml.dump(processEnvValue(item, labelName, extraLabels)));
 
     return [
       {
@@ -35,14 +39,18 @@ export const generateYamlList = (value: string, labelName: string): YamlItemType
   }
 };
 
-export const developGenerateYamlList = (value: string, labelName: string): YamlItemType[] => {
+export const developGenerateYamlList = (
+  value: string,
+  labelName: string,
+  extraLabels: ExtraResourceLabels = {}
+): YamlItemType[] => {
   try {
     return JsYaml.loadAll(value)
       .filter((i) => i)
       .map((item: any) => {
         return {
           filename: `${item?.kind}-${item?.metadata?.name ? item.metadata.name : nanoid(6)}.yaml`,
-          value: JsYaml.dump(processEnvValue(item, labelName))
+          value: JsYaml.dump(processEnvValue(item, labelName, extraLabels))
         };
       });
   } catch (error) {
@@ -134,6 +142,26 @@ export const getTemplateDataSource = (template: TemplateType): ProcessedTemplate
   }
 };
 
+const sanitizeInstanceInputs = (
+  inputs: TemplateType['spec']['inputs'] | undefined
+): TemplateInstanceType['spec']['inputs'] => {
+  if (!inputs) {
+    return {};
+  }
+
+  return Object.fromEntries(
+    Object.entries(inputs).map(([key, item]) => [
+      key,
+      {
+        description: item.description,
+        type: item.type,
+        default: item.default,
+        required: item.required
+      }
+    ])
+  );
+};
+
 export const handleTemplateToInstanceYaml = (
   template: TemplateType,
   instanceName: string
@@ -167,7 +195,7 @@ export const handleTemplateToInstanceYaml = (
       templateType: templateType || template_type,
       categories: categories || [],
       defaults: defaults || {},
-      inputs: inputs || {},
+      inputs: sanitizeInstanceInputs(inputs),
       author: author || '',
       title: title || '',
       url: url || '',

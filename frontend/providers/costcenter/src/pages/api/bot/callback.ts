@@ -1,3 +1,4 @@
+import { Config } from '@/config';
 import { makeAPIClient } from '@/service/backend/region';
 import {
   callbackToUpdateBot,
@@ -23,7 +24,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
       }
 
       // !todo
-      if (token === global.AppConfig.costCenter.invoice.feishApp.token) {
+      if (token === Config().costCenter.invoice.feishuApp.token) {
         return resp.json({ challenge });
       }
     } else {
@@ -52,8 +53,8 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
         !event ||
         schema !== '2.0' ||
         !header ||
-        header.token !== global.AppConfig.costCenter.invoice.feishApp.token ||
-        header.app_id !== global.AppConfig.costCenter.invoice.feishApp.appId
+        header.token !== Config().costCenter.invoice.feishuApp.token ||
+        header.app_id !== Config().costCenter.invoice.feishuApp.appId
       ) {
         throw Error('feishu request error');
       }
@@ -79,7 +80,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
       const setStatusRes = await client.post('/account/v1alpha1/invoice/set-status', {
         invoiceIDList: [invoiceId],
         status,
-        token: AppConfig.costCenter.invoice.serviceToken
+        token: Config().costCenter.invoice.serviceToken
       });
       if (setStatusRes.status !== 200) {
         console.log(setStatusRes.data);
@@ -88,7 +89,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
 
       // const getUrl = makeAPIClient(null, '/account/v1alpha1/invoice/get');
       const getInvoiceRes = await client.post('/account/v1alpha1/invoice/get', {
-        token: AppConfig.costCenter.invoice.serviceToken,
+        token: Config().costCenter.invoice.serviceToken,
         invoiceID: invoiceId,
         page: 1,
         pageSize: 10,

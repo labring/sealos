@@ -35,4 +35,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-data/config.yaml.local
+data/*
+!data/config.example.yaml

@@ -5,6 +5,26 @@ import { pauseApp, createK8sContext } from '@/services/backend';
 import { withErrorHandler } from '@/services/backend/middleware';
 import { ResponseCode } from '@/types/response';
 
+const sanitizeUrl = (value?: string | string[]) => {
+  const url = Array.isArray(value) ? value[0] : value;
+  if (!url) return undefined;
+
+  try {
+    const parsed = new URL(url);
+    return `${parsed.origin}${parsed.pathname}`;
+  } catch {
+    return url.split('?')[0];
+  }
+};
+
+const getRequestSource = (req: NextApiRequest) => ({
+  method: req.method,
+  forwardedFor: req.headers['x-forwarded-for'],
+  realIp: req.headers['x-real-ip'],
+  userAgent: req.headers['user-agent'],
+  referer: sanitizeUrl(req.headers.referer)
+});
+
 export default withErrorHandler(async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ApiResp>
@@ -19,7 +39,26 @@ export default withErrorHandler(async function handler(
   }
 
   const k8s = await createK8sContext(req);
-  await pauseApp(appName, k8s);
+  const logPayload = {
+    action: 'pause',
+    appName,
+    namespace: k8s.namespace,
+    user: k8s.kube_user?.name,
+    request: getRequestSource(req)
+  };
+
+  console.info('[applaunchpad app operation] received', logPayload);
+
+  try {
+    await pauseApp(appName, k8s);
+    console.info('[applaunchpad app operation] succeeded', logPayload);
+  } catch (error) {
+    console.error('[applaunchpad app operation] failed', {
+      ...logPayload,
+      error
+    });
+    throw error;
+  }
 
   jsonRes(res, {
     message: 'App paused successfully'

@@ -1,4 +1,4 @@
-import useEnvStore from '@/stores/env';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import { useTranslation } from 'next-i18next';
 import { formatMoney } from '@/utils/format';
 import {
@@ -29,7 +29,7 @@ export type PricePayload = {
 
 export function PriceTablePanel({ priceData }: { priceData: PricePayload[] }) {
   const { t } = useTranslation();
-  const gpuEnabled = useEnvStore((state) => state.gpuEnabled);
+  const config = useClientAppConfig();
 
   const gpuData = priceData.filter((x) => x.isGpu);
   const otherData = priceData.filter((x) => !x.isGpu);
@@ -161,7 +161,7 @@ export function PriceTablePanel({ priceData }: { priceData: PricePayload[] }) {
             )}
 
             {/* GPU Section */}
-            {gpuEnabled && gpuData.length > 0 && (
+            {config.features.gpuEnabled && gpuData.length > 0 && (
               <>
                 <SectionHeader title={t('common:gpu_valuation')} />
                 {renderDataRows(gpuData)}

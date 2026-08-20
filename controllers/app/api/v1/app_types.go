@@ -58,12 +58,14 @@ type AppSpec struct {
 	AppMeta `json:",inline"`
 
 	//+kubebuilder:validation:Optional
+	Position float64 `json:"position,omitempty"`
+
+	//+kubebuilder:validation:Optional
 	I18N *map[string]AppMeta `json:"i18n,omitempty"`
 }
 
 // AppStatus defines the observed state of App
-type AppStatus struct {
-}
+type AppStatus struct{}
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status

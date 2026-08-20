@@ -18,7 +18,7 @@
     "i18n-ally.pathMatcher": "{locale}/{namespaces}.json",
     "i18n-ally.extract.targetPickingStrategy": "most-similar-by-key",
     "[typescriptreact]": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode"
+        "editor.defaultFormatter": "vscode.typescript-language-features"
     },
     "[typescript]": {
         "editor.defaultFormatter": "esbenp.prettier-vscode"

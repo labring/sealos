@@ -51,7 +51,11 @@ func (v *VLogsQuery) generatePodListQuery(req *api.VlogsLaunchpadRequest) string
 			EscapeSingleQuoted(req.App),
 		)
 	} else {
-		item = fmt.Sprintf(`{namespace='%s'}  app:='%s' | Drop _stream_id,_stream,app,job,namespace,node`, EscapeSingleQuoted(req.Namespace), EscapeSingleQuoted(req.App))
+		item = fmt.Sprintf(
+			`{namespace='%s'}  app:='%s' | Drop _stream_id,_stream,app,job,namespace,node`,
+			EscapeSingleQuoted(req.Namespace),
+			EscapeSingleQuoted(req.App),
+		)
 	}
 	v.query += item
 	return v.query
@@ -101,14 +105,12 @@ func (v *VLogsQuery) generateStreamQuery(req *api.VlogsLaunchpadRequest) {
 	switch {
 	case len(req.Pod) == 0 && len(req.Container) == 0:
 		// Generate query based only on namespace
-		builder.WriteString(fmt.Sprintf(`{namespace='%s'}`, namespace))
+		fmt.Fprintf(&builder, `{namespace='%s'}`, namespace)
 	case len(req.Pod) == 0:
 		// Generate query based on container
 		for i, container := range req.Container {
 			container := EscapeSingleQuoted(container)
-			builder.WriteString(
-				fmt.Sprintf(`{container='%s',namespace='%s'}`, container, namespace),
-			)
+			fmt.Fprintf(&builder, `{container='%s',namespace='%s'}`, container, namespace)
 			if i != len(req.Container)-1 {
 				builder.WriteString(" OR ")
 			}
@@ -117,7 +119,7 @@ func (v *VLogsQuery) generateStreamQuery(req *api.VlogsLaunchpadRequest) {
 		// Generate query based on pod
 		for i, pod := range req.Pod {
 			pod := EscapeSingleQuoted(pod)
-			builder.WriteString(fmt.Sprintf(`{pod='%s',namespace='%s'}`, pod, namespace))
+			fmt.Fprintf(&builder, `{pod='%s',namespace='%s'}`, pod, namespace)
 			if i != len(req.Pod)-1 {
 				builder.WriteString(" OR ")
 			}
@@ -128,14 +130,10 @@ func (v *VLogsQuery) generateStreamQuery(req *api.VlogsLaunchpadRequest) {
 			for j, pod := range req.Pod {
 				container := EscapeSingleQuoted(container)
 				pod := EscapeSingleQuoted(pod)
-				builder.WriteString(
-					fmt.Sprintf(
-						`{container='%s',namespace='%s',pod='%s'}`,
-						container,
-						namespace,
-						pod,
-					),
-				)
+				fmt.Fprintf(&builder, `{container='%s',namespace='%s',pod='%s'}`,
+					container,
+					namespace,
+					pod)
 				if i != len(req.Container)-1 || j != len(req.Pod)-1 {
 					builder.WriteString(" OR ")
 				}

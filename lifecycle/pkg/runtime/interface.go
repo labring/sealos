@@ -28,8 +28,13 @@ type Ruler interface {
 	SyncNodeIPVS(masters, nodes []string) error
 }
 
+type CertRenewOptions struct {
+	Targets []string
+	Groups  []string
+}
+
 type CertManager interface {
-	Renew() error
+	Renew(opts CertRenewOptions) error
 	UpdateCertSANs(certSANs []string) error
 }
 

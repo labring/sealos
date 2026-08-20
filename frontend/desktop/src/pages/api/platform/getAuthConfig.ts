@@ -46,7 +46,8 @@ function genResAuthClientConfig(conf: AuthConfigType) {
       google: {
         enabled: !!conf.idp.google?.enabled,
         clientID: conf.idp.google?.clientID || '',
-        proxyAddress: conf.idp.google?.proxyAddress || ''
+        proxyAddress: conf.idp.google?.proxyAddress || '',
+        oneTapOrigins: conf.idp.google?.oneTapOrigins || []
       },
       oauth2: {
         enabled: !!conf.idp.oauth2?.enabled,

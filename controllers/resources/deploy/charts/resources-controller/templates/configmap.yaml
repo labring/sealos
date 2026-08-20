@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.configmap.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    control-plane: controller-manager
+    {{- include "resources.labels" . | nindent 4 }}
+data:
+  {{- $data := dict
+      "MONGO_URI" .Values.configmap.mongoURI
+      "TRAFFIC_MONGO_URI" .Values.configmap.trafficMongoURI
+      "TRAFFICS_SERVICE_CONNECT_ADDRESS" .Values.configmap.trafficsServiceConnectAddress
+      "MINIO_ENDPOINT" .Values.configmap.minioEndpoint
+      "MINIO_AK" .Values.configmap.minioAK
+      "MINIO_SK" .Values.configmap.minioSK
+      "MINIO_METRICS_ADDR" .Values.configmap.minioMetricsAddr
+      "MINIO_METRICS_SECURE" .Values.configmap.minioMetricsSecure
+      "PROM_URL" .Values.configmap.promURL
+      "OBJECT_STORAGE_INSTANCE" .Values.configmap.objectStorageInstance
+      "ENABLE_AUTO_RESOURCE_QUOTA" .Values.configmap.enableAutoResourceQuota
+      "CONCURRENT_LIMIT" .Values.configmap.concurrentLimit
+      "EPHEMERAL_STORAGE_CHARGE_THRESHOLD" .Values.configmap.ephemeralStorageChargeThreshold
+      "LIMIT_QUOTA_EXPANSION_CYCLE" .Values.configmap.limitQuotaExpansionCycle
+  -}}
+  {{- if eq (default "overwrite" .Values.configmapMergeStrategy) "preserve" }}
+  {{- $existing := (lookup "v1" "ConfigMap" .Release.Namespace .Values.configmap.name) }}
+  {{- if $existing }}
+  {{- range $k, $v := $existing.data }}
+  {{- $_ := set $data $k $v }}
+  {{- end }}
+  {{- end }}
+  {{- end }}
+  {{- range $k, $v := $data }}
+  {{ $k }}: {{ $v | quote }}
+  {{- end }}

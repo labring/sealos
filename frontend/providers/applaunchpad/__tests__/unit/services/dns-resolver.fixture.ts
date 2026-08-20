@@ -599,6 +599,22 @@ export const dnsFixtures: DNSFixtures = {
 
     // NS server: 198.41.0.4 (a.root-servers.net)
     '198.41.0.4': {
+      [queryKey('test', 'NS')]: {
+        request: { name: 'test', type: 'NS' },
+        response: createDnsResponse(
+          61000,
+          [{ name: 'test', type: 'NS' }],
+          [],
+          [
+            { name: 'test', type: 'NS', ttl: 86400, data: 'a.test-servers.example' },
+            { name: 'test', type: 'NS', ttl: 86400, data: 'b.test-servers.example' }
+          ],
+          [
+            { name: 'a.test-servers.example', type: 'A', ttl: 172800, data: '192.0.2.1' },
+            { name: 'b.test-servers.example', type: 'A', ttl: 172800, data: '192.0.2.2' }
+          ]
+        )
+      },
       [queryKey('org', 'NS')]: {
         request: { name: 'org', type: 'NS' },
         response: createDnsResponse(
@@ -894,6 +910,22 @@ export const dnsFixtures: DNSFixtures = {
 
     // Local DNS resolvers (8.8.8.8, 1.1.1.1) - used by getAuthoritativeNsFromLocal
     '8.8.8.8': {
+      [queryKey('test', 'NS')]: {
+        request: { name: 'test', type: 'NS' },
+        response: createDnsResponse(
+          61000,
+          [{ name: 'test', type: 'NS' }],
+          [],
+          [
+            { name: 'test', type: 'NS', ttl: 86400, data: 'a.test-servers.example' },
+            { name: 'test', type: 'NS', ttl: 86400, data: 'b.test-servers.example' }
+          ],
+          [
+            { name: 'a.test-servers.example', type: 'A', ttl: 172800, data: '192.0.2.1' },
+            { name: 'b.test-servers.example', type: 'A', ttl: 172800, data: '192.0.2.2' }
+          ]
+        )
+      },
       [queryKey('example.org', 'NS')]: {
         request: { name: 'example.org', type: 'NS' },
         response: createDnsResponse(
@@ -1241,6 +1273,91 @@ export const dnsFixtures: DNSFixtures = {
       }
     },
 
+    // NS server: 192.0.2.1 (a.test-servers.example)
+    '192.0.2.1': {
+      [queryKey('example.test', 'NS')]: {
+        request: { name: 'example.test', type: 'NS' },
+        response: createDnsResponse(
+          61001,
+          [{ name: 'example.test', type: 'NS' }],
+          [],
+          [
+            { name: 'example.test', type: 'NS', ttl: 86400, data: 'ns1.example.test' },
+            { name: 'example.test', type: 'NS', ttl: 86400, data: 'ns2.example.test' }
+          ],
+          [
+            { name: 'ns1.example.test', type: 'A', ttl: 172800, data: '198.51.100.1' },
+            { name: 'ns2.example.test', type: 'A', ttl: 172800, data: '198.51.100.2' }
+          ]
+        )
+      },
+      [queryKey('app.platform.example.test', 'NS')]: {
+        request: { name: 'app.platform.example.test', type: 'NS' },
+        response: createDnsResponse(
+          61002,
+          [{ name: 'app.platform.example.test', type: 'NS' }],
+          [],
+          [{ name: 'example.test', type: 'NS', ttl: 86400, data: 'ns1.example.test' }],
+          [{ name: 'ns1.example.test', type: 'A', ttl: 172800, data: '198.51.100.1' }]
+        )
+      }
+    },
+
+    // NS server: 198.51.100.1 (ns1.example.test)
+    '198.51.100.1': {
+      [queryKey('app.platform.example.test', 'NS')]: {
+        request: { name: 'app.platform.example.test', type: 'NS' },
+        response: createDnsResponse(
+          61003,
+          [{ name: 'app.platform.example.test', type: 'NS' }],
+          [],
+          [
+            {
+              name: 'example.test',
+              type: 'SOA',
+              ttl: 600,
+              data: 'ns1.example.test hostmaster.example.test 1 3600 600 86400 600'
+            }
+          ]
+        )
+      },
+      [queryKey('app.platform.example.test', 'CNAME')]: {
+        request: { name: 'app.platform.example.test', type: 'CNAME' },
+        response: createDnsResponse(
+          61004,
+          [{ name: 'app.platform.example.test', type: 'CNAME' }],
+          [
+            {
+              name: 'app.platform.example.test',
+              type: 'CNAME',
+              ttl: 300,
+              data: 'target.platform.example.test'
+            }
+          ]
+        )
+      }
+    },
+
+    // NS server: 203.0.113.2 (soa-only.example.test)
+    '203.0.113.2': {
+      [queryKey('soa-only.example.test', 'NS')]: {
+        request: { name: 'soa-only.example.test', type: 'NS' },
+        response: createDnsResponse(
+          62002,
+          [{ name: 'soa-only.example.test', type: 'NS' }],
+          [],
+          [
+            {
+              name: 'soa-only.example.test',
+              type: 'SOA',
+              ttl: 600,
+              data: 'ns1.soa-only.example.test hostmaster.soa-only.example.test 1 3600 600 86400 600'
+            }
+          ]
+        )
+      }
+    },
+
     // For resolveWithNs multi-nameserver test: good nameserver (returns success)
     '10.0.0.1': {
       [queryKey('test.example.org', 'A')]: {
@@ -1264,6 +1381,18 @@ export const dnsFixtures: DNSFixtures = {
     'a.root-servers.net': {
       ipv4: '198.41.0.4',
       ipv6: '2001:503:ba3e::2:30'
+    },
+    'a.test-servers.example': {
+      ipv4: '192.0.2.1'
+    },
+    'b.test-servers.example': {
+      ipv4: '192.0.2.2'
+    },
+    'ns1.example.test': {
+      ipv4: '198.51.100.1'
+    },
+    'ns2.example.test': {
+      ipv4: '198.51.100.2'
     },
     'a0.org.afilias-nst.info': {
       ipv4: '199.19.56.1',

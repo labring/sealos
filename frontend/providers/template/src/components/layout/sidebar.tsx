@@ -1,14 +1,35 @@
-import { useSystemConfigStore } from '@/store/config';
 import { useSearchStore } from '@/store/search';
+import { ApplicationType, SideBarMenuType } from '@/types/app';
 import { Flex, Text } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
+import { useMemo } from 'react';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
+import { getCategoryLabel } from '@/utils/template';
 
 export default function SideBar() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { appType, setAppType } = useSearchStore();
   const router = useRouter();
-  const { sideBarMenu } = useSystemConfigStore();
+  const clientAppConfig = useClientAppConfig();
+
+  const sideBarMenu: SideBarMenuType[] = useMemo(() => {
+    const base: SideBarMenuType[] = [
+      {
+        id: 'applications',
+        type: ApplicationType.All,
+        value: t('SideBar.Applications')
+      }
+    ];
+
+    const menus: SideBarMenuType[] = clientAppConfig.categories.map((category) => ({
+      id: category.slug,
+      type: category.slug as ApplicationType,
+      value: getCategoryLabel(category, i18n.language)
+    }));
+
+    return [...base, ...menus];
+  }, [clientAppConfig.categories, i18n.language, t]);
 
   return (
     <Flex flexDirection="column" mt="8px" flex={1}>
@@ -29,7 +50,9 @@ export default function SideBar() {
               cursor={'pointer'}
               id={item.id}
               onClick={() => {
-                router.replace('/');
+                if (router.pathname !== '/') {
+                  router.replace('/');
+                }
                 setAppType(item.type);
               }}
             >
@@ -38,7 +61,7 @@ export default function SideBar() {
                 fontSize={'14px'}
                 fontWeight={500}
               >
-                {t(item.value)}
+                {item.value}
               </Text>
             </Flex>
           );

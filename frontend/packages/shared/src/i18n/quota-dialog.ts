@@ -48,6 +48,7 @@ export const quotaDialogI18n: Record<SupportedLang, QuotaDialogI18nConfig> = {
       cpu: 'CPU',
       memory: '内存',
       storage: '存储卷',
+      pod: 'Pod',
       gpu: 'GPU',
       traffic: '流量',
       nodeport: '端口'
@@ -76,6 +77,7 @@ export const quotaDialogI18n: Record<SupportedLang, QuotaDialogI18nConfig> = {
       cpu: 'CPU',
       memory: 'Memory',
       storage: 'Storage',
+      pod: 'Pods',
       gpu: 'GPU',
       traffic: 'Traffic',
       nodeport: 'Port'

@@ -1,11 +1,11 @@
 import { useGuideStore } from '@/store/guide';
-import { Flex, Text, Box, Center, Image, Portal } from '@chakra-ui/react';
 import { driver } from '@sealos/driver';
 import { Config } from '@sealos/driver/src/config';
 import { track } from '@sealos/gtm';
 import { CircleCheckBig, X } from 'lucide-react';
 import { TFunction } from 'next-i18next';
 import { sealosApp } from 'sealos-desktop-sdk/app';
+import Image from 'next/image';
 
 let currentDriver: any = null;
 
@@ -52,14 +52,11 @@ export const applistDriverObj = (t: TFunction, nextStep: () => void): Config => 
         borderRadius: '12px 12px 12px 12px',
 
         PopoverBody: (
-          <Box width={'250px'} bg={'#2563EB'} p={'12px'} borderRadius={'12px'} color={'#fff'}>
-            <Flex alignItems={'center'} justifyContent={'space-between'}>
-              <Text color={'#fff'} fontSize={'14px'} fontWeight={600}>
-                {t('driver.create_launchpad')}
-              </Text>
-              <Box
-                cursor={'pointer'}
-                ml={'auto'}
+          <div className="w-[250px] bg-[#2563EB] p-3 rounded-xl text-white">
+            <div className="flex items-center justify-between">
+              <div className="text-white text-sm font-semibold">{t('driver.create_launchpad')}</div>
+              <div
+                className="cursor-pointer ml-auto"
                 onClick={() => {
                   track('guide_exit', {
                     module: 'guide',
@@ -73,25 +70,15 @@ export const applistDriverObj = (t: TFunction, nextStep: () => void): Config => 
                 }}
               >
                 <X width={'16px'} height={'16px'} />
-              </Box>
-            </Flex>
-            <Text mt={'8px'} color={'#FFFFFFCC'} fontSize={'14px'} fontWeight={400}>
+              </div>
+            </div>
+            <div className="mt-2 text-white/80 text-sm font-normal">
               {t('driver.define_settings')}
-            </Text>
-            <Flex justifyContent={'space-between'} alignItems={'center'} mt={'16px'}>
-              <Text color={'grayModern.900'} fontSize={'13px'} fontWeight={500}>
-                2/4
-              </Text>
-              <Center
-                color={'#fff'}
-                fontSize={'14px'}
-                fontWeight={500}
-                cursor={'pointer'}
-                borderRadius={'8px'}
-                background={'rgba(255, 255, 255, 0.20)'}
-                w={'fit-content'}
-                h={'32px'}
-                p={'8px'}
+            </div>
+            <div className="flex justify-between items-center mt-4">
+              <div className="text-gray-900 text-[13px] font-medium">2/4</div>
+              <div
+                className="text-white text-sm font-medium cursor-pointer rounded-lg bg-white/20 w-fit h-8 px-2 flex items-center justify-center"
                 onClick={() => {
                   currentDriver.destroy();
                   currentDriver = null;
@@ -99,9 +86,9 @@ export const applistDriverObj = (t: TFunction, nextStep: () => void): Config => 
                 }}
               >
                 {t('driver.next')}
-              </Center>
-            </Flex>
-          </Box>
+              </div>
+            </div>
+          </div>
         )
       }
     }
@@ -164,14 +151,13 @@ export const detailDriverObj = (t: TFunction): Config => ({
         align: 'center',
         borderRadius: '12px 12px 12px 12px',
         PopoverBody: (
-          <Box width={'250px'} bg={'#2563EB'} p={'12px'} borderRadius={'12px'} color={'#fff'}>
-            <Flex alignItems={'center'} justifyContent={'space-between'}>
-              <Text color={'#fff'} fontSize={'14px'} fontWeight={600}>
+          <div className="w-[250px] bg-[#2563EB] p-3 rounded-xl text-white">
+            <div className="flex items-center justify-between">
+              <div className="text-white text-sm font-semibold">
                 {t('driver.access_application')}
-              </Text>
-              <Box
-                cursor={'pointer'}
-                ml={'auto'}
+              </div>
+              <div
+                className="cursor-pointer ml-auto"
                 onClick={() => {
                   track('guide_exit', {
                     module: 'guide',
@@ -184,28 +170,14 @@ export const detailDriverObj = (t: TFunction): Config => ({
                 }}
               >
                 <X width={'16px'} height={'16px'} />
-              </Box>
-            </Flex>
-            <Text mt={'8px'} color={'#FFFFFFCC'} fontSize={'14px'} fontWeight={400}>
-              {t('driver.copy_address')}
-            </Text>
-            <Text color={'#FFFFFFCC'} fontSize={'14px'} fontWeight={400}>
-              {t('driver.click_anywhere')}
-            </Text>
-            <Flex alignItems={'center'} justifyContent={'space-between'} mt={'16px'}>
-              <Text color={'grayModern.900'} fontSize={'13px'} fontWeight={500}>
-                4/4
-              </Text>
-              <Center
-                color={'#fff'}
-                fontSize={'14px'}
-                fontWeight={500}
-                cursor={'pointer'}
-                borderRadius={'8px'}
-                background={'rgba(255, 255, 255, 0.20)'}
-                w={'fit-content'}
-                h={'32px'}
-                p={'8px'}
+              </div>
+            </div>
+            <div className="mt-2 text-white/80 text-sm font-normal">{t('driver.copy_address')}</div>
+            <div className="text-white/80 text-sm font-normal">{t('driver.click_anywhere')}</div>
+            <div className="flex items-center justify-between mt-4">
+              <div className="text-gray-900 text-[13px] font-medium">4/4</div>
+              <div
+                className="text-white text-sm font-medium cursor-pointer rounded-lg bg-white/20 w-fit h-8 px-2 flex items-center justify-center"
                 onClick={() => {
                   track('guide_complete', {
                     module: 'guide',
@@ -218,9 +190,9 @@ export const detailDriverObj = (t: TFunction): Config => ({
                 }}
               >
                 {t('driver.next')}
-              </Center>
-            </Flex>
-          </Box>
+              </div>
+            </div>
+          </div>
         )
       }
     }
@@ -275,29 +247,28 @@ export const quitGuideDriverObj = (t: TFunction, nextStep?: () => void): Config 
         side: 'bottom',
         align: 'end',
         PopoverBody: (
-          <Box color={'black'} borderRadius={'16px'} w={'460px'}>
-            <Box w={'100%'} borderRadius={'16px'} px={'24px'}>
-              <Box>
-                <Box mt={'32px'}>
+          <div className="text-black rounded-2xl w-[460px]">
+            <div className="w-full rounded-2xl px-6">
+              <div>
+                <div className="mt-8">
                   <CircleCheckBig size={32} color="#2563EB" />
-                </Box>
-                <Text my={'8px'} color={'#000'} fontSize={'20px'} fontWeight={600}>
+                </div>
+                <div className="my-2 text-black text-xl font-semibold">
                   {t('driver.still_here')}
-                </Text>
-                <Text mt={'8px'} color={'#404040'} fontSize={'14px'} fontWeight={400}>
+                </div>
+                <div className="mt-2 text-[#404040] text-sm font-normal">
                   {t('driver.find_guide_tip')}
-                </Text>
-                <Image mt={'20px'} src={'/guide-image.png'} alt="guide" />
-              </Box>
-              <Center
-                mt={'20px'}
-                h={'40px'}
-                borderRadius={'8px'}
-                border={'1px solid #E4E4E7'}
-                background={'#FFF'}
-                cursor={'pointer'}
-                py={'20px'}
-                px={'24px'}
+                </div>
+                <Image
+                  className="mt-5"
+                  src="/guide-image.png"
+                  alt="guide"
+                  width={412}
+                  height={300}
+                />
+              </div>
+              <div
+                className="mt-5 h-10 rounded-lg border border-[#E4E4E7] bg-white cursor-pointer py-5 px-6 flex items-center justify-center"
                 onClick={() => {
                   if (currentDriver) {
                     currentDriver.destroy();
@@ -307,17 +278,9 @@ export const quitGuideDriverObj = (t: TFunction, nextStep?: () => void): Config 
                 }}
               >
                 {t('driver.create_launchpad')}
-              </Center>
-              <Center
-                mt={'12px'}
-                mb={'20px'}
-                h={'40px'}
-                borderRadius={'8px'}
-                border={'1px solid #E4E4E7'}
-                background={'#FFF'}
-                cursor={'pointer'}
-                py={'20px'}
-                px={'24px'}
+              </div>
+              <div
+                className="mt-3 mb-5 h-10 rounded-lg border border-[#E4E4E7] bg-white cursor-pointer py-5 px-6 flex items-center justify-center"
                 onClick={() => {
                   if (currentDriver) {
                     currentDriver.destroy();
@@ -331,9 +294,9 @@ export const quitGuideDriverObj = (t: TFunction, nextStep?: () => void): Config 
                 }}
               >
                 {t('driver.quit_guide')}
-              </Center>
-            </Box>
-          </Box>
+              </div>
+            </div>
+          </div>
         )
       }
     }

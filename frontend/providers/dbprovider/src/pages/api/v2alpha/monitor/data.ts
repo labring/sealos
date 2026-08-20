@@ -1,11 +1,10 @@
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
-import { jsonRes } from '@/services/backend/response';
 import { handleAxiosStream } from '@/services/handleStream';
 import { ApiResp } from '@/services/kubernet';
 import { AdapterChartDataType, MonitorChartDataResult, MonitorDBResult } from '@/types/monitor';
-import { ResponseCode, ResponseMessages } from '@/types/response';
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { sendError, ErrorType, ErrorCode } from '@/types/v2alpha/error';
 
 const AdapterChartData: AdapterChartDataType = {
   disk: (data: MonitorDBResult) => {
@@ -62,17 +61,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   try {
     const kubeconfig = await authSession(req).catch(() => null);
     if (!kubeconfig) {
-      return jsonRes(res, {
-        code: ResponseCode.UNAUTHORIZED,
-        message: ResponseMessages[ResponseCode.UNAUTHORIZED]
+      return sendError(res, {
+        status: 401,
+        type: ErrorType.AUTHENTICATION_ERROR,
+        code: ErrorCode.AUTHENTICATION_REQUIRED,
+        message: 'Unauthorized, please login again.'
       });
     }
 
     const k8s = await getK8s({ kubeconfig }).catch(() => null);
     if (!k8s) {
-      return jsonRes(res, {
-        code: ResponseCode.UNAUTHORIZED,
-        message: ResponseMessages[ResponseCode.UNAUTHORIZED]
+      return sendError(res, {
+        status: 401,
+        type: ErrorType.AUTHENTICATION_ERROR,
+        code: ErrorCode.AUTHENTICATION_REQUIRED,
+        message: 'Unauthorized, please login again.'
       });
     }
     const { namespace } = k8s;
@@ -101,16 +104,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       return AdapterChartData[queryKey] ? AdapterChartData[queryKey](res as MonitorDBResult) : res;
     });
 
-    jsonRes(res, {
+    return res.status(200).json({
       code: 200,
-      data: {
-        result
-      }
-    });
-  } catch (error) {
-    jsonRes(res, {
-      code: 500,
-      error: error
+      data: { result }
+    } as any);
+  } catch (error: any) {
+    return sendError(res, {
+      status: 500,
+      type: ErrorType.INTERNAL_ERROR,
+      code: ErrorCode.INTERNAL_ERROR,
+      message: 'Failed to retrieve monitor data.',
+      details: error?.message || String(error)
     });
   }
 }

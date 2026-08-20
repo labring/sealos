@@ -1,12 +1,18 @@
+import { Config } from '@/config';
 import { createDatabaseSchemas } from '@/types/apis';
+import {
+  getEffectiveParameterConfig,
+  isMysql5742,
+  supportsParameterConfigDbType
+} from '../database-config';
 import { getK8s } from '../kubernetes';
 import { z } from 'zod';
-import { BackupSupportedDBTypeList, DBTypeEnum } from '@/constants/db';
+import { BackupSupportedDBTypeList } from '@/constants/db';
 import { updateBackupPolicyApi } from '@/pages/api/backup/updatePolicy';
 import { KbPgClusterType } from '@/types/cluster';
 import { adaptDBDetail, convertBackupFormToSpec } from '@/utils/adapt';
 import { json2Account, json2CreateCluster, json2ParameterConfig } from '@/utils/json2Yaml';
-import { DBEditType, EditType } from '@/types/db';
+import { DBEditType } from '@/types/db';
 import { getScore } from '@/utils/tools';
 
 const schema2Raw = (dbForm: z.Infer<typeof createDatabaseSchemas.body>): DBEditType => {
@@ -115,7 +121,7 @@ export async function createDatabase(
 
   const account = json2Account(rawDbForm);
   const cluster = json2CreateCluster(rawDbForm, undefined, {
-    storageClassName: process.env.STORAGE_CLASSNAME
+    storageClassName: Config().dbprovider.storage.forcedClassName ?? undefined
   });
 
   console.log('Generated cluster config preview:', {
@@ -127,22 +133,36 @@ export async function createDatabase(
 
   const yamlList = [account, cluster];
 
-  if (['postgresql', 'apecloud-mysql', 'mongodb', 'redis'].includes(rawDbForm.dbType)) {
-    if (!(rawDbForm.dbType === 'apecloud-mysql' && rawDbForm.dbVersion === 'mysql-5.7.42')) {
-      let dynamicMaxConnections: number = 0;
-      try {
-        dynamicMaxConnections = getScore(rawDbForm.dbType, rawDbForm.cpu, rawDbForm.memory);
-      } catch (error) {
-        console.warn('Failed to calculate dynamic max connections:', error);
+  if (supportsParameterConfigDbType(rawDbForm.dbType)) {
+    const mysql5742 = isMysql5742(rawDbForm.dbType, rawDbForm.dbVersion);
+    const tz = rawDbForm.parameterConfig?.timeZone;
+    const shouldApplyMysql5742Timezone = mysql5742 && !!tz;
 
-        dynamicMaxConnections = 0;
+    // For MySQL 5.7.42, only configure default-time-zone (derived from timeZone).
+    if (!mysql5742 || shouldApplyMysql5742Timezone) {
+      let dynamicMaxConnections: number | undefined = undefined;
+      if (!mysql5742) {
+        try {
+          dynamicMaxConnections = getScore(rawDbForm.dbType, rawDbForm.cpu, rawDbForm.memory);
+        } catch (error) {
+          console.warn('Failed to calculate dynamic max connections:', error);
+          dynamicMaxConnections = 0;
+        }
       }
+
+      const effectiveParameterConfig = getEffectiveParameterConfig({
+        mode: 'create',
+        dbType: rawDbForm.dbType,
+        incomingParameterConfig: shouldApplyMysql5742Timezone
+          ? { timeZone: tz as string }
+          : rawDbForm.parameterConfig || {}
+      });
 
       const config = json2ParameterConfig(
         rawDbForm.dbName,
         rawDbForm.dbType,
         rawDbForm.dbVersion,
-        rawDbForm.parameterConfig || {},
+        effectiveParameterConfig,
         dynamicMaxConnections
       );
 

@@ -25,8 +25,9 @@ import Head from 'next/head';
 import { useMessage } from '@sealos/ui';
 import { ResponseCode } from '@/types/response';
 import { useGuideStore } from '@/store/guide';
-import { useSystemConfigStore } from '@/store/config';
 import { useQuotaGuarded } from '@sealos/shared';
+import { Config } from '@/config';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 const Header = dynamic(() => import('./components/Header'), { ssr: false });
@@ -58,8 +59,8 @@ export default function EditApp({
   const [errorMessage, setErrorMessage] = useState('');
   const [errorCode, setErrorCode] = useState<ResponseCode>();
   const { setCached, cached, insideCloud, deleteCached, setInsideCloud } = useCachedStore();
-  const { setEnvs } = useSystemConfigStore();
   const { setAppType } = useSearchStore();
+  const clientAppConfig = useClientAppConfig();
 
   const detailName = useMemo(
     () => templateSource?.source?.defaults?.app_name?.value || '',
@@ -70,9 +71,6 @@ export default function EditApp({
     ['getPlatformEnvs'],
     () => getPlatformEnv({ insideCloud }),
     {
-      onSuccess(data) {
-        setEnvs(data);
-      },
       retry: 3
     }
   );
@@ -137,18 +135,6 @@ export default function EditApp({
   const handleOutside = useCallback(async () => {
     setCached(JSON.stringify({ ...formHook.getValues(), cachedKey: templateName }));
 
-    // Ensure platformEnvs is loaded
-    let envs = platformEnvs;
-    if (!envs?.DESKTOP_DOMAIN) {
-      try {
-        envs = await getPlatformEnv({ insideCloud });
-        setEnvs(envs);
-      } catch (error) {
-        console.error('Failed to get platform envs:', error);
-        return;
-      }
-    }
-
     const params = new URLSearchParams();
     ['k', 's', 'bd_vid'].forEach((param) => {
       const value = router.query[param];
@@ -159,7 +145,7 @@ export default function EditApp({
 
     const queryString = params.toString();
 
-    const baseUrl = `https://${envs.DESKTOP_DOMAIN}/`;
+    const baseUrl = `https://${clientAppConfig.desktopDomain}/`;
     const encodedTemplateQuery = encodeURIComponent(
       `?templateName=${templateName}&sealos_inside=true`
     );
@@ -169,7 +155,7 @@ export default function EditApp({
     }`;
 
     window.open(href, '_self');
-  }, [router, templateName, platformEnvs, setCached, formHook, insideCloud, setEnvs]);
+  }, [router, templateName, setCached, formHook, clientAppConfig]);
 
   const handleInside = useCallback(async () => {
     const yamls = yamlList.map((item) => item.value);
@@ -234,7 +220,9 @@ export default function EditApp({
     return usage;
   }, [yamlList]);
 
-  const handleCreateApp = useQuotaGuarded(
+  const createApp = () => formHook.handleSubmit(openConfirm(submitSuccess), submitError)();
+
+  const handleCreateAppInCloud = useQuotaGuarded(
     {
       requirements: {
         cpu: usage.cpu.max,
@@ -248,7 +236,7 @@ export default function EditApp({
       showRequirements: ['cpu', 'memory', 'nodeport', 'storage']
     },
     () => {
-      formHook.handleSubmit(openConfirm(submitSuccess), submitError)();
+      createApp();
     }
   );
 
@@ -406,7 +394,7 @@ export default function EditApp({
             title={title}
             yamlList={yamlList}
             applyBtnText={insideCloud ? applyBtnText : 'Deploy on sealos'}
-            applyCb={handleCreateApp}
+            applyCb={insideCloud ? handleCreateAppInCloud : createApp}
             isResourcesReady={isResourcesReady}
           />
           <Flex w="100%" mt="32px" flexDirection="column">
@@ -436,8 +424,11 @@ export default function EditApp({
 }
 
 export async function getServerSideProps(content: any) {
-  const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || 'Sealos';
+  const forcedLanguage = Config().template.ui.forcedLanguage;
+  const brandName = Config().template.ui.brandName;
+
   const locale =
+    forcedLanguage ||
     content?.req?.cookies?.NEXT_LOCALE ||
     compareFirstLanguages(content?.req?.headers?.['accept-language'] || 'zh');
   const appName = content?.query?.templateName || '';

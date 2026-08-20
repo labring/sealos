@@ -68,7 +68,7 @@ func CaList(CertPath, CertEtcdPath string) []Config {
 	}
 }
 
-func List(CertPath, CertEtcdPath string) []Config {
+func List(CertPath, CertEtcdPath string, identity localIdentityModel) []Config {
 	return []Config{
 		{
 			Path:         CertPath,
@@ -97,7 +97,7 @@ func List(CertPath, CertEtcdPath string) []Config {
 			BaseName:     "apiserver-kubelet-client",
 			CAName:       "kubernetes",
 			CommonName:   "kube-apiserver-kubelet-client",
-			Organization: []string{"system:masters"},
+			Organization: identity.APIServerKubeletOrganizations,
 			Year:         100,
 			AltNames:     AltNames{},
 			Usages:       []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
@@ -119,7 +119,7 @@ func List(CertPath, CertEtcdPath string) []Config {
 			BaseName:     "apiserver-etcd-client",
 			CAName:       "etcd-ca",
 			CommonName:   "kube-apiserver-etcd-client",
-			Organization: []string{"system:masters"},
+			Organization: identity.APIServerEtcdClientOrganizations,
 			Year:         100,
 			AltNames:     AltNames{},
 			Usages:       []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
@@ -152,7 +152,7 @@ func List(CertPath, CertEtcdPath string) []Config {
 			BaseName:     "healthcheck-client",
 			CAName:       "etcd-ca",
 			CommonName:   "kube-etcd-healthcheck-client",
-			Organization: []string{"system:masters"},
+			Organization: identity.EtcdHealthcheckOrganizations,
 			Year:         100,
 			AltNames:     AltNames{},
 			Usages:       []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
@@ -166,6 +166,7 @@ type SealosCertMetaData struct {
 	NodeName  string
 	NodeIP    string
 	DNSDomain string
+	identity  localIdentityModel
 	//证书生成的位置
 	CertPath     string
 	CertEtcdPath string
@@ -183,10 +184,15 @@ const (
 
 // apiServerIPAndDomains = MasterIP + VIP + CertSANS 暂时只有apiserver, 记得把cluster.local后缀加到apiServerIPAndDOmas里先
 func NewSealosCertMetaData(certPATH, certEtcdPATH string, apiServerIPAndDomains []string, SvcCIDR, nodeName, nodeIP, DNSDomain string) (*SealosCertMetaData, error) {
+	return NewSealosCertMetaDataForKubeVersion(certPATH, certEtcdPATH, apiServerIPAndDomains, SvcCIDR, nodeName, nodeIP, DNSDomain, "")
+}
+
+func NewSealosCertMetaDataForKubeVersion(certPATH, certEtcdPATH string, apiServerIPAndDomains []string, SvcCIDR, nodeName, nodeIP, DNSDomain, kubeVersion string) (*SealosCertMetaData, error) {
 	data := &SealosCertMetaData{}
 	data.CertPath = certPATH
 	data.CertEtcdPath = certEtcdPATH
 	data.DNSDomain = DNSDomain
+	data.identity = resolveLocalIdentityModel(kubeVersion)
 	data.APIServer.IPs = make(map[string]net.IP)
 	data.APIServer.DNSNames = make(map[string]string)
 
@@ -278,8 +284,16 @@ func (meta *SealosCertMetaData) generatorServiceAccountKeyPaire() error {
 }
 
 func (meta *SealosCertMetaData) GenerateAll() error {
+	return meta.generateAll(false)
+}
+
+func (meta *SealosCertMetaData) RenewAll() error {
+	return meta.generateAll(true)
+}
+
+func (meta *SealosCertMetaData) RenewLeafCerts() error {
 	cas := CaList(meta.CertPath, meta.CertEtcdPath)
-	certs := List(meta.CertPath, meta.CertEtcdPath)
+	certs := List(meta.CertPath, meta.CertEtcdPath, meta.identity)
 	meta.apiServerAltName(&certs)
 	meta.etcdAltAndCommonName(&certs)
 	_ = meta.generatorServiceAccountKeyPaire()
@@ -287,7 +301,63 @@ func (meta *SealosCertMetaData) GenerateAll() error {
 	CACerts := map[string]*x509.Certificate{}
 	CAKeys := map[string]crypto.Signer{}
 	for _, ca := range cas {
-		caCert, caKey, err := NewCaCertAndKey(ca)
+		caCert, caKey, err := LoadCaCertAndKeyFromDisk(ca)
+		if err != nil {
+			return err
+		}
+		CACerts[ca.CommonName] = caCert
+		CAKeys[ca.CommonName] = caKey
+	}
+
+	for _, cert := range certs {
+		caCert, ok := CACerts[cert.CAName]
+		if !ok {
+			return fmt.Errorf("root ca cert not found %s", cert.CAName)
+		}
+		caKey, ok := CAKeys[cert.CAName]
+		if !ok {
+			return fmt.Errorf("root ca key not found %s", cert.CAName)
+		}
+
+		Cert, Key, err := NewCaCertAndKeyFromRoot(cert, caCert, caKey)
+		if err != nil {
+			return err
+		}
+		err = WriteCertAndKey(cert.Path, cert.BaseName, Cert, Key)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (meta *SealosCertMetaData) generateAll(force bool) error {
+	cas := CaList(meta.CertPath, meta.CertEtcdPath)
+	certs := List(meta.CertPath, meta.CertEtcdPath, meta.identity)
+	meta.apiServerAltName(&certs)
+	meta.etcdAltAndCommonName(&certs)
+	_ = meta.generatorServiceAccountKeyPaire()
+
+	CACerts := map[string]*x509.Certificate{}
+	CAKeys := map[string]crypto.Signer{}
+	for _, ca := range cas {
+		var (
+			caCert *x509.Certificate
+			caKey  crypto.Signer
+			err    error
+		)
+		if force {
+			caKey, err = NewPrivateKey(x509.UnknownPublicKeyAlgorithm)
+			if err != nil {
+				return err
+			}
+			caCert, err = NewSelfSignedCACert(caKey, ca.CommonName, ca.Organization, ca.Year)
+			if err != nil {
+				return err
+			}
+		} else {
+			caCert, caKey, err = NewCaCertAndKey(ca)
+		}
 		if err != nil {
 			return err
 		}

@@ -14,11 +14,12 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
     req,
     res,
     async ({ userUid }) =>
-      await filterEmailVerifyParams(req, res, async ({ email, code }) => {
+      await filterEmailVerifyParams(req, res, async ({ email, code, challengeId }) => {
         await verifyCodeGuard(
           email,
           code,
-          'email_bind'
+          'email_bind',
+          challengeId
         )(res, () => bindEmailGuard(email, userUid)(res, () => bindEmailSvc(email, userUid)(res)));
       })
   );

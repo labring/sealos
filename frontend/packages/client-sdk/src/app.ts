@@ -1,13 +1,22 @@
 import { v4 } from 'uuid';
 import { API_NAME } from './constants';
-import {
+import type {
   AppMessageType,
   AppSendMessageType,
   MasterReplyMessageType,
+  OpenAppOptions,
   SessionV1,
   WorkspaceQuotaItem
 } from './types';
 import { isBrowser } from './utils';
+
+export type { OpenAppOptions, WindowSize } from './types';
+
+const windowSizeMap = {
+  maximized: 'maximize',
+  windowed: 'maxmin',
+  minimized: 'minimize'
+} as const;
 
 class ClientSDK {
   private readonly eventBus = new Map<string, (e?: any) => any>();
@@ -134,6 +143,15 @@ class ClientSDK {
     return this.sendMessageToMaster(API_NAME.EVENT_BUS, {
       eventName,
       eventData
+    });
+  }
+
+  openApp(options: OpenAppOptions) {
+    const { pathname = '/', appSize, ...eventData } = options;
+    return this.runEvents('openDesktopApp', {
+      pathname,
+      ...eventData,
+      ...(appSize ? { appSize: windowSizeMap[appSize] } : {})
     });
   }
 

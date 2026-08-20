@@ -10,7 +10,7 @@ export const gtmTopupCheckout = ({ amount }: { amount: number }) =>
     method: 'stripe',
     module: 'costcenter',
     context: 'app',
-    curreny: 'USD',
+    currency: 'USD',
     amount
   });
 export const gtmTopupSuccess = ({ amount, paid }: { amount: number; paid: number }) =>
@@ -19,7 +19,7 @@ export const gtmTopupSuccess = ({ amount, paid }: { amount: number; paid: number
     module: 'costcenter',
     method: 'stripe',
     context: 'app',
-    curreny: 'USD',
+    currency: 'USD',
     amount,
     paid
   });
@@ -38,7 +38,7 @@ export const gtmSubscribeCheckout = ({
     method: 'stripe',
     module: 'costcenter',
     context: 'app',
-    curreny: 'USD',
+    currency: 'USD',
     amount,
     plan,
     type
@@ -60,7 +60,7 @@ export const gtmSubscribeSuccess = ({
     module: 'costcenter',
     method: 'stripe',
     context: 'app',
-    curreny: 'USD',
+    currency: 'USD',
     amount,
     paid,
     plan,

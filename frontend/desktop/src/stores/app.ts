@@ -1,3 +1,4 @@
+import { BRAIN_APP_KEY } from '@/constants/app';
 import request from '@/services/request';
 import { APPTYPE, TApp, TAppMenuData, TOSState, WindowSize, displayType } from '@/types';
 import { formatUrl } from '@/utils/format';
@@ -10,8 +11,47 @@ import { useDesktopConfigStore } from './desktopConfig';
 import { track } from '@sealos/gtm';
 import useSessionStore from './session';
 
-export const BRAIN_APP_KEY = 'system-brain';
+export { BRAIN_APP_KEY };
 export const SESSION_RESTORE_APP_KEY = 'sealos_desktop_restore_app_key';
+
+const buildAppUrl = ({
+  baseUrl,
+  pathname = '/',
+  raw,
+  query
+}: {
+  baseUrl: string;
+  pathname?: string;
+  raw?: string;
+  query?: Record<string, string>;
+}) => {
+  let finalUrl = baseUrl;
+
+  if (pathname && pathname !== '/') {
+    const normalizedBaseUrl = finalUrl.endsWith('/') ? finalUrl.slice(0, -1) : finalUrl;
+    const normalizedPath = pathname.startsWith('/') ? pathname : '/' + pathname;
+    finalUrl = normalizedBaseUrl + normalizedPath;
+  }
+
+  if (raw) {
+    finalUrl += finalUrl.includes('?') ? '&' : '?';
+    finalUrl += raw;
+  } else if (query) {
+    finalUrl = formatUrl(finalUrl, query);
+  }
+
+  return finalUrl;
+};
+
+const hasExplicitNavigationTarget = ({
+  pathname,
+  raw,
+  query
+}: {
+  pathname?: string;
+  raw?: string;
+  query?: Record<string, string>;
+}) => !!((pathname && pathname !== '/') || raw || (query && Object.keys(query).length > 0));
 
 export class AppInfo {
   pid: number;
@@ -36,6 +76,7 @@ export class AppInfo {
   menuData?: TAppMenuData[];
   displayType: displayType;
   i18n?: any;
+  representativeMeta: TApp['representativeMeta'];
 
   constructor(app: TApp, pid: number) {
     this.isShow = false;
@@ -55,6 +96,7 @@ export class AppInfo {
     this.pid = pid;
     this.displayType = app.displayType;
     this.i18n = app?.i18n;
+    this.representativeMeta = cloneDeep(app.representativeMeta);
   }
 }
 
@@ -71,6 +113,8 @@ const useAppStore = create<TOSState>()(
         launchQuery: {},
         autolaunch: '',
         autolaunchWorkspaceUid: '',
+        autoDeployTemplate: '',
+        autoDeployTemplateForm: undefined as Record<string, any> | undefined,
         runner: new AppStateManager([]),
         async init() {
           const { isGuest } = useSessionStore.getState();
@@ -154,7 +198,7 @@ const useAppStore = create<TOSState>()(
           });
         },
 
-        openApp: async (app: TApp, { query, raw, pathname = '/', appSize = 'maximize' } = {}) => {
+        openApp: async (app: TApp, { query, raw, pathname = '/', appSize } = {}) => {
           console.log('open app: ', app.key);
 
           useDesktopConfigStore.getState().temporarilyDisableAnimation();
@@ -163,7 +207,35 @@ const useAppStore = create<TOSState>()(
           // 未支持多实例
           let alreadyApp = get().runningInfo.find((x) => x.key === app.key);
           if (alreadyApp) {
-            get().switchAppById(alreadyApp.pid);
+            const shouldNavigateRunningApp = hasExplicitNavigationTarget({ pathname, raw, query });
+
+            if (shouldNavigateRunningApp) {
+              const baseUrl = app.data?.url || alreadyApp.data?.url;
+              alreadyApp = {
+                ...alreadyApp,
+                data: {
+                  ...alreadyApp.data,
+                  url: baseUrl
+                    ? buildAppUrl({ baseUrl, pathname, raw, query })
+                    : alreadyApp.data.url
+                }
+              };
+            }
+
+            if (appSize) {
+              get().updateOpenedAppInfo({
+                ...alreadyApp,
+                isShow: true,
+                size: appSize,
+                cacheSize: appSize
+              });
+            } else {
+              if (shouldNavigateRunningApp) {
+                get().updateOpenedAppInfo(alreadyApp);
+              }
+              get().switchAppById(alreadyApp.pid);
+            }
+
             get().setToHighestLayerById(alreadyApp.pid);
             return;
           }
@@ -178,34 +250,21 @@ const useAppStore = create<TOSState>()(
           let run_app = get().runner.openApp(app.key);
 
           const _app = new AppInfo(app, run_app.pid);
+          const initialAppSize = appSize || 'maximize';
           _app.zIndex = zIndex;
-          _app.size = appSize;
+          _app.size = initialAppSize;
+          _app.cacheSize = initialAppSize;
           _app.isShow = true;
 
           if (_app.data?.url) {
-            let finalUrl = _app.data.url;
-
-            if (pathname && pathname !== '/') {
-              const baseUrl = finalUrl.endsWith('/') ? finalUrl.slice(0, -1) : finalUrl;
-              const normalizedPath = pathname.startsWith('/') ? pathname : '/' + pathname;
-              finalUrl = baseUrl + normalizedPath;
-            }
-
-            if (raw) {
-              finalUrl += finalUrl.includes('?') ? '&' : '?';
-              finalUrl += raw;
-            } else if (query) {
-              finalUrl = formatUrl(finalUrl, query);
-            }
-
-            _app.data.url = finalUrl;
+            _app.data.url = buildAppUrl({ baseUrl: _app.data.url, pathname, raw, query });
           }
 
           set((state) => {
             state.runningInfo.push(_app);
             state.currentAppPid = _app.pid;
             // Only save currentAppKey when app is maximized
-            if (appSize === 'maximize') {
+            if (initialAppSize === 'maximize') {
               state.currentAppKey = _app.key;
             }
             state.maxZIndex = zIndex;
@@ -301,6 +360,18 @@ const useAppStore = create<TOSState>()(
             state.launchQuery = {};
             state.autolaunchWorkspaceUid = '';
           });
+        },
+        setAutoDeployTemplate(templateName: string, templateForm: Record<string, any>) {
+          set((state) => {
+            state.autoDeployTemplate = templateName;
+            state.autoDeployTemplateForm = templateForm;
+          });
+        },
+        cancelAutoDeployTemplate: () => {
+          set((state) => {
+            state.autoDeployTemplate = '';
+            state.autoDeployTemplateForm = undefined;
+          });
         }
       })),
       {
@@ -319,6 +390,8 @@ const useAppStore = create<TOSState>()(
           return {
             launchQuery: state.launchQuery,
             autolaunch: state.autolaunch,
+            autoDeployTemplate: state.autoDeployTemplate,
+            autoDeployTemplateForm: state.autoDeployTemplateForm,
             // Only Brain can persist across tab close; other apps should rely on sessionStorage.
             currentAppKey: state.currentAppKey === BRAIN_APP_KEY ? state.currentAppKey : ''
           };

@@ -1,24 +1,32 @@
 import { InitRegionTokenParams } from '@/schema/auth';
 import { ILoginParams, ILoginResult, IRegisterParams } from '@/schema/auth';
 import { IEmailCheckParams } from '@/schema/email';
+import { OAuth2AuthorizeContextResponse } from '@/schema/oauth2';
 import { SmsType } from '@/services/backend/db/verifyCode';
 import { RegionResourceType } from '@/services/backend/svc/checkResource';
 import request from '@/services/request';
-import useSessionStore from '@/stores/session';
-import { ApiResp, Region } from '@/types';
+import { ApiResp, Region, VerificationChallenge } from '@/types';
 import { AdClickData } from '@/types/adClick';
 import { BIND_STATUS } from '@/types/response/bind';
 import { RESOURCE_STATUS } from '@/types/response/checkResource';
-import { DELETE_USER_STATUS } from '@/types/response/deleteUser';
+import {
+  DELETE_USER_STATUS,
+  DeleteUserFinalStatusResponse,
+  DeleteUserInitiateResponse
+} from '@/types/response/deleteUser';
 import { EnterpriseAuthInfo, PAYMENTSTATUS } from '@/types/response/enterpriseRealName';
 import { USER_MERGE_STATUS } from '@/types/response/merge';
 import { UNBIND_STATUS } from '@/types/response/unbind';
 import { SemData } from '@/types/sem';
 import { ValueOf } from '@/types/tools';
-import { TUserExist } from '@/types/user';
 import { type AxiosInstance } from 'axios';
 import { ProviderType } from 'prisma/global/generated/client';
 import { SubscriptionInfoResponse, WorkspacesPlansResponse } from '@/types/plan';
+
+export const issueMarketingConsentToken = (seaAttr?: string) =>
+  request.post<any, ApiResp<{ token: string }>>('/api/marketing/consent-token', {
+    ...(seaAttr ? { sea_attr: seaAttr } : {})
+  });
 
 export const _getRegionToken = (request: AxiosInstance) => () =>
   request.post<any, ApiResp<{ token: string; kubeconfig: string; appToken: string }>>(
@@ -76,40 +84,58 @@ export const _regionList = (request: AxiosInstance) => () =>
   >('/api/auth/regionList');
 const _getSmsBindCodeRequest =
   (request: AxiosInstance) => (smsType: SmsType) => (data: { id: string; cfToken?: string }) =>
-    request.post<typeof data, ApiResp>(`/api/auth/${smsType}/bind/sms`, data);
+    request.post<typeof data, ApiResp<VerificationChallenge>>(
+      `/api/auth/${smsType}/bind/sms`,
+      data
+    );
 
 export const _verifySmsBindRequest =
-  (request: AxiosInstance) => (smsType: SmsType) => (data: { id: string; code: string }) =>
+  (request: AxiosInstance) =>
+  (smsType: SmsType) =>
+  (data: { id: string; code: string; challengeId: string }) =>
     request.post<
       typeof data,
       ApiResp<{ code: string | null | undefined }, ValueOf<typeof BIND_STATUS>>
     >(`/api/auth/${smsType}/bind/verify`, data);
 
 export const _verifySmsUnbindRequest =
-  (request: AxiosInstance) => (smsType: SmsType) => (data: { id: string; code: string }) =>
+  (request: AxiosInstance) =>
+  (smsType: SmsType) =>
+  (data: { id: string; code: string; challengeId: string }) =>
     request.post<typeof data, ApiResp>(`/api/auth/${smsType}/unbind/verify`, data);
 export const _getSmsUnbindCodeRequest =
   (request: AxiosInstance) => (smsType: SmsType) => (data: { id: string; cfToken?: string }) =>
-    request.post<typeof data, ApiResp>(`/api/auth/${smsType}/unbind/sms`, data);
+    request.post<typeof data, ApiResp<VerificationChallenge>>(
+      `/api/auth/${smsType}/unbind/sms`,
+      data
+    );
 export const _verifyOldSmsRequest =
-  (request: AxiosInstance) => (smsType: SmsType) => (data: { id: string; code: string }) =>
+  (request: AxiosInstance) =>
+  (smsType: SmsType) =>
+  (data: { id: string; code: string; challengeId: string }) =>
     request.post<typeof data, ApiResp<{ uid: string }>>(
       `/api/auth/${smsType}/changeBinding/verifyOld`,
       data
     );
 export const _getOldSmsCodeRequest =
   (request: AxiosInstance) => (smsType: SmsType) => (data: { id: string; cfToken?: string }) =>
-    request.post<typeof data, ApiResp>(`/api/auth/${smsType}/changeBinding/oldSms`, data);
+    request.post<typeof data, ApiResp<VerificationChallenge>>(
+      `/api/auth/${smsType}/changeBinding/oldSms`,
+      data
+    );
 export const _verifyNewSmsRequest =
   (request: AxiosInstance) =>
   (smsType: SmsType) =>
-  (data: { id: string; code: string; uid: string }) =>
+  (data: { id: string; code: string; uid: string; challengeId: string }) =>
     request.post<typeof data, ApiResp>(`/api/auth/${smsType}/changeBinding/verifyNew`, data);
 export const _getNewSmsCodeRequest =
   (request: AxiosInstance) =>
   (smsType: SmsType) =>
   (data: { id: string; cfToken?: string; uid: string }) =>
-    request.post<typeof data, ApiResp>(`/api/auth/${smsType}/changeBinding/newSms`, data);
+    request.post<typeof data, ApiResp<VerificationChallenge>>(
+      `/api/auth/${smsType}/changeBinding/newSms`,
+      data
+    );
 
 export const _oauthProviderSignIn =
   (request: AxiosInstance) =>
@@ -146,7 +172,7 @@ export const _mergeUser =
     request.post<any, ApiResp<USER_MERGE_STATUS>>('/api/auth/mergeUser', data);
 
 export const _deleteUser = (request: AxiosInstance) => () =>
-  request<never, ApiResp<RESOURCE_STATUS>>('/api/auth/delete');
+  request.post<never, ApiResp<DeleteUserInitiateResponse>>('/api/auth/delete');
 export const _checkRemainResource = (request: AxiosInstance) => () =>
   request<
     never,
@@ -155,7 +181,16 @@ export const _checkRemainResource = (request: AxiosInstance) => () =>
   >('/api/auth/delete/checkAllResource');
 
 export const _forceDeleteUser = (request: AxiosInstance) => (data: { code: string }) =>
-  request.post<never, ApiResp<DELETE_USER_STATUS>>('/api/auth/delete/force', data);
+  request.post<typeof data, ApiResp<DeleteUserInitiateResponse, DELETE_USER_STATUS>>(
+    '/api/auth/delete/force',
+    data
+  );
+
+export const _getDeleteUserStatus = (request: AxiosInstance) => (deleteId: string) =>
+  request<never, ApiResp<DeleteUserFinalStatusResponse>>('/api/auth/delete/status', {
+    method: 'GET',
+    params: { deleteId }
+  });
 
 export const _faceAuthGenerateQRcodeUriRequest = (request: AxiosInstance) => () =>
   request.get<any, ApiResp<{ url: string; bizToken: string }>>(
@@ -212,6 +247,8 @@ export const _getAmount = (request: AxiosInstance) => () =>
   request<never, ApiResp<{ balance: number; deductionBalance: number }>>('/api/account/getAmount');
 export const _verifyToken = (request: AxiosInstance) => () =>
   request<never, ApiResp<null>>('/api/auth/verify');
+export const _verifySharedToken = (request: AxiosInstance) => () =>
+  request.get<any, ApiResp<{ userId: string; userUid: string }>>('/api/auth/verifySharedToken');
 
 export const _EmailSignIn = (request: AxiosInstance) => (data: ILoginParams) =>
   request.post<never, ApiResp<ILoginResult>>('/api/auth/email', data);
@@ -243,6 +280,7 @@ export const passwordLoginRequest = _passwordLoginRequest(request);
 export const passwordModifyRequest = _passwordModifyRequest(request);
 export const UserInfo = _UserInfo(request);
 export const verifyToken = _verifyToken(request);
+export const verifySharedTokenRequest = _verifySharedToken(request);
 export const regionList = _regionList(request);
 export const refreshRealNameQRecodeUriRequest = _refreshRealNameQRecodeUriRequest(request);
 export const getSmsBindCodeRequest = _getSmsBindCodeRequest(request);
@@ -260,6 +298,7 @@ export const mergeUserRequest = _mergeUser(request);
 export const deleteUserRequest = _deleteUser(request);
 export const checkRemainResource = _checkRemainResource(request);
 export const forceDeleteUser = _forceDeleteUser(request);
+export const getDeleteUserStatus = _getDeleteUserStatus(request);
 export const enterpriseRealNameAuthPaymentRequest = _enterpriseRealNameAuthPaymentRequest(request);
 export const enterpriseRealNameAuthVerifyRequest = _enterpriseRealNameAuthVerifyRequest(request);
 export const enterpriseRealNameAuthInfoRequest = _enterpriseRealNameAuthInfoRequest(request);
@@ -284,3 +323,50 @@ export const getWorkspacesPlans = (workspaces: string[]) =>
       workspaces
     }
   });
+
+export const _rotateKubeconfig = (request: AxiosInstance) => () =>
+  request.post<never, ApiResp<{ kubeconfig: string }>>('/api/auth/rotateKubeconfig');
+
+export const rotateKubeconfig = _rotateKubeconfig(request);
+
+const buildOauth2AuthHeaders = (authToken?: string): HeadersInit =>
+  authToken ? { Authorization: encodeURIComponent(authToken) } : {};
+
+export const oauth2AuthorizeContext = async (
+  params: { user_code?: string; request_id?: string },
+  authToken?: string
+): Promise<OAuth2AuthorizeContextResponse> => {
+  const query = new URLSearchParams();
+  if (params.user_code) query.set('user_code', params.user_code);
+  if (params.request_id) query.set('request_id', params.request_id);
+  const response = await fetch(`/api/auth/oauth2/authorize/context?${query.toString()}`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildOauth2AuthHeaders(authToken)
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw data;
+  }
+  return data as OAuth2AuthorizeContextResponse;
+};
+
+export const oauth2AuthorizeDecision = async (
+  data: { request_id: string; decision: 'approve' | 'deny' },
+  authToken?: string
+): Promise<{ status: 'approved' | 'denied' }> => {
+  const response = await fetch('/api/auth/oauth2/authorize/decision', {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      ...buildOauth2AuthHeaders(authToken)
+    },
+    body: JSON.stringify(data)
+  });
+  const payload = await response.json();
+  if (!response.ok) {
+    throw payload;
+  }
+  return payload as { status: 'approved' | 'denied' };
+};

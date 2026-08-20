@@ -25,10 +25,8 @@ import (
 
 	rtype "github.com/docker/docker/api/types/registry"
 	lru "github.com/hashicorp/golang-lru"
-
-	api "k8s.io/cri-api/pkg/apis/runtime/v1"
-
 	"github.com/labring/sealos/pkg/utils/logger"
+	api "k8s.io/cri-api/pkg/apis/runtime/v1"
 )
 
 type v1ImageService struct {
@@ -178,7 +176,11 @@ func (m *cacheMetrics) recordInvalidation() {
 	}
 }
 
-func newV1ImageService(client api.ImageServiceClient, authStore *AuthStore, cacheOpts CacheOptions) *v1ImageService {
+func newV1ImageService(
+	client api.ImageServiceClient,
+	authStore *AuthStore,
+	cacheOpts CacheOptions,
+) *v1ImageService {
 	service := &v1ImageService{
 		imageClient: client,
 		authStore:   authStore,
@@ -325,7 +327,10 @@ func (s *v1ImageService) cacheDomainMatch(imageDomain, registryDomain string) {
 	})
 }
 
-func (s *v1ImageService) getCachedDomainMatch(domain string, registries map[string]rtype.AuthConfig) (string, *rtype.AuthConfig) {
+func (s *v1ImageService) getCachedDomainMatch(
+	domain string,
+	registries map[string]rtype.AuthConfig,
+) (string, *rtype.AuthConfig) {
 	s.cacheMutex.Lock()
 	defer s.cacheMutex.Unlock()
 	if s.domainCache == nil {
@@ -383,7 +388,10 @@ func (s *v1ImageService) invalidateCache() {
 	}
 }
 
-func (s *v1ImageService) findMatchingRegistry(domain string, registries map[string]rtype.AuthConfig) (string, *rtype.AuthConfig) {
+func (s *v1ImageService) findMatchingRegistry(
+	domain string,
+	registries map[string]rtype.AuthConfig,
+) (string, *rtype.AuthConfig) {
 	if domain == "" || len(registries) == 0 {
 		return "", nil
 	}
@@ -403,7 +411,10 @@ func (s *v1ImageService) findMatchingRegistry(domain string, registries map[stri
 	return "", nil
 }
 
-func (s *v1ImageService) logRewriteResult(action, original, rewritten, source string, cacheHit bool, replaced bool) {
+func (s *v1ImageService) logRewriteResult(
+	action, original, rewritten, source string,
+	cacheHit, replaced bool,
+) {
 	logger.Info("rewrite action=%s cache_hit=%t source=%s original=%s result=%s replaced=%t",
 		action, cacheHit, source, original, rewritten, replaced)
 }
@@ -480,10 +491,10 @@ func ToV1AuthConfig(c *rtype.AuthConfig) *api.AuthConfig {
 }
 
 func (s *v1ImageService) ListImages(ctx context.Context,
-	req *api.ListImagesRequest) (*api.ListImagesResponse, error) {
+	req *api.ListImagesRequest,
+) (*api.ListImagesResponse, error) {
 	logger.Debug("ListImages: %+v", req)
 	rsp, err := s.imageClient.ListImages(ctx, req)
-
 	if err != nil {
 		return nil, err
 	}
@@ -492,7 +503,8 @@ func (s *v1ImageService) ListImages(ctx context.Context,
 }
 
 func (s *v1ImageService) ImageStatus(ctx context.Context,
-	req *api.ImageStatusRequest) (*api.ImageStatusResponse, error) {
+	req *api.ImageStatusRequest,
+) (*api.ImageStatusResponse, error) {
 	logger.Debug("ImageStatus: %+v", req)
 	if req.Image != nil {
 		if id, _ := s.GetImageRefByID(ctx, req.Image.Image); id != "" {
@@ -504,7 +516,6 @@ func (s *v1ImageService) ImageStatus(ctx context.Context,
 		}
 	}
 	rsp, err := s.imageClient.ImageStatus(ctx, req)
-
 	if err != nil {
 		return nil, err
 	}
@@ -513,7 +524,8 @@ func (s *v1ImageService) ImageStatus(ctx context.Context,
 }
 
 func (s *v1ImageService) PullImage(ctx context.Context,
-	req *api.PullImageRequest) (*api.PullImageResponse, error) {
+	req *api.PullImageRequest,
+) (*api.PullImageResponse, error) {
 	logger.Debug("PullImage begin: %+v", req)
 	if req.Image != nil {
 		originalImage := req.Image.Image
@@ -537,7 +549,8 @@ func (s *v1ImageService) PullImage(ctx context.Context,
 }
 
 func (s *v1ImageService) RemoveImage(ctx context.Context,
-	req *api.RemoveImageRequest) (*api.RemoveImageResponse, error) {
+	req *api.RemoveImageRequest,
+) (*api.RemoveImageResponse, error) {
 	logger.Debug("RemoveImage: %+v", req)
 	if req.Image != nil {
 		if id, _ := s.GetImageRefByID(ctx, req.Image.Image); id != "" {
@@ -549,7 +562,6 @@ func (s *v1ImageService) RemoveImage(ctx context.Context,
 		}
 	}
 	rsp, err := s.imageClient.RemoveImage(ctx, req)
-
 	if err != nil {
 		return nil, err
 	}
@@ -558,10 +570,10 @@ func (s *v1ImageService) RemoveImage(ctx context.Context,
 }
 
 func (s *v1ImageService) ImageFsInfo(ctx context.Context,
-	req *api.ImageFsInfoRequest) (*api.ImageFsInfoResponse, error) {
+	req *api.ImageFsInfoRequest,
+) (*api.ImageFsInfoResponse, error) {
 	logger.Debug("ImageFsInfo: %+v", req)
 	rsp, err := s.imageClient.ImageFsInfo(ctx, req)
-
 	if err != nil {
 		return nil, err
 	}

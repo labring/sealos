@@ -1,49 +1,129 @@
-import MyIcon from '@/components/Icon';
-import { MyTooltip } from '@sealos/ui';
 import PodLineChart from '@/components/PodLineChart';
+import PodPieChart from '@/components/PodPieChart';
 import { ProtocolList } from '@/constants/app';
 import { MOCK_APP_DETAIL } from '@/mock/apps';
-import { DOMAIN_PORT } from '@/store/static';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import type { AppDetailType } from '@/types/app';
-import { useCopyData } from '@/utils/tools';
+import { buildExternalUrl, getExternalProtocol } from '@/utils/network-url';
+import { useCopyData, generatePvcNameRegex } from '@/utils/tools';
+import { calculateStorageUsagePercentFromUsageData } from '@/utils/storage-usage';
 import { getUserNamespace } from '@/utils/user';
-import {
-  Box,
-  Button,
-  Center,
-  Flex,
-  Grid,
-  Popover,
-  PopoverArrow,
-  PopoverBody,
-  PopoverContent,
-  PopoverTrigger,
-  Text,
-  useDisclosure
-} from '@chakra-ui/react';
-import dayjs from 'dayjs';
 import { useTranslation } from 'next-i18next';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import MonitorModal from './MonitorModal';
 import { useQuery } from '@tanstack/react-query';
 import { checkReady } from '@/api/platform';
+import { getAppMonitorData, getNetworkMonitorData } from '@/api/app';
 import { useGuideStore } from '@/store/guide';
 import { startDriver, detailDriverObj } from '@/hooks/driver';
-import ICPStatus from './ICPStatus';
-import { CircleHelpIcon } from 'lucide-react';
+import { useRouter } from 'next/router';
+import Image from 'next/image';
+import { Button } from '@sealos/shadcn-ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
+import { CircleHelp } from 'lucide-react';
+import NetworkConfigurationTable from './NetworkConfigurationTable';
 
 const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
   const { t } = useTranslation();
   const { copyData } = useCopyData();
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const config = useClientAppConfig();
+  const [isOpen, setIsOpen] = useState(false);
+  const router = useRouter();
 
   const { detailCompleted } = useGuideStore();
+
+  const hasStorage = app.storeList && app.storeList.length > 0;
+  const pvcNameRegex = generatePvcNameRegex(app);
+
+  // Fetch storage size and available capacity for all PVCs
+  const { data: storageData } = useQuery({
+    queryKey: ['storageUsage', app.appName, pvcNameRegex],
+    queryFn: async () => {
+      if (!pvcNameRegex) return null;
+      return getAppMonitorData({
+        queryName: pvcNameRegex,
+        queryKey: 'storage',
+        step: '2m',
+        pvcName: pvcNameRegex
+      });
+    },
+    enabled: hasStorage && !!pvcNameRegex,
+    refetchInterval: 2 * 60 * 1000
+  });
+
+  const storageUsagePercent = useMemo(() => {
+    return calculateStorageUsagePercentFromUsageData(storageData, app.storeList);
+  }, [app.storeList, storageData]);
+
+  // Get all available networks for error codes query (non-NodePort networks only)
+  const availableNetworks = useMemo(() => {
+    return app.networks?.filter((network) => !network.openNodePort) || [];
+  }, [app.networks]);
+
+  const hasNetwork = availableNetworks.length > 0;
+
+  // Fetch error codes data for all networks (last 5 minutes)
+  const { data: allNetworksErrorData } = useQuery({
+    queryKey: [
+      'errorCodes',
+      app.appName,
+      availableNetworks.map((n) => `${n.serviceName || app.appName}:${n.port}`).join(',')
+    ],
+    queryFn: async () => {
+      if (!hasNetwork) return null;
+      const end = Date.now();
+      const start = end - 5 * 60 * 1000; // last 5 minutes
+
+      // Query all networks in parallel
+      const results = await Promise.all(
+        availableNetworks.map((network) =>
+          getNetworkMonitorData({
+            serviceName: network.serviceName || app.appName,
+            port: network.port,
+            type: 'network_service_request_count',
+            step: '1m',
+            start,
+            end
+          })
+        )
+      );
+
+      return results;
+    },
+    enabled: hasNetwork && !app.isPause,
+    refetchInterval: 60 * 1000 // refresh every minute
+  });
+
+  // Calculate error codes counts (sum of all values across all networks)
+  const errorCodesCounts = useMemo(() => {
+    const counts = {
+      '3xx': 0,
+      '4xx': 0,
+      '5xx': 0
+    };
+
+    if (!allNetworksErrorData) return counts;
+
+    // Iterate through all network results
+    allNetworksErrorData.forEach((networkData) => {
+      if (!networkData) return;
+      networkData.forEach((item) => {
+        if (item.name && ['3xx', '4xx', '5xx'].includes(item.name)) {
+          const total = item.yData.reduce((sum, val) => {
+            return sum + (val ? parseInt(val, 10) : 0);
+          }, 0);
+          counts[item.name as keyof typeof counts] += total;
+        }
+      });
+    });
+
+    return counts;
+  }, [allNetworksErrorData]);
 
   useEffect(() => {
     if (!detailCompleted) {
       const checkAndStartGuide = () => {
         const guideListElement = document.getElementById('driver-detail-network');
-        console.log(guideListElement, 'guideListElement');
 
         if (guideListElement) {
           startDriver(detailDriverObj(t));
@@ -79,11 +159,18 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
             inline: `${protocol?.inline}${
               network?.serviceName ? network.serviceName : app.appName
             }.${getUserNamespace()}.svc.cluster.local:${network.port}`,
-            public: `${protocol?.label}${protocol?.value.toLowerCase()}.${network.domain}${
-              network?.nodePort ? `:${network.nodePort}` : ''
-            }`,
+            public: network.nodePort
+              ? buildExternalUrl({
+                  protocol: network.protocol,
+                  host: `${protocol?.value.toLowerCase()}.${network.domain}`,
+                  nodePort: network.nodePort
+                })
+              : `${getExternalProtocol(network.protocol)}://${protocol?.value.toLowerCase()}.${
+                  network.domain
+                }`,
             customDomain: null,
-            showReadyStatus: false
+            showReadyStatus: false,
+            port: network.port
           };
         }
 
@@ -92,17 +179,24 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
             network?.serviceName ? network.serviceName : app.appName
           }.${getUserNamespace()}.svc.cluster.local:${network.port}`,
           public: network.openPublicDomain
-            ? `${appProtocol?.label}${
-                network.customDomain
+            ? buildExternalUrl({
+                protocol: network.appProtocol,
+                host: network.customDomain
                   ? network.customDomain
-                  : `${network.publicDomain}.${network.domain}${DOMAIN_PORT}`
-              }`
+                  : `${network.publicDomain}.${network.domain}`,
+                config: {
+                  disableHttps: config.disableHttps,
+                  cloudPort: config.port,
+                  httpPort: config.httpPort
+                }
+              })
             : '',
           customDomain: network.openPublicDomain ? network.customDomain : null,
-          showReadyStatus: true
+          showReadyStatus: true,
+          port: network.port
         };
       }),
-    [app]
+    [app, config.disableHttps, config.httpPort, config.port]
   );
 
   const retryCount = useRef(0);
@@ -132,247 +226,159 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
   const statusMap = useMemo(
     () =>
       networkStatus
-        ? networkStatus.reduce(
-            (acc, item) => {
-              if (item?.url) {
-                acc[item.url] = item;
-              }
-              return acc;
-            },
-            {} as Record<string, { ready: boolean; url: string }>
-          )
+        ? networkStatus.reduce((acc, item) => {
+            if (item?.url) {
+              acc[item.url] = item;
+            }
+            return acc;
+          }, {} as Record<string, { ready: boolean; url: string }>)
         : {},
     [networkStatus]
   );
 
   return (
-    <Box p={'24px'} position={'relative'}>
-      <>
-        <Flex alignItems={'center'} fontSize={'14px'} fontWeight={'bold'}>
-          <Box color={'grayModern.900'}>{t('Real-time Monitoring')}</Box>
-          <Box ml={'8px'} color={'grayModern.600'}>
-            ({t('Update Time')}&ensp;{dayjs().format('HH:mm')})
-          </Box>
-        </Flex>
-        <Grid
-          w={'100%'}
-          templateColumns={'1fr 1fr'}
-          gap={3}
-          mt={'12px'}
-          px={'16px'}
-          py={'12px'}
-          backgroundColor={'#FBFBFC'}
-          borderRadius={'6px'}
-          fontSize={'12px'}
-          color={'grayModern.600'}
-          fontWeight={'bold'}
-          position={'relative'}
-          className="driver-detail-monitor"
-        >
-          <Box>
-            <Box mb={'4px'}>CPU&ensp;({app.usedCpu.yData[app.usedCpu.yData.length - 1]}%)</Box>
-            <Box h={'60px'}>
-              <PodLineChart type={'blue'} data={app.usedCpu} />
-            </Box>
-          </Box>
-          <Box>
-            <Box mb={'4px'}>
-              {t('Memory')}&ensp;({app.usedMemory.yData[app.usedMemory.yData.length - 1]}%)
-            </Box>
-            <Box h={'60px'}>
-              <PodLineChart type={'purple'} data={app.usedMemory} />
-            </Box>
-          </Box>
-        </Grid>
-        <Box id="driver-detail-network">
-          <Flex mt={3} alignItems={'center'} fontSize={'14px'} fontWeight={'bold'}>
-            <Text color={'grayModern.900'}>{t('Network Configuration')}</Text>
-            <Text ml={'8px'} color={'grayModern.600'}>
-              ({networks.length})
-            </Text>
-          </Flex>
-          <Flex mt={'12px'}>
-            <table className={'table-cross'}>
-              <thead>
-                <tr>
-                  <Box as={'th'} fontSize={'12px'}>
-                    {t('Private Address')}
-                  </Box>
-                  <Box as={'th'} fontSize={'12px'}>
-                    {t('Public Address')}
-                  </Box>
-                </tr>
-              </thead>
-              <tbody>
-                {networks.map((network, index) => {
-                  return (
-                    <tr key={network.inline + index}>
-                      <th>
-                        <Flex>
-                          <MyTooltip label={t('Copy')} placement={'bottom-start'}>
-                            <Box
-                              fontSize={'12px'}
-                              cursor={'pointer'}
-                              _hover={{ textDecoration: 'underline' }}
-                              onClick={() => copyData(network.inline)}
-                            >
-                              {network.inline.replace('.svc.cluster.local', '')}
-                            </Box>
-                          </MyTooltip>
-                        </Flex>
-                      </th>
-                      <th>
-                        <Box width={'full'} overflowX={'auto'}>
-                          <Flex
-                            alignItems={'center'}
-                            gap={'2px'}
-                            flexWrap={'nowrap'}
-                            width={'fit-content'}
-                            minW={'full'}
-                          >
-                            {network.public && network.showReadyStatus && (
-                              <>
-                                {statusMap[network.public]?.ready ? (
-                                  <Center
-                                    fontSize={'12px'}
-                                    fontWeight={400}
-                                    bg={'rgba(3, 152, 85, 0.05)'}
-                                    color={'#039855'}
-                                    borderRadius={'full'}
-                                    p={'2px 8px 2px 4px'}
-                                    gap={'2px'}
-                                    minW={'63px'}
-                                  >
-                                    <Center
-                                      w={'6px'}
-                                      h={'6px'}
-                                      borderRadius={'full'}
-                                      bg={'#039855'}
-                                    ></Center>
-                                    {t('Accessible')}
-                                  </Center>
-                                ) : (
-                                  <Popover trigger="hover">
-                                    <PopoverTrigger>
-                                      <Center
-                                        fontSize={'12px'}
-                                        fontWeight={400}
-                                        bg={'#FAFAFA'}
-                                        color={'#71717A'}
-                                        border={'1px solid #E4E4E7'}
-                                        borderRadius={'full'}
-                                        p={'2px 4px 2px 4px'}
-                                        gap={'2px'}
-                                        minW={'63px'}
-                                        cursor={'pointer'}
-                                        whiteSpace={'nowrap'}
-                                      >
-                                        <Center
-                                          w={'6px'}
-                                          h={'6px'}
-                                          mr={'4px'}
-                                          borderRadius={'full'}
-                                          bg={'#A1A1AA'}
-                                        ></Center>
+    <div className="flex flex-col gap-1.5">
+      {/* Real-time Monitoring Cards */}
+      <div
+        className={`w-full grid grid-cols-2 ${
+          hasStorage && hasNetwork
+            ? 'lg:grid-cols-4'
+            : hasStorage || hasNetwork
+            ? 'lg:grid-cols-3'
+            : ''
+        } gap-2 text-sm text-zinc-700 relative driver-detail-monitor`}
+      >
+        <div className="p-5 relative rounded-xl bg-white border-[0.5px] border-zinc-200 shadow-xs flex flex-col gap-3">
+          <div className="text-zinc-900 text-sm font-medium">
+            CPU: {app.usedCpu.yData[app.usedCpu.yData.length - 1]}%
+          </div>
+          <div className="h-[84px]">
+            <PodLineChart type={'blue'} data={app.usedCpu} />
+          </div>
+        </div>
+        <div className="p-5 relative rounded-xl bg-white border-[0.5px] border-zinc-200 shadow-xs flex flex-col gap-3">
+          <div className="text-zinc-900 text-sm font-medium">
+            {t('Memory')}: {app.usedMemory.yData[app.usedMemory.yData.length - 1]}%
+          </div>
+          <div className="h-[84px]">
+            <PodLineChart type={'green'} data={app.usedMemory} />
+          </div>
+        </div>
+        {hasStorage && (
+          <div className="p-5 pb-3 min-h-0 relative rounded-xl bg-white border-[0.5px] border-zinc-200 shadow-xs flex flex-col gap-3">
+            <div className="text-zinc-900 text-sm font-medium">{t('storage_usage')}</div>
+            <div className="flex flex-1 items-center justify-center">
+              <PodPieChart type={'blue'} value={storageUsagePercent} />
+            </div>
+          </div>
+        )}
+        {/* Error Codes Card */}
+        {hasNetwork && (
+          <div className="p-5 pb-3 min-h-0 relative rounded-xl bg-white border-[0.5px] border-zinc-200 shadow-xs flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <div className="text-zinc-900 text-sm font-medium">{t('error_codes')}</div>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label={t('error_codes_tooltip_label')}
+                      className="flex h-4 w-4 cursor-help items-center justify-center text-zinc-400"
+                    >
+                      <CircleHelp className="h-3.5 w-3.5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-[260px] leading-5">
+                    {t('error_codes_tooltip_content')}
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              <div className="text-xs text-zinc-400">{t('last_5_mins')}</div>
+            </div>
+            {errorCodesCounts['3xx'] === 0 &&
+            errorCodesCounts['4xx'] === 0 &&
+            errorCodesCounts['5xx'] === 0 ? (
+              <div className="flex flex-1 flex-col items-center justify-center gap-2">
+                <div className="pt-1">
+                  <Image
+                    src="/images/no_errors_found.svg"
+                    alt="No errors"
+                    width={72}
+                    height={72}
+                    className=""
+                  />
+                </div>
+                <span className="text-xs text-zinc-500">{t('no_errors_found')}</span>
+              </div>
+            ) : (
+              <div className="flex flex-col">
+                <div className="py-1.5 flex items-center justify-between border-b border-zinc-100">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-blue-400"></div>
+                    <span className="text-sm text-zinc-900">300+</span>
+                  </div>
+                  <div className="text-sm">
+                    <span className="font-medium text-zinc-900">{errorCodesCounts['3xx']}</span>
+                    <span className="text-xs text-zinc-500 ml-0.5">{t('counts')}</span>
+                  </div>
+                </div>
+                <div className="py-1.5 flex items-center justify-between border-b border-zinc-100">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-amber-400"></div>
+                    <span className="text-sm text-zinc-900">400+</span>
+                  </div>
+                  <div className="text-sm">
+                    <span className="font-medium text-zinc-900">{errorCodesCounts['4xx']}</span>
+                    <span className="text-xs text-zinc-500 ml-0.5">{t('counts')}</span>
+                  </div>
+                </div>
+                <div className="py-1.5 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-red-400"></div>
+                    <span className="text-sm text-zinc-900">500+</span>
+                  </div>
+                  <div className="text-sm">
+                    <span className="font-medium text-zinc-900">{errorCodesCounts['5xx']}</span>
+                    <span className="text-xs text-zinc-500 ml-0.5">{t('counts')}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
-                                        {t('Ready')}
+      {/* Network Configuration Card */}
+      <div
+        id="driver-detail-network"
+        className="min-h-[200px] max-h-[238px] pt-5 px-5 relative rounded-xl bg-white border-[0.5px] border-zinc-200 shadow-xs flex flex-col gap-4"
+      >
+        <div className="flex items-center justify-between">
+          <div className="text-zinc-900 text-base font-medium flex items-center gap-2">
+            {t('Network Configuration')}
+            <span className="text-base font-medium leading-none text-zinc-500 bg-zinc-100 rounded-full px-2 py-0.5 border-[0.5px] border-zinc-200">
+              {networks.length}
+            </span>
+          </div>
+          <Button
+            variant="outline"
+            className="h-9 !px-4 rounded-lg hover:bg-zinc-50 flex items-center"
+            onClick={() => router.push(`/app/edit?name=${app.appName}&scrollTo=network`)}
+          >
+            {t('Manage')}
+          </Button>
+        </div>
+        <NetworkConfigurationTable
+          networks={networks}
+          networkStatus={networkStatus}
+          statusMap={statusMap}
+          copyData={copyData}
+          t={t}
+        />
+      </div>
 
-                                        <Box ml={'4px'}>
-                                          <CircleHelpIcon size={12} color={'#485264'} />
-                                        </Box>
-                                      </Center>
-                                    </PopoverTrigger>
-                                    <PopoverContent w={'254px'} borderRadius={'10px'}>
-                                      <PopoverArrow />
-                                      <PopoverBody p={'10px'}>
-                                        <Box
-                                          color={'grayModern.900'}
-                                          fontSize={'12px'}
-                                          fontWeight={'400'}
-                                          lineHeight={'16px'}
-                                        >
-                                          {network.customDomain
-                                            ? t('network_not_ready_icp_reg')
-                                            : t('network_not_ready')}
-                                        </Box>
-                                      </PopoverBody>
-                                    </PopoverContent>
-                                  </Popover>
-                                )}
-                              </>
-                            )}
-
-                            <MyTooltip
-                              label={network.public ? t('Open Link') : ''}
-                              placement={'bottom-start'}
-                            >
-                              <Box
-                                fontSize={'12px'}
-                                className={'textEllipsis'}
-                                {...(network.public
-                                  ? {
-                                      cursor: 'pointer',
-                                      _hover: { textDecoration: 'underline' },
-                                      onClick: () => window.open(network.public, '_blank')
-                                    }
-                                  : {})}
-                              >
-                                <Flex alignItems={'center'} gap={2}>
-                                  {network.public || '-'}
-                                </Flex>
-                              </Box>
-                            </MyTooltip>
-
-                            {/* ICP reg status*/}
-                            {network.customDomain !== null &&
-                              network.showReadyStatus === true &&
-                              network.public &&
-                              !statusMap[network.public]?.ready && (
-                                <ICPStatus
-                                  customDomain={network.customDomain}
-                                  enabled={
-                                    !!networkStatus &&
-                                    !!network.customDomain &&
-                                    network.showReadyStatus === true &&
-                                    !!network.public &&
-                                    !statusMap[network.public]?.ready
-                                  }
-                                />
-                              )}
-
-                            {!!network.public && (
-                              <Center
-                                ml={'auto'}
-                                flexShrink={0}
-                                w={'24px'}
-                                h={'24px'}
-                                borderRadius={'6px'}
-                                _hover={{
-                                  bg: 'rgba(17, 24, 36, 0.05)'
-                                }}
-                                cursor={'pointer'}
-                              >
-                                <MyIcon
-                                  name={'copy'}
-                                  w={'16px'}
-                                  color={'#667085'}
-                                  onClick={() => copyData(network.public)}
-                                />
-                              </Center>
-                            )}
-                          </Flex>
-                        </Box>
-                      </th>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </Flex>
-        </Box>
-      </>
-      <MonitorModal isOpen={isOpen} onClose={onClose} />
-    </Box>
+      <MonitorModal isOpen={isOpen} onClose={() => setIsOpen(false)} />
+    </div>
   );
 };
 

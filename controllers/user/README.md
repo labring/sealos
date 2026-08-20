@@ -10,6 +10,7 @@ metadata:
 spec:
   displayName: cuisongliu
   csrExpirationSeconds: 1000000000
+  kubeConfigRotateAt: "2026-01-19T14:55:00Z"
 
 ```
 
@@ -472,4 +473,3 @@ kind: List
 metadata:
   resourceVersion: ""
 ```
-

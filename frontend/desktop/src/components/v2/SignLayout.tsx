@@ -10,11 +10,9 @@ import { useTranslation } from 'next-i18next';
 import useSessionStore from '@/stores/session';
 import useSigninPageStore from '@/stores/signinPageStore';
 import { useRouter } from 'next/router';
-import { useLanguageSwitcher } from '@/hooks/useLanguageSwitcher';
 import { GitHubReauthPrompt } from './GitHubReauthPrompt';
 
 export default function SignLayout({ children }: { children: React.ReactNode }) {
-  useLanguageSwitcher(); // force set language
   const { i18n } = useTranslation();
   const { layoutConfig, authConfig, isLoaded } = useConfigStore();
   const { session, token } = useSessionStore();

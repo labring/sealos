@@ -1,6 +1,5 @@
-import { delInstanceByName, deleteAllResources } from '@/api/delete';
+import { delInstanceByName } from '@/api/delete';
 import { useTemplateOperation } from '@/hooks/useTemplateOperation';
-import { useResourceStore } from '@/store/resource';
 import ErrorModal from '@/components/ErrorModal';
 import {
   Box,
@@ -27,7 +26,6 @@ const DelModal = ({
   onSuccess: () => void;
 }) => {
   const { t } = useTranslation();
-  const { resource } = useResourceStore();
   const [inputValue, setInputValue] = useState('');
   const { loading, executeOperation, errorModalState, closeErrorModal } = useTemplateOperation();
 
@@ -35,7 +33,6 @@ const DelModal = ({
     await executeOperation(
       async () => {
         await delInstanceByName(name);
-        await deleteAllResources(resource);
       },
       {
         successMessage: t('Delete successful'),
@@ -46,7 +43,7 @@ const DelModal = ({
         }
       }
     );
-  }, [name, resource, t, executeOperation, onSuccess, onClose]);
+  }, [name, t, executeOperation, onSuccess, onClose]);
 
   return (
     <>

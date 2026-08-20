@@ -3,8 +3,8 @@ import { SessionV1 } from 'sealos-desktop-sdk/*';
 
 // edge
 export const getUserKubeConfig = () => {
-  let kubeConfig: string =
-    process.env.NODE_ENV === 'development' ? process.env.NEXT_PUBLIC_MOCK_USER || '' : '';
+  let kubeConfig: string = '';
+
   try {
     const session = useSessionStore.getState()?.session;
     if (!kubeConfig && session) {

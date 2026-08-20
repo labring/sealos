@@ -5,7 +5,7 @@ import { CurrencySymbol, MyTooltip } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
 import { useMemo } from 'react';
 import MyIcon from '@/components/Icon';
-import useEnvStore from '@/store/env';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 export const colorMap = {
   cpu: '#33BABB',
@@ -25,7 +25,7 @@ const PriceBox = ({
 }) => {
   const theme = useTheme();
   const { t } = useTranslation();
-  const { SystemEnv } = useEnvStore();
+  const config = useClientAppConfig();
 
   const priceList: {
     label: I18nCommonKey;
@@ -92,7 +92,7 @@ const PriceBox = ({
               :
             </Flex>
             <Flex alignItems={'center'} gap={'4px'}>
-              <CurrencySymbol type={SystemEnv.CurrencySymbol} />
+              <CurrencySymbol type={config.currencySymbol} />
               {item.value}
             </Flex>
           </Flex>

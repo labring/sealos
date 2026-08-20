@@ -3,6 +3,7 @@ import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
+import { Config } from '@/config';
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 
@@ -25,7 +26,7 @@ export interface LogQueryPayload {
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
-  const logUrl = global.AppConfig.launchpad.components.log.url;
+  const logUrl = Config().launchpad.components.logging.url;
 
   if (!logUrl) {
     return jsonRes(res, {

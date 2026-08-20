@@ -1,4 +1,28 @@
 import { z } from 'zod';
+import { Quantity, QuantitySchema } from '@sealos/shared';
+
+/** Schema for a single resource value (quantity string/number from API). */
+const MaxResourcesValueSchema = z.union([
+  QuantitySchema,
+  // For backwards compatibility
+  z.number().transform((n) => Quantity.newQuantity(BigInt(Math.floor(Number(n))), 'DecimalSI'))
+]);
+
+/** Parsed plan max resources: resource type -> Quantity. */
+export const MaxResourcesRecordSchema = z.record(z.string(), MaxResourcesValueSchema);
+export type MaxResourcesRecord = z.infer<typeof MaxResourcesRecordSchema>;
+
+/** Deserializes MaxResources JSON string into Record<string, Quantity>. */
+export const MaxResourcesSchema = z.string().transform((s): MaxResourcesRecord => {
+  let obj: unknown;
+  try {
+    obj = JSON.parse(s || '{}');
+  } catch {
+    return {};
+  }
+  const result = MaxResourcesRecordSchema.safeParse(obj);
+  return result.success ? result.data : {};
+});
 
 // 基础类型定义
 export const SubscriptionTypeSchema = z.enum(['SUBSCRIPTION', 'PAYG']);
@@ -7,8 +31,18 @@ export type SubscriptionType = z.infer<typeof SubscriptionTypeSchema>;
 export const PaymentMethodSchema = z.enum(['stripe', 'balance']);
 export type PaymentMethod = z.infer<typeof PaymentMethodSchema>;
 
-export const OperatorSchema = z.enum(['created', 'upgraded', 'downgraded', 'renewed', 'canceled']);
+export const OperatorSchema = z.enum([
+  'created',
+  'upgraded',
+  'downgraded',
+  'renewed',
+  'canceled',
+  'resumed'
+]);
 export type Operator = z.infer<typeof OperatorSchema>;
+
+export const WorkspaceRoleSchema = z.enum(['MANAGER', 'DEVELOPER', 'OWNER']);
+export type WorkspaceRole = z.infer<typeof WorkspaceRoleSchema>;
 
 // Stripe 信息
 export const StripeInfoSchema = z.object({
@@ -37,7 +71,7 @@ export const SubscriptionPlanSchema = z.object({
   UpgradePlanList: z.array(z.string()).nullable(),
   DowngradePlanList: z.array(z.string()).nullable(),
   MaxSeats: z.number(),
-  MaxResources: z.string(),
+  MaxResources: MaxResourcesSchema,
   Traffic: z.number(),
   Prices: z.array(PlanPriceSchema),
   CreatedAt: z.string(),
@@ -48,6 +82,24 @@ export const SubscriptionPlanSchema = z.object({
 });
 
 export type SubscriptionPlan = z.infer<typeof SubscriptionPlanSchema>;
+
+// 发票信息
+export const InvoiceInfoSchema = z.object({
+  ID: z.string(),
+  PaymentUrl: z.url(),
+  AmountDue: z.number(),
+  Currency: z.string(),
+  Status: z.string(),
+  CreatedAt: z.number(),
+  DueDate: z.number(),
+  HasDiscount: z.boolean(),
+  DiscountAmount: z.number(),
+  Subtotal: z.number(),
+  Total: z.number(),
+  Description: z.string(),
+  PaymentMethodType: z.string()
+});
+export type InvoiceInfo = z.infer<typeof InvoiceInfoSchema>;
 
 // 工作空间订阅
 export const WorkspaceSubscriptionSchema = z.object({
@@ -69,7 +121,9 @@ export const WorkspaceSubscriptionSchema = z.object({
   UpdateAt: z.string(),
   ExpireAt: z.string().nullable(),
   Traffic: z.array(z.any()).nullable(),
-  type: SubscriptionTypeSchema
+  type: SubscriptionTypeSchema,
+  InvoiceInfo: InvoiceInfoSchema.optional(),
+  role: WorkspaceRoleSchema
 });
 export type WorkspaceSubscription = z.infer<typeof WorkspaceSubscriptionSchema>;
 
@@ -110,7 +164,7 @@ export type PaymentRecord = z.infer<typeof PaymentRecordSchema>;
 
 // 请求类型
 export const WorkspaceSubscriptionRequestSchema = z.object({
-  workspace: z.string(),
+  workspace: z.string().optional(),
   regionDomain: z.string()
 });
 export type WorkspaceSubscriptionRequest = z.infer<typeof WorkspaceSubscriptionRequestSchema>;
@@ -126,7 +180,7 @@ export type UpgradeAmountRequest = z.infer<typeof UpgradeAmountRequestSchema>;
 
 export const SubscriptionPayRequestSchema = WorkspaceSubscriptionRequestSchema.extend({
   planName: z.string(),
-  period: z.enum(['1m', '1y']), // 订阅周期：1m=1个月，1y=1年（需与套餐价格表的 billing_cycle 匹配）
+  period: z.enum(['1m', '1y']).optional(), // 订阅周期：1m=1个月，1y=1年（需与套餐价格表的 billing_cycle 匹配）
   payMethod: PaymentMethodSchema, // 支付方式：stripe 或 balance
   operator: OperatorSchema,
   cardId: z.string().optional(),
@@ -137,6 +191,16 @@ export const SubscriptionPayRequestSchema = WorkspaceSubscriptionRequestSchema.e
       userType: z.enum(['subscription', 'payg'])
     })
     .optional()
+}).superRefine((val, ctx) => {
+  const operator = val.operator;
+  const periodRequiredOperators: Operator[] = ['created', 'upgraded', 'downgraded', 'renewed'];
+  if (periodRequiredOperators.includes(operator) && !val.period) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['period'],
+      message: 'period is required'
+    });
+  }
 });
 export type SubscriptionPayRequest = z.infer<typeof SubscriptionPayRequestSchema>;
 

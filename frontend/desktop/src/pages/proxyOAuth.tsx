@@ -7,7 +7,7 @@ import { Flex, Spinner } from '@chakra-ui/react';
 import { isString } from 'lodash';
 import { useQuery } from '@tanstack/react-query';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import { compareFirstLanguages } from '@/utils/tools';
+import { ensureLocaleCookie } from '@/utils/ssrLocale';
 import { OauthProvider } from '@/types/user';
 import { useConfigStore } from '@/stores/config';
 import { getAppConfig } from './api/platform/getAppConfig';
@@ -87,9 +87,7 @@ export default function Callback({ appConfig }: { appConfig: AppClientConfigType
 }
 
 export async function getServerSideProps({ req, res, locales }: any) {
-  const local =
-    req?.cookies?.NEXT_LOCALE || compareFirstLanguages(req?.headers?.['accept-language'] || 'zh');
-  res.setHeader('Set-Cookie', `NEXT_LOCALE=${local}; Max-Age=2592000; Secure; SameSite=None`);
+  const local = ensureLocaleCookie({ req, res, defaultLocale: 'en' });
   const sealos_cloud_domain = useConfigStore.getState().cloudConfig?.domain;
   const appConfig = await getAppConfig();
   return {

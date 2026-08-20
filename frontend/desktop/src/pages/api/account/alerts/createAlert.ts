@@ -1,6 +1,6 @@
 import { verifyAccessToken, generateBillingToken } from '@/services/backend/auth';
 import { jsonRes } from '@/services/backend/response';
-import { CreateAlertRequest, CreateAlertResponse, ProviderType } from '@/types/alert';
+import { CreateAlertRequestSchema, CreateAlertResponse, ProviderType } from '@/types/alert';
 import { verifyCodeGuard } from '@/services/backend/middleware/sms';
 import { globalPrisma } from '@/services/backend/db/init';
 import type { NextApiRequest, NextApiResponse } from 'next';
@@ -22,15 +22,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    const body: CreateAlertRequest = req.body;
-    const { providerType, providerId, code } = body;
-
-    if (!providerType || !providerId) {
+    const parsedBody = CreateAlertRequestSchema.safeParse(req.body);
+    if (!parsedBody.success) {
       return jsonRes(res, {
         code: 400,
-        message: 'Missing required fields: providerType, providerId'
+        message: 'Invalid verification request'
       });
     }
+    const { providerType, providerId, code, challengeId } = parsedBody.data;
 
     // Check if phone/email is already bound to user account
     const userInfo = await globalPrisma.user.findUnique({
@@ -58,19 +57,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    if (!code) {
-      return jsonRes(res, {
-        code: 400,
-        message: 'Missing required field: code'
-      });
-    }
-
     const smsType = providerType === 'PHONE' ? 'alert_bind_phone' : 'alert_bind_email';
 
     await verifyCodeGuard(
       providerId,
       code,
-      smsType
+      smsType,
+      challengeId
     )(res, async () => {
       const billingUrl = global.AppConfig.desktop.auth.billingUrl;
       if (!billingUrl) {

@@ -100,7 +100,10 @@ func (c *UserTrafficController) processUserTraffic(resultMap map[string]int64) e
 		userUIDs = append(userUIDs, uid)
 	}
 	var existingUserUIDs []uuid.UUID
-	if err := c.GlobalDB.Model(&types.UserTimeRangeTraffic{}).Where("user_uid IN ?", userUIDs).Pluck("user_uid", &existingUserUIDs).Error; err != nil {
+	if err := c.GlobalDB.Model(&types.UserTimeRangeTraffic{}).
+		Where("user_uid IN ?", userUIDs).
+		Pluck("user_uid", &existingUserUIDs).
+		Error; err != nil {
 		c.Logger.Error(err, "failed to fetch existing user uids")
 		return fmt.Errorf("failed to fetch existing user uids: %w", err)
 	}
@@ -137,10 +140,7 @@ func (c *UserTrafficController) processBatchInserts(records []*types.UserTimeRan
 		return nil
 	}
 	for i := 0; i < len(records); i += batchSize {
-		end := i + batchSize
-		if end > len(records) {
-			end = len(records)
-		}
+		end := min(i+batchSize, len(records))
 		batch := records[i:end]
 		tx := c.GlobalDB.Begin()
 		if tx.Error != nil {
@@ -181,10 +181,7 @@ func (c *UserTrafficController) processBatchUpdates(
 	}
 
 	for i := 0; i < len(records); i += batchSize {
-		end := i + batchSize
-		if end > len(records) {
-			end = len(records)
-		}
+		end := min(i+batchSize, len(records))
 		batch := records[i:end]
 
 		tx := c.GlobalDB.Begin()
@@ -198,20 +195,21 @@ func (c *UserTrafficController) processBatchUpdates(
 			return fmt.Errorf("failed to begin transaction for update batch: %w", tx.Error)
 		}
 
-		caseStmt := "CASE user_uid "
+		var caseStmt strings.Builder
+		caseStmt.WriteString("CASE user_uid ")
 		values := make([]any, 0, len(batch)*2)
 		batchUserUIDs := make([]uuid.UUID, 0, len(batch))
 		for _, record := range batch {
-			caseStmt += "WHEN ? THEN sent_bytes + ? "
+			caseStmt.WriteString("WHEN ? THEN sent_bytes + ? ")
 			values = append(values, record.UserUID, record.SentBytes)
 			batchUserUIDs = append(batchUserUIDs, record.UserUID)
 		}
-		caseStmt += "END"
+		caseStmt.WriteString("END")
 
 		if err := tx.Model(&types.UserTimeRangeTraffic{}).
 			Where("user_uid IN ?", batchUserUIDs).
 			Updates(map[string]any{
-				"sent_bytes": gorm.Expr(caseStmt, values...),
+				"sent_bytes": gorm.Expr(caseStmt.String(), values...),
 				"updated_at": now,
 			}).Error; err != nil {
 			tx.Rollback()
@@ -248,7 +246,15 @@ func (c *UserTrafficController) ProcessTrafficWithTimeRange() {
 			if err != nil {
 				c.Logger.Error(err, "failed to process user traffic")
 			} else {
-				c.Logger.Info("successfully process user traffic", "count", len(result), "start", startTime, "end", endTime)
+				c.Logger.Info(
+					"successfully process user traffic",
+					"count",
+					len(result),
+					"start",
+					startTime,
+					"end",
+					endTime,
+				)
 			}
 		}
 		startTime = endTime
@@ -284,7 +290,7 @@ func (c *UserTrafficController) sendUserTrafficRequest(userUID uuid.UUID, operat
 
 		maxRetries := 3
 		for attempt := 1; attempt <= maxRetries; attempt++ {
-			req, err := http.NewRequest(http.MethodPost, url, nil)
+			req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, url, nil)
 			if err != nil {
 				return fmt.Errorf("failed to create request: %w", err)
 			}
@@ -305,9 +311,17 @@ func (c *UserTrafficController) sendUserTrafficRequest(userUID uuid.UUID, operat
 				}
 				body, err := io.ReadAll(resp.Body)
 				if err != nil {
-					lastErr = fmt.Errorf("unexpected status code: %d, failed to read response body: %w", resp.StatusCode, err)
+					lastErr = fmt.Errorf(
+						"unexpected status code: %d, failed to read response body: %w",
+						resp.StatusCode,
+						err,
+					)
 				} else {
-					lastErr = fmt.Errorf("unexpected status code: %d, response body: %s", resp.StatusCode, string(body))
+					lastErr = fmt.Errorf(
+						"unexpected status code: %d, response body: %s",
+						resp.StatusCode,
+						string(body),
+					)
 				}
 			}
 

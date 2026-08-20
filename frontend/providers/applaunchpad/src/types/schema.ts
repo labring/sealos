@@ -22,16 +22,6 @@ import { customAlphabet } from 'nanoid';
 
 export const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
-export const resourceConverters = {
-  cpuToMillicores: (cores: number): number => cores * 1000,
-
-  memoryToMB: (gb: number): number => gb * 1024,
-
-  millicoresToCpu: (millicores: number): number => millicores / 1000,
-
-  mbToMemory: (mb: number): number => mb / 1024
-};
-
 export const ResourceSchema = z
   .object({
     replicas: z

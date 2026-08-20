@@ -10,8 +10,7 @@ import {
   useDisclosure,
   ModalCloseButton,
   IconButton,
-  Tooltip,
-  Text
+  Tooltip
 } from '@chakra-ui/react';
 import type { DBConditionItemType, DBStatusMapType } from '@/types/db';
 import MyIcon from '../Icon';
@@ -24,15 +23,18 @@ import { Maximize2 } from 'lucide-react';
 const DBStatusTag = ({
   conditions = [],
   status,
-  showBorder = false,
   alertReason,
-  alertDetails
+  alertDetails,
+  onOpenStatusDetails,
+  onOpenAlertDetails
 }: {
   conditions: DBConditionItemType[];
   status: DBStatusMapType;
   showBorder?: boolean;
   alertReason?: string;
   alertDetails?: string;
+  onOpenStatusDetails?: () => void;
+  onOpenAlertDetails?: () => void;
 }) => {
   const { t } = useTranslation();
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -46,6 +48,8 @@ const DBStatusTag = ({
   // Check if status is not Running or Stopped
   const shouldShowQuestionIcon =
     status.value !== DBStatusEnum.Running && status.value !== DBStatusEnum.Stopped && alertReason;
+  const handleOpenStatusDetails = onOpenStatusDetails || onOpen;
+  const handleOpenAlertDetails = onOpenAlertDetails || onQuestionOpen;
 
   return (
     <>
@@ -81,7 +85,12 @@ const DBStatusTag = ({
           >
             {label}
           </Box>
-          <Maximize2 size={14} color="#71717A" cursor={'pointer'} onClick={onOpen} />
+          <Maximize2
+            size={14}
+            color="#71717A"
+            cursor={'pointer'}
+            onClick={handleOpenStatusDetails}
+          />
         </Flex>
         {shouldShowQuestionIcon && (
           <Tooltip label={t('click_for_details')} placement="top">
@@ -91,7 +100,7 @@ const DBStatusTag = ({
               variant="ghost"
               aria-label="Question mark"
               icon={<MyIcon name="help" w="14px" h="14px" color="#F04438" />}
-              onClick={onQuestionOpen}
+              onClick={handleOpenAlertDetails}
               color="#F04438"
               backgroundColor="#FEF3F2"
               w="14px"
@@ -102,65 +111,67 @@ const DBStatusTag = ({
           </Tooltip>
         )}
 
-        {/* Status details modal */}
-        <Modal isOpen={isOpen} onClose={onClose} lockFocusAcrossFrames={false}>
-          <ModalOverlay />
-          <ModalContent minW={'520px'}>
-            <ModalHeader display={'flex'} alignItems={'center'}>
-              <Box flex={1}>{label}</Box>
-              <ModalCloseButton top={'10px'} right={'10px'} />
-            </ModalHeader>
-            <ModalBody>
-              {conditions.map((item, i) => (
-                <Box
-                  key={i}
-                  pl={6}
-                  pb={6}
-                  ml={4}
-                  borderLeft={`2px solid ${
-                    i === conditions.length - 1 ? 'transparent' : '#DCE7F1'
-                  }`}
-                  position={'relative'}
-                  _before={{
-                    content: '""',
-                    position: 'absolute',
-                    left: '-6.5px',
-                    w: '8px',
-                    h: '8px',
-                    borderRadius: '8px',
-                    backgroundColor: '#fff',
-                    border: '2px solid',
-                    borderColor: item.status === 'False' ? '#D92D20' : '#039855'
-                  }}
-                >
-                  <Flex lineHeight={1} mb={2} alignItems={'center'}>
-                    <Box fontWeight={'bold'}>
-                      {item.reason},&ensp;Last Occur:{' '}
-                      {formatPodTime(item.lastTransitionTime as unknown as Date)}
-                    </Box>
-                  </Flex>
-                  <Box color={'blackAlpha.700'}>{item.message}</Box>
-                </Box>
-              ))}
-            </ModalBody>
-          </ModalContent>
-        </Modal>
+        {!onOpenStatusDetails && (
+          <Modal isOpen={isOpen} onClose={onClose} lockFocusAcrossFrames={false}>
+            <ModalOverlay />
+            <ModalContent minW={'520px'}>
+              <ModalHeader display={'flex'} alignItems={'center'}>
+                <Box flex={1}>{label}</Box>
+                <ModalCloseButton top={'10px'} right={'10px'} />
+              </ModalHeader>
+              <ModalBody>
+                {conditions.map((item, i) => (
+                  <Box
+                    key={i}
+                    pl={6}
+                    pb={6}
+                    ml={4}
+                    borderLeft={`2px solid ${
+                      i === conditions.length - 1 ? 'transparent' : '#DCE7F1'
+                    }`}
+                    position={'relative'}
+                    _before={{
+                      content: '""',
+                      position: 'absolute',
+                      left: '-6.5px',
+                      w: '8px',
+                      h: '8px',
+                      borderRadius: '8px',
+                      backgroundColor: '#fff',
+                      border: '2px solid',
+                      borderColor: item.status === 'False' ? '#D92D20' : '#039855'
+                    }}
+                  >
+                    <Flex lineHeight={1} mb={2} alignItems={'center'}>
+                      <Box fontWeight={'bold'}>
+                        {item.reason},&ensp;Last Occur:{' '}
+                        {formatPodTime(item.lastTransitionTime as unknown as Date)}
+                      </Box>
+                    </Flex>
+                    <Box color={'blackAlpha.700'}>{item.message}</Box>
+                  </Box>
+                ))}
+              </ModalBody>
+            </ModalContent>
+          </Modal>
+        )}
 
-        {/* Question mark modal */}
-        <Modal isOpen={isQuestionOpen} onClose={onQuestionClose} lockFocusAcrossFrames={false}>
-          <ModalOverlay />
-          <ModalContent minW={'520px'}>
-            <ModalHeader display={'flex'} alignItems={'center'}>
-              <Box flex={1}>{alertReason || 'Status Details'}</Box>
-              <ModalCloseButton top={'10px'} right={'10px'} />
-            </ModalHeader>
-            <ModalBody>
-              <Box whiteSpace={'pre-wrap'} color={'gray.700'}>
-                {alertDetails || ''}
-              </Box>
-            </ModalBody>
-          </ModalContent>
-        </Modal>
+        {!onOpenAlertDetails && (
+          <Modal isOpen={isQuestionOpen} onClose={onQuestionClose} lockFocusAcrossFrames={false}>
+            <ModalOverlay />
+            <ModalContent minW={'520px'}>
+              <ModalHeader display={'flex'} alignItems={'center'}>
+                <Box flex={1}>{alertReason || 'Status Details'}</Box>
+                <ModalCloseButton top={'10px'} right={'10px'} />
+              </ModalHeader>
+              <ModalBody>
+                <Box whiteSpace={'pre-wrap'} color={'gray.700'}>
+                  {alertDetails || ''}
+                </Box>
+              </ModalBody>
+            </ModalContent>
+          </Modal>
+        )}
       </Flex>
     </>
   );

@@ -1,40 +1,34 @@
 'use client';
 
-import {
-  Button,
-  ButtonGroup,
-  Divider,
-  Flex,
-  FlexProps,
-  Input,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-  Text,
-  useDisclosure
-} from '@chakra-ui/react';
-import {
-  endOfDay,
-  format,
-  isAfter,
-  isBefore,
-  isMatch,
-  isValid,
-  parse,
-  startOfDay,
-  subDays
-} from 'date-fns';
+import { format, isAfter, isBefore, subDays } from 'date-fns';
 import { enUS, zhCN } from 'date-fns/locale';
 import { useTranslation } from 'next-i18next';
 import { ChangeEventHandler, useMemo, useState } from 'react';
-import { DateRange, DayPicker, SelectRangeEventHandler } from 'react-day-picker';
+import { DateRange, DayPicker } from 'react-day-picker';
 import useDateTimeStore from '@/store/date';
-import { formatTimeRange, parseTimeRange } from '@/utils/timeRange';
-import { MySelect } from '@sealos/ui';
-import MyIcon from '../Icon';
+import {
+  formatDateInTimeZone,
+  formatDateTimeInTimeZone,
+  formatTimeInTimeZone,
+  getBrowserTimeZone,
+  getBoundedRangeStart,
+  getBoundedDayRangeInTimeZone,
+  getDayBoundsInTimeZone,
+  normalizeTimeInput,
+  orderDateRange,
+  parseTimeRange,
+  parseDateTimeInTimeZone
+} from '@/utils/timeRange';
+import { Button } from '@sealos/shadcn-ui/button';
+import { Calendar, RefreshCw } from 'lucide-react';
+import { Input } from '@sealos/shadcn-ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@sealos/shadcn-ui/popover';
+import { cn } from '@sealos/shadcn-ui';
+import 'react-day-picker/style.css';
 
-interface DatePickerProps extends FlexProps {
+interface DatePickerProps {
   isDisabled?: boolean;
+  className?: string;
 }
 
 interface RecentDate {
@@ -43,16 +37,25 @@ interface RecentDate {
   compareValue: string;
 }
 
-const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
+const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
   const { t, i18n } = useTranslation();
   const currentLang = i18n.language;
-  const { isOpen, onClose, onOpen } = useDisclosure();
+  const [isOpen, setIsOpen] = useState(false);
+  const timeZone = useMemo(() => getBrowserTimeZone(), []);
 
-  const { startDateTime, endDateTime, setStartDateTime, setEndDateTime, timeZone, setTimeZone } =
-    useDateTimeStore();
+  const {
+    startDateTime,
+    endDateTime,
+    setStartDateTime,
+    setEndDateTime,
+    setManualRange,
+    setAutoRange
+  } = useDateTimeStore();
 
   const now = new Date();
   const sevenDaysAgo = subDays(now, 7);
+  const earliestCalendarDay = getDayBoundsInTimeZone(sevenDaysAgo, timeZone).start;
+  const latestCalendarDay = getDayBoundsInTimeZone(now, timeZone).start;
 
   const initState = {
     from: startDateTime,
@@ -140,10 +143,18 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
   const [inputState, setInputState] = useState<0 | 1>(0);
   const [recentDate, setRecentDate] = useState<RecentDate | null>(defaultRecentDate);
 
-  const [fromDateString, setFromDateString] = useState<string>(format(initState.from, 'y-MM-dd'));
-  const [toDateString, setToDateString] = useState<string>(format(initState.to, 'y-MM-dd'));
-  const [fromTimeString, setFromTimeString] = useState<string>(format(initState.from, 'HH:mm:ss'));
-  const [toTimeString, setToTimeString] = useState<string>(format(initState.to, 'HH:mm:ss'));
+  const [fromDateString, setFromDateString] = useState<string>(
+    formatDateInTimeZone(initState.from, timeZone)
+  );
+  const [toDateString, setToDateString] = useState<string>(
+    formatDateInTimeZone(initState.to, timeZone)
+  );
+  const [fromTimeString, setFromTimeString] = useState<string>(
+    formatTimeInTimeZone(initState.from, timeZone)
+  );
+  const [toTimeString, setToTimeString] = useState<string>(
+    formatTimeInTimeZone(initState.to, timeZone)
+  );
 
   const [fromDateError, setFromDateError] = useState<string | null>(null);
   const [toDateError, setToDateError] = useState<string | null>(null);
@@ -155,6 +166,14 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
   const [toTimeShake, setToTimeShake] = useState(false);
 
   const [selectedRange, setSelectedRange] = useState<DateRange | undefined>(initState);
+
+  const syncRange = ({ from, to }: { from: Date; to: Date }) => {
+    setSelectedRange({ from, to });
+    setFromDateString(formatDateInTimeZone(from, timeZone));
+    setFromTimeString(formatTimeInTimeZone(from, timeZone));
+    setToDateString(formatDateInTimeZone(to, timeZone));
+    setToTimeString(formatTimeInTimeZone(to, timeZone));
+  };
 
   const onSubmit = () => {
     if (fromDateError || fromTimeError || toDateError || toTimeError) {
@@ -171,35 +190,67 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
 
       return;
     }
-    selectedRange?.from && setStartDateTime(selectedRange.from);
-    selectedRange?.to && setEndDateTime(selectedRange.to);
-    onClose();
+    const start = parseDateTimeInTimeZone(fromDateString, fromTimeString, timeZone);
+    const end = parseDateTimeInTimeZone(toDateString, toTimeString, timeZone);
+
+    if (!start || !end) {
+      if (!start) setFromTimeError('Invalid start time range');
+      if (!end) setToTimeError('Invalid end time range');
+      return;
+    }
+
+    if (start > end) {
+      setFromTimeError('Start time must be before end time');
+      setToTimeError('End time must be after start time');
+      return;
+    }
+
+    const submitNow = new Date();
+    const earliestStart = subDays(submitNow, 7);
+    const boundedStart = getBoundedRangeStart(start, end, earliestStart, timeZone);
+
+    if (!boundedStart) {
+      setFromTimeError('start time cannot be before 7 days ago');
+      return;
+    }
+
+    if (isAfter(end, submitNow)) {
+      setToTimeError('end time cannot be after current time');
+      return;
+    }
+
+    setFromDateError(null);
+    setFromTimeError(null);
+    setToDateError(null);
+    setToTimeError(null);
+    syncRange({ from: boundedStart, to: end });
+    setStartDateTime(boundedStart);
+    setEndDateTime(end);
+    setIsOpen(false);
   };
 
   const handleFromChange = (value: string, type: 'date' | 'time') => {
-    let newDateTimeString;
+    setManualRange();
+    const normalizedValue = type === 'time' ? normalizeTimeInput(value) : value;
 
     if (type === 'date') {
       setFromDateString(value);
-      if (!isMatch(value, 'y-MM-dd')) {
-        setFromDateError('Invalid date format');
-        return;
-      }
-      newDateTimeString = `${value} ${fromTimeString}`;
     } else {
-      setFromTimeString(value);
-      if (!isMatch(value, 'HH:mm:ss')) {
-        setFromTimeError('Invalid time format');
-        return;
-      }
-      newDateTimeString = `${fromDateString} ${value}`;
+      setFromTimeString(normalizedValue);
     }
 
-    console.log(newDateTimeString);
+    const date = parseDateTimeInTimeZone(
+      type === 'date' ? value : fromDateString,
+      type === 'time' ? normalizedValue : fromTimeString,
+      timeZone
+    );
 
-    const date = parse(newDateTimeString, 'y-MM-dd HH:mm:ss', new Date());
-
-    if (!isValid(date)) {
+    if (!date) {
+      if (type === 'date') {
+        setFromDateError('Invalid date format');
+      } else {
+        setFromTimeError('Invalid time format');
+      }
       return setSelectedRange({ from: undefined, to: selectedRange?.to });
     }
 
@@ -218,38 +269,34 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
     setRecentDate(null);
 
     if (selectedRange?.to) {
-      if (isAfter(date, selectedRange.to)) {
-        setSelectedRange({ from: selectedRange.to, to: date });
-      } else {
-        setSelectedRange({ from: date, to: selectedRange?.to });
-      }
+      syncRange(orderDateRange(date, selectedRange.to));
     } else {
-      setSelectedRange({ from: date, to: date });
+      syncRange({ from: date, to: date });
     }
   };
 
   const handleToChange = (value: string, type: 'date' | 'time') => {
-    let newDateTimeString;
+    setManualRange();
+    const normalizedValue = type === 'time' ? normalizeTimeInput(value) : value;
 
     if (type === 'date') {
       setToDateString(value);
-      if (!isMatch(value, 'y-MM-dd')) {
-        setToDateError('Invalid date format');
-        return;
-      }
-      newDateTimeString = `${value} ${toTimeString}`;
     } else {
-      setToTimeString(value);
-      if (!isMatch(value, 'HH:mm:ss')) {
-        setToTimeError('Invalid time format');
-        return;
-      }
-      newDateTimeString = `${toDateString} ${value}`;
+      setToTimeString(normalizedValue);
     }
 
-    const date = parse(newDateTimeString, 'y-MM-dd HH:mm:ss', new Date());
+    const date = parseDateTimeInTimeZone(
+      type === 'date' ? value : toDateString,
+      type === 'time' ? normalizedValue : toTimeString,
+      timeZone
+    );
 
-    if (!isValid(date)) {
+    if (!date) {
+      if (type === 'date') {
+        setToDateError('Invalid date format');
+      } else {
+        setToTimeError('Invalid time format');
+      }
       return setSelectedRange({ from: selectedRange?.from, to: undefined });
     }
 
@@ -268,26 +315,16 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
     setRecentDate(null);
 
     if (selectedRange?.from) {
-      if (isBefore(date, selectedRange.from)) {
-        setSelectedRange({ from: date, to: selectedRange.from });
-      } else {
-        setSelectedRange({ from: selectedRange?.from, to: date });
-      }
+      syncRange(orderDateRange(selectedRange.from, date));
     } else {
-      setSelectedRange({ from: date, to: date });
+      syncRange({ from: date, to: date });
     }
   };
 
-  const handleRangeSelect: SelectRangeEventHandler = (range: DateRange | undefined) => {
+  const handleRangeSelect = (range: DateRange | undefined) => {
+    setManualRange();
     if (range) {
       let { from, to } = range;
-
-      if (from && isBefore(from, sevenDaysAgo)) {
-        from = sevenDaysAgo;
-      }
-      if (to && isAfter(to, now)) {
-        to = now;
-      }
 
       if (inputState === 0) {
         // from
@@ -301,23 +338,23 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
       } else {
         setInputState(0);
       }
-      setSelectedRange({
-        from,
-        to
-      });
-      if (from) {
-        setFromDateString(format(startOfDay(from), 'y-MM-dd'));
-        setFromTimeString(format(startOfDay(from), 'HH:mm:ss'));
+      const boundedRange = getBoundedDayRangeInTimeZone(from, to, sevenDaysAgo, now, timeZone);
+
+      setSelectedRange(boundedRange);
+      if (boundedRange.from) {
+        setFromDateString(formatDateInTimeZone(boundedRange.from, timeZone));
+        setFromTimeString(formatTimeInTimeZone(boundedRange.from, timeZone));
       } else {
-        setFromDateString(format(new Date(), 'y-MM-dd'));
-        setFromTimeString(format(new Date(), 'HH:mm:ss'));
+        setFromDateString(formatDateInTimeZone(now, timeZone));
+        setFromTimeString(formatTimeInTimeZone(now, timeZone));
       }
-      if (to) {
-        setToDateString(format(endOfDay(to), 'y-MM-dd'));
-        setToTimeString(format(endOfDay(to), 'HH:mm:ss'));
+      if (boundedRange.to) {
+        setToDateString(formatDateInTimeZone(boundedRange.to, timeZone));
+        setToTimeString(formatTimeInTimeZone(boundedRange.to, timeZone));
       } else {
-        setToDateString(format(from ? from : new Date(), 'y-MM-dd'));
-        setToTimeString(format(from ? from : new Date(), 'HH:mm:ss'));
+        const fallback = boundedRange.from || now;
+        setToDateString(formatDateInTimeZone(fallback, timeZone));
+        setToTimeString(formatTimeInTimeZone(fallback, timeZone));
       }
 
       setRecentDate(null);
@@ -336,183 +373,169 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
   };
 
   const handleRecentDateClick = (item: RecentDate) => {
+    setAutoRange(item.compareValue);
     setFromDateError(null);
     setFromTimeError(null);
     setToDateError(null);
     setToTimeError(null);
 
-    setRecentDate(item);
-    setSelectedRange(item.value);
-    if (item.value.from) {
-      setFromDateString(format(item.value.from, 'y-MM-dd'));
-      setFromTimeString(format(item.value.from, 'HH:mm:ss'));
+    const nextRange = getDateRange(item.compareValue);
+    setRecentDate({ ...item, value: nextRange });
+    setSelectedRange(nextRange);
+    if (nextRange.from) {
+      setFromDateString(formatDateInTimeZone(nextRange.from, timeZone));
+      setFromTimeString(formatTimeInTimeZone(nextRange.from, timeZone));
     }
-    if (item.value.to) {
-      setToDateString(format(item.value.to, 'y-MM-dd'));
-      setToTimeString(format(item.value.to, 'HH:mm:ss'));
+    if (nextRange.to) {
+      setToDateString(formatDateInTimeZone(nextRange.to, timeZone));
+      setToTimeString(formatTimeInTimeZone(nextRange.to, timeZone));
     }
   };
 
-  return (
-    <Flex
-      h={'32px'}
-      bg="grayModern.50"
-      gap={'10px'}
-      align={'center'}
-      px={'10px'}
-      justify={'space-between'}
-      border={'1px solid'}
-      borderColor={'grayModern.200'}
-      borderRadius="6px"
-      color={'grayModern.900'}
-      fontSize={'12px'}
-      {...props}
-    >
-      <Popover isOpen={isOpen} onClose={onClose}>
-        <PopoverTrigger>
-          <Flex cursor={'pointer'} alignItems={'center'} gap={'4px'} onClick={onOpen}>
-            <Text>{format(startDateTime, 'y-MM-dd HH:mm:ss')}</Text>
-            <MyIcon name="to" />
-            <Text>{format(endDateTime, 'y-MM-dd HH:mm:ss')}</Text>
-            <Button variant={'unstyled'} isDisabled={isDisabled} minW={'fit-content'}>
-              <MyIcon name="calendar" />
-            </Button>
-          </Flex>
-        </PopoverTrigger>
-        <PopoverContent zIndex={99} w={'fit-content'} borderRadius={'12px'}>
-          <Flex w={'402px'} height={'420px'}>
-            <Flex w={'242px'} flexDir={'column'}>
-              <DayPicker
-                mode="range"
-                selected={selectedRange}
-                onSelect={handleRangeSelect}
-                locale={currentLang === 'zh' ? zhCN : enUS}
-                weekStartsOn={0}
-                disabled={(date) => {
-                  return isAfter(date, now) || isBefore(date, sevenDaysAgo);
-                }}
-              />
-              <Divider />
-              <Flex flexDir={'column'} gap={'5px'} px={'16px'} pt={'8px'}>
-                <Text fontSize={'12px'} color={'grayModern.600'} ml={'3px'} mb={'4px'}>
-                  {t('start')}
-                </Text>
-                <Flex w={'100%'} justify={'center'} gap={'4px'}>
-                  <DatePickerInput
-                    value={fromDateString}
-                    onChange={(e) => handleFromChange(e.target.value, 'date')}
-                    error={!!fromDateError}
-                    showError={fromDateShake}
-                  />
-                  <DatePickerInput
-                    value={fromTimeString}
-                    onChange={(e) => handleFromChange(e.target.value, 'time')}
-                    error={!!fromTimeError}
-                    showError={fromTimeShake}
-                  />
-                </Flex>
-              </Flex>
+  // format date time display
+  const formatDateTimeDisplay = () => {
+    return `${formatDateTimeInTimeZone(
+      startDateTime,
+      timeZone,
+      'HH:mm, MMM DD'
+    )} - ${formatDateTimeInTimeZone(endDateTime, timeZone, 'HH:mm, MMM DD')}`;
+  };
 
-              <Flex flexDir={'column'} gap={'5px'} px={'16px'} pt={'8px'} pb={'12px'}>
-                <Text fontSize={'12px'} color={'grayModern.600'} ml={'3px'} mb={'4px'}>
-                  {t('end')}
-                </Text>
-                <Flex w={'100%'} justify={'center'} gap={'4px'}>
-                  <DatePickerInput
-                    value={toDateString}
-                    onChange={(e) => handleToChange(e.target.value, 'date')}
-                    error={!!toDateError}
-                    showError={toDateShake}
-                  />
-                  <DatePickerInput
-                    value={toTimeString}
-                    onChange={(e) => handleToChange(e.target.value, 'time')}
-                    error={!!toTimeError}
-                    showError={toTimeShake}
-                  />
-                </Flex>
-              </Flex>
-            </Flex>
-            <Divider orientation="vertical" flexShrink={0} />
-            <Flex flex={1}>
-              <Flex flexDir={'column'} gap={'4px'} p={'12px 8px'} w={'100%'}>
-                {recentDateList.map((item) => (
-                  <Button
-                    height={'32px'}
-                    key={JSON.stringify(item.value)}
-                    variant={'ghost'}
-                    color={'grayModern.900'}
-                    fontSize={'12px'}
-                    fontWeight={'400'}
-                    justifyContent={'flex-start'}
-                    {...(recentDate &&
-                      recentDate.compareValue === item.compareValue && {
-                        bg: 'brightBlue.50',
-                        color: 'brightBlue.600'
-                      })}
-                    _hover={{
-                      bg: 'rgba(17, 24, 36, 0.05)'
-                    }}
-                    onClick={() => handleRecentDateClick(item)}
-                  >
-                    {item.label}
-                  </Button>
-                ))}
-              </Flex>
-            </Flex>
-          </Flex>
-          <Divider />
-          <Flex justify={'space-between'} pl={'12px'} alignItems={'center'} py={'8px'}>
-            <MySelect
-              height="32px"
-              width={'fit-content'}
-              border={'none'}
-              boxShadow={'none'}
-              backgroundColor={'transparent'}
-              color={'grayModern.600'}
-              value={timeZone}
-              list={[
-                { value: 'local', label: 'Local (Asia/Shanghai)' },
-                { value: 'utc', label: 'UTC' }
-              ]}
-              onchange={(val: any) => setTimeZone(val)}
+  return (
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          className={cn(
+            'h-10 flex gap-2 items-center px-4 rounded-lg shadow-none hover:bg-zinc-50',
+            className
+          )}
+          disabled={isDisabled}
+        >
+          <Calendar className="w-4 h-4 text-neutral-500" />
+          <span className="whitespace-nowrap text-gray-900 text-sm font-normal ">
+            {formatDateTimeDisplay()}
+          </span>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-fit p-0 rounded-xl z-50 border-[0.5px] border-zinc-200"
+        align="start"
+      >
+        <div className="w-[402px] flex">
+          <div className="w-[242px] h-fit flex flex-col">
+            <DayPicker
+              mode="range"
+              timeZone={timeZone}
+              navLayout="around"
+              selected={selectedRange}
+              onSelect={handleRangeSelect}
+              locale={currentLang === 'zh' ? zhCN : enUS}
+              weekStartsOn={0}
+              disabled={(date) => {
+                const dayStart = getDayBoundsInTimeZone(date, timeZone).start;
+                return (
+                  isAfter(dayStart, latestCalendarDay) || isBefore(dayStart, earliestCalendarDay)
+                );
+              }}
+              formatters={{
+                formatWeekdayName: (date) =>
+                  format(date, 'EEE', { locale: currentLang === 'zh' ? zhCN : enUS })
+              }}
+              className="px-4 pb-2 pt-4"
             />
-            <ButtonGroup variant="outline" spacing="2" px={'10px'}>
-              <Button
-                border={'1px solid'}
-                borderColor={'grayModern.250'}
-                borderRadius={'6px'}
-                onClick={() => {
-                  if (defaultRecentDate) {
-                    setRecentDate(defaultRecentDate);
-                    handleRecentDateClick(defaultRecentDate);
-                  } else {
-                    const defaultOption =
-                      recentDateList.find((item) => item.compareValue === '30m') ||
-                      recentDateList[0];
-                    setRecentDate(defaultOption);
-                    handleRecentDateClick(defaultOption);
-                  }
-                }}
-              >
-                <MyIcon name="refresh" color={'grayModern.500'} />
-              </Button>
-              <Button
-                border={'1px solid'}
-                borderColor={'grayModern.250'}
-                borderRadius={'6px'}
-                onClick={() => onClose()}
-              >
-                {t('Cancel')}
-              </Button>
-              <Button onClick={() => onSubmit()} variant={'solid'}>
-                {t('Confirm')}
-              </Button>
-            </ButtonGroup>
-          </Flex>
-        </PopoverContent>
-      </Popover>
-    </Flex>
+
+            <div className="flex flex-col gap-1 px-4 pt-3 border-t border-zinc-100">
+              <span className="text-xs text-zinc-600 ml-1">{t('start')}</span>
+              <div className="w-full flex justify-center gap-1">
+                <DatePickerInput
+                  value={fromDateString}
+                  onChange={(e) => handleFromChange(e.target.value, 'date')}
+                  error={!!fromDateError}
+                  showError={fromDateShake}
+                />
+                <DatePickerInput
+                  value={fromTimeString}
+                  onChange={(e) => handleFromChange(e.target.value, 'time')}
+                  error={!!fromTimeError}
+                  showError={fromTimeShake}
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1 px-4 pt-2 pb-4">
+              <span className="text-xs text-zinc-600 ml-1">{t('end')}</span>
+              <div className="w-full flex justify-center gap-1">
+                <DatePickerInput
+                  value={toDateString}
+                  onChange={(e) => handleToChange(e.target.value, 'date')}
+                  error={!!toDateError}
+                  showError={toDateShake}
+                />
+                <DatePickerInput
+                  value={toTimeString}
+                  onChange={(e) => handleToChange(e.target.value, 'time')}
+                  error={!!toTimeError}
+                  showError={toTimeShake}
+                />
+              </div>
+            </div>
+          </div>
+          <div className="flex-1 border-l border-zinc-100">
+            <div className="flex flex-col gap-0.5 py-3 px-2 w-full">
+              {recentDateList.map((item) => (
+                <Button
+                  key={JSON.stringify(item.value)}
+                  variant="ghost"
+                  className={cn(
+                    'h-8 px-2 text-gray-900 text-xs font-normal justify-start hover:bg-gray-50',
+                    recentDate &&
+                      recentDate.compareValue === item.compareValue &&
+                      'bg-blue-50 text-blue-600 hover:bg-blue-50'
+                  )}
+                  onClick={() => handleRecentDateClick(item)}
+                >
+                  {item.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex justify-between items-center px-3 py-2 border-t border-zinc-100">
+          <span className="text-xs text-zinc-500">{timeZone}</span>
+          <div className="flex gap-2 px-2.5">
+            <Button
+              variant="outline"
+              className="border rounded-lg shadow-none h-9 w-9"
+              onClick={() => {
+                if (defaultRecentDate) {
+                  setRecentDate(defaultRecentDate);
+                  handleRecentDateClick(defaultRecentDate);
+                } else {
+                  const defaultOption =
+                    recentDateList.find((item) => item.compareValue === '30m') || recentDateList[0];
+                  setRecentDate(defaultOption);
+                  handleRecentDateClick(defaultOption);
+                }
+              }}
+            >
+              <RefreshCw className="w-4 h-4 text-neutral-500" />
+            </Button>
+            <Button
+              variant="outline"
+              className="min-w-14 rounded-lg shadow-none"
+              onClick={() => setIsOpen(false)}
+            >
+              {t('Cancel')}
+            </Button>
+            <Button className="rounded-lg min-w-14 shadow-none" onClick={() => onSubmit()}>
+              {t('Confirm')}
+            </Button>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 };
 
@@ -526,24 +549,11 @@ interface DatePickerInputProps {
 const DatePickerInput = ({ value, onChange, error, showError }: DatePickerInputProps) => {
   return (
     <Input
-      backgroundColor={'white'}
-      w={'50%'}
-      {...(error && {
-        borderColor: 'red.500',
-        _hover: { borderColor: 'red.500' }
-      })}
-      {...(showError && {
-        borderColor: 'red.500',
-        _hover: { borderColor: 'red.500' },
-        animation: 'shake 0.3s'
-      })}
-      sx={{
-        '@keyframes shake': {
-          '0%, 100%': { transform: 'translateX(0)' },
-          '25%': { transform: 'translateX(-4px)' },
-          '75%': { transform: 'translateX(4px)' }
-        }
-      }}
+      className={cn(
+        'bg-white w-full h-8 !text-xs text-zinc-900 border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-none hover:bg-zinc-50',
+        error && 'border-red-500 hover:border-red-500 focus:border-red-500 focus:ring-red-500',
+        showError && 'border-red-500 hover:border-red-500 animate-shake'
+      )}
       value={value}
       onChange={onChange}
     />

@@ -94,8 +94,8 @@ export const LogFilter = ({
           podName === null
             ? false
             : podName === ''
-              ? true
-              : (podName as string[]).includes(p.podName);
+            ? true
+            : (podName as string[]).includes(p.podName);
         return {
           value: p.podName,
           label: p.podName,
@@ -112,6 +112,7 @@ export const LogFilter = ({
         mongodb: 'mongodb',
         postgresql: 'postgresql',
         'apecloud-mysql': 'mysql',
+        mysql: 'mysql',
         redis: 'redis',
         kafka: 'kafka',
         qdrant: 'qdrant',
@@ -161,6 +162,7 @@ export const LogFilter = ({
       mongodb: 'mongodb',
       postgresql: 'postgresql',
       'apecloud-mysql': 'mysql',
+      mysql: 'mysql',
       redis: 'redis',
       kafka: 'kafka',
       qdrant: 'qdrant',
@@ -359,11 +361,13 @@ export const LogFilter = ({
                   const displayText = isPlaceholder
                     ? t('Please select')
                     : selectedCount === podList.length
-                      ? t('All')
-                      : (() => {
-                          const firstSelected = podList.find((p) => p.checked);
-                          return `${firstSelected?.label}${selectedCount > 1 ? ` (+${selectedCount - 1})` : ''}`;
-                        })();
+                    ? t('All')
+                    : (() => {
+                        const firstSelected = podList.find((p) => p.checked);
+                        return `${firstSelected?.label}${
+                          selectedCount > 1 ? ` (+${selectedCount - 1})` : ''
+                        }`;
+                      })();
 
                   return (
                     <Text
@@ -544,11 +548,13 @@ export const LogFilter = ({
                   const displayText = isPlaceholder
                     ? t('Please select')
                     : selectedCount === containerList.length
-                      ? t('All')
-                      : (() => {
-                          const firstSelected = containerList.find((c) => c.checked);
-                          return `${firstSelected?.label}${selectedCount > 1 ? ` (+${selectedCount - 1})` : ''}`;
-                        })();
+                    ? t('All')
+                    : (() => {
+                        const firstSelected = containerList.find((c) => c.checked);
+                        return `${firstSelected?.label}${
+                          selectedCount > 1 ? ` (+${selectedCount - 1})` : ''
+                        }`;
+                      })();
 
                   return (
                     <Text
@@ -606,8 +612,8 @@ export const LogFilter = ({
                       selectedContainers.length === 0
                         ? (null as any)
                         : selectedContainers.length === newList.length
-                          ? (undefined as any)
-                          : ({ name: selectedContainers[0]?.value } as TFile)
+                        ? (undefined as any)
+                        : ({ name: selectedContainers[0]?.value } as TFile)
                     );
                     setTimeout(() => onRefresh(), 0);
                   }}
@@ -653,8 +659,8 @@ export const LogFilter = ({
                         selectedContainers.length === 0
                           ? (null as any)
                           : selectedContainers.length === newList.length
-                            ? (undefined as any)
-                            : ({ name: selectedContainers[0]?.value } as TFile)
+                          ? (undefined as any)
+                          : ({ name: selectedContainers[0]?.value } as TFile)
                       );
                       setTimeout(() => onRefresh(), 0);
                     }}

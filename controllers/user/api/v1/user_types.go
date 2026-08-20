@@ -23,18 +23,24 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const DefaultCSRExpirationSeconds int32 = 1_000_000_000
+
 // UserSpec defines the desired state of User
 type UserSpec struct {
 	// expirationSeconds is the requested duration of validity of the issued
-	// certificate. The certificate signer may issue a certificate with a different
-	// validity duration so a client must check the delta between the notBefore and
-	// notAfter fields in the issued certificate to determine the actual duration.
+	// kubeconfig credential. The issuer may issue a credential with a different
+	// validity duration so a client must check the issued credential to determine
+	// the actual duration.
 	//
 	// The minimum valid value for expirationSeconds is 600, i.e. 10 minutes.
 	//
 	// +optional
-	//+kubebuilder:default:=7200
+	//+kubebuilder:default:=1000000000
 	CSRExpirationSeconds int32 `json:"csrExpirationSeconds,omitempty"`
+	// kubeConfigRotateAt 用于手动触发 kubeconfig 轮转。
+	// 当字段被设置或更新时，controller 会重新请求 token 并重建 kubeconfig。
+	// +optional
+	KubeConfigRotateAt *metav1.Time `json:"kubeConfigRotateAt,omitempty"`
 }
 type RoleType string
 
@@ -59,8 +65,11 @@ type UserStatus struct {
 	//+kubebuilder:default:=Unknown
 	Phase      UserPhase `json:"phase,omitempty"`
 	KubeConfig string    `json:"kubeConfig"`
-	//+kubebuilder:default:=7200
+	//+kubebuilder:default:=1000000000
 	ObservedCSRExpirationSeconds int32 `json:"observedCSRExpirationSeconds,omitempty"`
+	// ObservedKubeConfigRotateAt 记录已处理的轮转请求时间戳。
+	// +optional
+	ObservedKubeConfigRotateAt *metav1.Time `json:"observedKubeConfigRotateAt,omitempty"`
 	// The generation observed by the user controller.
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
@@ -113,8 +122,8 @@ type User struct {
 
 // UserList contains a list of User
 type UserList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
+	metav1.TypeMeta `       json:",inline"`
+	metav1.ListMeta `       json:"metadata,omitempty"`
 	Items           []User `json:"items"`
 }
 

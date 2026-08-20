@@ -18,6 +18,8 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"os"
@@ -25,44 +27,29 @@ import (
 	"sync"
 	"time"
 
-	"github.com/labring/sealos/controllers/pkg/types"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	appv1 "github.com/labring/sealos/controllers/app/api/v1"
-
 	kbv1alpha1 "github.com/apecloud/kubeblocks/apis/dataprotection/v1alpha1"
-
-	"golang.org/x/sync/errgroup"
-
-	"github.com/labring/sealos/controllers/pkg/utils/env"
-
-	"golang.org/x/sync/semaphore"
-
-	"k8s.io/apimachinery/pkg/selection"
-
-	"k8s.io/apimachinery/pkg/labels"
-
-	userv1 "github.com/labring/sealos/controllers/user/api/v1"
-
-	"github.com/labring/sealos/controllers/user/controllers/helper/config"
-
-	"github.com/minio/minio-go/v7"
-
-	objstorage "github.com/labring/sealos/controllers/pkg/objectstorage"
-
 	"github.com/go-logr/logr"
-
+	appv1 "github.com/labring/sealos/controllers/app/api/v1"
 	"github.com/labring/sealos/controllers/pkg/database"
 	"github.com/labring/sealos/controllers/pkg/gpu"
+	objstorage "github.com/labring/sealos/controllers/pkg/objectstorage"
 	"github.com/labring/sealos/controllers/pkg/resources"
+	"github.com/labring/sealos/controllers/pkg/types"
+	"github.com/labring/sealos/controllers/pkg/utils/env"
 	"github.com/labring/sealos/controllers/pkg/utils/logger"
 	"github.com/labring/sealos/controllers/pkg/utils/retry"
-
+	userv1 "github.com/labring/sealos/controllers/user/api/v1"
+	"github.com/labring/sealos/controllers/user/controllers/helper/config"
+	"github.com/minio/minio-go/v7"
+	"golang.org/x/sync/errgroup"
+	"golang.org/x/sync/semaphore"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/selection"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -76,8 +63,9 @@ type MonitorReconciler struct {
 	stopCh                   chan struct{}
 	wg                       sync.WaitGroup
 	periodicReconcile        time.Duration
-	NvidiaGpu                map[string]gpu.NvidiaGPU
-	gpuMutex                 sync.Mutex
+	gpuAliasCard             map[string]corev1.ResourceName
+	gpuNodeAlias             map[string]string
+	gpuMutex                 sync.RWMutex
 	DBClient                 database.Interface
 	TrafficClient            database.Interface
 	Properties               *resources.PropertyTypeLS
@@ -95,13 +83,37 @@ type quantity struct {
 	detail string
 }
 
+type gpuAliasResource struct {
+	Card string `json:"card"`
+}
+
+type gpuAliasConfig struct {
+	Resource gpuAliasResource `json:"resource"`
+}
+
+type gpuNodeConfig struct {
+	Ref     string `json:"gpu.ref"`
+	Product string `json:"gpu.product"`
+}
+
 const (
-	PrometheusURL         = "PROM_URL"
-	ObjectStorageInstance = "OBJECT_STORAGE_INSTANCE"
-	ConcurrentLimit       = "CONCURRENT_LIMIT"
+	PrometheusURL                      = "PROM_URL"
+	ObjectStorageInstance              = "OBJECT_STORAGE_INSTANCE"
+	ConcurrentLimit                    = "CONCURRENT_LIMIT"
+	envEphemeralStorageChargeThreshold = "EPHEMERAL_STORAGE_CHARGE_THRESHOLD"
 )
 
-var concurrentLimit = int64(DefaultConcurrencyLimit)
+const (
+	gpuAliasConfigKey = "alias"
+	gpuInfoConfigKey  = "gpu"
+)
+
+var (
+	concurrentLimit                 = int64(DefaultConcurrencyLimit)
+	ephemeralStorageChargeThreshold = resource.MustParse(
+		env.GetEnvWithDefault(envEphemeralStorageChargeThreshold, "10Gi"),
+	)
+)
 
 const (
 	DefaultConcurrencyLimit = 1000
@@ -128,41 +140,57 @@ func NewMonitorReconciler(mgr ctrl.Manager) (*MonitorReconciler, error) {
 		periodicReconcile:     1 * time.Minute,
 		PromURL:               os.Getenv(PrometheusURL),
 		ObjectStorageInstance: os.Getenv(ObjectStorageInstance),
-		NvidiaGpu:             make(map[string]gpu.NvidiaGPU),
+		gpuAliasCard:          make(map[string]corev1.ResourceName),
+		gpuNodeAlias:          make(map[string]string),
 	}
 	concurrentLimit = env.GetInt64EnvWithDefault(ConcurrentLimit, DefaultConcurrencyLimit)
 	var err error
 	err = retry.Retry(2, 1*time.Second, func() error {
-		r.NvidiaGpu, err = gpu.GetNodeGpuModel(mgr.GetClient())
-		if err != nil {
-			return fmt.Errorf("failed to get node gpu model: %v", err)
+		if err = r.refreshGPUConfig(context.Background()); err != nil {
+			return fmt.Errorf("failed to refresh gpu config: %w", err)
 		}
 		return nil
 	})
 	if err != nil {
-		return nil, err
+		fmt.Printf("INFO: refresh gpu config: %v, will retry in next reconcile", err)
 	}
-	r.Logger.Info("get gpu model", "gpu model", r.NvidiaGpu)
+	r.gpuMutex.RLock()
+	aliasCount := len(r.gpuAliasCard)
+	nodeCount := len(r.gpuNodeAlias)
+	r.gpuMutex.RUnlock()
+	r.Info("refresh gpu config", "aliasCount", aliasCount, "nodeCount", nodeCount)
 	return r, nil
 }
 
 func InitIndexField(mgr ctrl.Manager) error {
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &corev1.PersistentVolumeClaim{}, "status.phase", func(rawObj client.Object) []string {
-		pvc := rawObj.(*corev1.PersistentVolumeClaim)
-		return []string{string(pvc.Status.Phase)}
-	}); err != nil {
+	if err := mgr.GetFieldIndexer().
+		IndexField(context.Background(), &corev1.PersistentVolumeClaim{}, "status.phase", func(rawObj client.Object) []string {
+			pvc, ok := rawObj.(*corev1.PersistentVolumeClaim)
+			if !ok {
+				return nil
+			}
+			return []string{string(pvc.Status.Phase)}
+		}); err != nil {
 		return err
 	}
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &kbv1alpha1.Backup{}, "status.phase", func(rawObj client.Object) []string {
-		backup := rawObj.(*kbv1alpha1.Backup)
-		return []string{string(backup.Status.Phase)}
-	}); err != nil {
+	if err := mgr.GetFieldIndexer().
+		IndexField(context.Background(), &kbv1alpha1.Backup{}, "status.phase", func(rawObj client.Object) []string {
+			backup, ok := rawObj.(*kbv1alpha1.Backup)
+			if !ok {
+				return nil
+			}
+			return []string{string(backup.Status.Phase)}
+		}); err != nil {
 		return err
 	}
-	return mgr.GetFieldIndexer().IndexField(context.Background(), &corev1.Service{}, "spec.type", func(rawObj client.Object) []string {
-		svc := rawObj.(*corev1.Service)
-		return []string{string(svc.Spec.Type)}
-	})
+	return mgr.GetFieldIndexer().
+		IndexField(context.Background(), &corev1.Service{}, "spec.type", func(rawObj client.Object) []string {
+			svc, ok := rawObj.(*corev1.Service)
+			if !ok {
+				return nil
+			}
+			return []string{string(svc.Spec.Type)}
+		})
 }
 
 func (r *MonitorReconciler) StartReconciler(ctx context.Context) error {
@@ -185,6 +213,9 @@ func (r *MonitorReconciler) startPeriodicReconcile() {
 			select {
 			case <-ticker.C:
 				r.enqueueNamespacesForReconcile()
+				if err := r.refreshGPUConfig(context.Background()); err != nil {
+					r.Error(err, "refresh gpu config failed")
+				}
 			case <-r.stopCh:
 				ticker.Stop()
 				return
@@ -197,7 +228,7 @@ func (r *MonitorReconciler) getNamespaceList() (*corev1.NamespaceList, error) {
 	namespaceList := &corev1.NamespaceList{}
 	req, err := labels.NewRequirement(userv1.UserLabelOwnerKey, selection.Exists, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create label requirement: %v", err)
+		return nil, fmt.Errorf("failed to create label requirement: %w", err)
 	}
 	return namespaceList, r.List(context.Background(), namespaceList, &client.ListOptions{
 		LabelSelector: labels.NewSelector().Add(*req),
@@ -224,18 +255,23 @@ func (r *MonitorReconciler) startMonitorTraffic() {
 	r.wg.Add(1)
 	go func() {
 		defer r.wg.Done()
-		startTime, endTime := time.Now().UTC(), time.Now().Truncate(time.Hour).Add(1*time.Hour).UTC()
+		startTime, endTime := time.Now().
+			UTC(),
+			time.Now().
+				Truncate(time.Hour).
+				Add(1*time.Hour).
+				UTC()
 		waitNextHour()
 		ticker := time.NewTicker(1 * time.Hour)
 		if err := r.MonitorTrafficUsed(startTime, endTime); err != nil {
-			r.Logger.Error(err, "failed to monitor pod traffic used")
+			r.Error(err, "failed to monitor pod traffic used")
 		}
 		for {
 			select {
 			case <-ticker.C:
 				startTime, endTime = endTime, endTime.Add(1*time.Hour)
 				if err := r.MonitorTrafficUsed(startTime, endTime); err != nil {
-					r.Logger.Error(err, "failed to monitor pod traffic used")
+					r.Error(err, "failed to monitor pod traffic used")
 					break
 				}
 			case <-r.stopCh:
@@ -252,47 +288,59 @@ func (r *MonitorReconciler) stopPeriodicReconcile() {
 }
 
 func (r *MonitorReconciler) enqueueNamespacesForReconcile() {
-	r.Logger.Info("enqueue namespaces for reconcile", "time", time.Now().Format(time.RFC3339))
+	r.Info("enqueue namespaces for reconcile", "time", time.Now().Format(time.RFC3339))
 
 	namespaceList, err := r.getNamespaceList()
 	if err != nil {
-		r.Logger.Error(err, "failed to list namespaces")
+		r.Error(err, "failed to list namespaces")
 		return
 	}
 
 	filterNormalNamespace(namespaceList)
 
-	if err := r.processNamespaceList(namespaceList); err != nil {
-		r.Logger.Error(err, "failed to process namespace", "time", time.Now().Format(time.RFC3339))
-	}
+	r.processNamespaceList(namespaceList)
 }
 
 func filterNormalNamespace(namespaceList *corev1.NamespaceList) {
-	var items []corev1.Namespace
+	items := make([]corev1.Namespace, 0, len(namespaceList.Items))
 	for i := range namespaceList.Items {
 		debtStatus := ""
 		anno := namespaceList.Items[i].Annotations
 		if anno != nil {
 			debtStatus = anno[types.DebtNamespaceAnnoStatusKey]
 		}
-		if debtStatus == types.SuspendDebtNamespaceAnnoStatus || debtStatus == types.SuspendCompletedDebtNamespaceAnnoStatus ||
-			debtStatus == types.FinalDeletionDebtNamespaceAnnoStatus || debtStatus == types.FinalDeletionCompletedDebtNamespaceAnnoStatus {
+		if debtStatus == types.SuspendDebtNamespaceAnnoStatus ||
+			debtStatus == types.SuspendCompletedDebtNamespaceAnnoStatus ||
+			debtStatus == types.FinalDeletionDebtNamespaceAnnoStatus ||
+			debtStatus == types.FinalDeletionCompletedDebtNamespaceAnnoStatus {
 			continue
 		}
 		items = append(items, namespaceList.Items[i])
 	}
 	namespaceList.Items = items
-	logger.Info("filter normal namespace", "namespaceList len", len(namespaceList.Items), "time", time.Now().Format(time.RFC3339))
+	logger.Info(
+		"filter normal namespace",
+		"namespaceList len",
+		len(namespaceList.Items),
+		"time",
+		time.Now().Format(time.RFC3339),
+	)
 }
 
-func (r *MonitorReconciler) processNamespaceList(namespaceList *corev1.NamespaceList) error {
-	logger.Info("start processNamespaceList", "namespaceList len", len(namespaceList.Items), "time", time.Now().Format(time.RFC3339))
+func (r *MonitorReconciler) processNamespaceList(namespaceList *corev1.NamespaceList) {
+	logger.Info(
+		"start processNamespaceList",
+		"namespaceList len",
+		len(namespaceList.Items),
+		"time",
+		time.Now().Format(time.RFC3339),
+	)
 	if len(namespaceList.Items) == 0 {
-		r.Logger.Error(fmt.Errorf("no namespace to process"), "")
-		return nil
+		r.Error(errors.New("no namespace to process"), "")
+		return
 	}
 	if err := r.preMonitorResourceUsage(); err != nil {
-		r.Logger.Error(err, "failed to pre monitor resource usage")
+		r.Error(err, "failed to pre monitor resource usage")
 	}
 	sem := semaphore.NewWeighted(concurrentLimit)
 	wg := sync.WaitGroup{}
@@ -306,16 +354,15 @@ func (r *MonitorReconciler) processNamespaceList(namespaceList *corev1.Namespace
 			}
 			defer sem.Release(1)
 			if err := r.monitorResourceUsage(namespace); err != nil {
-				r.Logger.Error(err, "monitor pod resource", "namespace", namespace.Name)
+				r.Error(err, "monitor pod resource", "namespace", namespace.Name)
 			}
 		}(&namespaceList.Items[i])
 	}
 	wg.Wait()
 	if err := r.monitorObjectStorageTraffic(); err != nil {
-		r.Logger.Error(err, "failed to monitor object storage traffic")
+		r.Error(err, "failed to monitor object storage traffic")
 	}
-	logger.Info("end processNamespaceList", "time", time.Now().Format("2006-01-02 15:04:05"))
-	return nil
+	logger.Info("end processNamespaceList", "time", time.Now().Format(time.DateTime))
 }
 
 func (r *MonitorReconciler) preMonitorResourceUsage() error {
@@ -356,7 +403,11 @@ func (r *MonitorReconciler) preMonitorResourceUsage() error {
 			r.lastObjectMetrics = latestObjTrafficSentMetrics
 		}
 		r.currentObjectMetrics = metrics
-		logger.Info("success query object storage usage and traffic metrics", "time", time.Now().Format("2006-01-02 15:04:05"))
+		logger.Info(
+			"success query object storage usage and traffic metrics",
+			"time",
+			time.Now().Format(time.DateTime),
+		)
 	}
 	return nil
 }
@@ -367,29 +418,32 @@ func (r *MonitorReconciler) monitorResourceUsage(namespace *corev1.Namespace) er
 	resNamed := make(map[string]*resources.ResourceNamed)
 	instances, err := r.getInstances(namespace.Name)
 	if err != nil {
-		return fmt.Errorf("failed to get instances: %v", err)
+		return fmt.Errorf("failed to get instances: %w", err)
 	}
 	if err := r.monitorPodResourceUsage(namespace.Name, resUsed, resNamed, instances); err != nil {
-		return fmt.Errorf("failed to monitor pod resource usage: %v", err)
+		return fmt.Errorf("failed to monitor pod resource usage: %w", err)
 	}
 
 	if err := r.monitorPVCResourceUsage(namespace.Name, resUsed, resNamed, instances); err != nil {
-		return fmt.Errorf("failed to monitor PVC resource usage: %v", err)
+		return fmt.Errorf("failed to monitor PVC resource usage: %w", err)
 	}
 
 	if err := r.monitorDatabaseBackupUsage(namespace.Name, resUsed, resNamed); err != nil {
-		return fmt.Errorf("failed to monitor backup resource usage: %v", err)
+		return fmt.Errorf("failed to monitor backup resource usage: %w", err)
 	}
 
-	if err := r.monitorServiceResourceUsage(namespace.Name, resUsed, resNamed, instances); err != nil {
-		return fmt.Errorf("failed to monitor service resource usage: %v", err)
+	if err := r.monitorServiceResourceUsage(
+		namespace.Name,
+		resUsed,
+		resNamed,
+		instances,
+	); err != nil {
+		return fmt.Errorf("failed to monitor service resource usage: %w", err)
 	}
 
-	if err := r.monitorObjectStorageUsage(namespace.Name, resUsed, resNamed); err != nil {
-		return fmt.Errorf("failed to get object storage resource usage: %v", err)
-	}
+	r.monitorObjectStorageUsage(namespace.Name, resUsed, resNamed)
 
-	var monitors []*resources.Monitor
+	monitors := make([]*resources.Monitor, 0, len(resUsed))
 
 	for name, podResource := range resUsed {
 		isEmpty, used := r.getResourceUsed(podResource)
@@ -414,7 +468,7 @@ func (r *MonitorReconciler) getInstances(namespace string) (map[string]struct{},
 	insList := metav1.PartialObjectMetadataList{}
 	insList.SetGroupVersionKind(appv1.GroupVersion.WithKind("InstanceList"))
 	if err := r.List(context.Background(), &insList, client.InNamespace(namespace)); err != nil {
-		return nil, fmt.Errorf("failed to list instances: %v", err)
+		return nil, fmt.Errorf("failed to list instances: %w", err)
 	}
 	for i := range insList.Items {
 		name := insList.Items[i].Labels[resources.AppStoreDeployLabelKey]
@@ -426,17 +480,25 @@ func (r *MonitorReconciler) getInstances(namespace string) (map[string]struct{},
 	return instances, nil
 }
 
-func (r *MonitorReconciler) monitorPodResourceUsage(namespace string, resUsed map[string]map[corev1.ResourceName]*quantity, resNamed map[string]*resources.ResourceNamed, instances map[string]struct{}) error {
+func (r *MonitorReconciler) monitorPodResourceUsage(
+	namespace string,
+	resUsed map[string]map[corev1.ResourceName]*quantity,
+	resNamed map[string]*resources.ResourceNamed,
+	instances map[string]struct{},
+) error {
 	podList := &corev1.PodList{}
 	if err := r.List(context.Background(), podList, &client.ListOptions{
 		Namespace: namespace,
 	}); err != nil {
-		return fmt.Errorf("failed to list pods: %v", err)
+		return fmt.Errorf("failed to list pods: %w", err)
 	}
 
+	knownCardResources := r.getGPUCardResources()
 	for i := range podList.Items {
 		pod := &podList.Items[i]
-		if pod.Spec.NodeName == "" || pod.Status.Phase == corev1.PodSucceeded && time.Since(pod.Status.StartTime.Time) > 1*time.Minute {
+		if pod.Spec.NodeName == "" ||
+			pod.Status.Phase == corev1.PodSucceeded &&
+				time.Since(pod.Status.StartTime.Time) > 1*time.Minute {
 			continue
 		}
 		podResNamed := resources.NewResourceNamed(pod)
@@ -445,13 +507,41 @@ func (r *MonitorReconciler) monitorPodResourceUsage(namespace string, resUsed ma
 		if resUsed[podResNamed.String()] == nil {
 			resUsed[podResNamed.String()] = initResources()
 		}
+		usesGPU := podUsesGPU(pod, knownCardResources)
+		var aliasKey string
+		var cardResource corev1.ResourceName
+		if usesGPU {
+			var err error
+			aliasKey, cardResource, err = r.getGPUConfigForNode(pod.Spec.NodeName)
+			if err != nil {
+				r.Error(
+					err,
+					"get gpu config failed",
+					"pod",
+					pod.Name,
+					"namespace",
+					pod.Namespace,
+					"node",
+					pod.Spec.NodeName,
+				)
+			}
+		}
+		podEphemeralStorage := resource.NewQuantity(0, resource.BinarySI)
 		// skip pods that do not start for more than 1 minute
-		skip := pod.Status.Phase != corev1.PodRunning && (pod.Status.StartTime == nil || time.Since(pod.Status.StartTime.Time) > 1*time.Minute)
+		skip := pod.Status.Phase != corev1.PodRunning &&
+			(pod.Status.StartTime == nil || time.Since(pod.Status.StartTime.Time) > 1*time.Minute)
 		for _, container := range pod.Spec.Containers {
 			// gpu only use limit and not ignore pod pending status
-			if gpuRequest, ok := container.Resources.Limits[gpu.NvidiaGpuKey]; ok {
-				if err := r.getGPUResourceUsage(pod, gpuRequest, resUsed[podResNamed.String()]); err != nil {
-					r.Logger.Error(err, "get gpu resource usage failed", "pod", pod.Name)
+			if usesGPU && cardResource != "" {
+				if gpuRequest, ok := container.Resources.Limits[cardResource]; ok {
+					if err := r.getGPUResourceUsage(
+						pod,
+						aliasKey,
+						gpuRequest,
+						resUsed[podResNamed.String()],
+					); err != nil {
+						r.Error(err, "get gpu resource usage failed", "pod", pod.Name)
+					}
 				}
 			}
 			if skip {
@@ -460,25 +550,45 @@ func (r *MonitorReconciler) monitorPodResourceUsage(namespace string, resUsed ma
 			if cpuRequest, ok := container.Resources.Limits[corev1.ResourceCPU]; ok {
 				resUsed[podResNamed.String()][corev1.ResourceCPU].Add(cpuRequest)
 			} else {
-				resUsed[podResNamed.String()][corev1.ResourceCPU].Add(container.Resources.Requests[corev1.ResourceCPU])
+				resUsed[podResNamed.String()][corev1.ResourceCPU].Add(
+					container.Resources.Requests[corev1.ResourceCPU],
+				)
 			}
 			if memoryRequest, ok := container.Resources.Limits[corev1.ResourceMemory]; ok {
 				resUsed[podResNamed.String()][corev1.ResourceMemory].Add(memoryRequest)
 			} else {
-				resUsed[podResNamed.String()][corev1.ResourceMemory].Add(container.Resources.Requests[corev1.ResourceMemory])
+				resUsed[podResNamed.String()][corev1.ResourceMemory].Add(
+					container.Resources.Requests[corev1.ResourceMemory],
+				)
 			}
+			if ephemeralRequest, ok := container.Resources.Limits[corev1.ResourceEphemeralStorage]; ok {
+				podEphemeralStorage.Add(ephemeralRequest)
+			} else {
+				podEphemeralStorage.Add(
+					container.Resources.Requests[corev1.ResourceEphemeralStorage],
+				)
+			}
+		}
+		if !skip && podEphemeralStorage.Cmp(ephemeralStorageChargeThreshold) == 1 {
+			podEphemeralStorage.Sub(ephemeralStorageChargeThreshold)
+			resUsed[podResNamed.String()][corev1.ResourceStorage].Add(*podEphemeralStorage)
 		}
 	}
 	return nil
 }
 
-func (r *MonitorReconciler) monitorPVCResourceUsage(namespace string, resUsed map[string]map[corev1.ResourceName]*quantity, resNamed map[string]*resources.ResourceNamed, instances map[string]struct{}) error {
+func (r *MonitorReconciler) monitorPVCResourceUsage(
+	namespace string,
+	resUsed map[string]map[corev1.ResourceName]*quantity,
+	resNamed map[string]*resources.ResourceNamed,
+	instances map[string]struct{},
+) error {
 	pvcList := &corev1.PersistentVolumeClaimList{}
 	if err := r.List(context.Background(), pvcList, &client.ListOptions{
 		Namespace:     namespace,
 		FieldSelector: fields.OneTermEqualSelector("status.phase", string(corev1.ClaimBound)),
 	}); err != nil {
-		return fmt.Errorf("failed to list pvc: %v", err)
+		return fmt.Errorf("failed to list pvc: %w", err)
 	}
 	for i := range pvcList.Items {
 		pvc := &pvcList.Items[i]
@@ -491,18 +601,27 @@ func (r *MonitorReconciler) monitorPVCResourceUsage(namespace string, resUsed ma
 			resNamed[pvcRes.String()] = pvcRes
 			resUsed[pvcRes.String()] = initResources()
 		}
-		resUsed[pvcRes.String()][corev1.ResourceStorage].Add(pvc.Spec.Resources.Requests[corev1.ResourceStorage])
+		resUsed[pvcRes.String()][corev1.ResourceStorage].Add(
+			pvc.Spec.Resources.Requests[corev1.ResourceStorage],
+		)
 	}
 	return nil
 }
 
-func (r *MonitorReconciler) monitorDatabaseBackupUsage(namespace string, resUsed map[string]map[corev1.ResourceName]*quantity, resNamed map[string]*resources.ResourceNamed) error {
+func (r *MonitorReconciler) monitorDatabaseBackupUsage(
+	namespace string,
+	resUsed map[string]map[corev1.ResourceName]*quantity,
+	resNamed map[string]*resources.ResourceNamed,
+) error {
 	backupList := &kbv1alpha1.BackupList{}
 	if err := r.List(context.Background(), backupList, &client.ListOptions{
-		Namespace:     namespace,
-		FieldSelector: fields.OneTermEqualSelector("status.phase", string(kbv1alpha1.BackupPhaseCompleted)),
+		Namespace: namespace,
+		FieldSelector: fields.OneTermEqualSelector(
+			"status.phase",
+			string(kbv1alpha1.BackupPhaseCompleted),
+		),
 	}); err != nil {
-		return fmt.Errorf("failed to list backup: %v", err)
+		return fmt.Errorf("failed to list backup: %w", err)
 	}
 	if len(backupList.Items) == 0 {
 		return nil
@@ -510,24 +629,31 @@ func (r *MonitorReconciler) monitorDatabaseBackupUsage(namespace string, resUsed
 	for i := range backupList.Items {
 		backup := &backupList.Items[i]
 		backupRes := resources.NewResourceNamed(backup)
-		//fmt.Printf("backup name: %v, backup size: %v, backupRes: %s \n", backupList.Items[i].Name, backupList.Items[i].Status.TotalSize, backupRes.String())
+		// fmt.Printf("backup name: %v, backup size: %v, backupRes: %s \n", backupList.Items[i].Name, backupList.Items[i].Status.TotalSize, backupRes.String())
 		if resUsed[backupRes.String()] == nil {
 			resNamed[backupRes.String()] = backupRes
 			resUsed[backupRes.String()] = initResources()
 		}
-		resUsed[backupRes.String()][corev1.ResourceStorage].Add(resource.MustParse(backup.Status.TotalSize))
+		resUsed[backupRes.String()][corev1.ResourceStorage].Add(
+			resource.MustParse(backup.Status.TotalSize),
+		)
 	}
 	return nil
 }
 
 // instance is the app instance name
-func (r *MonitorReconciler) monitorServiceResourceUsage(namespace string, resUsed map[string]map[corev1.ResourceName]*quantity, resNamed map[string]*resources.ResourceNamed, instances map[string]struct{}) error {
+func (r *MonitorReconciler) monitorServiceResourceUsage(
+	namespace string,
+	resUsed map[string]map[corev1.ResourceName]*quantity,
+	resNamed map[string]*resources.ResourceNamed,
+	instances map[string]struct{},
+) error {
 	svcList := &corev1.ServiceList{}
 	if err := r.List(context.Background(), svcList, &client.ListOptions{
 		Namespace:     namespace,
 		FieldSelector: fields.OneTermEqualSelector("spec.type", string(corev1.ServiceTypeNodePort)),
 	}); err != nil {
-		return fmt.Errorf("failed to list svc: %v", err)
+		return fmt.Errorf("failed to list svc: %w", err)
 	}
 	for i := range svcList.Items {
 		svc := &svcList.Items[i]
@@ -545,12 +671,16 @@ func (r *MonitorReconciler) monitorServiceResourceUsage(namespace string, resUse
 			resUsed[svcRes.String()] = initResources()
 		}
 		// nodeport 1:1000, the measurement is quantity 1000
-		resUsed[svcRes.String()][corev1.ResourceServicesNodePorts].Add(*resource.NewQuantity(int64(1000*len(port)), resource.BinarySI))
+		resUsed[svcRes.String()][corev1.ResourceServicesNodePorts].Add(
+			*resource.NewQuantity(int64(1000*len(port)), resource.BinarySI),
+		)
 	}
 	return nil
 }
 
-func (r *MonitorReconciler) getResourceUsed(podResource map[corev1.ResourceName]*quantity) (bool, map[uint8]int64) {
+func (r *MonitorReconciler) getResourceUsed(
+	podResource map[corev1.ResourceName]*quantity,
+) (bool, map[uint8]int64) {
 	used := map[uint8]int64{}
 	isEmpty := true
 	for i := range podResource {
@@ -559,18 +689,24 @@ func (r *MonitorReconciler) getResourceUsed(podResource map[corev1.ResourceName]
 		}
 		isEmpty = false
 		if pType, ok := r.Properties.StringMap[i.String()]; ok {
-			used[pType.Enum] = int64(math.Ceil(float64(podResource[i].MilliValue()) / float64(pType.Unit.MilliValue())))
+			used[pType.Enum] = int64(
+				math.Ceil(float64(podResource[i].MilliValue()) / float64(pType.Unit.MilliValue())),
+			)
 			continue
 		}
-		r.Logger.Error(fmt.Errorf("not found resource type"), "resource", i.String())
+		r.Error(errors.New("not found resource type"), "", "resource", i.String())
 	}
 	return isEmpty, used
 }
 
-func (r *MonitorReconciler) monitorObjectStorageUsage(namespace string, resMap map[string]map[corev1.ResourceName]*quantity, namedMap map[string]*resources.ResourceNamed) error {
+func (r *MonitorReconciler) monitorObjectStorageUsage(
+	namespace string,
+	resMap map[string]map[corev1.ResourceName]*quantity,
+	namedMap map[string]*resources.ResourceNamed,
+) {
 	username := config.GetUserNameByNamespace(namespace)
 	if r.currentObjectMetrics == nil || r.currentObjectMetrics[username].Usage == nil {
-		return nil
+		return
 	}
 	for bucket, usage := range r.currentObjectMetrics[username].Usage {
 		if bucket == "" || usage <= 0 {
@@ -581,9 +717,10 @@ func (r *MonitorReconciler) monitorObjectStorageUsage(namespace string, resMap m
 		if _, ok := resMap[objStorageNamed.String()]; !ok {
 			resMap[objStorageNamed.String()] = initResources()
 		}
-		resMap[objStorageNamed.String()][corev1.ResourceStorage].Add(*resource.NewQuantity(usage, resource.BinarySI))
+		resMap[objStorageNamed.String()][corev1.ResourceStorage].Add(
+			*resource.NewQuantity(usage, resource.BinarySI),
+		)
 	}
-	return nil
 }
 
 func (r *MonitorReconciler) monitorObjectStorageTraffic() error {
@@ -629,19 +766,33 @@ func (r *MonitorReconciler) monitorObjectStorageTraffic() error {
 }
 
 func (r *MonitorReconciler) MonitorTrafficUsed(startTime, endTime time.Time) error {
-	logger.Info("start getTrafficUsed", "startTime", startTime.Format(time.RFC3339), "endTime", endTime.Format(time.RFC3339))
+	logger.Info(
+		"start getTrafficUsed",
+		"startTime",
+		startTime.Format(time.RFC3339),
+		"endTime",
+		endTime.Format(time.RFC3339),
+	)
 	execTime := time.Now().UTC()
 	if r.TrafficClient != nil {
 		if err := r.monitorPodTrafficUsed(startTime, endTime); err != nil {
-			r.Logger.Error(err, "failed to monitor pod traffic used")
+			r.Error(err, "failed to monitor pod traffic used")
 		}
 	}
 	if r.ObjStorageClient != nil {
 		if err := r.monitorObjectStorageTrafficUsed(startTime, endTime); err != nil {
-			r.Logger.Error(err, "failed to monitor object storage traffic used")
+			r.Error(err, "failed to monitor object storage traffic used")
 		}
 	}
-	r.Logger.Info("success to monitor pod traffic used", "startTime", startTime.Format(time.RFC3339), "endTime", endTime.Format(time.RFC3339), "execTime", time.Since(execTime).String())
+	r.Info(
+		"success to monitor pod traffic used",
+		"startTime",
+		startTime.Format(time.RFC3339),
+		"endTime",
+		endTime.Format(time.RFC3339),
+		"execTime",
+		time.Since(execTime).String(),
+	)
 	return nil
 }
 
@@ -650,7 +801,7 @@ func (r *MonitorReconciler) monitorObjectStorageTrafficUsed(startTime, endTime t
 	if err != nil {
 		return fmt.Errorf("failed to get object storage buckets: %w", err)
 	}
-	r.Logger.Info("object storage buckets", "buckets len", len(buckets))
+	r.Info("object storage buckets", "buckets len", len(buckets))
 	wg, _ := errgroup.WithContext(context.Background())
 	wg.SetLimit(10)
 	for i := range buckets {
@@ -665,7 +816,10 @@ func (r *MonitorReconciler) monitorObjectStorageTrafficUsed(startTime, endTime t
 	return wg.Wait()
 }
 
-func (r *MonitorReconciler) handlerObjectStorageTrafficUsed(startTime, endTime time.Time, bucket string) error {
+func (r *MonitorReconciler) handlerObjectStorageTrafficUsed(
+	startTime, endTime time.Time,
+	bucket string,
+) error {
 	bytes, err := r.DBClient.HandlerTimeObjBucketSentTraffic(startTime, endTime, bucket)
 	if err != nil {
 		return fmt.Errorf("failed to get object storage flow: %w", err)
@@ -675,7 +829,15 @@ func (r *MonitorReconciler) handlerObjectStorageTrafficUsed(startTime, endTime t
 		return nil
 	}
 	unit := r.Properties.StringMap[resources.ResourceNetwork].Unit
-	used := int64(math.Ceil(float64(resource.NewQuantity(bytes, resource.BinarySI).MilliValue()) / float64(unit.MilliValue())))
+	used := int64(
+		math.Ceil(
+			float64(
+				resource.NewQuantity(bytes, resource.BinarySI).MilliValue(),
+			) / float64(
+				unit.MilliValue(),
+			),
+		),
+	)
 
 	namespace := "ns-" + strings.SplitN(bucket, "-", 2)[0]
 	ro := resources.Monitor{
@@ -685,7 +847,7 @@ func (r *MonitorReconciler) handlerObjectStorageTrafficUsed(startTime, endTime t
 		Time:     endTime.Add(-1 * time.Minute),
 		Type:     resources.AppType[resources.ObjectStorage],
 	}
-	r.Logger.Info("object storage traffic used", "monitor", ro)
+	r.Info("object storage traffic used", "monitor", ro)
 	err = r.DBClient.InsertMonitor(context.Background(), &ro)
 	if err != nil {
 		return fmt.Errorf("failed to insert monitor: %w", err)
@@ -698,7 +860,7 @@ func (r *MonitorReconciler) monitorPodTrafficUsed(startTime, endTime time.Time) 
 	if err != nil {
 		return fmt.Errorf("failed to get distinct monitor combinations: %w", err)
 	}
-	r.Logger.Info("distinct monitor combinations", "monitors len", len(monitors))
+	r.Info("distinct monitor combinations", "monitors len", len(monitors))
 	wg, _ := errgroup.WithContext(context.Background())
 	wg.SetLimit(100)
 	for i := range monitors {
@@ -710,17 +872,34 @@ func (r *MonitorReconciler) monitorPodTrafficUsed(startTime, endTime time.Time) 
 	return wg.Wait()
 }
 
-func (r *MonitorReconciler) handlerTrafficUsed(startTime, endTime time.Time, monitor resources.Monitor) error {
-	bytes, err := r.TrafficClient.GetTrafficSentBytes(startTime, endTime, monitor.Category, monitor.Type, monitor.Name)
+func (r *MonitorReconciler) handlerTrafficUsed(
+	startTime, endTime time.Time,
+	monitor resources.Monitor,
+) error {
+	bytes, err := r.TrafficClient.GetTrafficSentBytes(
+		startTime,
+		endTime,
+		monitor.Category,
+		monitor.Type,
+		monitor.Name,
+	)
 	if err != nil {
 		return fmt.Errorf("failed to get traffic sent bytes: %w", err)
 	}
 	unit := r.Properties.StringMap[resources.ResourceNetwork].Unit
-	used := int64(math.Ceil(float64(resource.NewQuantity(bytes, resource.BinarySI).MilliValue()) / float64(unit.MilliValue())))
+	used := int64(
+		math.Ceil(
+			float64(
+				resource.NewQuantity(bytes, resource.BinarySI).MilliValue(),
+			) / float64(
+				unit.MilliValue(),
+			),
+		),
+	)
 	if used == 0 {
 		return nil
 	}
-	//logger.Info("traffic used ", "monitor", monitor, "used", used, "unit", unit, "bytes", bytes)
+	// logger.Info("traffic used ", "monitor", monitor, "used", used, "unit", unit, "bytes", bytes)
 	ro := resources.Monitor{
 		Category: monitor.Category,
 		Name:     monitor.Name,
@@ -735,36 +914,160 @@ func (r *MonitorReconciler) handlerTrafficUsed(startTime, endTime time.Time, mon
 	return nil
 }
 
-func (r *MonitorReconciler) getGPUResourceUsage(pod *corev1.Pod, gpuReq resource.Quantity, rs map[corev1.ResourceName]*quantity) (err error) {
-	nodeName := pod.Spec.NodeName
+func (r *MonitorReconciler) refreshGPUConfig(ctx context.Context) error {
+	configmap := &corev1.ConfigMap{}
+	if err := r.Get(ctx, client.ObjectKey{
+		Namespace: gpu.NodeInfoConfigmapNamespace,
+		Name:      gpu.NodeInfoConfigmapName,
+	}, configmap); err != nil {
+		return err
+	}
+	aliasRaw := strings.TrimSpace(configmap.Data[gpuAliasConfigKey])
+	gpuRaw := strings.TrimSpace(configmap.Data[gpuInfoConfigKey])
+	if aliasRaw == "" || gpuRaw == "" {
+		return fmt.Errorf(
+			"gpu configmap %s/%s missing data",
+			gpu.NodeInfoConfigmapNamespace,
+			gpu.NodeInfoConfigmapName,
+		)
+	}
+	aliasMap := make(map[string]gpuAliasConfig)
+	if err := json.Unmarshal([]byte(aliasRaw), &aliasMap); err != nil {
+		return fmt.Errorf("unmarshal gpu alias failed: %w", err)
+	}
+	gpuMap := make(map[string]gpuNodeConfig)
+	if err := json.Unmarshal([]byte(gpuRaw), &gpuMap); err != nil {
+		return fmt.Errorf("unmarshal gpu info failed: %w", err)
+	}
+	aliasCard := make(map[string]corev1.ResourceName, len(aliasMap))
+	for aliasKey, alias := range aliasMap {
+		if alias.Resource.Card == "" {
+			continue
+		}
+		aliasCard[aliasKey] = corev1.ResourceName(alias.Resource.Card)
+	}
+	nodeAlias := make(map[string]string, len(gpuMap))
+	for nodeName, info := range gpuMap {
+		ref := strings.TrimSpace(info.Ref)
+		if ref == "" {
+			ref = strings.TrimSpace(info.Product)
+		}
+		if ref == "" {
+			continue
+		}
+		nodeAlias[nodeName] = ref
+	}
 	r.gpuMutex.Lock()
-	defer r.gpuMutex.Unlock()
-	gpuModel, exist := r.NvidiaGpu[nodeName]
-	if !exist {
-		if r.NvidiaGpu, err = gpu.GetNodeGpuModel(r.Client); err != nil {
-			return fmt.Errorf("get node gpu model failed: %w", err)
+	r.gpuAliasCard = aliasCard
+	r.gpuNodeAlias = nodeAlias
+	r.gpuMutex.Unlock()
+	return nil
+}
+
+func (r *MonitorReconciler) getGPUConfigForNode(
+	nodeName string,
+) (string, corev1.ResourceName, error) {
+	r.gpuMutex.RLock()
+	aliasKey, ok := r.gpuNodeAlias[nodeName]
+	cardResource := r.gpuAliasCard[aliasKey]
+	r.gpuMutex.RUnlock()
+	if ok && cardResource != "" {
+		return aliasKey, cardResource, nil
+	}
+	if err := r.refreshGPUConfig(context.Background()); err != nil {
+		return "", "", err
+	}
+	r.gpuMutex.RLock()
+	aliasKey, ok = r.gpuNodeAlias[nodeName]
+	cardResource = r.gpuAliasCard[aliasKey]
+	r.gpuMutex.RUnlock()
+	if !ok || cardResource == "" {
+		return "", "", fmt.Errorf("node %s not found gpu config", nodeName)
+	}
+	return aliasKey, cardResource, nil
+}
+
+func (r *MonitorReconciler) getGPUCardResources() []corev1.ResourceName {
+	r.gpuMutex.RLock()
+	defer r.gpuMutex.RUnlock()
+	cardResources := make([]corev1.ResourceName, 0, len(r.gpuAliasCard))
+	for _, card := range r.gpuAliasCard {
+		if card == "" {
+			continue
 		}
-		if gpuModel, exist = r.NvidiaGpu[nodeName]; !exist {
-			return fmt.Errorf("node %s not found gpu model", nodeName)
+		cardResources = append(cardResources, card)
+	}
+	return cardResources
+}
+
+func podUsesGPU(pod *corev1.Pod, cardResources []corev1.ResourceName) bool {
+	if len(cardResources) == 0 {
+		return false
+	}
+	for _, container := range pod.Spec.Containers {
+		for _, card := range cardResources {
+			if _, ok := container.Resources.Limits[card]; ok {
+				return true
+			}
 		}
 	}
-	if _, ok := rs[resources.NewGpuResource(gpuModel.GpuInfo.GpuProduct)]; !ok {
-		rs[resources.NewGpuResource(gpuModel.GpuInfo.GpuProduct)] = initGpuResources()
+	return false
+}
+
+func (r *MonitorReconciler) getGPUResourceUsage(
+	pod *corev1.Pod,
+	aliasKey string,
+	gpuReq resource.Quantity,
+	rs map[corev1.ResourceName]*quantity,
+) (err error) {
+	if aliasKey == "" {
+		return errors.New("gpu alias is empty")
 	}
-	logger.Info("gpu request", "pod", pod.Name, "namespace", pod.Namespace, "gpu req", gpuReq.String(), "node", nodeName, "gpu model", gpuModel.GpuInfo.GpuProduct)
-	rs[resources.NewGpuResource(gpuModel.GpuInfo.GpuProduct)].Add(gpuReq)
+	gpuResource := resources.NewGpuResource(aliasKey)
+	if _, ok := rs[gpuResource]; !ok {
+		rs[gpuResource] = initGpuResources()
+	}
+	logger.Info(
+		"gpu request",
+		"pod",
+		pod.Name,
+		"namespace",
+		pod.Namespace,
+		"gpu req",
+		gpuReq.String(),
+		"node",
+		pod.Spec.NodeName,
+		"gpu alias",
+		aliasKey,
+	)
+	rs[gpuResource].Add(gpuReq)
 	return nil
 }
 
 func initResources() (rs map[corev1.ResourceName]*quantity) {
 	rs = make(map[corev1.ResourceName]*quantity)
 	rs[resources.ResourceGPU] = initGpuResources()
-	rs[corev1.ResourceCPU] = &quantity{Quantity: resource.NewQuantity(0, resource.DecimalSI), detail: ""}
-	rs[corev1.ResourceMemory] = &quantity{Quantity: resource.NewQuantity(0, resource.BinarySI), detail: ""}
-	rs[corev1.ResourceStorage] = &quantity{Quantity: resource.NewQuantity(0, resource.BinarySI), detail: ""}
-	rs[resources.ResourceNetwork] = &quantity{Quantity: resource.NewQuantity(0, resource.BinarySI), detail: ""}
-	rs[corev1.ResourceServicesNodePorts] = &quantity{Quantity: resource.NewQuantity(0, resource.DecimalSI), detail: ""}
-	return
+	rs[corev1.ResourceCPU] = &quantity{
+		Quantity: resource.NewQuantity(0, resource.DecimalSI),
+		detail:   "",
+	}
+	rs[corev1.ResourceMemory] = &quantity{
+		Quantity: resource.NewQuantity(0, resource.BinarySI),
+		detail:   "",
+	}
+	rs[corev1.ResourceStorage] = &quantity{
+		Quantity: resource.NewQuantity(0, resource.BinarySI),
+		detail:   "",
+	}
+	rs[resources.ResourceNetwork] = &quantity{
+		Quantity: resource.NewQuantity(0, resource.BinarySI),
+		detail:   "",
+	}
+	rs[corev1.ResourceServicesNodePorts] = &quantity{
+		Quantity: resource.NewQuantity(0, resource.DecimalSI),
+		detail:   "",
+	}
+	return rs
 }
 
 func initGpuResources() *quantity {

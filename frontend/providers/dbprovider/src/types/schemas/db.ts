@@ -59,6 +59,7 @@ export const dbTypeSchema = z.enum([
   'postgresql',
   'mongodb',
   'apecloud-mysql',
+  'mysql',
   'redis',
   'kafka',
   'qdrant',

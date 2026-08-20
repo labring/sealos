@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import request from '@/service/request';
 import { ApiResp } from '@/types/api';
 import { useTranslation } from 'react-i18next';
+import { Quantity } from '@sealos/shared';
 
 export interface AppBillingDrawerProps {
   open: boolean;
@@ -112,7 +113,7 @@ export function AppBillingDrawer({
     keepPreviousData: true
   });
 
-  // Transform app billing data
+  // Transform app billing data and convert resource amounts to Quantity
   const appBillingDetails = useMemo(() => {
     if (!appBillingData?.data?.costs) return [];
 
@@ -125,25 +126,46 @@ export function AppBillingDrawer({
         namespace: item.namespace,
         amount: subItem.amount,
         usage: {
+          // Legacy API does not have schemas, so we need to do the conversions here.
+
           // Map from used and used_amount arrays based on resource type indices
-          // 0: cpu, 1: memory, 2: storage, 3: network, 4: port, 5: gpu
+          // Convert number amounts to Quantity based on resource type
+          // 0: cpu (millicores), 1: memory (MiB), 2: storage (MiB), 3: network (MB), 4: port (count), 5: gpu (count)
           cpu: subItem?.used?.['0']
-            ? { amount: subItem.used['0'], cost: subItem.used_amount['0'] }
+            ? {
+                amount: Quantity.parse(`${subItem.used['0']}m`), // millicores
+                cost: subItem.used_amount['0']
+              }
             : undefined,
           memory: subItem?.used?.['1']
-            ? { amount: subItem.used['1'], cost: subItem.used_amount['1'] }
+            ? {
+                amount: Quantity.parse(`${subItem.used['1']}Mi`), // MiB
+                cost: subItem.used_amount['1']
+              }
             : undefined,
           storage: subItem?.used?.['2']
-            ? { amount: subItem.used['2'], cost: subItem.used_amount['2'] }
+            ? {
+                amount: Quantity.parse(`${subItem.used['2']}Mi`), // MiB
+                cost: subItem.used_amount['2']
+              }
             : undefined,
           network: subItem?.used?.['3']
-            ? { amount: subItem.used['3'], cost: subItem.used_amount['3'] }
+            ? {
+                amount: Quantity.parse(`${subItem.used['3']}`), // MB (plain number)
+                cost: subItem.used_amount['3']
+              }
             : undefined,
           port: subItem?.used?.['4']
-            ? { amount: subItem.used['4'], cost: subItem.used_amount['4'] }
+            ? {
+                amount: Quantity.parse(`${subItem.used['4']}`), // count (plain number)
+                cost: subItem.used_amount['4']
+              }
             : undefined,
           gpu: subItem?.used?.['5']
-            ? { amount: subItem.used['5'], cost: subItem.used_amount['5'] }
+            ? {
+                amount: Quantity.parse(`${subItem.used['5']}`), // count (plain number)
+                cost: subItem.used_amount['5']
+              }
             : undefined
         }
       }))

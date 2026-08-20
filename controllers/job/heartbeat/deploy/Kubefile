@@ -3,6 +3,7 @@ FROM scratch
 USER 65532:65532
 
 COPY registry registry
-COPY manifests manifests
+COPY charts charts
+COPY heartbeat-cronjob-entrypoint.sh heartbeat-cronjob-entrypoint.sh
 
-CMD ["kubectl apply -f manifests"]
+CMD ["bash heartbeat-cronjob-entrypoint.sh"]

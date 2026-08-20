@@ -185,6 +185,9 @@ func (wsp *WorkspaceSubscriptionProcessor) shouldProcessTransaction(
 	tx *types.WorkspaceSubscriptionTransaction,
 ) bool {
 	now := time.Now()
+	if tx.Operator == types.SubscriptionTransactionTypeResumed {
+		return false
+	}
 	return (tx.PayStatus == types.SubscriptionPayStatusPaid || tx.PayStatus == types.SubscriptionPayStatusNoNeed || tx.PayStatus == types.SubscriptionPayStatusUnpaid) &&
 		!tx.StartAt.After(now) &&
 		tx.Status != types.SubscriptionTransactionStatusCompleted &&
@@ -260,10 +263,25 @@ func handleWorkspaceSubscriptionCreated(
 		return fmt.Errorf("failed to get workspace subscription plan: %w", err)
 	}
 
-	if err = helper.AddTrafficPackage(dbTx, dao.K8sManager.GetClient(), &sub, plan, sub.CurrentPeriodEndAt, types.WorkspaceTrafficFromWorkspaceSubscription, tx.ID.String()); err != nil {
+	if err = helper.AddTrafficPackage(
+		dbTx,
+		dao.K8sManager.GetClient(),
+		&sub,
+		plan,
+		sub.CurrentPeriodEndAt,
+		types.WorkspaceTrafficFromWorkspaceSubscription,
+		tx.ID.String(),
+	); err != nil {
 		return fmt.Errorf("failed to add traffic package: %w", err)
 	}
-	if err = cockroach.AddWorkspaceSubscriptionAIQuotaPackage(dbTx, sub.ID, plan.AIQuota, sub.CurrentPeriodEndAt, types.PKGFromWorkspaceSubscription, tx.ID.String()); err != nil {
+	if err = cockroach.AddWorkspaceSubscriptionAIQuotaPackage(
+		dbTx,
+		sub.ID,
+		plan.AIQuota,
+		sub.CurrentPeriodEndAt,
+		types.PKGFromWorkspaceSubscription,
+		tx.ID.String(),
+	); err != nil {
 		return fmt.Errorf("failed to create AI quota package: %w", err)
 	}
 	if err := updateWorkspaceSubscriptionQuota(tx.NewPlanName, sub.Workspace); err != nil {
@@ -307,10 +325,25 @@ func (wsp *WorkspaceSubscriptionProcessor) handleUpgrade(
 		return fmt.Errorf("failed to get workspace subscription plan: %w", err)
 	}
 
-	if err = helper.AddTrafficPackage(dbTx, dao.K8sManager.GetClient(), &sub, plan, sub.CurrentPeriodEndAt, types.WorkspaceTrafficFromWorkspaceSubscription, tx.ID.String()); err != nil {
+	if err = helper.AddTrafficPackage(
+		dbTx,
+		dao.K8sManager.GetClient(),
+		&sub,
+		plan,
+		sub.CurrentPeriodEndAt,
+		types.WorkspaceTrafficFromWorkspaceSubscription,
+		tx.ID.String(),
+	); err != nil {
 		return fmt.Errorf("failed to add traffic package: %w", err)
 	}
-	if err = cockroach.AddWorkspaceSubscriptionAIQuotaPackage(dbTx, sub.ID, plan.AIQuota, sub.CurrentPeriodEndAt, types.PKGFromWorkspaceSubscription, tx.ID.String()); err != nil {
+	if err = cockroach.AddWorkspaceSubscriptionAIQuotaPackage(
+		dbTx,
+		sub.ID,
+		plan.AIQuota,
+		sub.CurrentPeriodEndAt,
+		types.PKGFromWorkspaceSubscription,
+		tx.ID.String(),
+	); err != nil {
 		return fmt.Errorf("failed to create AI quota package: %w", err)
 	}
 
@@ -357,7 +390,11 @@ func (wsp *WorkspaceSubscriptionProcessor) handleDowngrade(
 	}
 
 	// 检查配额条件
-	if ok, err := wsp.checkWorkspaceQuotaConditions(ctx, sub.Workspace, tx.NewPlanName); err != nil {
+	if ok, err := wsp.checkWorkspaceQuotaConditions(
+		ctx,
+		sub.Workspace,
+		tx.NewPlanName,
+	); err != nil {
 		return fmt.Errorf("failed to check workspace quota conditions: %w", err)
 	} else if !ok {
 		tx.Status = types.SubscriptionTransactionStatusFailed
@@ -443,10 +480,25 @@ func (wsp *WorkspaceSubscriptionProcessor) handleRenewal(
 	if err != nil {
 		return fmt.Errorf("failed to get workspace subscription plan: %w", err)
 	}
-	if err = helper.AddTrafficPackage(dbTx, dao.K8sManager.GetClient(), &sub, plan, sub.CurrentPeriodEndAt, types.WorkspaceTrafficFromWorkspaceSubscription, tx.ID.String()); err != nil {
+	if err = helper.AddTrafficPackage(
+		dbTx,
+		dao.K8sManager.GetClient(),
+		&sub,
+		plan,
+		sub.CurrentPeriodEndAt,
+		types.WorkspaceTrafficFromWorkspaceSubscription,
+		tx.ID.String(),
+	); err != nil {
 		return fmt.Errorf("failed to add traffic package: %w", err)
 	}
-	if err = cockroach.AddWorkspaceSubscriptionAIQuotaPackage(dbTx, sub.ID, plan.AIQuota, sub.CurrentPeriodEndAt, types.PKGFromWorkspaceSubscription, tx.ID.String()); err != nil {
+	if err = cockroach.AddWorkspaceSubscriptionAIQuotaPackage(
+		dbTx,
+		sub.ID,
+		plan.AIQuota,
+		sub.CurrentPeriodEndAt,
+		types.PKGFromWorkspaceSubscription,
+		tx.ID.String(),
+	); err != nil {
 		return fmt.Errorf("failed to create AI quota package: %w", err)
 	}
 	sub.Status = types.SubscriptionStatusNormal
@@ -498,7 +550,9 @@ func (wsp *WorkspaceSubscriptionProcessor) handleDeletion(
 		sub.Stripe != nil &&
 		sub.Stripe.SubscriptionID != "" {
 		// 取消Stripe订阅
-		if _, err := services.StripeServiceInstance.CancelSubscription(sub.Stripe.SubscriptionID); err != nil {
+		if _, err := services.StripeServiceInstance.CancelSubscription(
+			sub.Stripe.SubscriptionID,
+		); err != nil {
 			// logrus.Errorf("Failed to cancel Stripe subscription %s: %v", sub.Stripe.SubscriptionID, err)
 			dao.Logger.Errorf(
 				"Failed to cancel Stripe subscription %s: %v",
@@ -529,7 +583,12 @@ func (wsp *WorkspaceSubscriptionProcessor) handleDeletion(
 	}
 
 	// 设置namespace的final删除标签，标记资源需要最终删除
-	if err := updateDebtNamespaceStatus(ctx, dao.K8sManager.GetClient(), FinalDeletionDebtNamespaceAnnoStatus, []string{sub.Workspace}); err != nil {
+	if err := updateDebtNamespaceStatus(
+		ctx,
+		dao.K8sManager.GetClient(),
+		FinalDeletionDebtNamespaceAnnoStatus,
+		[]string{sub.Workspace},
+	); err != nil {
 		// logrus.Errorf("Failed to set final deletion annotation for workspace %s: %v", sub.Workspace, err)
 		dao.Logger.Errorf(
 			"Failed to set final deletion annotation for workspace %s: %v",
@@ -626,7 +685,7 @@ func (wsp *WorkspaceSubscriptionProcessor) processExpiredBalanceSubscriptions(
 
 	err := dao.DBClient.GetGlobalDB().WithContext(ctx).
 		Model(&types.WorkspaceSubscription{}).
-		Where("current_period_end_at <= ? AND status = ? AND region_domain = ? AND pay_status != ? AND (pay_method = ? OR (expire_at > current_period_end_at))",
+		Where("current_period_end_at <= ? AND status = ? AND region_domain = ? AND pay_status != ? AND cancel_at_period_end = false AND (pay_method = ? OR (expire_at > current_period_end_at))",
 			renewalThreshold,
 			normalStatus,
 			localDomain,
@@ -762,7 +821,11 @@ func (wsp *WorkspaceSubscriptionProcessor) processPeriodRenewal(
 			}
 			paymentID = _payID
 			paymentAmount = price.Price
-			if err := cockroach.AddDeductionAccount(dbTx, latestSub.UserUID, price.Price); err != nil {
+			if err := cockroach.AddDeductionAccount(
+				dbTx,
+				latestSub.UserUID,
+				price.Price,
+			); err != nil {
 				return fmt.Errorf("failed to deduct balance: %w", err)
 			}
 
@@ -837,11 +900,26 @@ func (wsp *WorkspaceSubscriptionProcessor) processPeriodRenewal(
 			return fmt.Errorf("failed to create renewal transaction: %w", err)
 		}
 
-		if err = helper.AddTrafficPackage(dbTx, dao.K8sManager.GetClient(), &latestSub, plan, newPeriodEnd, types.WorkspaceTrafficFromWorkspaceSubscription, transaction.ID.String()); err != nil {
+		if err = helper.AddTrafficPackage(
+			dbTx,
+			dao.K8sManager.GetClient(),
+			&latestSub,
+			plan,
+			newPeriodEnd,
+			types.WorkspaceTrafficFromWorkspaceSubscription,
+			transaction.ID.String(),
+		); err != nil {
 			return fmt.Errorf("failed to add traffic package: %w", err)
 		}
 
-		if err = cockroach.AddWorkspaceSubscriptionAIQuotaPackage(dbTx, latestSub.ID, plan.AIQuota, newPeriodEnd, types.PKGFromWorkspaceSubscription, transaction.ID.String()); err != nil {
+		if err = cockroach.AddWorkspaceSubscriptionAIQuotaPackage(
+			dbTx,
+			latestSub.ID,
+			plan.AIQuota,
+			newPeriodEnd,
+			types.PKGFromWorkspaceSubscription,
+			transaction.ID.String(),
+		); err != nil {
 			return fmt.Errorf("failed to create AI quota package: %w", err)
 		}
 
@@ -943,14 +1021,25 @@ func (wsp *WorkspaceSubscriptionProcessor) handleInsufficientBalance(
 	// if err := wdp.updateWorkspaceDebtStatus(ctx, types.SuspendDebtNamespaceAnnoStatus, namespaces); err != nil {
 	//	return fmt.Errorf("update workspace debt status error: %w", err)
 	//}
-	if err := updateDebtNamespaceStatus(ctx, dao.K8sManager.GetClient(), SuspendDebtNamespaceAnnoStatus, []string{sub.Workspace}); err != nil {
+	if err := updateDebtNamespaceStatus(
+		ctx,
+		dao.K8sManager.GetClient(),
+		SuspendDebtNamespaceAnnoStatus,
+		[]string{sub.Workspace},
+	); err != nil {
 		return fmt.Errorf(
 			"failed to set suspend debt annotation for workspace %s: %w",
 			sub.Workspace,
 			err,
 		)
 	}
-	if _, err := dao.UserNotificationService.HandleWorkspaceSubscriptionEvent(context.Background(), sub.UserUID, eventData, types.SubscriptionTransactionTypeDebt, []usernotify.NotificationMethod{usernotify.NotificationMethodEmail}); err != nil {
+	if _, err := dao.UserNotificationService.HandleWorkspaceSubscriptionEvent(
+		context.Background(),
+		sub.UserUID,
+		eventData,
+		types.SubscriptionTransactionTypeDebt,
+		[]usernotify.NotificationMethod{usernotify.NotificationMethodEmail},
+	); err != nil {
 		dao.Logger.Errorf(
 			"failed to send subscription success notification for user %s: %v",
 			sub.UserUID,

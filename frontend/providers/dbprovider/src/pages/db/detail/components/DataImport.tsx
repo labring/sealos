@@ -1,10 +1,10 @@
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import { DBDetailType } from '@/types/db';
 import { Box, Button, Flex } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 import { MigrateTable } from './Migrate/Table';
 import DumpImport from './DumpImport';
-import useEnvStore from '@/store/env';
 import { useRouter } from 'next/router';
 
 enum MenuType {
@@ -16,8 +16,8 @@ export default function DataImport({ db }: { db?: DBDetailType }) {
   if (!db) return null;
 
   const { t } = useTranslation();
+  const config = useClientAppConfig();
   const [activeId, setActiveId] = useState(MenuType.InternetMigration);
-  const { SystemEnv } = useEnvStore();
   const router = useRouter();
 
   return (
@@ -26,7 +26,7 @@ export default function DataImport({ db }: { db?: DBDetailType }) {
         <Flex>
           {[
             { id: MenuType.InternetMigration, label: t('online_import') },
-            ...(Boolean(SystemEnv.minio_url)
+            ...(config.fileImportEnabled
               ? [{ id: MenuType.DumpImport, label: t('import_through_file') }]
               : [])
           ].map((item) => (

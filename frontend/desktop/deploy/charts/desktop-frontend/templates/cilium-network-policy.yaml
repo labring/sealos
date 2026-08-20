@@ -1,0 +1,36 @@
+{{- if .Values.ciliumNetworkPolicy.enabled }}
+{{- if not (.Capabilities.APIVersions.Has "cilium.io/v2/CiliumNetworkPolicy") }}
+{{- fail "ciliumNetworkPolicy.enabled requires the cilium.io/v2/CiliumNetworkPolicy CRD" }}
+{{- end }}
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: {{ printf "%s-ingress" (include "desktop.fullname" .) | trunc 63 | trimSuffix "-" }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "desktop.labels" . | nindent 4 }}
+spec:
+  endpointSelector:
+    matchLabels:
+      app: {{ include "desktop.name" . }}
+  ingress:
+    - fromEntities:
+        - host
+        - remote-node
+      toPorts:
+        - ports:
+            - port: "3000"
+              protocol: TCP
+    {{- range .Values.ciliumNetworkPolicy.trustedCallers }}
+    {{- if and .namespace .serviceAccountName }}
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: {{ .namespace | quote }}
+            io.cilium.k8s.policy.serviceaccount: {{ .serviceAccountName | quote }}
+      toPorts:
+        - ports:
+            - port: "3000"
+              protocol: TCP
+    {{- end }}
+    {{- end }}
+{{- end }}

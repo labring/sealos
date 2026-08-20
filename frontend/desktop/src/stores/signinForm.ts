@@ -13,6 +13,9 @@ interface SignupState {
   captchaToken: string | null;
   setCaptchaToken: (token: string) => void;
   clearCaptchaToken: () => void;
+  challengeId: string | null;
+  setChallengeId: (challengeId: string) => void;
+  clearChallengeId: () => void;
   startTime: number;
   updateStartTime: () => void;
   // for restore
@@ -21,11 +24,14 @@ interface SignupState {
 
 export const useSigninFormStore = create<SignupState>((set) => ({
   formValues: null,
-  setFormValues: (data) => set({ formValues: data }),
-  clearFormValues: () => set({ formValues: null }),
+  setFormValues: (data) => set({ formValues: data, challengeId: null }),
+  clearFormValues: () => set({ formValues: null, challengeId: null }),
   captchaToken: null,
   setCaptchaToken: (token: string | null) => set({ captchaToken: token }),
   clearCaptchaToken: () => set({ captchaToken: null }),
+  challengeId: null,
+  setChallengeId: (challengeId) => set({ challengeId }),
+  clearChallengeId: () => set({ challengeId: null }),
   startTime: 0,
   updateStartTime() {
     set({

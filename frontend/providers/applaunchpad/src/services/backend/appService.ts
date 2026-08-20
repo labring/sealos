@@ -1,14 +1,18 @@
 import { appDeployKey, pauseKey, minReplicasKey, maxReplicasKey } from '@/constants/app';
 import { formData2Yamls } from '@/pages/app/edit';
-import { serverLoadInitData } from '@/store/static';
+import { Config } from '@/config';
 import { AppEditType } from '@/types/app';
 import { json2HPA } from '@/utils/deployYaml2Json';
 import { str2Num } from '@/utils/tools';
 import { adaptAppDetail } from '@/utils/adapt';
 import { DeployKindsType, AppDetailType } from '@/types/app';
 import { z } from 'zod';
-import { LaunchpadApplicationSchema, resourceConverters } from '@/types/schema';
+import { LaunchpadApplicationSchema } from '@/types/schema';
 import { transformFromLegacySchema } from '@/types/request_schema';
+import { LaunchpadApplicationSchema as LaunchpadApplicationSchemaV2 } from '@/types/v2alpha/schema';
+import { transformFromLegacySchema as transformFromLegacySchemaV2 } from '@/types/v2alpha/request_schema';
+import type { Quantity } from '@sealos/shared';
+import { cpuRequestQuantity, memoryRequestQuantity } from '@/utils/resourceQuantity';
 import {
   PatchUtils,
   KubeConfig,
@@ -105,16 +109,14 @@ export async function getAppByName(appName: string, k8s: K8sContext) {
  * @param k8s Kubernetes context containing clients and configuration
  */
 export async function createApp(appForm: AppEditType, k8s: K8sContext) {
-  serverLoadInitData();
-
   const { applyYamlList } = k8s;
 
   appForm.networks = appForm.networks.map((network: any) => ({
     ...network,
-    domain: global.AppConfig.cloud.domain
+    domain: Config().cloud.domain
   }));
 
-  const parseYamls = formData2Yamls(appForm);
+  const parseYamls = formData2Yamls(appForm, Config().cloud.userDomains);
   const yamls = parseYamls.map((item) => item.value);
 
   await applyYamlList(yamls, 'create');
@@ -126,7 +128,7 @@ export async function createApp(appForm: AppEditType, k8s: K8sContext) {
  * @param k8s Kubernetes context containing clients and configuration
  */
 export async function startApp(appName: string, k8s: K8sContext) {
-  const { apiClient, getDeployApp, applyYamlList, namespace, k8sNetworkingApp } = k8s;
+  const { apiClient, getDeployApp, applyYamlList, namespace, k8sNetworkingApp, kube_user } = k8s;
 
   const app = await getDeployApp(appName);
 
@@ -142,11 +144,26 @@ export async function startApp(appName: string, k8s: K8sContext) {
     target: string;
     value: string;
   } = JSON.parse(app.metadata.annotations[pauseKey]);
+  const previousReplicas = app.spec.replicas;
+  const previousPauseData = app.metadata.annotations[pauseKey];
 
   delete app.metadata.annotations[pauseKey];
   app.spec.replicas = app.metadata.annotations[minReplicasKey]
     ? +app.metadata.annotations[minReplicasKey]
     : 1;
+
+  console.info('[applaunchpad app operation] applying start', {
+    action: 'start',
+    appName,
+    namespace,
+    user: kube_user?.name,
+    previousReplicas,
+    nextReplicas: app.spec.replicas,
+    previousPauseData,
+    minReplicas: app.metadata.annotations[minReplicasKey],
+    maxReplicas: app.metadata.annotations[maxReplicasKey],
+    restoreHpa: !!pauseData.target
+  });
 
   const requestQueue: Promise<any>[] = [apiClient.replace(app)];
   if (pauseData.target) {
@@ -195,6 +212,14 @@ export async function startApp(appName: string, k8s: K8sContext) {
           }
 
           if (Object.keys(patchData).length > 0) {
+            console.info('[applaunchpad app operation] patch ingress', {
+              action: 'start',
+              appName,
+              namespace,
+              user: kube_user?.name,
+              ingressName: ingressItem.metadata.name,
+              patchData
+            });
             requestQueue.push(
               k8sNetworkingApp.patchNamespacedIngress(
                 ingressItem.metadata.name,
@@ -219,6 +244,15 @@ export async function startApp(appName: string, k8s: K8sContext) {
   }
 
   await Promise.all(requestQueue);
+  console.info('[applaunchpad app operation] applied start', {
+    action: 'start',
+    appName,
+    namespace,
+    user: kube_user?.name,
+    previousReplicas,
+    nextReplicas: app.spec.replicas,
+    restoredHpa: !!pauseData.target
+  });
 }
 
 /**
@@ -227,12 +261,14 @@ export async function startApp(appName: string, k8s: K8sContext) {
  * @param k8s Kubernetes context containing clients and configuration
  */
 export async function pauseApp(appName: string, k8s: K8sContext) {
-  const { apiClient, k8sAutoscaling, getDeployApp, namespace, k8sNetworkingApp } = k8s;
+  const { apiClient, k8sAutoscaling, getDeployApp, namespace, k8sNetworkingApp, kube_user } = k8s;
 
   const app = await getDeployApp(appName);
   if (!app.metadata?.name || !app?.metadata?.annotations || !app.spec) {
     throw new Error('app data error');
   }
+  const previousReplicas = app.spec.replicas;
+  const previousPauseData = app.metadata.annotations[pauseKey];
 
   const restartAnnotations: Record<string, string> = {
     target: '',
@@ -251,6 +287,14 @@ export async function pauseApp(appName: string, k8s: K8sContext) {
       hpa?.spec?.metrics?.[0]?.resource?.target?.averageUtilization || 50
     }`;
 
+    console.info('[applaunchpad app operation] delete hpa before pause', {
+      action: 'pause',
+      appName,
+      namespace,
+      user: kube_user?.name,
+      hpaName: hpa.metadata?.name,
+      restartAnnotations
+    });
     requestQueue.push(k8sAutoscaling.deleteNamespacedHorizontalPodAutoscaler(appName, namespace));
   } catch (error: any) {
     if (error?.statusCode !== 404) {
@@ -285,6 +329,14 @@ export async function pauseApp(appName: string, k8s: K8sContext) {
           }
 
           if (Object.keys(patchData).length > 0) {
+            console.info('[applaunchpad app operation] patch ingress', {
+              action: 'pause',
+              appName,
+              namespace,
+              user: kube_user?.name,
+              ingressName: ingressItem.metadata.name,
+              patchData
+            });
             requestQueue.push(
               k8sNetworkingApp.patchNamespacedIngress(
                 ingressItem.metadata.name,
@@ -311,9 +363,31 @@ export async function pauseApp(appName: string, k8s: K8sContext) {
   app.metadata.annotations[pauseKey] = JSON.stringify(restartAnnotations);
   app.spec.replicas = 0;
 
+  console.info('[applaunchpad app operation] applying pause', {
+    action: 'pause',
+    appName,
+    namespace,
+    user: kube_user?.name,
+    previousReplicas,
+    nextReplicas: app.spec.replicas,
+    previousPauseData,
+    nextPauseData: app.metadata.annotations[pauseKey],
+    minReplicas: app.metadata.annotations[minReplicasKey],
+    maxReplicas: app.metadata.annotations[maxReplicasKey]
+  });
+
   requestQueue.push(apiClient.replace(app));
 
   await Promise.all(requestQueue);
+  console.info('[applaunchpad app operation] applied pause', {
+    action: 'pause',
+    appName,
+    namespace,
+    user: kube_user?.name,
+    previousReplicas,
+    nextReplicas: app.spec.replicas,
+    nextPauseData: app.metadata.annotations[pauseKey]
+  });
 }
 
 /**
@@ -322,7 +396,7 @@ export async function pauseApp(appName: string, k8s: K8sContext) {
  * @param k8s Kubernetes context containing clients and configuration
  */
 export async function restartApp(appName: string, k8s: K8sContext) {
-  const { apiClient, getDeployApp } = k8s;
+  const { apiClient, getDeployApp, namespace, kube_user } = k8s;
 
   const app = await getDeployApp(appName);
 
@@ -335,8 +409,25 @@ export async function restartApp(appName: string, k8s: K8sContext) {
     .replace(/[:T]/g, '')
     .replace(/\./g, '')
     .replace(/-/g, '');
+  const previousRestartTime = app.spec.template.metadata.labels.restartTime;
   app.spec.template.metadata.labels['restartTime'] = timestamp;
+  console.info('[applaunchpad app operation] applying restart', {
+    action: 'restart',
+    appName,
+    namespace,
+    user: kube_user?.name,
+    previousRestartTime,
+    nextRestartTime: timestamp
+  });
   await apiClient.replace(app);
+  console.info('[applaunchpad app operation] applied restart', {
+    action: 'restart',
+    appName,
+    namespace,
+    user: kube_user?.name,
+    previousRestartTime,
+    nextRestartTime: timestamp
+  });
 }
 
 /**
@@ -418,7 +509,6 @@ export async function deleteAppByName(name: string, k8s: K8sContext) {
       undefined,
       `${appDeployKey}=${name}`
     ),
-
     k8sCore.deleteCollectionNamespacedPersistentVolumeClaim(
       namespace,
       undefined,
@@ -461,8 +551,8 @@ export async function updateAppResources(
   appName: string,
   updateData: {
     resource?: {
-      cpu?: number;
-      memory?: number;
+      cpu?: Quantity;
+      memory?: Quantity;
       replicas?: number;
       hpa?: {
         target: 'cpu' | 'memory' | 'gpu';
@@ -472,7 +562,7 @@ export async function updateAppResources(
       };
     };
     command?: string;
-    args?: string;
+    args?: string[];
     image?: string;
     imageName?: string;
     imageRegistry?: {
@@ -611,33 +701,31 @@ export async function updateAppResources(
     }> = [];
 
     if (updateData.resource?.cpu !== undefined) {
-      const millicores = resourceConverters.cpuToMillicores(updateData.resource.cpu);
       jsonPatch.push(
         {
           op: 'replace',
           path: '/spec/template/spec/containers/0/resources/requests/cpu',
-          value: `${str2Num(Math.floor(millicores * 0.1))}m`
+          value: cpuRequestQuantity(updateData.resource.cpu).withFormat('DecimalSI').toString()
         },
         {
           op: 'replace',
           path: '/spec/template/spec/containers/0/resources/limits/cpu',
-          value: `${str2Num(millicores)}m`
+          value: updateData.resource.cpu.withFormat('DecimalSI').toString()
         }
       );
     }
 
     if (updateData.resource?.memory !== undefined) {
-      const memoryMB = resourceConverters.memoryToMB(updateData.resource.memory);
       jsonPatch.push(
         {
           op: 'replace',
           path: '/spec/template/spec/containers/0/resources/requests/memory',
-          value: `${str2Num(Math.floor(memoryMB * 0.1))}Mi`
+          value: memoryRequestQuantity(updateData.resource.memory).withFormat('BinarySI').toString()
         },
         {
           op: 'replace',
           path: '/spec/template/spec/containers/0/resources/limits/memory',
-          value: `${str2Num(memoryMB)}Mi`
+          value: updateData.resource.memory.withFormat('BinarySI').toString()
         }
       );
     }
@@ -663,23 +751,11 @@ export async function updateAppResources(
     }
 
     if (updateData.args !== undefined) {
-      const argsArray = (() => {
-        if (updateData.args === '') return [];
-        if (!updateData.args) return undefined;
-        try {
-          return JSON.parse(updateData.args) as string[];
-        } catch (error) {
-          return [updateData.args];
-        }
-      })();
-
-      if (argsArray !== undefined) {
-        jsonPatch.push({
-          op: 'replace',
-          path: '/spec/template/spec/containers/0/args',
-          value: argsArray
-        });
-      }
+      jsonPatch.push({
+        op: 'replace',
+        path: '/spec/template/spec/containers/0/args',
+        value: updateData.args
+      });
     }
 
     // Handle image name update (either from image or imageName field)
@@ -815,9 +891,10 @@ export async function processAppResponse<T extends boolean = true>(
     .filter((item): item is DeployKindsType => item !== null)
     .flat() as DeployKindsType[];
 
+  const _config = Config();
   const appDetailData: AppDetailType = await adaptAppDetail(responseData, {
-    SEALOS_DOMAIN: global.AppConfig.cloud.domain,
-    SEALOS_USER_DOMAINS: global.AppConfig.cloud.userDomains
+    domain: _config.cloud.domain,
+    userDomains: _config.cloud.userDomains
   });
 
   if (transform === false) {
@@ -826,4 +903,82 @@ export async function processAppResponse<T extends boolean = true>(
 
   const standardizedData = transformFromLegacySchema(appDetailData);
   return LaunchpadApplicationSchema.parse(standardizedData) as any;
+}
+
+/**
+ * List all applications in the namespace
+ * @param k8s Kubernetes context containing clients and configuration
+ * @returns Promise<z.infer<typeof LaunchpadApplicationSchema>[]>
+ */
+export async function listApps(
+  k8s: K8sContext
+): Promise<z.infer<typeof LaunchpadApplicationSchemaV2>[]> {
+  const { k8sApp, namespace } = k8s;
+
+  const [deploymentsResult, statefulsetsResult] = await Promise.allSettled([
+    k8sApp.listNamespacedDeployment(
+      namespace,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      appDeployKey
+    ),
+    k8sApp.listNamespacedStatefulSet(
+      namespace,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      appDeployKey
+    )
+  ]);
+
+  const appNames = new Set<string>();
+
+  if (deploymentsResult.status === 'fulfilled') {
+    for (const item of deploymentsResult.value.body.items) {
+      const name = item.metadata?.labels?.[appDeployKey];
+      if (name) appNames.add(name);
+    }
+  }
+
+  if (statefulsetsResult.status === 'fulfilled') {
+    for (const item of statefulsetsResult.value.body.items) {
+      const name = item.metadata?.labels?.[appDeployKey];
+      if (name) appNames.add(name);
+    }
+  }
+
+  const appResults = await Promise.allSettled(
+    Array.from(appNames).map((name) => getAppByName(name, k8s))
+  );
+
+  const apps: z.infer<typeof LaunchpadApplicationSchemaV2>[] = [];
+  for (const result of appResults) {
+    if (result.status === 'fulfilled') {
+      try {
+        const responseData = result.value
+          .map((item: PromiseSettledResult<any>) => {
+            if (item.status === 'fulfilled') return item.value.body;
+            if (item.status === 'rejected' && +item.reason?.body?.code === 404) return null;
+            return null;
+          })
+          .filter((item: any): item is DeployKindsType => item !== null)
+          .flat() as DeployKindsType[];
+
+        const appDetailData: AppDetailType = await adaptAppDetail(responseData, {
+          domain: Config().cloud.domain,
+          userDomains: Config().cloud.userDomains
+        });
+
+        const standardizedData = transformFromLegacySchemaV2(appDetailData, undefined, namespace);
+        apps.push(LaunchpadApplicationSchemaV2.parse(standardizedData));
+      } catch {
+        // Skip apps that fail to process
+      }
+    }
+  }
+
+  return apps;
 }

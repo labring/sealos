@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const TemplateInputSchema = z.object({
   description: z.string().describe('Human-readable explanation of the argument'),
-  type: z.enum(['string', 'number', 'boolean']).describe('Argument type'),
+  type: z.string().describe('Argument type (e.g. "string", "number", "boolean", "password")'),
   default: z.string().describe('Default value used during deployment'),
   required: z.boolean().describe('Whether this argument is mandatory')
 });
@@ -19,10 +19,14 @@ export const LanguageQuerySchema = z.object({
     .string()
     .optional()
     .describe('Language code for internationalization (e.g., "en", "zh"). Defaults to "en"')
+    .meta({ example: 'en' })
 });
 
 export const TemplateNamePathSchema = z.object({
-  name: z.string().describe('Template name identifier (e.g., "perplexica", "yourls")')
+  name: z
+    .string()
+    .describe('Template name identifier (e.g., "perplexica", "yourls")')
+    .meta({ example: 'perplexica' })
 });
 
 export const InstanceNamePathSchema = z.object({
@@ -34,13 +38,14 @@ export const InstanceNamePathSchema = z.object({
 export const TemplateBaseSchema = z.object({
   name: z.string().describe('Unique template identifier'),
   resourceType: z.literal('template').describe('Resource type, always "template"'),
-  readme: z.string().url().describe('URL to README documentation'),
-  icon: z.string().url().describe('URL to template icon image'),
+  readme: z.string().describe('URL to README documentation. Empty string when not available.'),
+  icon: z.string().describe('URL to template icon image. Empty string when not available.'),
   description: z.string().describe('Brief description of the template'),
-  gitRepo: z.string().url().describe('Git repository URL'),
+  gitRepo: z.string().describe('Git repository URL. Empty string when not available.'),
   category: z.array(z.string()).describe('Template categories (e.g., ["ai", "database"])'),
   args: z
-    .record(z.string(), TemplateInputSchema)
+    .object({})
+    .catchall(TemplateInputSchema.describe('Template argument configuration'))
     .describe('Arguments required for template deployment'),
   deployCount: z.number().describe('Number of deployments (includes multiplier for display)')
 });

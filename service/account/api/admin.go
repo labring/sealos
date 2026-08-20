@@ -452,7 +452,12 @@ func adminUserTrafficOperator(c *gin.Context, networkStatus string) {
 		c.JSON(http.StatusOK, gin.H{"success": true})
 		return
 	}
-	if err = updateNetworkNamespaceStatus(context.Background(), dao.K8sManager.GetClient(), networkStatus, namespaces); err != nil {
+	if err = updateNetworkNamespaceStatus(
+		context.Background(),
+		dao.K8sManager.GetClient(),
+		networkStatus,
+		namespaces,
+	); err != nil {
 		c.JSON(
 			http.StatusInternalServerError,
 			helper.ErrorMessage{
@@ -1071,7 +1076,9 @@ func AdminDeleteSubscriptionPlan(c *gin.Context) {
 		}
 
 		// Delete associated product prices first
-		if err := tx.Where("product_id = ?", plan.ID).Delete(&types.ProductPrice{}).Error; err != nil {
+		if err := tx.Where("product_id = ?", plan.ID).
+			Delete(&types.ProductPrice{}).
+			Error; err != nil {
 			return fmt.Errorf("failed to delete associated product prices: %w", err)
 		}
 

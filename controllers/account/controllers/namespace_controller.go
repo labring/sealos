@@ -13,9 +13,9 @@ import (
 
 	"github.com/go-logr/logr"
 	v1 "github.com/labring/sealos/controllers/account/api/v1"
+	"github.com/labring/sealos/controllers/pkg/objectstorage"
 	"github.com/labring/sealos/controllers/pkg/types"
 	"github.com/minio/madmin-go/v3"
-	objectstoragev1 "github/labring/sealos/controllers/objectstorage/api/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	batchv1 "k8s.io/api/batch/v1"
@@ -73,6 +73,8 @@ const (
 	MaxReplicasKey     = "deploy.cloud.sealos.io/maxReplicas"
 	DeployPVCResizeKey = "deploy.cloud.sealos.io/resize"
 )
+
+var errFinalDeletionCancelled = errors2.New("final deletion cancelled by namespace status")
 
 //+kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=core,resources=namespaces/status,verbs=get;update;patch
@@ -146,6 +148,9 @@ func (r *NamespaceReconciler) Reconcile(
 	// auxiliary function handles resource operations
 	performAction := func(action func(context.Context, string) error, actionName string) (ctrl.Result, error) {
 		if err := action(ctx, req.Name); err != nil {
+			if errors2.Is(err, errFinalDeletionCancelled) {
+				return ctrl.Result{}, err
+			}
 			logger.Error(err, actionName+" namespace resources failed")
 			return ctrl.Result{
 				Requeue:      actionName == deleteConst,
@@ -290,34 +295,87 @@ func (r *NamespaceReconciler) Reconcile(
 				return "suspend/resume"
 			}(),
 		},
-		// Case 4: debt completion status handling network
+		// Case 4: debt completion status handling network OR network completion status handling debt
 		{
 			condition: func() bool {
-				return debtExists && networkExists && debtCompletedStates[debtStatus] &&
-					!networkCompletedStates[networkStatus]
-			},
-			newDebt: debtStatus,
-			newNetwork: func() string {
-				switch networkStatus {
-				case types.NetworkSuspend:
-					return types.NetworkSuspendCompleted
-				case types.NetworkResume:
-					return types.NetworkResumeCompleted
-				default:
-					return networkStatus
+				// Subcase 4a: debt completed but network not completed
+				if debtExists && networkExists && debtCompletedStates[debtStatus] &&
+					!networkCompletedStates[networkStatus] {
+					return true
 				}
+				// Subcase 4b: network completed but debt not completed
+				if debtExists && networkExists && networkCompletedStates[networkStatus] &&
+					!debtCompletedStates[debtStatus] {
+					return true
+				}
+				return false
+			},
+			newDebt: func() string {
+				// If debt is not completed, transition it to completed state
+				if !debtCompletedStates[debtStatus] {
+					switch debtStatus {
+					case types.SuspendDebtNamespaceAnnoStatus:
+						return types.SuspendCompletedDebtNamespaceAnnoStatus
+					case types.TerminateSuspendDebtNamespaceAnnoStatus:
+						return types.TerminateSuspendCompletedDebtNamespaceAnnoStatus
+					case types.ResumeDebtNamespaceAnnoStatus:
+						return types.ResumeCompletedDebtNamespaceAnnoStatus
+					case types.FinalDeletionDebtNamespaceAnnoStatus:
+						return types.FinalDeletionCompletedDebtNamespaceAnnoStatus
+					default:
+						return debtStatus
+					}
+				}
+				return debtStatus
+			}(),
+			newNetwork: func() string {
+				// If network is not completed, transition it to completed state
+				if !networkCompletedStates[networkStatus] {
+					switch networkStatus {
+					case types.NetworkSuspend:
+						return types.NetworkSuspendCompleted
+					case types.NetworkResume:
+						return types.NetworkResumeCompleted
+					default:
+						return networkStatus
+					}
+				}
+				return networkStatus
 			}(),
 			action: func(ctx context.Context, name string) error {
-				switch networkStatus {
-				case types.NetworkSuspend:
-					return r.SuspendUserResource(ctx, name)
-				case types.NetworkResume:
-					return r.ResumeUserResource(ctx, name)
-				default:
-					return nil
+				// Prioritize debt action (suspend/delete) over network action when both need action
+				// If debt needs action and is suspend/delete type, execute it
+				if !debtCompletedStates[debtStatus] {
+					switch debtStatus {
+					case types.SuspendDebtNamespaceAnnoStatus,
+						types.TerminateSuspendDebtNamespaceAnnoStatus:
+						return r.SuspendUserResource(ctx, name)
+					case types.FinalDeletionDebtNamespaceAnnoStatus:
+						return r.DeleteUserResource(ctx, name)
+					case types.ResumeDebtNamespaceAnnoStatus:
+						return r.ResumeUserResource(ctx, name)
+					}
 				}
+				// Otherwise execute network action if needed
+				if !networkCompletedStates[networkStatus] {
+					switch networkStatus {
+					case types.NetworkSuspend:
+						return r.SuspendUserResource(ctx, name)
+					case types.NetworkResume:
+						return r.ResumeUserResource(ctx, name)
+					}
+				}
+				return nil
 			},
-			actionName: "suspend/resume",
+			actionName: func() string {
+				if !debtCompletedStates[debtStatus] {
+					if debtStatus == types.FinalDeletionDebtNamespaceAnnoStatus {
+						return deleteConst
+					}
+					return "suspend/resume"
+				}
+				return "suspend/resume"
+			}(),
 		},
 	}
 
@@ -326,6 +384,10 @@ func (r *NamespaceReconciler) Reconcile(
 		if t.condition() {
 			if t.action != nil {
 				if result, err := performAction(t.action, t.actionName); err != nil {
+					if errors2.Is(err, errFinalDeletionCancelled) {
+						logger.Info("final deletion cancelled by current namespace status")
+						return ctrl.Result{}, nil
+					}
 					return result, err
 				}
 			}
@@ -388,10 +450,60 @@ func (r *NamespaceReconciler) deleteBackup(ctx context.Context, namespace string
 		Version:  "v1alpha1",
 		Resource: "backups",
 	}
-	return deleteResourceListAndWait(ctx, r.dynamicClient, gvr, namespace, r.deleteBackupSemaphore)
+	return deleteResourceListAndWait(
+		ctx,
+		r.dynamicClient,
+		gvr,
+		namespace,
+		r.deleteBackupSemaphore,
+		func(ctx context.Context) error {
+			return r.ensureFinalDeletionActive(ctx, namespace)
+		},
+	)
+}
+
+func (r *NamespaceReconciler) ensureFinalDeletionActive(
+	ctx context.Context,
+	namespace string,
+) error {
+	current := &corev1.Namespace{}
+	if err := r.Client.Get(ctx, client.ObjectKey{Name: namespace}, current); err != nil {
+		if errors.IsNotFound(err) {
+			return fmt.Errorf(
+				"%w: namespace %s no longer exists",
+				errFinalDeletionCancelled,
+				namespace,
+			)
+		}
+		return fmt.Errorf(
+			"failed to verify final deletion status for namespace %s: %w",
+			namespace,
+			err,
+		)
+	}
+	if current.Status.Phase == corev1.NamespaceTerminating {
+		return fmt.Errorf(
+			"%w: namespace %s is terminating",
+			errFinalDeletionCancelled,
+			namespace,
+		)
+	}
+	if current.Annotations[types.DebtNamespaceAnnoStatusKey] != types.FinalDeletionDebtNamespaceAnnoStatus {
+		return fmt.Errorf(
+			"%w: namespace %s has debt status %q",
+			errFinalDeletionCancelled,
+			namespace,
+			current.Annotations[types.DebtNamespaceAnnoStatusKey],
+		)
+	}
+	return nil
 }
 
 func (r *NamespaceReconciler) DeleteUserResource(ctx context.Context, namespace string) error {
+	if err := r.ensureFinalDeletionActive(ctx, namespace); err != nil {
+		return err
+	}
+
 	// Delete backup first and wait for completion
 	if err := r.deleteBackup(ctx, namespace); err != nil {
 		return err
@@ -419,10 +531,25 @@ func (r *NamespaceReconciler) DeleteUserResource(ctx context.Context, namespace 
 			}
 		}(rs)
 	}
+	// Cancellation is expected when recharge changes the namespace status while
+	// deletion workers are still running. Record it and collect sibling results
+	// so this expected cancellation does not become a reconcile failure.
+	wasCancelled := false
+	var allErrors []error
 	for range deleteResources {
 		if err := <-errChan; err != nil {
-			return err
+			if errors2.Is(err, errFinalDeletionCancelled) {
+				wasCancelled = true
+				continue
+			}
+			allErrors = append(allErrors, err)
 		}
+	}
+	if len(allErrors) > 0 {
+		return errors2.Join(allErrors...)
+	}
+	if wasCancelled {
+		return errFinalDeletionCancelled
 	}
 	return nil
 }
@@ -542,7 +669,12 @@ func (r *NamespaceReconciler) suspendKBCluster(ctx context.Context, namespace st
 		if err != nil {
 			logger.Error(err, "failed to get backup config", "cluster", clusterName)
 		} else if hasBackup && backup != nil {
-			enabled, found, _ := unstructured.NestedBool(cluster.Object, "spec", "backup", "enabled")
+			enabled, found, _ := unstructured.NestedBool(
+				cluster.Object,
+				"spec",
+				"backup",
+				"enabled",
+			)
 			if found {
 				backupEnabled = enabled
 			}
@@ -579,12 +711,19 @@ func (r *NamespaceReconciler) suspendKBCluster(ctx context.Context, namespace st
 				backupEnabled,
 			)
 		} else {
-			logger.V(1).Info("Cluster already has original state, skipping state save", "Cluster", clusterName)
+			logger.V(1).
+				Info("Cluster already has original state, skipping state save", "Cluster", clusterName)
 		}
 
 		// Disable backup if it exists and is enabled
 		if hasBackup && backup != nil && backupEnabled {
-			if err := unstructured.SetNestedField(cluster.Object, false, "spec", "backup", "enabled"); err != nil {
+			if err := unstructured.SetNestedField(
+				cluster.Object,
+				false,
+				"spec",
+				"backup",
+				"enabled",
+			); err != nil {
 				logger.Error(err, "failed to set backup.enabled=false", "cluster", clusterName)
 			} else {
 				logger.Info("Disabled backup for cluster", "cluster", clusterName)
@@ -603,7 +742,8 @@ func (r *NamespaceReconciler) suspendKBCluster(ctx context.Context, namespace st
 				return fmt.Errorf("failed to update cluster %s: %w", clusterName, err)
 			}
 		} else {
-			logger.V(1).Info("No changes needed for cluster, skipping update", "Cluster", clusterName)
+			logger.V(1).
+				Info("No changes needed for cluster, skipping update", "Cluster", clusterName)
 		}
 
 		// Skip OpsRequest creation if cluster is already stopped or stopping
@@ -1063,10 +1203,22 @@ func (r *NamespaceReconciler) resumeKBCluster(ctx context.Context, namespace str
 			if err != nil {
 				logger.Error(err, "failed to get backup config", "cluster", clusterName)
 			} else if hasBackup && backup != nil {
-				if err := unstructured.SetNestedField(cluster.Object, true, "spec", "backup", "enabled"); err != nil {
+				if err := unstructured.SetNestedField(
+					cluster.Object,
+					true,
+					"spec",
+					"backup",
+					"enabled",
+				); err != nil {
 					logger.Error(err, "failed to restore backup.enabled", "cluster", clusterName)
 				} else {
-					logger.Info("Restored backup enabled state", "cluster", clusterName, "enabled", true)
+					logger.Info(
+						"Restored backup enabled state",
+						"cluster",
+						clusterName,
+						"enabled",
+						true,
+					)
 					needsUpdate = true
 				}
 			}
@@ -1137,7 +1289,13 @@ func (r *NamespaceReconciler) resumeKBCluster(ctx context.Context, namespace str
 				logger.V(1).
 					Info("OpsRequest already exists, skipping creation", "OpsRequest", opsName)
 			} else {
-				logger.Info("Created start OpsRequest for cluster", "cluster", clusterName, "opsRequest", opsName)
+				logger.Info(
+					"Created start OpsRequest for cluster",
+					"cluster",
+					clusterName,
+					"opsRequest",
+					opsName,
+				)
 			}
 		}
 	}
@@ -1173,7 +1331,11 @@ func (r *NamespaceReconciler) setOSUserStatus(ctx context.Context, user, status 
 	}
 	if r.OSAdminClient == nil {
 		secret := &corev1.Secret{}
-		if err := r.Client.Get(ctx, client.ObjectKey{Name: r.OSAdminSecret, Namespace: r.OSNamespace}, secret); err != nil {
+		if err := r.Client.Get(
+			ctx,
+			client.ObjectKey{Name: r.OSAdminSecret, Namespace: r.OSNamespace},
+			secret,
+		); err != nil {
 			r.Log.Error(
 				err,
 				"failed to get secret",
@@ -1186,7 +1348,7 @@ func (r *NamespaceReconciler) setOSUserStatus(ctx context.Context, user, status 
 		}
 		accessKey := string(secret.Data[OSAccessKey])
 		secretKey := string(secret.Data[OSSecretKey])
-		oSAdminClient, err := objectstoragev1.NewOSAdminClient(
+		oSAdminClient, err := objectstorage.NewOSAdminClient(
 			r.InternalEndpoint,
 			accessKey,
 			secretKey,
@@ -1282,11 +1444,15 @@ func (AnnotationChangedPredicate) Update(e event.UpdateEvent) bool {
 	newDebtStatus := newObj.Annotations[types.DebtNamespaceAnnoStatusKey]
 	oldNetworkStatus := oldObj.Annotations[types.NetworkStatusAnnoKey]
 	newNetworkStatus := newObj.Annotations[types.NetworkStatusAnnoKey]
+	oldFinalDeletionReplay := oldObj.Annotations[types.FinalDeletionReplayAnnotationKey]
+	newFinalDeletionReplay := newObj.Annotations[types.FinalDeletionReplayAnnotationKey]
 
 	debtChanged := oldDebtStatus != newDebtStatus && !isDebtCompleted(newDebtStatus)
 	networkChanged := oldNetworkStatus != newNetworkStatus && !isNetworkCompleted(newNetworkStatus)
+	replayChanged := oldFinalDeletionReplay != newFinalDeletionReplay &&
+		newFinalDeletionReplay != ""
 
-	return debtChanged || networkChanged
+	return debtChanged || networkChanged || replayChanged
 }
 
 func (AnnotationChangedPredicate) Create(e event.CreateEvent) bool {
@@ -1365,7 +1531,8 @@ func (r *NamespaceReconciler) suspendOrphanCronJob(ctx context.Context, namespac
 				currentlySuspended,
 			)
 		} else {
-			logger.V(1).Info("CronJob already has original state, skipping state save", "CronJob", cronJob.Name)
+			logger.V(1).
+				Info("CronJob already has original state, skipping state save", "CronJob", cronJob.Name)
 		}
 
 		// Set suspend to true if not already suspended
@@ -1567,7 +1734,8 @@ func (r *NamespaceReconciler) suspendOrphanDeployments(
 				replicas,
 			)
 		} else {
-			logger.V(1).Info("Deployment already has original state, skipping state save", "Deployment", deploy.Name)
+			logger.V(1).
+				Info("Deployment already has original state, skipping state save", "Deployment", deploy.Name)
 		}
 
 		// Set replicas to 0 if not already 0
@@ -1793,7 +1961,8 @@ func (r *NamespaceReconciler) suspendOrphanStatefulSets(
 				replicas,
 			)
 		} else {
-			logger.V(1).Info("StatefulSet already has original state, skipping state save", "StatefulSet", sts.Name)
+			logger.V(1).
+				Info("StatefulSet already has original state, skipping state save", "StatefulSet", sts.Name)
 		}
 
 		// Set replicas to 0 if not already 0
@@ -1998,7 +2167,8 @@ func (r *NamespaceReconciler) suspendOrphanReplicaSets(
 				replicas,
 			)
 		} else {
-			logger.V(1).Info("ReplicaSet already has original state, skipping state save", "ReplicaSet", rs.Name)
+			logger.V(1).
+				Info("ReplicaSet already has original state, skipping state save", "ReplicaSet", rs.Name)
 		}
 
 		// Set replicas to 0 if not already 0
@@ -2163,7 +2333,8 @@ func (r *NamespaceReconciler) suspendCertificates(ctx context.Context, namespace
 				wasDisabled,
 			)
 		} else {
-			logger.V(1).Info("Certificate already has original state, skipping state save", "Certificate", certName)
+			logger.V(1).
+				Info("Certificate already has original state, skipping state save", "Certificate", certName)
 		}
 
 		// Disable certificate reissue if not already set to true
@@ -2277,6 +2448,10 @@ func (r *NamespaceReconciler) deleteResource(
 	ctx context.Context,
 	resource, namespace string,
 ) error {
+	if err := r.ensureFinalDeletionActive(ctx, namespace); err != nil {
+		return err
+	}
+
 	deletePolicy := v12.DeletePropagationForeground
 	var gvr schema.GroupVersionResource
 	switch resource {
@@ -2446,7 +2621,8 @@ func (r *NamespaceReconciler) suspendIngresses(ctx context.Context, namespace st
 				originalIngressClass,
 			)
 		} else {
-			logger.V(1).Info("Ingress already has original state, skipping state save", "Ingress", ingressName)
+			logger.V(1).
+				Info("Ingress already has original state, skipping state save", "Ingress", ingressName)
 		}
 
 		// Change ingress class to "pause" if not already set
@@ -2709,7 +2885,12 @@ func deleteResourceListAndWait(
 	gvr schema.GroupVersionResource,
 	namespace string,
 	semaphore chan struct{},
+	guard func(context.Context) error,
 ) error {
+	if err := guard(ctx); err != nil {
+		return err
+	}
+
 	// List all resources
 	list, err := dynamicClient.Resource(gvr).Namespace(namespace).List(ctx, v12.ListOptions{})
 	if err != nil {
@@ -2734,7 +2915,17 @@ func deleteResourceListAndWait(
 			select {
 			case semaphore <- struct{}{}:
 				defer func() { <-semaphore }() // Release semaphore when done
-				if deleteErr := deleteResourceAndWait(ctx, dynamicClient, gvr, namespace, resName); deleteErr != nil {
+				if guardErr := guard(ctx); guardErr != nil {
+					errCh <- guardErr
+					return
+				}
+				if deleteErr := deleteResourceAndWait(
+					ctx,
+					dynamicClient,
+					gvr,
+					namespace,
+					resName,
+				); deleteErr != nil {
 					errCh <- fmt.Errorf("failed to delete %s/%s: %w", gvr, resName, deleteErr)
 				}
 			case <-ctx.Done():
@@ -2749,12 +2940,23 @@ func deleteResourceListAndWait(
 		close(errCh)
 	}()
 
+	// Cancellation is an expected result when recharge changes the namespace
+	// status during cleanup. It must be separated from real deletion errors so
+	// the caller can stop cleanly after every worker has finished.
+	wasCancelled := false
 	for deleteErr := range errCh {
+		if errors2.Is(deleteErr, errFinalDeletionCancelled) {
+			wasCancelled = true
+			continue
+		}
 		allErrors = append(allErrors, deleteErr)
 	}
 
 	if len(allErrors) > 0 {
 		return fmt.Errorf("failed to delete some %s resources: %v", gvr, allErrors)
+	}
+	if wasCancelled {
+		return errFinalDeletionCancelled
 	}
 
 	return nil
@@ -2921,12 +3123,18 @@ func (r *NamespaceReconciler) suspendDevboxes(ctx context.Context, namespace str
 				wasRunning,
 			)
 		} else {
-			logger.V(1).Info("Devbox already has original state, skipping state save", "Devbox", devboxName)
+			logger.V(1).
+				Info("Devbox already has original state, skipping state save", "Devbox", devboxName)
 		}
 
 		// Set state to Shutdown if currently running
 		if currentState == "Running" {
-			if err := unstructured.SetNestedField(devbox.Object, "Shutdown", "spec", "state"); err != nil {
+			if err := unstructured.SetNestedField(
+				devbox.Object,
+				"Shutdown",
+				"spec",
+				"state",
+			); err != nil {
 				logger.Error(err, "failed to set devbox state", "devbox", devboxName)
 				errs = append(
 					errs,
@@ -3019,7 +3227,12 @@ func (r *NamespaceReconciler) resumeDevboxes(ctx context.Context, namespace stri
 
 		// Restore devbox to Running state only if it was running before suspension
 		if originalState.WasRunning {
-			if err := unstructured.SetNestedField(devbox.Object, "Running", "spec", "state"); err != nil {
+			if err := unstructured.SetNestedField(
+				devbox.Object,
+				"Running",
+				"spec",
+				"state",
+			); err != nil {
 				logger.Error(err, "failed to set devbox state", "devbox", devboxName)
 				errs = append(
 					errs,

@@ -1,0 +1,37 @@
+{{- if .Values.metrics.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "account-controller.fullname" . }}-controller-manager-metrics-service
+  labels:
+    control-plane: controller-manager
+    {{- include "account-controller.labels" . | nindent 4 }}
+spec:
+  ports:
+    - name: https
+      port: {{ .Values.service.metrics.port }}
+      protocol: TCP
+      targetPort: https
+  selector:
+    control-plane: controller-manager
+{{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "account-controller.fullname" . }}-webhook-service
+  labels:
+    control-plane: controller-manager
+    {{- include "account-controller.labels" . | nindent 4 }}
+spec:
+  ports:
+    - port: {{ .Values.service.webhook.port }}
+      protocol: TCP
+      targetPort: 9443
+      name: webhook
+    - port: 9444
+      protocol: TCP
+      targetPort: 9444
+      name: account
+  selector:
+    control-plane: controller-manager

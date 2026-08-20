@@ -6,7 +6,6 @@ import {
   ModalContent,
   ModalCloseButton,
   Box,
-  useTheme,
   Flex,
   Button,
   MenuButton,
@@ -21,9 +20,11 @@ import { ChevronDownIcon } from '@chakra-ui/icons';
 import { streamFetch } from '@/services/streamFetch';
 import { default as AnsiUp } from 'ansi_up';
 import { useTranslation } from 'next-i18next';
+import { getPodContainerName } from '@/utils/pod';
+import type { PodDetailType } from '@/types/app';
 
 interface sinceItem {
-  key: 'streaming_logs' | 'within_5_minutes' | 'within_1_hour' | 'within_1_day' | 'terminated_logs';
+  key: 'streaming_logs' | 'within_5_minute' | 'within_1_hour' | 'within_1_day' | 'terminated_logs';
   since: number;
   previous: boolean;
 }
@@ -36,7 +37,7 @@ const newSinceItems = (baseTimestamp: number): sinceItem[] => {
       previous: false
     },
     {
-      key: 'within_5_minutes',
+      key: 'within_5_minute',
       since: baseTimestamp - 5 * 60 * 1000,
       previous: false
     },
@@ -63,18 +64,20 @@ const LogsModal = ({
   podName,
   pods = [],
   podAlias,
+  pod,
   setLogsPodName,
   closeFn
 }: {
   appName: string;
   podName: string;
-  pods: { alias: string; podName: string }[];
+  pods: { alias: string; podName: string; pod?: PodDetailType }[];
   podAlias: string;
+  pod?: PodDetailType;
   setLogsPodName: (name: string) => void;
   closeFn: () => void;
 }) => {
+  const borderBase = '1px solid #E8EBF0';
   const { t } = useTranslation();
-  const theme = useTheme();
   const { Loading } = useLoading();
   const [logs, setLogs] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -83,6 +86,7 @@ const LogsModal = ({
   const [sinceKey, setSinceKey] = useState('streaming_logs');
   const [sinceTime, setSinceTime] = useState(0);
   const [previous, setPrevious] = useState(false);
+  const containerName = getPodContainerName(pod || {});
 
   const switchSince = useCallback(
     (item: sinceItem) => {
@@ -106,6 +110,7 @@ const LogsModal = ({
       data: {
         appName,
         podName,
+        containerName,
         stream: true,
         sinceTime,
         previous
@@ -143,7 +148,7 @@ const LogsModal = ({
       }
     });
     return controller;
-  }, [appName, closeFn, podName, sinceTime, previous]);
+  }, [appName, closeFn, containerName, podName, sinceTime, previous]);
 
   useEffect(() => {
     const controller = watchLogs();
@@ -157,6 +162,7 @@ const LogsModal = ({
       const allLogs = await getPodLogs({
         appName,
         podName,
+        containerName,
         stream: false,
         sinceTime,
         previous
@@ -165,7 +171,7 @@ const LogsModal = ({
     } catch (e) {
       console.log('download log error:', e);
     }
-  }, [appName, podName, sinceTime, previous]);
+  }, [appName, containerName, podName, sinceTime, previous]);
 
   return (
     <Modal isOpen={true} onClose={closeFn} isCentered={true} lockFocusAcrossFrames={false}>
@@ -185,7 +191,7 @@ const LogsModal = ({
                     h={'32px'}
                     textAlign={'start'}
                     bg={'grayModern.100'}
-                    border={theme.borders.base}
+                    border={borderBase}
                     borderRadius={'md'}
                   >
                     <Flex px={4} alignItems={'center'}>
@@ -210,7 +216,7 @@ const LogsModal = ({
                     h={'32px'}
                     textAlign={'start'}
                     bg={'grayModern.100'}
-                    border={theme.borders.base}
+                    border={borderBase}
                     borderRadius={'md'}
                   >
                     <Flex px={4} alignItems={'center'}>

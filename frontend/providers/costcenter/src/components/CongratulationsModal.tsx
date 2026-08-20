@@ -4,15 +4,12 @@ import congratsHeaderImage from '@/assets/congrats_header.svg';
 import { Button } from '@sealos/shadcn-ui';
 import { formatTrafficAuto } from '@/utils/format';
 import { useTranslation } from 'next-i18next';
+import type { MaxResourcesRecord } from '@/types/plan';
 
 interface CongratulationsModalProps {
+  mode?: 'upgrade' | 'renew';
   planName?: string;
-  maxResources?: {
-    cpu: string;
-    memory: string;
-    storage: string;
-    nodeports: string;
-  };
+  maxResources?: MaxResourcesRecord;
   traffic?: number;
   onClose: () => void;
   isOpen: boolean;
@@ -21,27 +18,15 @@ interface CongratulationsModalProps {
 export default function CongratulationsModal(props: CongratulationsModalProps) {
   const { onClose, isOpen } = props;
   const { t } = useTranslation();
+  const mode = props.mode || 'upgrade';
 
-  // Format plan resources
-  const formatCpu = (cpu: string) => {
-    const cpuNum = parseFloat(cpu);
-    return `${cpuNum} vCPU`;
-  };
-
-  const formatMemory = (memory: string) => {
-    return memory.replace('Gi', 'GB RAM');
-  };
-
-  const formatStorage = (storage: string) => {
-    return storage.replace('Gi', 'GB Disk');
-  };
-
+  const r = props.maxResources;
   const benefits = {
-    cpu: props.maxResources?.cpu ? formatCpu(props.maxResources.cpu) : '2 vCPU',
-    memory: props.maxResources?.memory ? formatMemory(props.maxResources.memory) : '2GB RAM',
-    storage: props.maxResources?.storage ? formatStorage(props.maxResources.storage) : '5GB Disk',
+    cpu: r?.cpu ? `${r.cpu.toString()} vCPU` : '2 vCPU',
+    memory: r?.memory ? `${r.memory.toString()} RAM` : '2GB RAM',
+    storage: r?.storage ? `${r.storage.toString()} Disk` : '5GB Disk',
     traffic: props.traffic ? formatTrafficAuto(props.traffic) : '1GB Traffic',
-    nodeports: props.maxResources?.nodeports ? props.maxResources.nodeports : '1 Nodeport'
+    nodeports: r?.nodeports ? r.nodeports.toString() : '1 Nodeport'
   };
 
   return (
@@ -72,14 +57,25 @@ export default function CongratulationsModal(props: CongratulationsModalProps) {
             mb="8px"
             textAlign="start"
           >
-            {t('common:congratulations')}
+            {mode === 'renew'
+              ? t('common:subscription_renewed_title')
+              : t('common:congratulations')}
           </Text>
 
-          <Text fontSize="16px" color="var(--color-zinc-600)" textAlign="start" lineHeight="1.5">
-            {t('common:you_have_upgraded_to_plan_benefits_unlocked', {
-              planName: props.planName || t('common:pro_plan')
-            })}
+          <Text
+            fontSize="16px"
+            color="var(--color-zinc-600)"
+            textAlign="start"
+            lineHeight="1.5"
+            whiteSpace="pre-line"
+          >
+            {mode === 'renew'
+              ? t('common:subscription_renewed_desc')
+              : t('common:you_have_upgraded_to_plan_benefits_unlocked', {
+                  planName: props.planName || t('common:pro_plan')
+                })}
           </Text>
+
           <Divider my="8px" borderColor={'#F4F4F5'} />
           <Flex direction="column" gap="12px" mb="32px" w="100%">
             <Flex align="center" gap="12px">

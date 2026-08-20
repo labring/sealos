@@ -230,6 +230,9 @@ export default function AppDock() {
           url: '',
           desc: ''
         },
+        representativeMeta: {
+          forcedIconStyle: 'fill'
+        },
         displayType: 'hidden'
       },
       ...normalApps.slice(0, 5).map((app, index) => ({ ...app, pid: -2 }))

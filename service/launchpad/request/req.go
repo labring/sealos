@@ -2,6 +2,7 @@ package request
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -14,12 +15,27 @@ import (
 )
 
 func Request(addr string, params *bytes.Buffer) ([]byte, error) {
-	resp, err := http.Post(addr, "application/x-www-form-urlencoded", params)
+	log.Printf("[launchpad-monitor] request vm addr=%s body=%s", addr, params.String())
 
+	req, err := http.NewRequestWithContext(
+		context.Background(),
+		http.MethodPost,
+		addr,
+		params,
+	)
 	if err != nil {
+		log.Printf("[launchpad-monitor] create request failed addr=%s err=%v", addr, err)
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		log.Printf("[launchpad-monitor] request vm failed addr=%s err=%v", addr, err)
 		return nil, err
 	}
 	defer resp.Body.Close()
+	log.Printf("[launchpad-monitor] vm response status=%s addr=%s", resp.Status, addr)
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		log.Printf("%v\n", resp)
@@ -40,15 +56,27 @@ func GetQuery(query *api.VMRequest) (string, error) {
 	case "cpu":
 		result = "round(sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace=~\"$namespace\",pod=~\"$pod.*\"}) by (pod) / sum(cluster:namespace:pod_cpu:active:kube_pod_container_resource_limits{namespace=~\"$namespace\",pod=~\"$pod.*\"}) by (pod) * 100,0.01)"
 	case "memory":
-		result = "round(sum(container_memory_working_set_bytes{job=\"kubelet\", metrics_path=\"/metrics/cadvisor\",namespace=~\"$namespace\",pod=~\"$pod.*\"}) by(pod) / sum(cluster:namespace:pod_memory:active:kube_pod_container_resource_limits{namespace=~\"$namespace\",pod=~\"$pod.*\"}) by (pod)* 100, 0.01)"
+		result = "round(sum(node_namespace_pod_container:container_memory_working_set_bytes{namespace=~\"$namespace\",pod=~\"$pod.*\",container!=\"\",image!=\"\"}) by(pod) / sum(cluster:namespace:pod_memory:active:kube_pod_container_resource_limits{namespace=~\"$namespace\",pod=~\"$pod.*\"}) by (pod)* 100, 0.01)"
 	case "average_cpu":
 		result = "avg(round(sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace=~\"$namespace\",pod=~\"$pod.*\"}) by (pod) / sum(cluster:namespace:pod_cpu:active:kube_pod_container_resource_limits{namespace=~\"$namespace\",pod=~\"$pod.*\"}) by (pod) * 100,0.01))"
 	case "average_memory":
-		result = "avg(round(sum(container_memory_working_set_bytes{job=\"kubelet\", metrics_path=\"/metrics/cadvisor\",namespace=~\"$namespace\",pod=~\"$pod.*\",container!=\"\"}) by(pod) / sum(cluster:namespace:pod_memory:active:kube_pod_container_resource_limits{namespace=~\"$namespace\",pod=~\"$pod.*\"}) by (pod) * 100, 0.01))"
+		result = "avg(round(sum(node_namespace_pod_container:container_memory_working_set_bytes{namespace=~\"$namespace\",pod=~\"$pod.*\",container!=\"\",image!=\"\"}) by(pod) / sum(cluster:namespace:pod_memory:active:kube_pod_container_resource_limits{namespace=~\"$namespace\",pod=~\"$pod.*\"}) by (pod) * 100, 0.01))"
 	case "storage":
 		result = "round((max by (persistentvolumeclaim,namespace) (kubelet_volume_stats_used_bytes {namespace=~\"$namespace\", persistentvolumeclaim=~\"@persistentvolumeclaim\"})) / (max by (persistentvolumeclaim,namespace) (kubelet_volume_stats_capacity_bytes {namespace=~\"$namespace\", persistentvolumeclaim=~\"@persistentvolumeclaim\"})) * 100, 0.01)"
+	case "gpu":
+		result = "Device_utilization_desc_of_container{podnamespace=~\"$namespace\",podname=~\"$pod.*\"}"
+	case "gpu_memory":
+		result = "sum without(data) (Device_memory_desc_of_container{podnamespace=~\"$namespace\",podname=~\"$pod.*\"})"
+	case "network_service_request_count":
+		result = "envoy_cluster_upstream_rq{cluster_name=\"$cluster\"}"
+	case "network_service_request_percent":
+		result = "envoy_upstream_request_percentage{cluster_name=\"$cluster\"}"
 	default:
 		log.Println(query.Type)
+	}
+	if isNetworkServiceRequest(query.Type) {
+		result = strings.ReplaceAll(result, "$cluster", buildClusterName(query.Service, query.Port))
+		return result, nil
 	}
 	podName := getPodName(query.LaunchPadName)
 	result = strings.ReplaceAll(strings.ReplaceAll(result, "$namespace", query.NS), "$pod", podName)
@@ -58,12 +86,31 @@ func GetQuery(query *api.VMRequest) (string, error) {
 
 func getPodName(str string) string {
 	index := strings.LastIndex(str, "-")
+	if index == -1 {
+		return str
+	}
 	firstPart := str[:index]
 	return firstPart
 }
 
+func isNetworkServiceRequest(queryType string) bool {
+	return queryType == "network_service_request_count" ||
+		queryType == "network_service_request_percent"
+}
+
+func buildClusterName(serviceName, port string) string {
+	return fmt.Sprintf("outbound|%s||%s", port, serviceName)
+}
+
 func VMNew(query *api.VMRequest) ([]byte, error) {
 	result, _ := GetQuery(query)
+	log.Printf(
+		"[launchpad-monitor] built query type=%s namespace=%s launchPadName=%s query=%s",
+		query.Type,
+		query.NS,
+		query.LaunchPadName,
+		result,
+	)
 
 	formData := url.Values{}
 	formData.Set("query", result)
@@ -83,8 +130,26 @@ func VMNew(query *api.VMRequest) ([]byte, error) {
 	}
 
 	if len(formData.Get("start")) == 0 {
+		log.Printf(
+			"[launchpad-monitor] query instant vmHost=%s type=%s namespace=%s launchPadName=%s time=%s",
+			vmHost,
+			query.Type,
+			query.NS,
+			query.LaunchPadName,
+			query.Range.Time,
+		)
 		return Request(vmHost+"/api/v1/query", bf)
 	}
+	log.Printf(
+		"[launchpad-monitor] query range vmHost=%s type=%s namespace=%s launchPadName=%s start=%s end=%s step=%s",
+		vmHost,
+		query.Type,
+		query.NS,
+		query.LaunchPadName,
+		query.Range.Start,
+		query.Range.End,
+		query.Range.Step,
+	)
 	return Request(vmHost+"/api/v1/query_range", bf)
 }
 

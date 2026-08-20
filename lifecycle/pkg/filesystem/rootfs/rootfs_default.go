@@ -21,7 +21,10 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"os"
+	osexec "os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"golang.org/x/sync/errgroup"
@@ -34,6 +37,7 @@ import (
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	executils "github.com/labring/sealos/pkg/utils/exec"
 	"github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/hash"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/maps"
 	stringsutil "github.com/labring/sealos/pkg/utils/strings"
@@ -113,6 +117,7 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 		return errors.New("cannot mount a cluster without rootfs, this is an unexpected bug")
 	}
 	rootfsEnvs := v2.MergeEnvWithBuiltinKeys(rootfs.Env, *rootfs)
+	localSealctlPath := findLocalSealctl()
 
 	for idx := range ipList {
 		ip := ipList[idx]
@@ -133,6 +138,9 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 			envs := envProcessor.Getenv(ip)
 			envs = maps.Merge(rootfsEnvs, envs)
 			envs[v2.ImageRunModeEnvSysKey] = strings.Join(cluster.GetRolesByIP(ip), ",")
+			if err := syncSealctlToRootfs(execer, ip, localSealctlPath, pathResolver.RootFSSealctlPath()); err != nil {
+				logger.Warn("failed to sync sealctl to %s: %v", ip, err)
+			}
 			renderCommand := getRenderCommand(pathResolver.RootFSSealctlPath(), target)
 
 			return execer.CmdAsync(ip, stringsutil.RenderShellWithEnv(renderCommand, envs))
@@ -152,6 +160,9 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 				if err := copyFn(mountInfo, master0, targetDir); err != nil {
 					return err
 				}
+				if err := syncSealctlToRootfs(execer, master0, localSealctlPath, pathResolver.RootFSSealctlPath()); err != nil {
+					logger.Warn("failed to sync sealctl to %s: %v", master0, err)
+				}
 				renderCommand := getRenderCommand(pathResolver.RootFSSealctlPath(), targetDir)
 				return execer.CmdAsync(master0, stringsutil.RenderShellWithEnv(renderCommand, mountInfo.Env))
 			}
@@ -163,13 +174,105 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 
 func getRenderCommand(binary string, target string) string {
 	// skip if sealctl doesn't has subcommand render
-	return fmt.Sprintf("%s render --debug=%v --clear %s 2>/dev/null || true", binary,
+	return fmt.Sprintf("%s render --debug=%v --clear %s >/dev/null 2>&1 || true", binary,
 		logger.IsDebugMode(),
 		strings.Join([]string{
 			filepath.Join(target, constants.EtcDirName),
 			filepath.Join(target, constants.ScriptsDirName),
 			filepath.Join(target, constants.ManifestsDirName),
 		}, " "))
+}
+
+func findLocalSealctl() string {
+	if runtime.GOOS != "linux" {
+		return ""
+	}
+
+	var candidates []string
+	if path := os.Getenv("SEALOS_SEALCTL_PATH"); path != "" {
+		candidates = append(candidates, path)
+	}
+	if exe, err := os.Executable(); err == nil {
+		candidates = append(candidates, filepath.Join(filepath.Dir(exe), "sealctl"))
+	}
+	if path, err := osexec.LookPath("sealctl"); err == nil {
+		candidates = append(candidates, path)
+	}
+	candidates = append(candidates, "/tmp/sealctl")
+
+	for _, candidate := range candidates {
+		if isExecutableFile(candidate) {
+			return candidate
+		}
+	}
+	return ""
+}
+
+func isExecutableFile(path string) bool {
+	info, err := os.Stat(path)
+	return err == nil && !info.IsDir() && info.Mode()&0111 != 0
+}
+
+func syncSealctlToRootfs(execer exec.Interface, host, localSealctlPath, remoteSealctlPath string) error {
+	if localSealctlPath == "" {
+		return nil
+	}
+	if !isRemoteArchCompatible(execer, host) {
+		return nil
+	}
+	if isRemoteSealctlCurrent(execer, host, localSealctlPath, remoteSealctlPath) {
+		return nil
+	}
+
+	tmpPath := remoteSealctlPath + ".new"
+	if err := execer.Copy(host, localSealctlPath, tmpPath); err != nil {
+		return err
+	}
+	return execer.CmdAsync(host, fmt.Sprintf("install -m 0755 %s %s && rm -f %s",
+		shellQuote(tmpPath),
+		shellQuote(remoteSealctlPath),
+		shellQuote(tmpPath),
+	))
+}
+
+func isRemoteSealctlCurrent(execer exec.Interface, host, localSealctlPath, remoteSealctlPath string) bool {
+	localDigest := hash.FileDigest(localSealctlPath)
+	if localDigest == "" {
+		return false
+	}
+	output, err := execer.Cmd(host, fmt.Sprintf("if [ -f %s ]; then sha256sum %s | cut -d' ' -f1; fi",
+		shellQuote(remoteSealctlPath),
+		shellQuote(remoteSealctlPath),
+	))
+	if err != nil {
+		logger.Debug("failed to get remote sealctl digest on host %s: %v", host, err)
+		return false
+	}
+	return strings.TrimSpace(string(output)) == localDigest
+}
+
+func isRemoteArchCompatible(execer exec.Interface, host string) bool {
+	output, err := execer.Cmd(host, "uname -m")
+	if err != nil {
+		logger.Debug("failed to detect remote arch on host %s: %v", host, err)
+		return false
+	}
+	return normalizeArch(strings.TrimSpace(string(output))) == runtime.GOARCH
+}
+
+func normalizeArch(arch string) string {
+	switch arch {
+	case "x86_64", "amd64":
+		return "amd64"
+	case "aarch64", "arm64":
+		return "arm64"
+	default:
+		return arch
+	}
+}
+
+func shellQuote(value string) string {
+	return "'" + strings.ReplaceAll(value, "'", "'\"'\"'") + "'"
 }
 
 func (f *defaultRootfs) unmountRootfs(cluster *v2.Cluster, ipList []string) error {

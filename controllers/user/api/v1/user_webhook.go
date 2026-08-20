@@ -19,18 +19,45 @@ package v1
 import (
 	"context"
 	"errors"
+	"fmt"
 
+	"github.com/labring/sealos/controllers/user/pkg/licensegate"
+	"github.com/labring/sealos/controllers/user/pkg/usercount"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // log is for logging in this package.
-var userlog = logf.Log.WithName("user-webhook")
+var (
+	userlog           = logf.Log.WithName("user-webhook")
+	userWebhookReader client.Reader
+)
+
+const (
+	licenseLimitErrorCode   = 40301
+	userCountLimitErrorCode = 40302
+)
+
+func buildLicenseLimitErrorMessage() string {
+	return fmt.Sprintf(
+		"{\"code\":%d,\"message\":\"license inactive: user limit reached\"}",
+		licenseLimitErrorCode,
+	)
+}
+
+func buildUserCountLimitErrorMessage() string {
+	return fmt.Sprintf(
+		"{\"code\":%d,\"message\":\"license active: user limit reached\"}",
+		userCountLimitErrorCode,
+	)
+}
 
 func (r *User) SetupWebhookWithManager(mgr ctrl.Manager) error {
+	userWebhookReader = mgr.GetAPIReader()
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
 		WithDefaulter(r).
@@ -53,7 +80,7 @@ func (r *User) Default(ctx context.Context, obj runtime.Object) error {
 	userlog.Info("default", "name", user.Name)
 	user.ObjectMeta = initAnnotationAndLabels(user.ObjectMeta)
 	if user.Spec.CSRExpirationSeconds == 0 {
-		user.Spec.CSRExpirationSeconds = 7200
+		user.Spec.CSRExpirationSeconds = DefaultCSRExpirationSeconds
 	}
 	if user.Annotations[UserAnnotationDisplayKey] == "" {
 		user.Annotations[UserAnnotationDisplayKey] = user.Name
@@ -79,12 +106,36 @@ func (r *User) ValidateCreate(ctx context.Context, obj runtime.Object) (admissio
 	if err := user.validateCSRExpirationSeconds(); err != nil {
 		return admission.Warnings{}, err
 	}
-	return admission.Warnings{}, validateAnnotationKeyNotEmpty(user.ObjectMeta, UserAnnotationDisplayKey)
+	if userWebhookReader == nil {
+		return admission.Warnings{}, errors.New("user webhook reader is not initialized")
+	}
+	if err := usercount.Init(ctx, userWebhookReader); err != nil {
+		return admission.Warnings{}, err
+	}
+	currentCount, err := usercount.CountQuotaUsers(ctx, userWebhookReader)
+	if err != nil {
+		return admission.Warnings{}, err
+	}
+	if !licensegate.AllowNewUser(currentCount) {
+		message := buildLicenseLimitErrorMessage()
+		if licensegate.HasActiveLicense() {
+			message = buildUserCountLimitErrorMessage()
+		}
+		warnings := admission.Warnings{message}
+		return warnings, errors.New(message)
+	}
+	return admission.Warnings{}, validateAnnotationKeyNotEmpty(
+		user.ObjectMeta,
+		UserAnnotationDisplayKey,
+	)
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *User) ValidateUpdate(ctx context.Context, old runtime.Object, new runtime.Object) (admission.Warnings, error) {
-	user, ok := new.(*User)
+func (r *User) ValidateUpdate(
+	ctx context.Context,
+	oldObj, newObj runtime.Object,
+) (admission.Warnings, error) {
+	user, ok := newObj.(*User)
 	if !ok {
 		return admission.Warnings{}, errors.New("obj convert User is error")
 	}
@@ -92,7 +143,10 @@ func (r *User) ValidateUpdate(ctx context.Context, old runtime.Object, new runti
 	if err := user.validateCSRExpirationSeconds(); err != nil {
 		return admission.Warnings{}, err
 	}
-	return admission.Warnings{}, validateAnnotationKeyNotEmpty(user.ObjectMeta, UserAnnotationDisplayKey)
+	return admission.Warnings{}, validateAnnotationKeyNotEmpty(
+		user.ObjectMeta,
+		UserAnnotationDisplayKey,
+	)
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
@@ -102,5 +156,8 @@ func (r *User) ValidateDelete(ctx context.Context, obj runtime.Object) (admissio
 		return admission.Warnings{}, errors.New("obj convert User is error")
 	}
 	userlog.Info("validate delete", "name", user.Name)
-	return admission.Warnings{}, validateAnnotationKeyNotEmpty(user.ObjectMeta, UserAnnotationDisplayKey)
+	return admission.Warnings{}, validateAnnotationKeyNotEmpty(
+		user.ObjectMeta,
+		UserAnnotationDisplayKey,
+	)
 }

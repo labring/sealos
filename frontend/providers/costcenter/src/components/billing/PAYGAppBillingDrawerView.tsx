@@ -28,7 +28,7 @@ import { useTranslation } from 'next-i18next';
 import { AppIcon } from '../AppIcon';
 import { formatMoney } from '@/utils/format';
 import CurrencySymbol from '../CurrencySymbol';
-import { valuationMap } from '@/constants/payment';
+import { Quantity } from '@sealos/shared';
 
 type PAYGBillingDetail = {
   appName: string;
@@ -41,7 +41,7 @@ type PAYGBillingDetail = {
     Record<
       'cpu' | 'memory' | 'storage' | 'network' | 'port' | 'gpu',
       {
-        amount: number;
+        amount: Quantity;
         cost: number;
       }
     >
@@ -117,34 +117,31 @@ export function PAYGAppBillingDrawerView({
       return skeletonData;
     }
 
-    const grouped = data.reduce(
-      (acc, item) => {
-        let groupKey: string;
-        if (hasSubApps) {
-          // Group by hour when showing sub-apps
-          groupKey = new Date(
-            item.time.getFullYear(),
-            item.time.getMonth(),
-            item.time.getDate(),
-            item.time.getHours()
-          ).toISOString();
-        } else {
-          // Group by day when not showing sub-apps
-          groupKey = new Date(
-            item.time.getFullYear(),
-            item.time.getMonth(),
-            item.time.getDate()
-          ).toISOString();
-        }
+    const grouped = data.reduce((acc, item) => {
+      let groupKey: string;
+      if (hasSubApps) {
+        // Group by hour when showing sub-apps
+        groupKey = new Date(
+          item.time.getFullYear(),
+          item.time.getMonth(),
+          item.time.getDate(),
+          item.time.getHours()
+        ).toISOString();
+      } else {
+        // Group by day when not showing sub-apps
+        groupKey = new Date(
+          item.time.getFullYear(),
+          item.time.getMonth(),
+          item.time.getDate()
+        ).toISOString();
+      }
 
-        if (!acc[groupKey]) {
-          acc[groupKey] = [];
-        }
-        acc[groupKey].push(item);
-        return acc;
-      },
-      {} as Record<string, PAYGBillingDetail[]>
-    );
+      if (!acc[groupKey]) {
+        acc[groupKey] = [];
+      }
+      acc[groupKey].push(item);
+      return acc;
+    }, {} as Record<string, PAYGBillingDetail[]>);
 
     const result: TableRowData[] = [];
     Object.entries(grouped).forEach(([groupKey, items]) => {
@@ -170,16 +167,8 @@ export function PAYGAppBillingDrawerView({
         const usage = row.data.usage[resourceType];
         if (!usage) return '-';
 
-        // special handling for nodeport naming ('port' is from the legacy accounting api)
-        const valuation = valuationMap.get(resourceType === 'port' ? 'nodeport' : resourceType);
-        if (!valuation) return `${usage.amount.toFixed(6)}`;
-
-        // special handling for nodeport scale (legacy use 1000 as scale)
-        return `${(usage.amount / (resourceType === 'port' ? 1000 : valuation.scale)).toFixed(
-          6
-        )} ${t('common:units.' + valuation.unit, {
-          count: usage.amount / valuation.scale
-        })}`;
+        // All resource amounts are now Quantity, use toString() for display
+        return usage.amount.toString();
       }
       default:
         return null;

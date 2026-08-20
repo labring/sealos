@@ -3,7 +3,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
-import { appDeployKey } from '@/constants/keys';
+import { appDeployKey, legacyAppLabelKey } from '@/constants/keys';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -93,14 +93,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           );
         }),
       k8sCore.deleteCollectionNamespacedPersistentVolumeClaim(
-        // delete pvc
+        // Legacy Applaunchpad PVC cleanup. New Template instance cleanup uses templateDeployKey.
         namespace,
         undefined,
         undefined,
         undefined,
         undefined,
         undefined,
-        `app=${instanceName}`
+        `${legacyAppLabelKey}=${instanceName}`
       ),
       k8sAutoscaling.deleteNamespacedHorizontalPodAutoscaler(instanceName, namespace) // delete HorizontalPodAutoscaler
     ]);

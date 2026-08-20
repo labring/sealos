@@ -13,6 +13,7 @@ const (
 	SuspendCompletedDebtNamespaceAnnoStatus          = "SuspendCompleted"
 	FinalDeletionDebtNamespaceAnnoStatus             = "FinalDeletion"
 	FinalDeletionCompletedDebtNamespaceAnnoStatus    = "FinalDeletionCompleted"
+	FinalDeletionReplayAnnotationKey                 = "debt.sealos/final-deletion-replay"
 	ResumeDebtNamespaceAnnoStatus                    = "Resume"
 	ResumeCompletedDebtNamespaceAnnoStatus           = "ResumeCompleted"
 	TerminateSuspendDebtNamespaceAnnoStatus          = "TerminateSuspend"

@@ -1,6 +1,7 @@
 package request
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -59,7 +60,12 @@ func generateReq(query *QueryParams) (*http.Request, error) {
 	params.Add("start", query.StartTime)
 	params.Add("end", query.EndTime)
 	parsedURL.RawQuery = params.Encode()
-	req, err := http.NewRequest(http.MethodGet, parsedURL.String(), nil)
+	req, err := http.NewRequestWithContext(
+		context.Background(),
+		http.MethodGet,
+		parsedURL.String(),
+		nil,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("create HTTP req error: %w", err)
 	}

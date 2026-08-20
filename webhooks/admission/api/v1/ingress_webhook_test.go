@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"context"
 	"strings"
 	"testing"
 
@@ -57,7 +58,7 @@ func TestIngressValidator_checkForbiddenDomainSuffix(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			v.DenyDomains = tt.deny
 			rule := &netv1.IngressRule{Host: tt.host}
-			err := v.checkDeny(i, rule)
+			err := v.checkDeny(context.Background(), i, rule)
 			if tt.wantError && err == nil {
 				t.Fatalf("expected error, got nil")
 			}

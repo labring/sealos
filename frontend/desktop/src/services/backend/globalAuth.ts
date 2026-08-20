@@ -1,8 +1,7 @@
 import { uploadConvertData } from '@/api/platform';
-import { generateAuthenticationToken } from '@/services/backend/auth';
+import { generateGlobalAccessToken } from '@/services/backend/auth';
 import { globalPrisma } from '@/services/backend/db/init';
 import { AuthError } from '@/services/backend/errors';
-import { AuthConfigType } from '@/types';
 import { SemData } from '@/types/sem';
 import { hashPassword } from '@/utils/crypto';
 import { nanoid } from 'nanoid';
@@ -16,7 +15,7 @@ import {
 import { enableSignUp, enableTracking, getRegionUid, getVersion } from '../enable';
 import { trackSignUp } from './tracking';
 import { emit } from 'process';
-import { addOauthProvider, bindEmailSvc } from './svc/bindProvider';
+import { addOauthProvider } from './svc/bindProvider';
 import { AdClickData } from '@/types/adClick';
 
 type TransactionClient = Omit<
@@ -131,13 +130,14 @@ async function signUp({
   semData?: SemData;
 }) {
   const name = nanoid(10);
+  const displayName = nickname?.trim() ? nickname : nanoid(8);
   try {
     const result = await globalPrisma.$transaction(async (tx) => {
       const user: User = await tx.user.create({
         data: {
           name: name,
           id: name,
-          nickname: nickname,
+          nickname: displayName,
           avatarUri: avatar_url,
           oauthProvider: {
             create: {
@@ -191,13 +191,14 @@ async function signUpWithEmail({
   email: string;
 }) {
   const name = nanoid(10);
+  const displayName = nickname?.trim() ? nickname : nanoid(8);
   try {
     const user = await globalPrisma.$transaction(async (tx) => {
       const user: User = await tx.user.create({
         data: {
           name: name,
           id: name,
-          nickname: nickname,
+          nickname: displayName,
           avatarUri: avatar_url,
           oauthProvider: {
             create: {
@@ -255,12 +256,13 @@ export async function signUpByPassword({
   semData?: SemData;
 }) {
   const name = nanoid(10);
+  const displayName = nickname?.trim() ? nickname : nanoid(8);
 
   try {
     const result = await globalPrisma.$transaction(async (tx) => {
       const user: User = await tx.user.create({
         data: {
-          nickname,
+          nickname: displayName,
           avatarUri: avatar_url,
           id: name,
           name,
@@ -457,6 +459,8 @@ export const getGlobalToken = async ({
   }
   if (!user) throw new AuthError('Failed to edit db', 'DATABASE_ERROR');
 
+  // Returning users only authenticate here. Provider profile fields are only used
+  // to initialize new users, so login must not overwrite user-managed profile data.
   if (!forceBindEmail(provider) && email) {
     try {
       const emailProvider = await globalPrisma.oauthProvider.findFirst({
@@ -479,9 +483,10 @@ export const getGlobalToken = async ({
 
   // user is deleted or banned
   if (user.status !== UserStatus.NORMAL_USER) return null;
-  const token = generateAuthenticationToken({
-    userUid: user.uid,
-    userId: user.name
+  const token = generateGlobalAccessToken({
+    sub: user.uid,
+    user_id: user.id,
+    preferred_username: user.nickname
   });
   const userInfo = await globalPrisma.userInfo.findUnique({
     where: {

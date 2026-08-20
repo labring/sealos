@@ -1,0 +1,49 @@
+# Custom values for costcenter frontend helm chart.
+# This file contains user-customizable configurations.
+
+replicaCount: 1
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 2048Mi
+  requests:
+    cpu: 10m
+    memory: 128Mi
+
+# Costcenter business configuration
+# Customize these settings based on your requirements
+costcenterConfig:
+  transferEnabled: true
+  currencyType: "shellCoin"
+
+  # Invoice configuration
+  invoice:
+    enabled: false
+    feiShuBotURL: ""
+    aliSms:
+      endpoint: ""
+      accessKeyID: ""
+      accessKeySecret: ""
+      templateCode: ""
+      signName: ""
+      invoiceCompletedTemplateCode: ""
+    mongo:
+      uri: ""
+
+  # Recharge configuration
+  recharge:
+    enabled: false
+    payMethods:
+      wechat:
+        enabled: false
+      alipay:
+        enabled: false
+      stripe:
+        enabled: false
+        publicKey: ""
+
+  # Component URLs
+  components:
+    accountService:
+      url: "http://account-service.account-system.svc:2333"

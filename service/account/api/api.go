@@ -256,7 +256,12 @@ func GetAllRegionConsumptionAmount(c *gin.Context) {
 			},
 		}
 		client := &http.Client{Transport: tr}
-		req2, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(body))
+		req2, err := http.NewRequestWithContext(
+			c.Request.Context(),
+			http.MethodPost,
+			url,
+			bytes.NewBuffer(body),
+		)
 		if err != nil {
 			c.JSON(
 				http.StatusInternalServerError,

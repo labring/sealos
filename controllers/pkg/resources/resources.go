@@ -137,6 +137,12 @@ type Billing struct {
 	// UserUID  uuid.UUID `json:"user_uid" bson:"user_uid,omitempty"`
 }
 
+type BillingCheckpoint struct {
+	ID        string    `json:"id"         bson:"_id"`
+	Time      time.Time `json:"time"       bson:"time"`
+	UpdatedAt time.Time `json:"updated_at" bson:"updated_at"`
+}
+
 type Payment struct {
 	Method  string `json:"method"            bson:"method"`
 	UserID  string `json:"user_id"           bson:"user_id"`

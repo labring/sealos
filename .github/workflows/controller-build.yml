@@ -77,7 +77,7 @@ jobs:
       - name: Run Linter
         uses: golangci/golangci-lint-action@v8
         with:
-          version: v2.5.0
+          version: v2.12.2
           working-directory: controllers/${{ inputs.module_path }}
           args: --color=always --config=${{ github.workspace }}/.golangci.yml
 
@@ -250,6 +250,12 @@ jobs:
             if [[ -f charts/${MODULE_PATH}/values.yaml ]]; then
               sed -i -E "s;(${OLD_DOCKER_REPO}|${GHCR_DOCKER_REPO}):[^[:space:]\"']*;${NEW_DOCKER_IMAGE};" charts/${MODULE_PATH}/values.yaml
             fi
+            if [[ -f charts/${MODULE_NAME}/values.yaml ]]; then
+              sed -i -E "s;(${OLD_DOCKER_REPO}|${GHCR_DOCKER_REPO}):[^[:space:]\"']*;${NEW_DOCKER_IMAGE};" charts/${MODULE_NAME}/values.yaml
+            fi
+            if [[ -f charts/${MODULE_NAME}-controller/values.yaml ]]; then
+              sed -i -E "s;(${OLD_DOCKER_REPO}|${GHCR_DOCKER_REPO}):[^[:space:]\"']*;${NEW_DOCKER_IMAGE};" charts/${MODULE_NAME}-controller/values.yaml
+            fi
             sudo rm -rf registry
             echo "Building ${TAG}-amd64"
             sudo sealos build -t "${TAG}-amd64" --platform linux/amd64 -f Kubefile
@@ -264,6 +270,12 @@ jobs:
             fi
             if [[ -f charts/${MODULE_PATH}/values.yaml ]]; then
               sed -i -E "s;(${OLD_DOCKER_REPO}|${GHCR_DOCKER_REPO}):[^[:space:]\"']*;${NEW_DOCKER_IMAGE};" charts/${MODULE_PATH}/values.yaml
+            fi
+            if [[ -f charts/${MODULE_NAME}/values.yaml ]]; then
+              sed -i -E "s;(${OLD_DOCKER_REPO}|${GHCR_DOCKER_REPO}):[^[:space:]\"']*;${NEW_DOCKER_IMAGE};" charts/${MODULE_NAME}/values.yaml
+            fi
+            if [[ -f charts/${MODULE_NAME}-controller/values.yaml ]]; then
+              sed -i -E "s;(${OLD_DOCKER_REPO}|${GHCR_DOCKER_REPO}):[^[:space:]\"']*;${NEW_DOCKER_IMAGE};" charts/${MODULE_NAME}-controller/values.yaml
             fi
             sudo rm -rf registry
             echo "Building ${TAG}-arm64"

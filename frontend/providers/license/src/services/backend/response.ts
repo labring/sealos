@@ -6,11 +6,12 @@ export const jsonRes = <T = any>(
   props?: {
     code?: number;
     message?: string;
+    errorCode?: string | number;
     data?: T;
     error?: any;
   }
 ) => {
-  const { code = 200, message = '', data = null, error } = props || {};
+  const { code = 200, message = '', errorCode, data = null, error } = props || {};
 
   // Specified error
   if (typeof error === 'string' && ERROR_RESPONSE[error]) {
@@ -33,6 +34,7 @@ export const jsonRes = <T = any>(
   res.json({
     code,
     statusText: '',
+    errorCode,
     message: msg,
     data: data || error || null
   });

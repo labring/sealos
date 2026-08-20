@@ -261,7 +261,12 @@ func sendFlushQuotaRequest(
 
 		maxRetries := 3
 		for attempt := 1; attempt <= maxRetries; attempt++ {
-			req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(quotaReqBody))
+			req, err := http.NewRequestWithContext(
+				context.Background(),
+				http.MethodPost,
+				url,
+				bytes.NewBuffer(quotaReqBody),
+			)
 			if err != nil {
 				return fmt.Errorf("failed to create request: %w", err)
 			}
@@ -282,9 +287,17 @@ func sendFlushQuotaRequest(
 				}
 				body, err := io.ReadAll(resp.Body)
 				if err != nil {
-					lastErr = fmt.Errorf("unexpected status code: %d, failed to read response body: %w", resp.StatusCode, err)
+					lastErr = fmt.Errorf(
+						"unexpected status code: %d, failed to read response body: %w",
+						resp.StatusCode,
+						err,
+					)
 				} else {
-					lastErr = fmt.Errorf("unexpected status code: %d, response body: %s", resp.StatusCode, string(body))
+					lastErr = fmt.Errorf(
+						"unexpected status code: %d, response body: %s",
+						resp.StatusCode,
+						string(body),
+					)
 				}
 			}
 
@@ -314,7 +327,10 @@ func (sp *SubscriptionProcessor) handleCreated(
 	tx *types.SubscriptionTransaction,
 ) error {
 	var sub types.Subscription
-	if err := dbTx.Model(&types.Subscription{}).Where(&types.Subscription{UserUID: tx.UserUID, ID: tx.SubscriptionID}).Find(&sub).Error; err != nil {
+	if err := dbTx.Model(&types.Subscription{}).
+		Where(&types.Subscription{UserUID: tx.UserUID, ID: tx.SubscriptionID}).
+		Find(&sub).
+		Error; err != nil {
 		return fmt.Errorf("failed to fetch subscription: %w", err)
 	}
 
@@ -366,7 +382,10 @@ func (sp *SubscriptionProcessor) handleUpgrade(
 	tx *types.SubscriptionTransaction,
 ) error {
 	var sub types.Subscription
-	if err := dbTx.Model(&types.Subscription{}).Where(&types.Subscription{UserUID: tx.UserUID, ID: tx.SubscriptionID}).Find(&sub).Error; err != nil {
+	if err := dbTx.Model(&types.Subscription{}).
+		Where(&types.Subscription{UserUID: tx.UserUID, ID: tx.SubscriptionID}).
+		Find(&sub).
+		Error; err != nil {
 		return fmt.Errorf("failed to fetch subscription: %w", err)
 	}
 	now := time.Now()
@@ -426,7 +445,10 @@ func (sp *SubscriptionProcessor) handleDowngrade(
 	tx *types.SubscriptionTransaction,
 ) error {
 	var sub types.Subscription
-	if err := dbTx.Model(&types.Subscription{}).Where(&types.Subscription{UserUID: tx.UserUID, ID: tx.SubscriptionID}).Find(&sub).Error; err != nil {
+	if err := dbTx.Model(&types.Subscription{}).
+		Where(&types.Subscription{UserUID: tx.UserUID, ID: tx.SubscriptionID}).
+		Find(&sub).
+		Error; err != nil {
 		return fmt.Errorf("failed to fetch subscription: %w", err)
 	}
 	if ok, err := sp.checkDowngradeConditions(ctx, &sub, tx.NewPlanID); err != nil {
@@ -435,7 +457,12 @@ func (sp *SubscriptionProcessor) handleDowngrade(
 		tx.Status = types.SubscriptionTransactionStatusFailed
 		return dbTx.Save(tx).Error
 	}
-	if ok, err := sp.checkQuotaConditions(ctx, sub.UserUID, tx.NewPlanID, tx.NewPlanName); err != nil {
+	if ok, err := sp.checkQuotaConditions(
+		ctx,
+		sub.UserUID,
+		tx.NewPlanID,
+		tx.NewPlanName,
+	); err != nil {
 		return fmt.Errorf("failed to check quota conditions: %w", err)
 	} else if !ok {
 		tx.Status = types.SubscriptionTransactionStatusFailed
@@ -469,7 +496,10 @@ func (sp *SubscriptionProcessor) handleRenewal(
 	tx *types.SubscriptionTransaction,
 ) error {
 	var sub types.Subscription
-	if err := dbTx.Model(&types.Subscription{}).Where(&types.Subscription{UserUID: tx.UserUID, ID: tx.SubscriptionID}).Find(&sub).Error; err != nil {
+	if err := dbTx.Model(&types.Subscription{}).
+		Where(&types.Subscription{UserUID: tx.UserUID, ID: tx.SubscriptionID}).
+		Find(&sub).
+		Error; err != nil {
 		return fmt.Errorf("failed to fetch subscription: %w", err)
 	}
 
@@ -520,7 +550,7 @@ func (sp *SubscriptionProcessor) handleRenewal(
 
 // checkDowngradeConditions 检查降级条件
 func (sp *SubscriptionProcessor) checkDowngradeConditions(
-	_ context.Context,
+	ctx context.Context,
 	subscription *types.Subscription,
 	planID uuid.UUID,
 ) (bool, error) {
@@ -540,7 +570,8 @@ func (sp *SubscriptionProcessor) checkDowngradeConditions(
 
 	maxRetries := 3
 	for attempt := 1; attempt <= maxRetries; attempt++ {
-		req, err := http.NewRequest(
+		req, err := http.NewRequestWithContext(
+			ctx,
 			http.MethodPost,
 			url,
 			bytes.NewBufferString(fmt.Sprintf(`{"subscriptionPlanId": "%s"}`, planID)),
@@ -577,7 +608,11 @@ func (sp *SubscriptionProcessor) checkDowngradeConditions(
 				}
 				return response.Data.AllWorkspaceReady && response.Data.SeatReady, nil
 			case resp.StatusCode >= 500:
-				lastErr = fmt.Errorf("unexpected status code: %d; %s", resp.StatusCode, string(body))
+				lastErr = fmt.Errorf(
+					"unexpected status code: %d; %s",
+					resp.StatusCode,
+					string(body),
+				)
 			default:
 				return false, fmt.Errorf("client error: %d; %s", resp.StatusCode, string(body))
 			}
@@ -614,7 +649,7 @@ type SubscriptionQuotaCheckResp struct {
 
 // checkDowngradeConditions 检查降级条件
 func (sp *SubscriptionProcessor) checkQuotaConditions(
-	_ context.Context,
+	ctx context.Context,
 	userUID, planID uuid.UUID,
 	planName string,
 ) (bool, error) {
@@ -638,7 +673,12 @@ func (sp *SubscriptionProcessor) checkQuotaConditions(
 		if err != nil {
 			return false, fmt.Errorf("failed to marshal request: %w", err)
 		}
-		req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(quotaReqBody))
+		req, err := http.NewRequestWithContext(
+			ctx,
+			http.MethodPost,
+			url,
+			bytes.NewBuffer(quotaReqBody),
+		)
 		if err != nil {
 			return false, fmt.Errorf("failed to create request: %w", err)
 		}

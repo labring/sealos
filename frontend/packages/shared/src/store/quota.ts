@@ -6,8 +6,8 @@ import type {
   ExceededWorkspaceQuotaItem,
   WorkspaceQuotaItemType
 } from '../types/workspace';
-import { sealosApp } from 'sealos-desktop-sdk/app';
 import type { SessionV1 } from 'sealos-desktop-sdk';
+import type { sealosApp as defaultSealosApp } from 'sealos-desktop-sdk/app';
 
 /**
  * @internal
@@ -22,11 +22,11 @@ type QuotaGuardedConfig = {
 type State = {
   userQuota: WorkspaceQuotaItem[];
   setUserQuota: (quotas: WorkspaceQuotaItem[]) => void;
-  fetchUserQuota: () => Promise<WorkspaceQuotaItem[]>;
+  fetchUserQuota: (sealosApp?: typeof defaultSealosApp) => Promise<WorkspaceQuotaItem[]>;
   exceededQuotas: ExceededWorkspaceQuotaItem[];
   setExceededQuotas: (quotas: ExceededWorkspaceQuotaItem[]) => void;
   checkExceededQuotas: (
-    request: Partial<Record<'cpu' | 'memory' | 'gpu' | 'nodeport' | 'storage', number>> & {
+    request: Partial<Record<'cpu' | 'memory' | 'gpu' | 'nodeport' | 'pod' | 'storage', number>> & {
       traffic?: number | boolean;
     }
   ) => ExceededWorkspaceQuotaItem[];
@@ -34,8 +34,8 @@ type State = {
   setExceededPromptOpen: (open: boolean) => void;
   showExceededPromptControls: boolean;
   setExceededPromptControls: (show: boolean) => void;
-  exceededPromptCallback: (() => void) | null;
-  setExceededPromptCallback: (callback: (() => void) | null) => void;
+  exceededPromptCallback: (() => void | Promise<void>) | null;
+  setExceededPromptCallback: (callback: (() => void | Promise<void>) | null) => void;
   showRequirements: WorkspaceQuotaItemType[];
   setShowRequirements: (types: WorkspaceQuotaItemType[]) => void;
   disallowClosing: boolean;
@@ -57,9 +57,9 @@ export const useQuotaStore = create<State>()(
           userQuota: quotas
         });
       },
-      fetchUserQuota: async () => {
-        const response = await sealosApp.getWorkspaceQuota();
-        return response.quota;
+      fetchUserQuota: async (sealosApp?: typeof defaultSealosApp) => {
+        const response = await sealosApp?.getWorkspaceQuota();
+        return response?.quota ?? [];
       },
       exceededQuotas: [],
       setExceededQuotas: (quotas) => {

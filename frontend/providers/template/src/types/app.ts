@@ -165,10 +165,14 @@ export type InstanceListItemType = {
   displayName?: string;
 };
 
-export enum ApplicationType {
-  All = 'all',
-  MyApp = 'myapp'
-}
+export const ApplicationType = {
+  All: 'all',
+  MyApp: 'myapp'
+} as const;
+
+export type ApplicationType =
+  | (typeof ApplicationType)[keyof typeof ApplicationType]
+  | (string & {});
 
 export type SlideDataType = {
   title: string;
@@ -184,9 +188,4 @@ export type SideBarMenuType = {
   id: string;
   value: string;
   type: ApplicationType;
-};
-
-export type SystemConfigType = {
-  showCarousel: boolean;
-  slideData: SlideDataType[];
 };

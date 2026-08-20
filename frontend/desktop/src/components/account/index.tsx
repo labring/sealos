@@ -3,6 +3,8 @@ import { useCopyData } from '@/hooks/useCopyData';
 import { useConfigStore } from '@/stores/config';
 import useSessionStore from '@/stores/session';
 import download from '@/utils/downloadFIle';
+import { clearSharedAuthCookie } from '@/utils/cookieUtils';
+import { clearPersistedMarketingQuery } from '@/utils/marketing-attribution';
 import {
   Box,
   Center,
@@ -13,9 +15,14 @@ import {
   MenuButton,
   MenuItem,
   MenuList,
+  Modal,
+  ModalCloseButton,
+  ModalContent,
+  ModalOverlay,
   Text,
   useBreakpointValue,
-  useDisclosure
+  useDisclosure,
+  useToast
 } from '@chakra-ui/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
@@ -26,14 +33,16 @@ import WorkspaceToggle from '../team/WorkspaceToggle';
 import useAppStore from '@/stores/app';
 import {
   ArrowLeftRight,
+  ArrowRight,
   Bell,
+  ChevronRight,
   Copy,
   Dock,
   FileCode,
-  Gift,
   Globe,
   LogOut,
   ReceiptText,
+  RefreshCw,
   User
 } from 'lucide-react';
 import AccountCenter from './AccountCenter';
@@ -42,9 +51,12 @@ import { useGuideModalStore } from '@/stores/guideModal';
 import SecondaryLinks from '../SecondaryLinks';
 import { useSubscriptionStore } from '@/stores/subscription';
 import { Badge } from '@sealos/shadcn-ui/badge';
+import { Button } from '@sealos/shadcn-ui/button';
 import { cn } from '@sealos/shadcn-ui';
 import { getPlanBackgroundClass } from '@/utils/styling';
 import { AlertSettings } from './AlertSettings';
+import { rotateKubeconfig } from '@/api/auth';
+import { useDesktopConfigStore } from '@/stores/desktopConfig';
 
 const baseItemStyle = {
   minW: '36px',
@@ -58,33 +70,87 @@ const baseItemStyle = {
 };
 
 export default function Account() {
-  const { layoutConfig, authConfig, isLoaded: configLoaded } = useConfigStore();
+  const { layoutConfig, authConfig, commonConfig, isLoaded: configLoaded } = useConfigStore();
   const router = useRouter();
   const { copyData } = useCopyData();
   const { t } = useTranslation();
-  const { delSession, session, setToken } = useSessionStore();
+  const { delSession, session, setToken, setSessionProp } = useSessionStore();
   const user = session?.user;
   const queryclient = useQueryClient();
   const kubeconfig = session?.kubeconfig || '';
+  const toast = useToast();
   const showDisclosure = useDisclosure();
+  const communityDisclosure = useDisclosure();
   const [, setNotificationAmount] = useState(0);
   const { openDesktopApp, autolaunch } = useAppStore();
+  const { canShowGuide } = useDesktopConfigStore();
   const { openGuideModal, initGuide, autoOpenBlocked, blockAutoOpen } = useGuideModalStore();
   const { toggleLanguage, currentLanguage } = useLanguageSwitcher();
   const onAmount = useCallback((amount: number) => setNotificationAmount(amount), []);
   const [showNsId, setShowNsId] = useState(false);
   const [alertSettingsOpen, setAlertSettingsOpen] = useState(false);
+  const [isRotatingKubeconfig, setIsRotatingKubeconfig] = useState(false);
 
   const emailAlertEnabled = layoutConfig?.common.emailAlertEnabled && authConfig?.idp.email.enabled;
   const phoneAlertEnabled = layoutConfig?.common.phoneAlertEnabled && authConfig?.idp.sms.enabled;
   const alertSettingsEnabled = emailAlertEnabled || phoneAlertEnabled;
+  const communityEnabled = layoutConfig?.common.communityEnabled !== false;
+  const communityQRCodeImage = layoutConfig?.common.communityQRCodeImage;
+  const communityLink = layoutConfig?.common.communityLink;
 
   const logout = (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
+    clearSharedAuthCookie(); // Clear shared cookie for cross-domain logout
+    clearPersistedMarketingQuery();
     delSession();
     queryclient.clear();
     router.replace('/signin');
     setToken('');
+  };
+
+  const handleRotateKubeconfig = async (e: React.MouseEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    if (isRotatingKubeconfig) return;
+
+    try {
+      setIsRotatingKubeconfig(true);
+      toast({
+        title: t('kubeconfig_rotating'),
+        status: 'info',
+        duration: 3000,
+        isClosable: true,
+        position: 'top'
+      });
+
+      const res = await rotateKubeconfig();
+
+      if (res.code === 200 && res.data?.kubeconfig) {
+        // Update session with new kubeconfig
+        setSessionProp('kubeconfig', res.data.kubeconfig);
+
+        toast({
+          title: t('kubeconfig_rotated_successfully'),
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+          position: 'top'
+        });
+      } else {
+        throw new Error(res.message || 'Failed to rotate kubeconfig');
+      }
+    } catch (error: any) {
+      console.error('Failed to rotate kubeconfig:', error);
+      toast({
+        title: t('kubeconfig_rotation_failed'),
+        description: error?.message || 'An error occurred',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+        position: 'top'
+      });
+    } finally {
+      setIsRotatingKubeconfig(false);
+    }
   };
 
   const openCostcenterApp = ({ page = 'plan', mode = '' }: { page?: string; mode?: string }) => {
@@ -112,10 +178,26 @@ export default function Account() {
       return;
     }
 
-    if (initGuide && !isNarrowScreen && !autoOpenBlocked) {
+    if (
+      commonConfig?.guideEnabled &&
+      canShowGuide &&
+      initGuide &&
+      !isNarrowScreen &&
+      !autoOpenBlocked
+    ) {
       openGuideModal();
     }
-  }, [initGuide, openGuideModal, isNarrowScreen, autoOpenBlocked]);
+  }, [
+    router.query,
+    autolaunch,
+    blockAutoOpen,
+    canShowGuide,
+    commonConfig?.guideEnabled,
+    initGuide,
+    openGuideModal,
+    isNarrowScreen,
+    autoOpenBlocked
+  ]);
   const { subscriptionInfo } = useSubscriptionStore();
 
   return (
@@ -315,7 +397,7 @@ export default function Account() {
                           getPlanBackgroundClass(
                             subscriptionInfo?.subscription?.PlanName ?? '',
                             !!subscriptionInfo?.subscription,
-                            subscriptionInfo?.subscription.Status === 'Debt'
+                            subscriptionInfo?.subscription?.Status?.toLowerCase() === 'debt'
                           )
                         )}
                       >
@@ -343,7 +425,87 @@ export default function Account() {
                   </Flex>
                 </MenuItem>
               </Box>
+              {communityEnabled && (
+                <>
+                  <Divider bg={'#E4E4E7'} />
+
+                  <Box p={'8px'}>
+                    <MenuItem
+                      mt="0px"
+                      py="6px"
+                      px="8px"
+                      borderRadius="8px"
+                      bg={'rgba(59, 130, 246, 0.15)'}
+                      border={'1px solid rgba(59, 130, 246, 0.15)'}
+                      position="relative"
+                      overflow="hidden"
+                      _before={{
+                        content: '""',
+                        position: 'absolute',
+                        inset: 0,
+                        bgGradient:
+                          'linear(to bottom right, var(--color-background) 13.69%, var(--color-blue-300) 91.5%)',
+                        maskImage: "url('/images/hexgrid.svg')",
+                        WebkitMaskImage: "url('/images/hexgrid.svg')",
+                        maskPosition: 'right center',
+                        WebkitMaskPosition: 'right center',
+                        maskRepeat: 'no-repeat',
+                        WebkitMaskRepeat: 'no-repeat',
+                        maskSize: '197px 55px',
+                        WebkitMaskSize: '197px 55px',
+                        pointerEvents: 'none'
+                      }}
+                      _hover={{
+                        cursor: 'pointer',
+
+                        _before: {
+                          bgGradient:
+                            'linear(to bottom right, var(--color-background) 13.69%, var(--color-blue-500) 91.5%)'
+                        }
+                      }}
+                      _active={{
+                        _before: {
+                          bgGradient:
+                            'linear(to bottom right, var(--color-background) 13.69%, var(--color-blue-500) 91.5%)'
+                        }
+                      }}
+                      className="group"
+                      onClick={communityDisclosure.onOpen}
+                    >
+                      <Flex
+                        alignItems="center"
+                        gap="8px"
+                        w="full"
+                        justifyContent="space-between"
+                        position="relative"
+                      >
+                        <div>
+                          <div className="flex gap-2 items-center">
+                            <span className="font-medium text-sm">
+                              {t('common:community.menu.title')}
+                            </span>
+                            <span className="font-semibold text-xs text-blue-600 py-0.5 px-2.5 rounded-full border-t-[0.5px] border-l-[0.5px] border-t-blue-500 border-l-blue-500 bg-gradient-to-br from-blue-400/40 to-pink-300/40 inset-shadow-[-1px_-1px_2px_0] inset-shadow-white/50">
+                              {t('common:community.menu.badge')}
+                            </span>
+                          </div>
+
+                          <div>
+                            <span className="text-xs">
+                              {t('common:community.menu.description')}
+                            </span>
+                          </div>
+                        </div>
+                        <div>
+                          <ChevronRight className="size-4 text-muted-foreground group-hover:text-blue-600" />
+                        </div>
+                      </Flex>
+                    </MenuItem>
+                  </Box>
+                </>
+              )}
+
               <Divider bg={'#E4E4E7'} />
+
               <Box p={'8px'}>
                 {/* <MenuItem
                   py="6px"
@@ -379,16 +541,51 @@ export default function Account() {
                         Kubeconfig
                       </Text>
                     </Flex>
-                    <Box
-                      p="2px"
-                      cursor="pointer"
-                      onClick={(e: React.MouseEvent<HTMLDivElement>) => {
-                        e.stopPropagation();
-                        kubeconfig && copyData(kubeconfig);
-                      }}
-                    >
-                      <Copy size={16} color="#737373" />
-                    </Box>
+                    <Flex alignItems="center" gap="4px">
+                      {layoutConfig?.common?.kcRotationEnabled && (
+                        <Box
+                          p="2px"
+                          cursor={isRotatingKubeconfig ? 'not-allowed' : 'pointer'}
+                          onClick={handleRotateKubeconfig}
+                          opacity={isRotatingKubeconfig ? 0.5 : 1}
+                          transition="opacity 0.2s"
+                          title={t('refresh_kubeconfig')}
+                          _hover={{
+                            color: 'blue.600'
+                          }}
+                          color="#737373"
+                          sx={
+                            isRotatingKubeconfig
+                              ? {
+                                  '& svg': {
+                                    animation: 'spin 1s linear infinite'
+                                  },
+                                  '@keyframes spin': {
+                                    from: { transform: 'rotate(0deg)' },
+                                    to: { transform: 'rotate(360deg)' }
+                                  }
+                                }
+                              : {}
+                          }
+                        >
+                          <RefreshCw size={16} />
+                        </Box>
+                      )}
+                      <Box
+                        p="2px"
+                        cursor="pointer"
+                        onClick={(e: React.MouseEvent<HTMLDivElement>) => {
+                          e.stopPropagation();
+                          kubeconfig && copyData(kubeconfig);
+                        }}
+                        _hover={{
+                          color: 'blue.600'
+                        }}
+                        color="#737373"
+                      >
+                        <Copy size={16} />
+                      </Box>
+                    </Flex>
                   </Flex>
                 </MenuItem>
 
@@ -448,6 +645,43 @@ export default function Account() {
           emailEnabled={emailAlertEnabled}
           phoneEnabled={phoneAlertEnabled}
         />
+
+        <Modal isOpen={communityDisclosure.isOpen} onClose={communityDisclosure.onClose} isCentered>
+          <ModalOverlay />
+          <ModalContent
+            className="relative items-center gap-7 overflow-hidden bg-white p-8"
+            width="24rem"
+          >
+            <div className="pointer-events-none absolute inset-x-0 -top-[20%] h-48 bg-[url('/images/sealos-box.svg')] bg-[length:80%_auto] bg-top bg-no-repeat [mask-image:linear-gradient(to_bottom,black_20%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_bottom,black_20%,transparent_100%)]" />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-36 bg-[url('/images/boxgrid.svg')] bg-no-repeat bg-cover bg-top" />
+            <ModalCloseButton className="z-20" />
+            <h1 className="relative z-10 bg-gradient-to-r from-foreground to-blue-800 bg-clip-text text-2xl font-semibold tracking-tight text-transparent">
+              {t('common:community.modal.title')}
+            </h1>
+            <div className="relative z-10 size-40 rounded-xl border border-blue-500 p-2">
+              {communityQRCodeImage && (
+                <Image
+                  src={communityQRCodeImage}
+                  alt={t('common:community.modal.qr_alt')}
+                  className="size-full rounded-lg object-cover"
+                />
+              )}
+            </div>
+            <span className="relative z-10 text-sm font-medium">
+              {t('common:community.modal.description')}
+            </span>
+            <Button
+              className="relative z-10 h-10 w-full"
+              disabled={!communityLink}
+              onClick={() =>
+                communityLink && window.open(communityLink, '_blank', 'noopener,noreferrer')
+              }
+            >
+              {t('common:community.modal.button')}
+              <ArrowRight className="size-4" />
+            </Button>
+          </ModalContent>
+        </Modal>
 
         {/*
         {layoutConfig?.common.workorderEnabled && (

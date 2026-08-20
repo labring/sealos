@@ -14,9 +14,8 @@
 
 package key
 
-// encryptionKey is the key used to decode license token, base64 encoded
-var encryptionKey = "ZHd6b2Nyc3NrcXdwZm5lb2twZmV5dGNxa2JnZ3Znem8="
+import "github.com/labring/sealos/controllers/pkg/license"
 
 func GetEncryptionKey() string {
-	return encryptionKey
+	return license.GetEncryptionKey()
 }

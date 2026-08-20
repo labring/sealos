@@ -18,125 +18,233 @@ package kubeconfig
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
+	"errors"
 	"fmt"
-	"strconv"
-	"time"
 
 	config2 "github.com/labring/sealos/controllers/user/controllers/helper/config"
-
+	authenticationv1 "k8s.io/api/authentication/v1"
 	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd/api"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-func (sac *ServiceAccountConfig) Apply(config *rest.Config, client client.Client) (*api.Config, error) {
+func (sac *ServiceAccountConfig) Apply(
+	config *rest.Config,
+	client client.Client,
+) (*api.Config, error) {
+	cfg, _, err := sac.ApplyWithTokenRequest(context.Background(), config, client)
+	return cfg, err
+}
+
+func (sac *ServiceAccountConfig) ApplyWithTokenRequest(
+	ctx context.Context,
+	config *rest.Config,
+	client client.Client,
+) (*api.Config, metav1.Time, error) {
 	if err := sac.applyServiceAccount(config, client); err != nil {
-		return nil, err
+		return nil, metav1.Time{}, fmt.Errorf("failed to apply service account error: %w", err)
 	}
-	if err := sac.applySecret(config, client); err != nil {
-		return nil, err
+	boundSecret, err := sac.applyBoundTokenSecret(ctx, client)
+	if err != nil {
+		return nil, metav1.Time{}, fmt.Errorf("failed to apply bound token secret: %w", err)
 	}
-	token, err := sac.fetchToken(client)
-	if err == nil {
-		if cfg, err := sac.generatorKubeConfig(config, token); err == nil {
-			return cfg, nil
-		}
+	tokenRequest, err := sac.requestToken(ctx, config, boundSecret)
+	if err != nil {
+		return nil, metav1.Time{}, fmt.Errorf("failed to fetch token: %w", err)
 	}
-	return nil, err
+	cfg, err := sac.generatorKubeConfig(config, tokenRequest.Status.Token)
+	if err != nil {
+		return nil, metav1.Time{}, fmt.Errorf("failed to generate kube config: %w", err)
+	}
+	return cfg, tokenRequest.Status.ExpirationTimestamp, nil
 }
 
 func (sac *ServiceAccountConfig) applyServiceAccount(_ *rest.Config, client client.Client) error {
-	if sac.sa != nil {
-		return nil
+	sa := sac.sa
+	if sa == nil {
+		sa = &v1.ServiceAccount{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      sac.user,
+				Namespace: sac.namespace,
+			},
+		}
 	}
-	sa := &v1.ServiceAccount{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      sac.user,
-			Namespace: sac.namespace,
-		},
+	if sa.Name == "" {
+		sa.Name = sac.user
+	}
+	if sa.Namespace == "" {
+		sa.Namespace = sac.namespace
 	}
 	_, err := controllerutil.CreateOrUpdate(context.TODO(), client, sa, func() error {
-		if len(sa.Secrets) == 0 {
+		if sac.forceNewSecret || len(sa.Secrets) == 0 {
 			sa.Secrets = []v1.ObjectReference{
 				{
-					Name: sac.getSecretName(),
+					Name: sac.generateSecretName(),
 				},
 			}
 		}
 		return nil
 	})
-	sac.secretName = sa.Secrets[0].Name
-	return err
+	if err != nil {
+		return err
+	}
+	sac.sa = sa
+	if len(sa.Secrets) > 0 {
+		sac.secretName = sa.Secrets[0].Name
+	}
+	return nil
 }
 
-func (sac *ServiceAccountConfig) applySecret(_ *rest.Config, client client.Client) error {
-	if sac.sa != nil {
-		return nil
+func (sac *ServiceAccountConfig) applyBoundTokenSecret(
+	ctx context.Context,
+	cli client.Client,
+) (*v1.Secret, error) {
+	secretName := sac.secretName
+	if secretName == "" {
+		secretName = sac.generateSecretName()
 	}
 	secret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      sac.secretName,
+			Name:      secretName,
 			Namespace: sac.namespace,
 		},
 	}
-	_, err := controllerutil.CreateOrUpdate(context.TODO(), client, secret, func() error {
+	_, err := controllerutil.CreateOrUpdate(ctx, cli, secret, func() error {
+		secret.Type = v1.SecretTypeOpaque
 		if secret.Annotations == nil {
-			secret.Annotations = make(map[string]string, 0)
+			secret.Annotations = map[string]string{}
 		}
-		secret.Type = v1.SecretTypeServiceAccountToken
 		secret.Annotations[v1.ServiceAccountNameKey] = sac.user
-		secret.Annotations["sealos.io/user.expirationSeconds"] = strconv.Itoa(int(sac.expirationSeconds))
+		if sac.sa != nil {
+			secret.OwnerReferences = append([]metav1.OwnerReference(nil), sac.sa.OwnerReferences...)
+		}
 		return nil
 	})
-	sac.sa = &v1.ServiceAccount{}
-	sac.sa.Name = sac.user
-	sac.sa.Namespace = sac.namespace
-	return err
-}
-
-func (sac *ServiceAccountConfig) getSecretName() string {
-	if sac.sa != nil {
-		return sac.sa.Secrets[0].Name
+	if err != nil {
+		return nil, err
 	}
-	return SecretName(sac.user)
+	if secret.UID == "" {
+		return nil, fmt.Errorf(
+			"bound token secret %s/%s has empty uid",
+			secret.Namespace,
+			secret.Name,
+		)
+	}
+	return secret, nil
 }
 
-func (sac *ServiceAccountConfig) fetchToken(cli client.Client) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-	start := time.Now()
-	for {
-		select {
-		case <-time.After(5 * time.Millisecond):
-			sa := sac.sa
-			if err := cli.Get(ctx, client.ObjectKeyFromObject(sa), sa); err != nil {
-				return "", err
-			}
-			if len(sa.Secrets) == 0 {
-				continue
-			}
-			secret := &v1.Secret{}
-			secret.Name = sa.Secrets[0].Name
-			secret.Namespace = sac.sa.Namespace
-			if err := cli.Get(ctx, client.ObjectKeyFromObject(secret), secret); err != nil {
-				continue
-			}
-			if secret.Data != nil && secret.Data[v1.ServiceAccountTokenKey] != nil {
-				dis := time.Since(start).Milliseconds()
-				defaultLog.Info("The serviceAccount secret is ready.", "secretName", secret.Name, "using Milliseconds", dis)
-				return string(secret.Data[v1.ServiceAccountTokenKey]), nil
-			}
-		case <-ctx.Done():
-			defaultLog.Error(ctx.Err(), "context get secrets time out")
-			return "", ctx.Err()
+// CleanupLegacyBoundTokenSecrets removes stale bound token secrets for a user.
+func CleanupLegacyBoundTokenSecrets(
+	ctx context.Context,
+	cli client.Client,
+	userName, keepSecretName string,
+) error {
+	secrets := &v1.SecretList{}
+	if err := cli.List(
+		ctx,
+		secrets,
+		client.InNamespace(config2.GetUserSystemNamespace()),
+		client.MatchingFields{v1.ServiceAccountNameKey: userName},
+	); err != nil {
+		return fmt.Errorf("failed to list legacy bound token secrets: %w", err)
+	}
+	if keepSecretName == "" {
+		return errors.New("keep secret name is empty")
+	}
+	for i := range secrets.Items {
+		secret := &secrets.Items[i]
+		if secret.Name == "" || secret.Name == keepSecretName {
+			continue
+		}
+		if secret.Annotations == nil || secret.Annotations[v1.ServiceAccountNameKey] != userName {
+			continue
+		}
+		if err := cli.Delete(ctx, secret); err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to delete legacy bound token secret %s: %w", secret.Name, err)
 		}
 	}
+	return nil
 }
 
-func (sac *ServiceAccountConfig) generatorKubeConfig(cfg *rest.Config, token string) (*api.Config, error) {
+func (sac *ServiceAccountConfig) requestToken(
+	ctx context.Context,
+	config *rest.Config,
+	boundSecret *v1.Secret,
+) (*authenticationv1.TokenRequest, error) {
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+	tokenRequest, err := clientset.CoreV1().
+		ServiceAccounts(sac.namespace).
+		CreateToken(ctx, sac.user, &authenticationv1.TokenRequest{
+			Spec: authenticationv1.TokenRequestSpec{
+				ExpirationSeconds: ptr.To(int64(sac.tokenRequestExpirationSeconds())),
+				BoundObjectRef: &authenticationv1.BoundObjectReference{
+					Kind:       "Secret",
+					APIVersion: "v1",
+					Name:       boundSecret.Name,
+					UID:        boundSecret.UID,
+				},
+			},
+		}, metav1.CreateOptions{})
+	if err != nil {
+		return nil, err
+	}
+	if tokenRequest.Status.Token == "" {
+		return nil, fmt.Errorf(
+			"token request returned empty token for serviceaccount %s/%s",
+			sac.namespace,
+			sac.user,
+		)
+	}
+	return tokenRequest, nil
+}
+
+func (sac *ServiceAccountConfig) tokenRequestExpirationSeconds() int32 {
+	if sac.expirationSeconds < defaultCSRExpirationSeconds {
+		return defaultCSRExpirationSeconds
+	}
+	return sac.expirationSeconds
+}
+
+func TokenSecretName(name string) string {
+	return "sealos-token-" + name
+}
+
+func (sac *ServiceAccountConfig) generateSecretName() string {
+	if sac.secretName != "" {
+		return sac.secretName
+	}
+	if !sac.forceNewSecret &&
+		sac.sa != nil &&
+		len(sac.sa.Secrets) > 0 &&
+		sac.sa.Secrets[0].Name != "" {
+		return sac.sa.Secrets[0].Name
+	}
+	return "sealos-token-" + sac.user + "-" + GetRandomString(5)
+}
+
+func GetRandomString(n int) string {
+	randBytes := make([]byte, n/2)
+	if _, err := rand.Read(randBytes); err != nil {
+		return ""
+	}
+	return hex.EncodeToString(randBytes)
+}
+
+func (sac *ServiceAccountConfig) generatorKubeConfig(
+	cfg *rest.Config,
+	token string,
+) (*api.Config, error) {
 	// make sure cadata is loaded into config under incluster mode
 	if err := rest.LoadTLSFiles(cfg); err != nil {
 		return nil, err
@@ -146,7 +254,7 @@ func (sac *ServiceAccountConfig) generatorKubeConfig(cfg *rest.Config, token str
 		Clusters: map[string]*api.Cluster{
 			sac.clusterName: {
 				Server:                   GetKubernetesHost(cfg),
-				CertificateAuthorityData: cfg.TLSClientConfig.CAData,
+				CertificateAuthorityData: cfg.CAData,
 			},
 		},
 		Contexts: map[string]*api.Context{

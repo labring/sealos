@@ -165,13 +165,15 @@ export function AlertSettings({
     mutationFn: async ({
       providerType,
       providerId,
-      code
+      code,
+      challengeId
     }: {
       providerType: ProviderType;
       providerId: string;
       code: string;
+      challengeId: string;
     }) => {
-      const res = await createAlert({ providerType, providerId, code });
+      const res = await createAlert({ providerType, providerId, code, challengeId });
       if (res.code !== 200) {
         const error = new Error(res.message || 'Failed to create alert') as Error & {
           code?: number;
@@ -292,11 +294,15 @@ export function AlertSettings({
     setBindDialogOpen(true);
   };
 
-  const handleBindConfirm = async (value: string, code: string): Promise<void> => {
+  const handleBindConfirm = async (
+    value: string,
+    code: string,
+    challengeId: string
+  ): Promise<void> => {
     return new Promise((resolve, reject) => {
       const providerType: ProviderType = bindDialogType === 'phone' ? 'PHONE' : 'EMAIL';
       createMutation.mutate(
-        { providerType, providerId: value, code },
+        { providerType, providerId: value, code, challengeId },
         {
           onSuccess: () => {
             toast({ title: t('common:alert_settings.messages.create_success'), status: 'success' });

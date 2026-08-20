@@ -39,6 +39,19 @@ export default function PrepareBox({
         permissionCheck: `<b>source account</b>: REPLICATION SLAVE、REPLICATION CLIENT、SELECT \nsink account: SELECT、INSERT、UPDATE、DELETE、CREATE、ALTER、DROP`,
         title: 'MySQL'
       },
+      mysql: {
+        codeList: [
+          t('migrate.mysql.stepOne'),
+          "show global variables like 'binlog%'; ",
+          'set global binlog_format=ROW;  ',
+          t('migrate.mysql.stepTwo'),
+          "show variables like '%row_im%';  ",
+          "set binlog_row_image ='FULL';  "
+        ],
+        checkboxLabel: t('migration_preparations'),
+        permissionCheck: `<b>source account</b>: REPLICATION SLAVE、REPLICATION CLIENT、SELECT \nsink account: SELECT、INSERT、UPDATE、DELETE、CREATE、ALTER、DROP`,
+        title: 'MySQL'
+      },
       mongodb: {
         codeList: [t('migrate.mongodb.stepOne'), t('migrate.mongodb.stepTwo')],
         checkboxLabel: t('migration_preparations'),

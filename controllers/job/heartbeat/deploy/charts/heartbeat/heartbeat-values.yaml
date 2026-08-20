@@ -1,0 +1,10 @@
+# Custom values for heartbeat cronjob helm chart.
+# This file contains user-customizable configurations.
+
+resources:
+  limits:
+    cpu: 200m
+    memory: 128Mi
+  requests:
+    cpu: 100m
+    memory: 64Mi

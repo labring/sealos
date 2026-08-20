@@ -6,11 +6,8 @@ import { customAlphabet } from 'nanoid';
 import { retrySerially } from '@/utils/tools';
 import { AccessTokenPayload } from '@/types/token';
 import { JoinStatus, Role } from 'prisma/region/generated/client';
-import { generateAccessToken, generateAppToken } from '@/services/backend/auth';
-import { K8sApiDefault } from '@/services/backend/kubernetes/admin';
+import { generateRegionalToken, generateAppToken } from '@/services/backend/auth';
 import { v4 } from 'uuid';
-import { HttpStatusCode } from 'axios';
-import { userInfo } from 'node:os';
 
 const LetterBytes = 'abcdefghijklmnopqrstuvwxyz0123456789';
 const HostnameLength = 8;
@@ -350,7 +347,7 @@ export async function getRegionToken({
   const { kubeconfig, payload } = result;
   return {
     kubeconfig,
-    token: generateAccessToken(payload),
+    token: generateRegionalToken(payload),
     appToken: generateAppToken(payload)
   };
 }
@@ -576,7 +573,7 @@ export async function initRegionToken({
   const { kubeconfig, payload } = result;
   return {
     kubeconfig,
-    token: generateAccessToken(payload),
+    token: generateRegionalToken(payload),
     appToken: generateAppToken(payload)
   };
 }

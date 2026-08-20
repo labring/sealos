@@ -1,0 +1,136 @@
+# Default values for desktop frontend helm chart.
+global:
+  featureConfigs:
+    database:
+      # Database backend for Prisma migrations.
+      # Supported values: cockroachdb, postgresql
+      type: cockroachdb
+image: ghcr.io/labring/sealos-desktop-frontend:latest
+imagePullPolicy: IfNotPresent
+
+imagePullSecrets: []
+fullnameOverride: "sealos-desktop"
+
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: "desktop-frontend"
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+
+securityContext:
+  allowPrivilegeEscalation: false
+  runAsNonRoot: true
+
+service:
+  port: 3000
+
+# Opt in to restricting Desktop ingress to node-hosted Higress gateways and
+# explicitly trusted internal callers. When disabled, this chart creates no
+# ingress policy; absent another policy, every pod can connect to Desktop.
+ciliumNetworkPolicy:
+  enabled: false
+  trustedCallers:
+    - namespace: account-system
+      serviceAccountName: account-controller-manager
+    - namespace: costcenter-frontend
+      serviceAccountName: default
+
+# Auto configure from sealos-system configmap
+autoConfigEnabled: true
+
+# ============================================================================
+# Auto-configured values (from sealos-system/sealos-config ConfigMap)
+# ============================================================================
+# The following desktopConfig values are automatically fetched from the
+# sealos-system/sealos-config ConfigMap by the entrypoint script and will
+# override any values set here. These are provided as reference defaults.
+#
+# To override these auto-configured values, use HELM_OPTIONS or modify the
+# sealos-config ConfigMap directly.
+# ============================================================================
+
+desktopConfig:
+  # Basic cloud configuration (auto-configured from sealos-config)
+  cloudDomain: "127.0.0.1.nip.io"  # Auto-fetched from sealos-config.cloudDomain
+  cloudPort: ""                     # Auto-fetched from sealos-config.cloudPort
+  regionUID: "randomRegionUID"      # Auto-fetched from sealos-config.regionUID
+  certSecretName: "wildcard-cert"   # Fixed value
+  proxyDomain: ""                   # Auto-fetched from sealos-config.proxyDomain
+
+  allowedAllOrigins: false
+  allowedOrigins:
+    - "costcenter"
+    - "license"
+  googleOneTapOrigins: []
+
+  # Database connections (auto-configured from sealos-config)
+  databaseMongodbURI: ""               # Auto-fetched from sealos-config.databaseMongodbURI
+  databaseGlobalCockroachdbURI: ""     # Auto-fetched from sealos-config.databaseGlobalCockroachdbURI
+  databaseLocalCockroachdbURI: ""      # Auto-fetched from sealos-config.databaseLocalCockroachdbURI
+
+  # Authentication secrets (auto-configured from sealos-config)
+  passwordSalt: "randomSalt"       # Auto-fetched from sealos-config.passwordSalt
+  jwtInternal: ""                  # Auto-fetched from sealos-config.jwtInternal
+  jwtRegional: ""                  # Auto-fetched from sealos-config.jwtRegional
+  jwtGlobal: ""                    # Auto-fetched from sealos-config.jwtGlobal
+  jwtMarketingConsent: ""           # Auto-fetched from sealos-config.jwtMarketingConsent
+
+  # Render-safe defaults for nested layout fields. CI/sealos build may render
+  # the chart with only this base values file loaded.
+  authTitle:
+    zh: "欢迎来到 Sealos"
+    en: "Welcome to Sealos"
+  authBackgroundImage:
+    zh: "/images/bg-light.svg"
+    en: "/images/bg-light.svg"
+  protocol:
+    serviceProtocol:
+      zh: https://sealos.io/zh-Hans/docs/msa/terms-of-service
+      en: https://sealos.io/docs/msa/terms-of-service
+    privateProtocol:
+      zh: https://sealos.io/zh-Hans/docs/msa/privacy-policy
+      en: https://sealos.io/docs/msa/privacy-policy
+
+# End of auto-configured values
+# ============================================================================
+
+livenessProbe:
+  httpGet:
+    path: /api/platform/getAppConfig
+    port: 3000
+  initialDelaySeconds: 15
+  periodSeconds: 20
+
+readinessProbe:
+  httpGet:
+    path: /api/platform/getAppConfig
+    port: 3000
+  initialDelaySeconds: 5
+  periodSeconds: 3
+  timeoutSeconds: 2
+  successThreshold: 3
+  failureThreshold: 3
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+  # Will be auto-configured from desktopConfig.cloudDomain
+  hosts: []
+  tls: []
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

@@ -227,7 +227,10 @@ func Init(ctx context.Context) error {
 			UserContactProvider,
 		)
 	} else {
-		logrus.Errorf("empty notify config env: %s, user notification service disabled", helper.EnvNotifyConfig)
+		logrus.Errorf(
+			"empty notify config env: %s, user notification service disabled",
+			helper.EnvNotifyConfig,
+		)
 	}
 
 	EmailTmplMap = map[string]string{
@@ -312,7 +315,8 @@ func SetupCache(mgr ctrl.Manager) error {
 		{ns, accountv1.Name, nsNameFunc},
 		{ns, accountv1.Owner, nsOwnerFunc},
 	} {
-		if err := mgr.GetFieldIndexer().IndexField(context.TODO(), idx.obj, idx.field, idx.extractValue); err != nil {
+		if err := mgr.GetFieldIndexer().
+			IndexField(context.TODO(), idx.obj, idx.field, idx.extractValue); err != nil {
 			return err
 		}
 	}

@@ -1,4 +1,4 @@
 export type * from './types';
 
-export { track, configureGTM } from './track';
-export { GTMScript } from './components';
+export { track, configureGTM, flushRybbitQueue } from './track';
+export { GTMScript, RybbitScript } from './components';

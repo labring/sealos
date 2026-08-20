@@ -8,7 +8,6 @@ import {
   UpgradeAmountResponseSchema,
   PendingUpgradeSchema
 } from '@/types/plan';
-import { ApiResp } from '@/types/api';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {

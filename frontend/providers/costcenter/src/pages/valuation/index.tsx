@@ -17,7 +17,7 @@ import { FC, useMemo, useState } from 'react';
 import { LucideIcon } from 'lucide-react';
 import CalculatorPanel from '@/components/valuation/CalculatorPanel';
 import usePlanStore from '@/stores/plan';
-import useEnvStore from '@/stores/env';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 type CardItem = {
   title: string;
@@ -44,7 +44,7 @@ export default function Valuation() {
   const { data: _data } = useQuery(['valuation', regionUid], () => getValuation(regionUid), {
     // staleTime: 1000 * 60 * 60 * 24
   });
-  const subscriptionEnabled = useEnvStore((state) => state.subscriptionEnabled);
+  const config = useClientAppConfig();
 
   const { data: plansData } = useQuery(['plans'], () => getPlanList(), {
     staleTime: 1000 * 60 * 5 // 5 minutes
@@ -126,8 +126,8 @@ export default function Valuation() {
       }}
     >
       <TabList mx={'24px'}>
-        {subscriptionEnabled && <Tab>{t('common:subscription_plans')}</Tab>}
-        {(subscriptionEnabled ? !!isPaygType : true) && (
+        {config.features.subscriptionEnabled && <Tab>{t('common:subscription_plans')}</Tab>}
+        {(config.features.subscriptionEnabled ? !!isPaygType : true) && (
           <>
             <Tab>{t('common:price_table')}</Tab>
             <Tab>{t('common:price_calculator')}</Tab>
@@ -135,17 +135,17 @@ export default function Valuation() {
         )}
         <Flex ml="auto" gap={'12px'}>
           {/* Show region selector in PriceTablePanel and CalculatorPanel */}
-          {(subscriptionEnabled ? tabIdx === 1 || tabIdx === 2 : tabIdx === 0 || tabIdx === 1) && (
-            <RegionMenu isDisabled={false} />
-          )}
+          {(config.features.subscriptionEnabled
+            ? tabIdx === 1 || tabIdx === 2
+            : tabIdx === 0 || tabIdx === 1) && <RegionMenu isDisabled={false} />}
           {/* Show duration selector in PriceTablePanel */}
-          {(subscriptionEnabled ? tabIdx === 1 : tabIdx === 0) && (
+          {(config.features.subscriptionEnabled ? tabIdx === 1 : tabIdx === 0) && (
             <CycleMenu cycleIdx={cycleIdx} setCycleIdx={setCycleIdx} />
           )}
         </Flex>
       </TabList>
       <TabPanels>
-        {subscriptionEnabled && (
+        {config.features.subscriptionEnabled && (
           <TabPanel>
             <div className="border rounded-2xl bg-zinc-50 overflow-hidden">
               <SubscriptionPlansPanel plansData={plansData?.data?.plans} />

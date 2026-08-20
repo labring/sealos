@@ -3,6 +3,7 @@ module github.com/labring/sealos/service/account
 go 1.24.0
 
 replace (
+	github.com/labring/sealos/controllers/account => ../../controllers/account
 	github.com/labring/sealos/controllers/pkg => ../../controllers/pkg/
 	github.com/labring/sealos/service => ../../service
 	github.com/labring/sealos/service/account => ../account
@@ -11,13 +12,16 @@ replace (
 	k8s.io/apimachinery => k8s.io/apimachinery v0.32.1
 	k8s.io/client-go => k8s.io/client-go v0.32.1
 	sigs.k8s.io/controller-runtime => sigs.k8s.io/controller-runtime v0.20.4
+	github.com/labring/sealos/controllers/license => ../../controllers/license
 )
 
 require (
 	github.com/dustin/go-humanize v1.0.1
-	github.com/gin-gonic/gin v1.9.1
+	github.com/gin-gonic/gin v1.10.1
 	github.com/goccy/go-json v0.10.2
 	github.com/golang-jwt/jwt v3.2.2+incompatible
+	github.com/labring/sealos/controllers/account v0.0.0-00010101000000-000000000000
+	github.com/labring/sealos/controllers/license v0.0.0-00010101000000-000000000000
 	github.com/labring/sealos/controllers/pkg v0.0.0-00010101000000-000000000000
 	github.com/labring/sealos/service v0.0.0-00010101000000-000000000000
 	github.com/matoous/go-nanoid/v2 v2.0.0

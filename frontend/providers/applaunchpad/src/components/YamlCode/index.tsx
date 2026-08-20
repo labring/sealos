@@ -30,6 +30,8 @@ const YamlCode = ({ content, ...props }: TMarkDown) => {
               style={codeTheme}
               language={match[1]}
               PreTag="div"
+              customStyle={{ fontFamily: 'var(--font-fira-code), monospace' }}
+              codeTagProps={{ style: { fontFamily: 'var(--font-fira-code), monospace' } }}
               {...props}
             />
           ) : (

@@ -10,11 +10,12 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
     throw new Error('SMS is not enabled');
   }
   await filterAccessToken(req, res, ({ userUid }) =>
-    filterEmailVerifyParams(req, res, async ({ email, code }) =>
+    filterEmailVerifyParams(req, res, async ({ email, code, challengeId }) =>
       verifyCodeGuard(
         email,
         code,
-        'email_unbind'
+        'email_unbind',
+        challengeId
       )(res, async ({ smsInfo }) => unbindEmailSvc(smsInfo.id, userUid)(res))
     )
   );

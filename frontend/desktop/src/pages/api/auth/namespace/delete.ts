@@ -5,8 +5,9 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { globalPrisma, prisma } from '@/services/backend/db/init';
 import { validate } from 'uuid';
 import { Role } from 'prisma/region/generated/client';
-import { verifyAccessToken, callBillingService } from '@/services/backend/auth';
+import { verifyAccessToken } from '@/services/backend/auth';
 import { getRegionUid } from '@/services/enable';
+import { cancelWorkspaceSubscription } from '@/services/backend/billing/workspaceSubscription';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -43,16 +44,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // sync status, user add 1,
 
     try {
-      await callBillingService(
-        '/account/v1alpha1/workspace-subscription/delete',
-        {
-          userUid: payload.userUid,
-          userId: payload.userId
-        },
-        {
-          workspace: workspaceNS
-        }
-      );
+      await cancelWorkspaceSubscription({
+        userUid: payload.userUid,
+        userId: payload.userId,
+        workspaceId: workspaceNS
+      });
     } catch (e) {
       console.log('delete workspace subscription error', e);
       return jsonRes(res, {

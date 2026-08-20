@@ -52,7 +52,10 @@ func NewSubscriptionCache(db *gorm.DB, updateInterval time.Duration) (*Subscript
 // Uses a write lock to ensure exclusive access during cache population
 func (sc *SubscriptionCache) loadFullCache(ctx context.Context) error {
 	var subscriptions []types.Subscription
-	if err := sc.db.WithContext(ctx).Select("user_uid", "status", "plan_name").Find(&subscriptions).Error; err != nil {
+	if err := sc.db.WithContext(ctx).
+		Select("user_uid", "status", "plan_name").
+		Find(&subscriptions).
+		Error; err != nil {
 		return err
 	}
 

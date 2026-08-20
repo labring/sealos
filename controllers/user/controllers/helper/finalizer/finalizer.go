@@ -38,7 +38,12 @@ func (f *Finalizer) AddFinalizer(ctx context.Context, obj client.Object) (bool, 
 		// registering our finalizer.
 		notDelete = true
 		controllerutil.AddFinalizer(obj, f.finalizerName)
-		if err := f.updateFinalizers(ctx, client.ObjectKeyFromObject(obj), obj, obj.GetFinalizers()); err != nil {
+		if err := f.updateFinalizers(
+			ctx,
+			client.ObjectKeyFromObject(obj),
+			obj,
+			obj.GetFinalizers(),
+		); err != nil {
 			return notDelete, err
 		}
 	}
@@ -56,7 +61,11 @@ func NewFinalizer(client client.Client, finalizerName string) *Finalizer {
 	}
 }
 
-func (f *Finalizer) RemoveFinalizer(ctx context.Context, obj client.Object, fun func(ctx context.Context, obj client.Object) error) (bool, error) {
+func (f *Finalizer) RemoveFinalizer(
+	ctx context.Context,
+	obj client.Object,
+	fun func(ctx context.Context, obj client.Object) error,
+) (bool, error) {
 	var deleteBool bool
 	if obj.GetDeletionTimestamp() != nil && !obj.GetDeletionTimestamp().IsZero() {
 		deleteBool = true
@@ -67,7 +76,12 @@ func (f *Finalizer) RemoveFinalizer(ctx context.Context, obj client.Object, fun 
 			}
 
 			controllerutil.RemoveFinalizer(obj, f.finalizerName)
-			if err := f.updateFinalizers(ctx, client.ObjectKeyFromObject(obj), obj, obj.GetFinalizers()); err != nil {
+			if err := f.updateFinalizers(
+				ctx,
+				client.ObjectKeyFromObject(obj),
+				obj,
+				obj.GetFinalizers(),
+			); err != nil {
 				return deleteBool, err
 			}
 		}
@@ -75,7 +89,12 @@ func (f *Finalizer) RemoveFinalizer(ctx context.Context, obj client.Object, fun 
 	return deleteBool, nil
 }
 
-func (f *Finalizer) updateFinalizers(ctx context.Context, objectKey client.ObjectKey, obj client.Object, finalizers []string) error {
+func (f *Finalizer) updateFinalizers(
+	ctx context.Context,
+	objectKey client.ObjectKey,
+	obj client.Object,
+	finalizers []string,
+) error {
 	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		gvk := obj.GetObjectKind().GroupVersionKind()
 		fetchObject := &unstructured.Unstructured{}

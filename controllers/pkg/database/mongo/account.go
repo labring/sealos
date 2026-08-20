@@ -16,10 +16,11 @@ package mongo
 
 import (
 	"context"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"math"
-	"strconv"
+	"sort"
 	"strings"
 	"time"
 
@@ -29,7 +30,6 @@ import (
 	"github.com/labring/sealos/controllers/pkg/types"
 	"github.com/labring/sealos/controllers/pkg/utils/env"
 	"github.com/labring/sealos/controllers/pkg/utils/logger"
-	gonanoid "github.com/matoous/go-nanoid/v2"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -46,18 +46,19 @@ const (
 )
 
 const (
-	DefaultAccountDBName  = "sealos-resources"
-	DefaultTrafficDBName  = "sealos-networkmanager"
-	DefaultAuthDBName     = "sealos-auth"
-	DefaultCVMDBName      = "sealos-cvm"
-	DefaultCVMConn        = "cvm"
-	DefaultMeteringConn   = "metering"
-	DefaultMonitorConn    = "monitor"
-	DefaultBillingConn    = "billing"
-	DefaultObjTrafficConn = "objectstorage-traffic"
-	DefaultUserConn       = "user"
-	DefaultPricesConn     = "prices"
-	DefaultPropertiesConn = "properties"
+	DefaultAccountDBName         = "sealos-resources"
+	DefaultTrafficDBName         = "sealos-networkmanager"
+	DefaultAuthDBName            = "sealos-auth"
+	DefaultCVMDBName             = "sealos-cvm"
+	DefaultCVMConn               = "cvm"
+	DefaultMeteringConn          = "metering"
+	DefaultMonitorConn           = "monitor"
+	DefaultBillingConn           = "billing"
+	DefaultObjTrafficConn        = "objectstorage-traffic"
+	DefaultUserConn              = "user"
+	DefaultPricesConn            = "prices"
+	DefaultPropertiesConn        = "properties"
+	DefaultBillingCheckpointConn = "billing-checkpoint"
 	// TODO fix
 	DefaultTrafficConn = "traffic"
 )
@@ -215,6 +216,103 @@ func (m *mongoDB) GetOwnersRecentUpdates(
 	return updatedOwners, nil
 }
 
+func (m *mongoDB) GetOwnerBillingsAt(
+	ownerList []string,
+	billingTime time.Time,
+) (map[string][]*resources.Billing, error) {
+	result := make(map[string][]*resources.Billing)
+	if len(ownerList) == 0 {
+		return result, nil
+	}
+	filter := bson.M{
+		"owner": ownerListFilter(ownerList),
+		"time":  billingTime,
+		"type":  common.Consumption,
+		"app_type": bson.M{"$nin": []int{
+			int(resources.AppType[resources.CVM]),
+			int(resources.AppType[resources.LLMToken]),
+		}},
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	cursor, err := m.getBillingCollection().Find(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("find owner billings: %w", err)
+	}
+	defer cursor.Close(ctx)
+	var billings []*resources.Billing
+	if err := cursor.All(ctx, &billings); err != nil {
+		return nil, fmt.Errorf("decode owner billings: %w", err)
+	}
+	for _, billing := range billings {
+		result[billing.Owner] = append(result[billing.Owner], billing)
+	}
+	return result, nil
+}
+
+func (m *mongoDB) GetUnsettledBillingsAt(
+	billingTime time.Time,
+) (map[string][]*resources.Billing, error) {
+	filter := bson.M{
+		"time":     billingTime,
+		"type":     common.Consumption,
+		"status":   resources.Unsettled,
+		"order_id": primitive.Regex{Pattern: "^bh_"},
+		"app_type": bson.M{"$nin": []int{
+			int(resources.AppType[resources.CVM]),
+			int(resources.AppType[resources.LLMToken]),
+		}},
+	}
+	cursor, err := m.getBillingCollection().Find(context.Background(), filter)
+	if err != nil {
+		return nil, fmt.Errorf("find unsettled billings: %w", err)
+	}
+	defer cursor.Close(context.Background())
+	var billings []*resources.Billing
+	if err := cursor.All(context.Background(), &billings); err != nil {
+		return nil, fmt.Errorf("decode unsettled billings: %w", err)
+	}
+	result := make(map[string][]*resources.Billing)
+	for _, billing := range billings {
+		result[billing.Owner] = append(result[billing.Owner], billing)
+	}
+	return result, nil
+}
+
+func ownerListFilter(ownerList []string) bson.M {
+	return bson.M{"$in": ownerList}
+}
+
+const billingCheckpointID = "account-hourly-billing"
+
+func (m *mongoDB) GetBillingCheckpoint() (time.Time, bool, error) {
+	var checkpoint resources.BillingCheckpoint
+	err := m.getBillingCheckpointCollection().FindOne(
+		context.Background(),
+		bson.M{"_id": billingCheckpointID},
+	).Decode(&checkpoint)
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return time.Time{}, false, nil
+	}
+	if err != nil {
+		return time.Time{}, false, fmt.Errorf("get billing checkpoint: %w", err)
+	}
+	return checkpoint.Time.UTC(), true, nil
+}
+
+func (m *mongoDB) SaveBillingCheckpoint(billingTime time.Time) error {
+	_, err := m.getBillingCheckpointCollection().UpdateOne(
+		context.Background(),
+		bson.M{"_id": billingCheckpointID},
+		bson.M{"$set": bson.M{"time": billingTime.UTC(), "updated_at": time.Now().UTC()}},
+		options.Update().SetUpsert(true),
+	)
+	if err != nil {
+		return fmt.Errorf("save billing checkpoint: %w", err)
+	}
+	return nil
+}
+
 func (m *mongoDB) GetTimeUsedNamespaceList(startTime, endTime time.Time) ([]string, error) {
 	pipeline := mongo.Pipeline{
 		{
@@ -307,11 +405,19 @@ func (m *mongoDB) UpdateBillingStatus(orderIDs []string, status resources.Billin
 }
 
 func (m *mongoDB) SaveBillings(billing ...*resources.Billing) error {
-	billings := make([]any, len(billing))
-	for i, b := range billing {
-		billings[i] = b
+	if len(billing) == 0 {
+		return nil
 	}
-	_, err := m.getBillingCollection().InsertMany(context.Background(), billings)
+	models := make([]mongo.WriteModel, 0, len(billing))
+	for _, b := range billing {
+		models = append(models, mongo.NewUpdateOneModel().
+			SetFilter(bson.M{"owner": b.Owner, "order_id": b.OrderID}).
+			SetUpdate(bson.M{"$setOnInsert": b}).
+			SetUpsert(true))
+	}
+	_, err := m.getBillingCollection().BulkWrite(
+		context.Background(), models, options.BulkWrite().SetOrdered(false),
+	)
 	return err
 }
 
@@ -532,6 +638,126 @@ func (m *mongoDB) InitDefaultPropertyTypeLS() error {
 	return nil
 }
 
+// InitDefaultPropertyTypeLSWithDefaults initializes properties from database,
+// and ensures basic resource types (cpu, memory, storage, ...) exist.
+// If database is empty or missing basic resources, it will merge/write defaults.
+func (m *mongoDB) InitDefaultPropertyTypeLSWithDefaults() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Fetch existing properties from database
+	cursor, err := m.getPropertiesCollection().Find(ctx, bson.M{})
+	if err != nil {
+		return fmt.Errorf("failed to get properties: %w", err)
+	}
+	defer cursor.Close(ctx)
+
+	var existingProperties []resources.PropertyType
+	if err = cursor.All(ctx, &existingProperties); err != nil {
+		return fmt.Errorf("failed to decode properties: %w", err)
+	}
+
+	// Check if database is empty or missing basic resources
+	needsInit := len(existingProperties) == 0
+	missingBasicResources := m.findMissingBasicResources(existingProperties)
+
+	// Merge with defaults if needed
+	var finalProperties []resources.PropertyType
+	switch {
+	case needsInit:
+		// Database is empty, use all defaults
+		finalProperties = resources.DefaultPropertyTypeList
+		if err := m.SavePropertyTypes(finalProperties); err != nil {
+			return fmt.Errorf("failed to save default properties: %w", err)
+		}
+		logger.Info("initialized properties with defaults", "count", len(finalProperties))
+	case len(missingBasicResources) > 0:
+		// Merge existing properties with missing basic resources
+		finalProperties = m.mergeProperties(existingProperties, missingBasicResources)
+		// Upsert missing resources
+		for _, prop := range missingBasicResources {
+			filter := bson.M{"enum": prop.Enum}
+			update := bson.M{"$set": prop}
+			_, err := m.getPropertiesCollection().
+				UpdateOne(ctx, filter, update, options.Update().SetUpsert(true))
+			if err != nil {
+				return fmt.Errorf("failed to upsert property %s: %w", prop.Name, err)
+			}
+		}
+		logger.Info(
+			"merged missing basic resources",
+			"count",
+			len(missingBasicResources),
+			"resources",
+			missingBasicResources,
+		)
+		// finalProperties = existingProperties
+	default:
+		// All basic resources exist, use existing properties
+		finalProperties = existingProperties
+	}
+
+	// Update global DefaultPropertyTypeLS
+	if len(finalProperties) != 0 {
+		resources.DefaultPropertyTypeLS = resources.NewPropertyTypeLS(finalProperties)
+	}
+
+	return nil
+}
+
+// findMissingBasicResources checks which properties from DefaultPropertyTypeList are missing
+func (m *mongoDB) findMissingBasicResources(
+	properties []resources.PropertyType,
+) []resources.PropertyType {
+	var missing []resources.PropertyType
+	existingEnums := make(map[uint8]bool)
+
+	// Build map of existing property enums
+	for _, prop := range properties {
+		existingEnums[prop.Enum] = true
+	}
+
+	// Find missing properties from defaults
+	for _, defaultProp := range resources.DefaultPropertyTypeList {
+		if !existingEnums[defaultProp.Enum] {
+			missing = append(missing, defaultProp)
+		}
+	}
+
+	return missing
+}
+
+// mergeProperties merges existing properties with missing basic resources
+func (m *mongoDB) mergeProperties(
+	existing, missing []resources.PropertyType,
+) []resources.PropertyType {
+	// Create map of existing properties by enum
+	propMap := make(map[uint8]resources.PropertyType)
+	for _, prop := range existing {
+		propMap[prop.Enum] = prop
+	}
+
+	// Add missing resources
+	for _, prop := range missing {
+		if _, exists := propMap[prop.Enum]; !exists {
+			propMap[prop.Enum] = prop
+		}
+	}
+
+	// Convert back to slice
+	result := make([]resources.PropertyType, 0, len(propMap))
+	for _, prop := range propMap {
+		result = append(result, prop)
+	}
+
+	// Sort by enum for consistency
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].Enum < result[j].Enum
+	})
+
+	return result
+}
+
 func (m *mongoDB) ReloadPropertyTypeLS() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -588,15 +814,15 @@ func (m *mongoDB) FetchOwnerMonitorRecords(
 	startTime, endTime time.Time,
 	ownerToNS map[string][]string,
 ) (map[string][]resources.Monitor, error) {
-	// collect all namespaces to avoid repetition
-	nsSet := make(map[string]struct{})
-	for _, nsList := range ownerToNS {
+	// Build the reverse index once so each monitor record has an O(1) owner lookup.
+	nsToOwner := make(map[string]string)
+	for owner, nsList := range ownerToNS {
 		for _, ns := range nsList {
-			nsSet[ns] = struct{}{}
+			nsToOwner[ns] = owner
 		}
 	}
-	namespaces := make([]string, 0, len(nsSet))
-	for ns := range nsSet {
+	namespaces := make([]string, 0, len(nsToOwner))
+	for ns := range nsToOwner {
 		namespaces = append(namespaces, ns)
 	}
 
@@ -619,21 +845,20 @@ func (m *mongoDB) FetchOwnerMonitorRecords(
 		return nil, fmt.Errorf("failed to decode monitor records: %w", err)
 	}
 
-	// build the mapping of owner monitor data
+	return groupMonitorRecordsByOwner(allRecords, nsToOwner), nil
+}
+
+func groupMonitorRecordsByOwner(
+	records []resources.Monitor,
+	nsToOwner map[string]string,
+) map[string][]resources.Monitor {
 	ownerMonitorRecords := make(map[string][]resources.Monitor)
-	for _, record := range allRecords {
-		for owner, nsList := range ownerToNS {
-			// Only the records of the namespace that belong to the owner are saved
-			for _, ns := range nsList {
-				if record.Category == ns {
-					ownerMonitorRecords[owner] = append(ownerMonitorRecords[owner], record)
-					break // avoid duplicate additions
-				}
-			}
+	for _, record := range records {
+		if owner, ok := nsToOwner[record.Category]; ok {
+			ownerMonitorRecords[owner] = append(ownerMonitorRecords[owner], record)
 		}
 	}
-
-	return ownerMonitorRecords, nil
+	return ownerMonitorRecords
 }
 
 func GenerateBillingDataFromRecords(
@@ -682,9 +907,12 @@ func GenerateBillingDataFromRecords(
 	}
 
 	// 存储最终计费数据
-	// map[namespace]map[app_type | parent_type/parent_name][]resources.AppCost
-	appCostsMap := make(map[string]map[string][]resources.AppCost)
-	nsTypeAmount := make(map[string]map[string]int64)
+	type billingGroupKey struct {
+		appType uint8
+		appName string
+	}
+	appCostsMap := make(map[string]map[billingGroupKey][]resources.AppCost)
+	nsTypeAmount := make(map[string]map[billingGroupKey]int64)
 
 	calculateFinalUsed := func(values map[uint8][]int64, prols *resources.PropertyTypeLS, minutes float64) map[uint8]int64 {
 		finalUsed := make(map[uint8]int64)
@@ -723,18 +951,18 @@ func GenerateBillingDataFromRecords(
 			continue
 		}
 		appCost.Amount = totalAmount
-		groupKey := strconv.Itoa(int(agg.Type))
+		groupKey := billingGroupKey{appType: agg.Type}
 		if agg.ParentType != 0 && agg.ParentName != "" {
-			groupKey = strconv.Itoa(int(agg.ParentType)) + "/" + agg.ParentName
+			groupKey = billingGroupKey{appType: agg.ParentType, appName: agg.ParentName}
 		}
 		ns := agg.Category
 		if _, ok := nsTypeAmount[ns]; !ok {
-			nsTypeAmount[ns] = make(map[string]int64)
+			nsTypeAmount[ns] = make(map[billingGroupKey]int64)
 		}
 		nsTypeAmount[ns][groupKey] += totalAmount
 
 		if _, ok := appCostsMap[ns]; !ok {
-			appCostsMap[ns] = make(map[string][]resources.AppCost)
+			appCostsMap[ns] = make(map[billingGroupKey][]resources.AppCost)
 		}
 		appCostsMap[ns][groupKey] = append(appCostsMap[ns][groupKey], appCost)
 	}
@@ -742,27 +970,19 @@ func GenerateBillingDataFromRecords(
 
 	// 生成 Billing 数据
 	for ns, appCostMap := range appCostsMap {
-		for tp, appCostList := range appCostMap {
-			amount := nsTypeAmount[ns][tp]
+		for groupKey, appCostList := range appCostMap {
+			amount := nsTypeAmount[ns][groupKey]
 			if amount <= 0 {
 				continue
 			}
-			id, err := gonanoid.New(12)
-			if err != nil {
-				return nil, fmt.Errorf("generate billing id error: %w", err)
-			}
-			parts := strings.Split(tp, "/")
-			appType, _ := strconv.Atoi(parts[0])
-			appName := ""
-			if len(parts) > 1 {
-				appName = parts[1]
-			}
 			billings = append(billings, &resources.Billing{
-				OrderID:   id,
+				OrderID: stableBillingOrderID(
+					owner, endTime, ns, groupKey.appType, groupKey.appName,
+				),
 				Type:      Consumption,
 				Namespace: ns,
-				AppType:   uint8(appType), // #nosec G115
-				AppName:   appName,
+				AppType:   groupKey.appType,
+				AppName:   groupKey.appName,
 				AppCosts:  appCostList,
 				Amount:    amount,
 				Owner:     owner,
@@ -772,6 +992,25 @@ func GenerateBillingDataFromRecords(
 		}
 	}
 	return billings, nil
+}
+
+func stableBillingOrderID(
+	owner string,
+	endTime time.Time,
+	namespace string,
+	appType uint8,
+	appName string,
+) string {
+	key := fmt.Sprintf(
+		"%s\x00%s\x00%s\x00%d\x00%s",
+		owner,
+		endTime.UTC().Format(time.RFC3339),
+		namespace,
+		appType,
+		appName,
+	)
+	sum := sha256.Sum256([]byte(key))
+	return fmt.Sprintf("bh_%x", sum[:12])
 }
 
 func computeUsedValue(usedValues []int64, prop resources.PropertyType, minutes float64) int64 {
@@ -888,6 +1127,10 @@ func (m *mongoDB) getBillingCollection() *mongo.Collection {
 	return m.Client.Database(m.AccountDB).Collection(m.BillingConn)
 }
 
+func (m *mongoDB) getBillingCheckpointCollection() *mongo.Collection {
+	return m.Client.Database(m.AccountDB).Collection(DefaultBillingCheckpointConn)
+}
+
 func (m *mongoDB) getObjTrafficCollection() *mongo.Collection {
 	return m.Client.Database(m.AccountDB).Collection(m.ObjTrafficConn)
 }
@@ -897,13 +1140,15 @@ func (m *mongoDB) getPropertiesCollection() *mongo.Collection {
 }
 
 func (m *mongoDB) CreateBillingIfNotExist() error {
-	if exist, err := m.collectionExist(m.AccountDB, m.BillingConn); exist || err != nil {
+	ctx := context.Background()
+	exist, err := m.collectionExist(m.AccountDB, m.BillingConn)
+	if err != nil {
 		return err
 	}
-	ctx := context.Background()
-	err := m.Client.Database(m.AccountDB).CreateCollection(ctx, m.BillingConn)
-	if err != nil {
-		return fmt.Errorf("failed to create collection for billing: %w", err)
+	if !exist {
+		if err := m.Client.Database(m.AccountDB).CreateCollection(ctx, m.BillingConn); err != nil {
+			return fmt.Errorf("failed to create collection for billing: %w", err)
+		}
 	}
 
 	// create index
@@ -922,6 +1167,15 @@ func (m *mongoDB) CreateBillingIfNotExist() error {
 				primitive.E{Key: "owner", Value: 1},
 				primitive.E{Key: "time", Value: 1},
 				primitive.E{Key: "type", Value: 1},
+			},
+		},
+		{
+			// recover stable unsettled billings for one billing hour
+			Keys: bson.D{
+				primitive.E{Key: "time", Value: 1},
+				primitive.E{Key: "status", Value: 1},
+				primitive.E{Key: "type", Value: 1},
+				primitive.E{Key: "order_id", Value: 1},
 			},
 		},
 	})

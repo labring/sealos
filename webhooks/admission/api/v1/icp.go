@@ -15,9 +15,11 @@
 package v1
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/patrickmn/go-cache"
@@ -55,7 +57,7 @@ func NewIcpValidator(icpEnabled bool, icpEndpoint, icpKey string) *IcpValidator 
 	}
 }
 
-func (i *IcpValidator) Query(rule *netv1.IngressRule) (*IcpResponse, error) {
+func (i *IcpValidator) Query(ctx context.Context, rule *netv1.IngressRule) (*IcpResponse, error) {
 	domainName, err := publicsuffix.EffectiveTLDPlusOne(rule.Host)
 	if err != nil {
 		return nil, err
@@ -72,7 +74,19 @@ func (i *IcpValidator) Query(rule *netv1.IngressRule) (*IcpResponse, error) {
 	data.Set("domainName", domainName)
 	data.Set("key", i.key)
 
-	resp, err := http.PostForm(i.endpoint, data)
+	req, err := http.NewRequestWithContext( //nolint:gosec // ICP endpoint is configured by cluster administrators.
+		ctx,
+		http.MethodPost,
+		i.endpoint,
+		strings.NewReader(data.Encode()),
+	)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	//nolint:gosec // ICP endpoint is configured by cluster administrators.
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
