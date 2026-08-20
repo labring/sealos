@@ -67,6 +67,10 @@ dbproviderConfig:
   forcedStorageClassName: ""
   storageMaxSize: 300
   customScripts: []
+
+  # Rybbit Analytics (self-hosted); empty disables tracking
+  rybbitHost: ""
+  rybbitSiteId: ""
   eventAnalysisEnabled: false
   eventAnalysisUrl: "https://fastgpt.run/api/openapi"
   eventAnalysisModelId: "6455c433f437e55c638e630c"

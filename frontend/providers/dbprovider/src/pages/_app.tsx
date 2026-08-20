@@ -21,6 +21,7 @@ import 'nprogress/nprogress.css';
 import Script from 'next/script';
 import App from 'next/app';
 import { useUserStore } from '@/store/user';
+import { RybbitScript } from '@sealos/gtm';
 import {
   ClientConfigProvider,
   prefetchClientAppConfig,
@@ -50,17 +51,23 @@ setupClientAppConfigDefaults(queryClient, ['client-app-config']);
 
 type AppOwnProps = {
   customScripts: ComponentProps<typeof Script>[];
+  rybbitHost: string;
+  rybbitSiteId: string;
   dehydratedState?: unknown;
 };
 
 function AppContent({
   Component,
   pageProps,
-  customScripts
+  customScripts,
+  rybbitHost,
+  rybbitSiteId
 }: {
   Component: AppProps['Component'];
   pageProps: AppProps['pageProps'];
   customScripts: ComponentProps<typeof Script>[];
+  rybbitHost: string;
+  rybbitSiteId: string;
 }) {
   const standaloneAllowedPaths = new Set(['/api-docs', '/api/v2alpha/docs', '/doc/v2alpha']);
 
@@ -226,15 +233,33 @@ function AppContent({
       {customScripts.map((scriptProps, i) => (
         <Script key={i} {...scriptProps} />
       ))}
+      <RybbitScript
+        host={rybbitHost}
+        siteId={rybbitSiteId}
+        debug={process.env.NODE_ENV === 'development'}
+      />
     </>
   );
 }
 
-function MyApp({ Component, pageProps, customScripts, dehydratedState }: AppProps & AppOwnProps) {
+function MyApp({
+  Component,
+  pageProps,
+  customScripts,
+  rybbitHost,
+  rybbitSiteId,
+  dehydratedState
+}: AppProps & AppOwnProps) {
   return (
     <QueryClientProvider client={queryClient}>
       <ClientConfigProvider dehydratedState={dehydratedState}>
-        <AppContent Component={Component} pageProps={pageProps} customScripts={customScripts} />
+        <AppContent
+          Component={Component}
+          pageProps={pageProps}
+          customScripts={customScripts}
+          rybbitHost={rybbitHost}
+          rybbitSiteId={rybbitSiteId}
+        />
       </ClientConfigProvider>
     </QueryClientProvider>
   );
@@ -244,6 +269,8 @@ MyApp.getInitialProps = async (context: AppContext): Promise<AppOwnProps & AppIn
   const ctx = await App.getInitialProps(context);
 
   let customScripts: AppOwnProps['customScripts'] = [];
+  let rybbitHost = '';
+  let rybbitSiteId = '';
   let dehydratedState: unknown;
 
   if (typeof window === 'undefined') {
@@ -268,6 +295,8 @@ MyApp.getInitialProps = async (context: AppContext): Promise<AppOwnProps & AppIn
           return scriptProps;
         }
       );
+      rybbitHost = config.dbprovider.analytics?.rybbit.host ?? '';
+      rybbitSiteId = config.dbprovider.analytics?.rybbit.siteId ?? '';
     } catch (error) {
       console.error('[_app] Failed to read custom scripts:', error);
     }
@@ -278,7 +307,7 @@ MyApp.getInitialProps = async (context: AppContext): Promise<AppOwnProps & AppIn
     dehydratedState = dehydrate(qc);
   }
 
-  return { ...ctx, customScripts, dehydratedState };
+  return { ...ctx, customScripts, rybbitHost, rybbitSiteId, dehydratedState };
 };
 
 export default appWithTranslation(MyApp);

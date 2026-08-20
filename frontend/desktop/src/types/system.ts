@@ -103,6 +103,8 @@ export type LayoutConfigType = {
     communityLink?: string;
   };
   gtmId: string | null;
+  rybbitHost: string | null;
+  rybbitSiteId: string | null;
 };
 
 export type AuthConfigType = {
@@ -342,7 +344,9 @@ export const DefaultLayoutConfig: LayoutConfigType = {
     communityQRCodeImage: '',
     communityLink: ''
   },
-  gtmId: null
+  gtmId: null,
+  rybbitHost: null,
+  rybbitSiteId: null
 };
 
 export const DefaultAuthClientConfig: AuthClientConfigType = {

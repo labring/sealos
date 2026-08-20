@@ -166,6 +166,25 @@ const CloudSchema = z
 export type CloudConfig = z.infer<typeof CloudSchema>;
 
 /**
+ * Analytics configuration schema.
+ */
+const AnalyticsSchema = z
+  .object({
+    rybbit: z
+      .object({
+        host: z
+          .string()
+          .describe(
+            'Self-hosted Rybbit server URL, e.g. https://rybbit.example.com; empty disables tracking'
+          ),
+        siteId: z.string().describe('Rybbit site ID')
+      })
+      .strict()
+      .describe('Rybbit analytics configuration')
+  })
+  .strict();
+
+/**
  * Template provider configuration schema.
  */
 const TemplateSchema = z
@@ -191,7 +210,8 @@ const TemplateSchema = z
       .string()
       .optional()
       .describe('Domain for user app deployments, fallback to cloud domain if not provided'),
-    billingUrl: z.string().describe('Billing page URL used in guide bonus redemption flow')
+    billingUrl: z.string().describe('Billing page URL used in guide bonus redemption flow'),
+    analytics: AnalyticsSchema.optional().describe('Analytics configuration')
   })
   .strict();
 

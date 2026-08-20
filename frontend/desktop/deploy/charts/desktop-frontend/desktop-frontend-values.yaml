@@ -46,6 +46,10 @@ desktopConfig:
   # Google Tag Manager
   gtmId: ""
 
+  # Rybbit Analytics (self-hosted); empty disables tracking
+  rybbitHost: ""
+  rybbitSiteId: ""
+
   # Discord invite link (USD version only)
   discordInviteLink: ""
 

@@ -86,6 +86,14 @@ desktopConfig:
   gtmId: 'GTM-XXXXXXXX' # GTM ID
 ```
 
+### 6.1 Rybbit Analytics（自部署）
+
+```yaml
+desktopConfig:
+  rybbitHost: 'https://rybbit.example.com' # Rybbit 服务地址，留空则关闭
+  rybbitSiteId: '' # Rybbit 站点 ID
+```
+
 ### 7. Discord 配置
 
 ```yaml
