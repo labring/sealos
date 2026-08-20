@@ -66,12 +66,12 @@ const (
 
 // UserReconciler reconciles a User object
 type UserReconciler struct {
-	Logger         logr.Logger
-	Recorder       record.EventRecorder
-	cache          cache.Cache
-	apiReader      client.Reader
-	metadataReader usercount.MetadataReader
-	config         *rest.Config
+	Logger      logr.Logger
+	Recorder    record.EventRecorder
+	cache       cache.Cache
+	apiReader   client.Reader
+	userCounter *usercount.Counter
+	config      *rest.Config
 	*runtime.Scheme
 	client.Client
 	finalizer          *finalizer.Finalizer
@@ -148,7 +148,7 @@ func (p *ControllerRestartPredicate) Create(e event.CreateEvent) bool {
 // SetupWithManager sets up the controller with the Manager.
 func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager, opts ratelimiter.RateLimiterOptions,
 	minRequeueDuration, maxRequeueDuration, restartPredicateDuration time.Duration,
-	metadataReader usercount.MetadataReader,
+	userCounter *usercount.Counter,
 ) error {
 	const controllerName = "user_controller"
 	if r.Client == nil {
@@ -164,7 +164,7 @@ func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager, opts ratelimiter.Rat
 	r.Scheme = mgr.GetScheme()
 	r.cache = mgr.GetCache()
 	r.apiReader = mgr.GetAPIReader()
-	r.metadataReader = metadataReader
+	r.userCounter = userCounter
 	r.config = mgr.GetConfig()
 	r.Logger.V(1).Info("init reconcile controller user")
 	r.minRequeueDuration = minRequeueDuration
@@ -915,13 +915,10 @@ func (r *UserReconciler) handleLicenseLimit(ctx context.Context, user *userv1.Us
 		return false, nil
 	}
 
-	if r.metadataReader == nil {
-		return false, errors.New("user metadata reader is not initialized")
+	if r.userCounter == nil || !r.userCounter.Initialized() {
+		return false, errors.New("user count cache is not initialized")
 	}
-	userCount, err := usercount.CountQuotaUsersMetadataExcluding(ctx, r.metadataReader, user.Name)
-	if err != nil {
-		return false, err
-	}
+	userCount := r.userCounter.CountExcluding(user.Name)
 	if licensegate.AllowNewUser(userCount) {
 		user.Status.Conditions = helper.DeleteCondition(
 			user.Status.Conditions,

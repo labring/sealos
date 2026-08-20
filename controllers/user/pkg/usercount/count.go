@@ -15,201 +15,161 @@
 package usercount
 
 import (
-	"context"
-	"errors"
-	"fmt"
+	"sync"
 	"sync/atomic"
 
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	toolscache "k8s.io/client-go/tools/cache"
 )
 
-const (
-	UserPhaseActive = "Active"
-)
+// Counter tracks users that are present and not being deleted. It stores only
+// object names so quota checks do not retain or copy User status fields.
+type Counter struct {
+	mu          sync.RWMutex
+	users       map[string]struct{}
+	count       atomic.Int64
+	initialized atomic.Bool
+}
 
+func NewCounter() *Counter {
+	return &Counter{users: make(map[string]struct{})}
+}
+
+func (c *Counter) Initialized() bool {
+	return c != nil && c.initialized.Load()
+}
+
+func (c *Counter) Count() int {
+	if c == nil {
+		return 0
+	}
+	return int(c.count.Load())
+}
+
+func (c *Counter) CountExcluding(name string) int {
+	if c == nil {
+		return 0
+	}
+
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	count := int(c.count.Load())
+	if _, ok := c.users[name]; ok {
+		return count - 1
+	}
+	return count
+}
+
+// Initialize replaces the counter from objects already present in the local
+// informer store. Event handlers can run concurrently with initialization.
+func (c *Counter) Initialize(objects []interface{}) {
+	if c == nil {
+		return
+	}
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.users = make(map[string]struct{}, len(objects))
+	var count int64
+	for _, obj := range objects {
+		metadata, ok := objectMetadata(obj)
+		if !ok || !isQuotaUser(metadata) {
+			continue
+		}
+		c.users[metadata.GetName()] = struct{}{}
+		count++
+	}
+	c.count.Store(count)
+	c.initialized.Store(true)
+}
+
+func (c *Counter) Add(obj interface{}) {
+	metadata, ok := objectMetadata(obj)
+	if !ok {
+		return
+	}
+	c.set(metadata.GetName(), isQuotaUser(metadata))
+}
+
+func (c *Counter) Update(oldObj, newObj interface{}) {
+	oldMetadata, oldOK := objectMetadata(oldObj)
+	newMetadata, newOK := objectMetadata(newObj)
+	if oldOK && newOK && oldMetadata.GetName() != newMetadata.GetName() {
+		c.set(oldMetadata.GetName(), false)
+	}
+	if !newOK {
+		return
+	}
+	c.set(newMetadata.GetName(), isQuotaUser(newMetadata))
+}
+
+func (c *Counter) Delete(obj interface{}) {
+	metadata, ok := objectMetadata(obj)
+	if !ok {
+		return
+	}
+	c.set(metadata.GetName(), false)
+}
+
+func (c *Counter) set(name string, present bool) {
+	if c == nil || name == "" {
+		return
+	}
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.users == nil {
+		c.users = make(map[string]struct{})
+	}
+	if present {
+		if _, ok := c.users[name]; ok {
+			return
+		}
+		c.users[name] = struct{}{}
+		c.count.Add(1)
+		return
+	}
+	if _, ok := c.users[name]; !ok {
+		return
+	}
+	delete(c.users, name)
+	c.count.Add(-1)
+}
+
+func isQuotaUser(obj metav1.Object) bool {
+	return obj.GetName() != "" &&
+		(obj.GetDeletionTimestamp() == nil || obj.GetDeletionTimestamp().IsZero())
+}
+
+func objectMetadata(obj interface{}) (metav1.Object, bool) {
+	switch tombstone := obj.(type) {
+	case toolscache.DeletedFinalStateUnknown:
+		obj = tombstone.Obj
+	case *toolscache.DeletedFinalStateUnknown:
+		obj = tombstone.Obj
+	}
+	metadata, err := meta.Accessor(obj)
+	return metadata, err == nil && metadata != nil
+}
+
+// The following process-local functions are retained for the license
+// controller, which refreshes its own user count independently.
 var (
-	userCount       atomic.Int64
-	initializedFlag atomic.Uint32
+	processUserCount            atomic.Int64
+	processUserCountInitialized atomic.Uint32
 )
 
 func Initialized() bool {
-	return initializedFlag.Load() == 1
+	return processUserCountInitialized.Load() == 1
 }
 
 func Get() int {
-	return int(userCount.Load())
+	return int(processUserCount.Load())
 }
 
 func Set(count int) {
-	userCount.Store(int64(count))
-	initializedFlag.Store(1)
-}
-
-func Init(ctx context.Context, reader client.Reader) error {
-	if Initialized() {
-		return nil
-	}
-	count, err := countActiveUsersUnstructured(ctx, reader, &client.ListOptions{}, "")
-	if err != nil {
-		return fmt.Errorf("failed to count active users: %w", err)
-	}
-	Set(count)
-	return nil
-}
-
-func CountActiveUsers(ctx context.Context, reader client.Reader) (int, error) {
-	active, err := countActiveUsersUnstructured(ctx, reader, &client.ListOptions{}, "")
-	if err != nil {
-		return 0, fmt.Errorf("unable to get active user count: %w", err)
-	}
-	return active, nil
-}
-
-func CountQuotaUsers(ctx context.Context, reader client.Reader) (int, error) {
-	count, err := countQuotaUsersUnstructured(ctx, reader, &client.ListOptions{}, "")
-	if err != nil {
-		return 0, fmt.Errorf("unable to get quota user count: %w", err)
-	}
-	return count, nil
-}
-
-func CountQuotaUsersExcluding(
-	ctx context.Context,
-	reader client.Reader,
-	excludeName string,
-) (int, error) {
-	count, err := countQuotaUsersUnstructured(ctx, reader, &client.ListOptions{}, excludeName)
-	if err != nil {
-		return 0, fmt.Errorf("unable to get quota user count excluding %s: %w", excludeName, err)
-	}
-	return count, nil
-}
-
-// MetadataReader lists resources without fetching their full objects. User
-// objects contain kubeconfigs in status, so full lists are too expensive for
-// admission requests that only need metadata.
-type MetadataReader interface {
-	List(ctx context.Context, opts metav1.ListOptions) (*metav1.PartialObjectMetadataList, error)
-}
-
-func CountQuotaUsersMetadata(ctx context.Context, reader MetadataReader) (int, error) {
-	return CountQuotaUsersMetadataExcluding(ctx, reader, "")
-}
-
-func CountQuotaUsersMetadataExcluding(
-	ctx context.Context,
-	reader MetadataReader,
-	excludeName string,
-) (int, error) {
-	if reader == nil {
-		return 0, errors.New("metadata reader is nil")
-	}
-
-	list, err := reader.List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return 0, fmt.Errorf("failed to list user metadata: %w", err)
-	}
-
-	var count int
-	for _, item := range list.Items {
-		if excludeName != "" && item.Name == excludeName {
-			continue
-		}
-		if item.DeletionTimestamp != nil && !item.DeletionTimestamp.IsZero() {
-			continue
-		}
-		count++
-	}
-
-	return count, nil
-}
-
-func CountActiveUsersExcluding(
-	ctx context.Context,
-	reader client.Reader,
-	excludeName string,
-) (int, error) {
-	active, err := countActiveUsersUnstructured(ctx, reader, &client.ListOptions{}, excludeName)
-	if err != nil {
-		return 0, fmt.Errorf("unable to get active user count excluding %s: %w", excludeName, err)
-	}
-	return active, nil
-}
-
-func countActiveUsersUnstructured(
-	ctx context.Context,
-	reader client.Reader,
-	opts *client.ListOptions,
-	excludeName string,
-) (int, error) {
-	if reader == nil {
-		return 0, errors.New("client reader is nil")
-	}
-
-	list := &unstructured.UnstructuredList{}
-	list.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   "user.sealos.io",
-		Version: "v1",
-		Kind:    "UserList",
-	})
-
-	if err := reader.List(ctx, list, opts); err != nil {
-		return 0, fmt.Errorf("failed to list users: %w", err)
-	}
-
-	var activeCount int
-	for _, item := range list.Items {
-		if excludeName != "" && item.GetName() == excludeName {
-			continue
-		}
-		phase, _, _ := unstructured.NestedString(item.Object, "status", "phase")
-		if phase == UserPhaseActive {
-			activeCount++
-		}
-	}
-
-	return activeCount, nil
-}
-
-func countQuotaUsersUnstructured(
-	ctx context.Context,
-	reader client.Reader,
-	opts *client.ListOptions,
-	excludeName string,
-) (int, error) {
-	if reader == nil {
-		return 0, errors.New("client reader is nil")
-	}
-
-	list := &unstructured.UnstructuredList{}
-	list.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   "user.sealos.io",
-		Version: "v1",
-		Kind:    "UserList",
-	})
-
-	if err := reader.List(ctx, list, opts); err != nil {
-		return 0, fmt.Errorf("failed to list users: %w", err)
-	}
-
-	var count int
-	for _, item := range list.Items {
-		if excludeName != "" && item.GetName() == excludeName {
-			continue
-		}
-		if deletionTimestamp, found, _ := unstructured.NestedString(
-			item.Object,
-			"metadata",
-			"deletionTimestamp",
-		); found &&
-			deletionTimestamp != "" {
-			continue
-		}
-		count++
-	}
-
-	return count, nil
+	processUserCount.Store(int64(count))
+	processUserCountInitialized.Store(1)
 }

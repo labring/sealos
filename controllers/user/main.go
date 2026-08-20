@@ -28,10 +28,8 @@ import (
 	"github.com/labring/sealos/controllers/user/controllers"
 	ratelimiter "github.com/labring/sealos/controllers/user/controllers/helper/ratelimiter"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/metadata"
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -230,19 +228,13 @@ func main() {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
-	metadataClient, err := metadata.NewForConfig(cfg)
-	if err != nil {
-		setupLog.Error(err, "unable to create metadata client")
-		os.Exit(1)
-	}
-	userMetadataReader := metadataClient.Resource(schema.GroupVersionResource{
-		Group:    "user.sealos.io",
-		Version:  "v1",
-		Resource: "users",
-	})
-
 	if err := controllers.SetupLicenseGate(mgr); err != nil {
 		setupLog.Error(err, "unable to set up license gate")
+		os.Exit(1)
+	}
+	userCounter, err := controllers.SetupUserCount(mgr)
+	if err != nil {
+		setupLog.Error(err, "unable to set up user count cache")
 		os.Exit(1)
 	}
 
@@ -252,7 +244,7 @@ func main() {
 		minRequeueDuration,
 		maxRequeueDuration,
 		restartPredicateDuration,
-		userMetadataReader,
+		userCounter,
 	); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "User")
 		os.Exit(1)
@@ -261,7 +253,7 @@ func main() {
 	if os.Getenv("DISABLE_WEBHOOKS") == "true" {
 		setupLog.Info("disable all webhooks")
 	} else {
-		if err = (&userv1.User{}).SetupWebhookWithManager(mgr, userMetadataReader); err != nil {
+		if err = (&userv1.User{}).SetupWebhookWithManager(mgr, userCounter); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "User")
 			os.Exit(1)
 		}

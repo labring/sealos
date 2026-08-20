@@ -1,59 +1,71 @@
+// Copyright © 2026 sealos.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package usercount
 
 import (
-	"context"
-	"errors"
 	"testing"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	toolscache "k8s.io/client-go/tools/cache"
 )
 
-type fakeMetadataReader struct {
-	list *metav1.PartialObjectMetadataList
-	err  error
-}
-
-func (f fakeMetadataReader) List(
-	context.Context,
-	metav1.ListOptions,
-) (*metav1.PartialObjectMetadataList, error) {
-	return f.list, f.err
-}
-
-func TestCountQuotaUsersMetadataExcluding(t *testing.T) {
+func TestCounterTracksInformerEvents(t *testing.T) {
+	counter := NewCounter()
 	deletionTimestamp := metav1.Now()
-	reader := fakeMetadataReader{
-		list: &metav1.PartialObjectMetadataList{
-			Items: []metav1.PartialObjectMetadata{
-				{ObjectMeta: metav1.ObjectMeta{Name: "active-user"}},
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:              "deleted-user",
-						DeletionTimestamp: &deletionTimestamp,
-					},
-				},
-				{ObjectMeta: metav1.ObjectMeta{Name: "excluded-user"}},
-			},
+	active := &metav1.PartialObjectMetadata{ObjectMeta: metav1.ObjectMeta{Name: "active-user"}}
+	deleting := &metav1.PartialObjectMetadata{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              "active-user",
+			DeletionTimestamp: &deletionTimestamp,
 		},
 	}
 
-	count, err := CountQuotaUsersMetadataExcluding(context.Background(), reader, "excluded-user")
-	if err != nil {
-		t.Fatalf("CountQuotaUsersMetadataExcluding() error = %v", err)
+	counter.Initialize([]interface{}{active})
+	if !counter.Initialized() || counter.Count() != 1 {
+		t.Fatalf("initialized counter = (%t, %d), want (true, 1)", counter.Initialized(), counter.Count())
 	}
-	if count != 1 {
-		t.Fatalf("CountQuotaUsersMetadataExcluding() = %d, want 1", count)
+	if got := counter.CountExcluding("active-user"); got != 0 {
+		t.Fatalf("CountExcluding() = %d, want 0", got)
+	}
+
+	counter.Update(active, deleting)
+	if got := counter.Count(); got != 0 {
+		t.Fatalf("count after deletion update = %d, want 0", got)
+	}
+
+	counter.Add(&metav1.PartialObjectMetadata{ObjectMeta: metav1.ObjectMeta{Name: "new-user"}})
+	if got := counter.Count(); got != 1 {
+		t.Fatalf("count after add = %d, want 1", got)
+	}
+	counter.Delete(&metav1.PartialObjectMetadata{ObjectMeta: metav1.ObjectMeta{Name: "new-user"}})
+	if got := counter.Count(); got != 0 {
+		t.Fatalf("count after delete = %d, want 0", got)
 	}
 }
 
-func TestCountQuotaUsersMetadataErrors(t *testing.T) {
-	if _, err := CountQuotaUsersMetadata(context.Background(), nil); err == nil {
-		t.Fatal("CountQuotaUsersMetadata() with nil reader returned nil error")
-	}
+func TestCounterIgnoresDeletedFinalStateUnknown(t *testing.T) {
+	counter := NewCounter()
+	counter.Initialize([]interface{}{
+		&metav1.PartialObjectMetadata{ObjectMeta: metav1.ObjectMeta{Name: "user"}},
+	})
 
-	wantErr := errors.New("list failed")
-	_, err := CountQuotaUsersMetadata(context.Background(), fakeMetadataReader{err: wantErr})
-	if !errors.Is(err, wantErr) {
-		t.Fatalf("CountQuotaUsersMetadata() error = %v, want wrapped %v", err, wantErr)
+	counter.Delete(toolscache.DeletedFinalStateUnknown{
+		Key: "user",
+		Obj: &metav1.PartialObjectMetadata{ObjectMeta: metav1.ObjectMeta{Name: "user"}},
+	})
+	if got := counter.Count(); got != 0 {
+		t.Fatalf("count after tombstone delete = %d, want 0", got)
 	}
 }

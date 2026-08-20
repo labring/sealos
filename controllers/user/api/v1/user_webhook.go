@@ -32,8 +32,8 @@ import (
 
 // log is for logging in this package.
 var (
-	userlog                   = logf.Log.WithName("user-webhook")
-	userWebhookMetadataReader usercount.MetadataReader
+	userlog          = logf.Log.WithName("user-webhook")
+	userWebhookCount *usercount.Counter
 )
 
 const (
@@ -57,12 +57,12 @@ func buildUserCountLimitErrorMessage() string {
 
 func (r *User) SetupWebhookWithManager(
 	mgr ctrl.Manager,
-	metadataReader usercount.MetadataReader,
+	userCounter *usercount.Counter,
 ) error {
-	if metadataReader == nil {
-		return errors.New("user webhook metadata reader is not initialized")
+	if userCounter == nil {
+		return errors.New("user webhook count cache is not initialized")
 	}
-	userWebhookMetadataReader = metadataReader
+	userWebhookCount = userCounter
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
 		WithDefaulter(r).
@@ -111,13 +111,10 @@ func (r *User) ValidateCreate(ctx context.Context, obj runtime.Object) (admissio
 	if err := user.validateCSRExpirationSeconds(); err != nil {
 		return admission.Warnings{}, err
 	}
-	if userWebhookMetadataReader == nil {
-		return admission.Warnings{}, errors.New("user webhook metadata reader is not initialized")
+	if userWebhookCount == nil || !userWebhookCount.Initialized() {
+		return admission.Warnings{}, errors.New("user count cache is not initialized")
 	}
-	currentCount, err := usercount.CountQuotaUsersMetadata(ctx, userWebhookMetadataReader)
-	if err != nil {
-		return admission.Warnings{}, err
-	}
+	currentCount := userWebhookCount.Count()
 	if !licensegate.AllowNewUser(currentCount) {
 		message := buildLicenseLimitErrorMessage()
 		if licensegate.HasActiveLicense() {
