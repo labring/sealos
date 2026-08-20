@@ -13,7 +13,6 @@ use (
 	./objectstorage
 	./pkg
 	./resources
-	./terminal
 	./user
 )
 

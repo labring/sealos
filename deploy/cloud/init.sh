@@ -4,7 +4,6 @@ set -e
 declare -A images=(
   # controllers
   ["ghcr.io/labring/sealos-cloud-user-controller:latest"]="user.tar"
-  ["ghcr.io/labring/sealos-cloud-terminal-controller:latest"]="terminal.tar"
   ["ghcr.io/labring/sealos-cloud-app-controller:latest"]="app.tar"
   ["ghcr.io/labring/sealos-cloud-resources-controller:latest"]="monitoring.tar"
   ["ghcr.io/labring/sealos-cloud-account-controller:latest"]="account.tar"
@@ -12,7 +11,6 @@ declare -A images=(
 
   # frontends
   ["ghcr.io/labring/sealos-cloud-desktop-frontend:latest"]="frontend-desktop.tar"
-  ["ghcr.io/labring/sealos-cloud-terminal-frontend:latest"]="frontend-terminal.tar"
   ["ghcr.io/labring/sealos-cloud-applaunchpad-frontend:latest"]="frontend-applaunchpad.tar"
   ["ghcr.io/labring/sealos-cloud-dbprovider-frontend:latest"]="frontend-dbprovider.tar"
   ["ghcr.io/labring/sealos-cloud-costcenter-frontend:latest"]="frontend-costcenter.tar"
