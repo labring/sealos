@@ -49,6 +49,7 @@ import { useRouter } from 'next/router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { sealosApp } from 'sealos-desktop-sdk/app';
+import { getUserSession } from '@/utils/user';
 const CopyBox = ({
   value,
   showSecret = true,
@@ -272,6 +273,17 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
 
   const onclickConnectDB = useCallback(() => {
     if (!secret) return;
+    const ns = getUserSession()?.user?.nsid;
+    const statefulSetName = dbStatefulSet?.metadata?.name;
+    const container = dbStatefulSet?.spec?.template?.spec?.containers?.[0]?.name;
+    if (!ns || !statefulSetName || !container) {
+      toast({
+        title: 'Missing terminal parameters',
+        status: 'error'
+      });
+      return;
+    }
+
     const commandMap = {
       [DBTypeEnum.postgresql]: `psql '${secret.connection}'`,
       [DBTypeEnum.mongodb]: `mongosh '${secret.connection}'`,
@@ -288,6 +300,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
     };
 
     const defaultCommand = commandMap[db.dbType];
+    const command = defaultCommand ? ['sh', '-lc', defaultCommand] : undefined;
 
     track({
       event: 'deployment_action',
@@ -298,12 +311,22 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
 
     sealosApp.runEvents('openDesktopApp', {
       appKey: 'system-terminal',
+      pathname: '/exec',
       query: {
-        defaultCommand
+        ns,
+        pod: `${statefulSetName}-0`,
+        container,
+        ...(command ? { command: JSON.stringify(command) } : {})
       },
-      messageData: { type: 'new terminal', command: defaultCommand }
+      messageData: {
+        type: 'InternalAppCall',
+        ns,
+        pod: `${statefulSetName}-0`,
+        container,
+        ...(command ? { command } : {})
+      }
     });
-  }, [db.dbType, secret, db.dbName]);
+  }, [db.dbType, dbStatefulSet, secret, toast]);
 
   const refetchAll = () => {
     refetchDBStatefulSet();
