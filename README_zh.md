@@ -35,6 +35,7 @@ https://github.com/user-attachments/assets/8418437c-51ff-42b0-9195-38d1017c8522
 <p align="center">
   <a href="https://sealos.run/docs/Intro">文档</a> |
   <a href="./README.md">English</a> | 
+  <a href="./README_ja.md">日本語</a> | 
   <a href="https://github.com/orgs/labring/projects/4/views/9">发展规划</a>
 </p>
 
