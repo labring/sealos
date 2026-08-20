@@ -157,7 +157,7 @@ func getGVRK(req admission.Request) string {
 
 func isWhiteList(req admission.Request) bool {
 	// check if it is in whitelist
-	// default: "terminals.Terminal.terminal.sealos.io/v1,payments.Payment.account.sealos.io/v1,billingrecordqueries.BillingRecordQuery.account.sealos.io/v1,pricequeries.PriceQuery.account.sealos.io/v1"
+	// default: "licenses.License.license.sealos.io/v1,notifications.Notification.notification.sealos.io/v1,payments.Payment.account.sealos.io/v1,billingrecordqueries.BillingRecordQuery.account.sealos.io/v1,billinginfoqueries.BillingInfoQuery.account.sealos.io/v1,pricequeries.PriceQuery.account.sealos.io/v1"
 	whitelists := os.Getenv("WHITELIST")
 	if whitelists == "" {
 		return false

@@ -77,24 +77,6 @@ spec:
 apiVersion: app.sealos.io/v1
 kind: App
 metadata:
-  name: terminal
-  namespace: app-system
-spec:
-  data:
-    desc: sealos Terminal
-    url: ""
-  icon: /images/terminal.svg
-  menuData:
-  name: Terminal
-  type: iframe
-  displayType: normal
-  i18n:
-    zh-Hans:
-      name: 终端
----
-apiVersion: app.sealos.io/v1
-kind: App
-metadata:
   name: deploy-manager
 spec:
   name: Deploy Manager
