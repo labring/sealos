@@ -92,8 +92,6 @@ jobs:
               - 'frontend/providers/template/**'
             applaunchpad:
               - 'frontend/providers/applaunchpad/**'
-            terminal:
-              - 'frontend/providers/terminal/**'
             dbprovider:
               - 'frontend/providers/dbprovider/**'
             costcenter:
@@ -124,7 +122,6 @@ jobs:
               "providers/cronjob"
               "providers/template"
               "providers/applaunchpad"
-              "providers/terminal"
               "providers/dbprovider"
               "providers/costcenter"
               "providers/objectstorage"
@@ -140,7 +137,6 @@ jobs:
             [[ "${{ steps.filter.outputs.cronjob }}" == "true" ]] && modules+=("providers/cronjob")
             [[ "${{ steps.filter.outputs.template }}" == "true" ]] && modules+=("providers/template")
             [[ "${{ steps.filter.outputs.applaunchpad }}" == "true" ]] && modules+=("providers/applaunchpad")
-            [[ "${{ steps.filter.outputs.terminal }}" == "true" ]] && modules+=("providers/terminal")
             [[ "${{ steps.filter.outputs.dbprovider }}" == "true" ]] && modules+=("providers/dbprovider")
             [[ "${{ steps.filter.outputs.costcenter }}" == "true" ]] && modules+=("providers/costcenter")
             [[ "${{ steps.filter.outputs.objectstorage }}" == "true" ]] && modules+=("providers/objectstorage")
