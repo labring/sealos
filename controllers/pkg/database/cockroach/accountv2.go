@@ -2363,6 +2363,8 @@ func ensureFromIDIndex(db *gorm.DB, index fromIDIndexSpec) error {
 		}
 	}
 
+	// Identifiers come from the compile-time specs above, not external input.
+	// nosemgrep: go.lang.security.audit.database.string-formatted-query.string-formatted-query
 	createUniqueSQL := fmt.Sprintf(
 		`CREATE UNIQUE INDEX IF NOT EXISTS %s ON %q (from_id)`,
 		index.uniqueName,
@@ -2376,6 +2378,8 @@ func ensureFromIDIndex(db *gorm.DB, index fromIDIndexSpec) error {
 		if hasLookup {
 			return nil
 		}
+		// Identifiers come from the compile-time specs above, not external input.
+		// nosemgrep: go.lang.security.audit.database.string-formatted-query.string-formatted-query
 		createLookupSQL := fmt.Sprintf(
 			`CREATE INDEX IF NOT EXISTS %s ON %q (from_id)`,
 			index.lookupName,
