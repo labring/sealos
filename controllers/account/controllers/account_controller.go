@@ -92,6 +92,7 @@ const (
 
 	EnvNonFreeTrialEnabled = "NON_FREE_TRIAL_ENABLED"
 	EnvJwtSecret           = "ACCOUNT_API_JWT_SECRET"
+	EnvAdminJwtSecret      = "ACCOUNT_ADMIN_JWT_SECRET"
 	EnvDesktopJwtSecret    = "DESKTOP_API_JWT_SECRET"
 
 	InitAccountTimeAnnotation   = "user.sealos.io/init-account-time"
@@ -122,6 +123,7 @@ type AccountReconciler struct {
 	localDomain                    string
 	allRegionDomain                []string
 	jwtManager                     *utils.JWTManager
+	adminJwtManager                *utils.JWTManager
 	desktopJwtManager              *utils.JWTManager
 	workspaceSubPlans              []pkgtypes.WorkspaceSubscriptionPlan
 	workspaceSubPlansResourceLimit map[string]corev1.ResourceList
@@ -424,7 +426,19 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controll
 		r.allRegionDomain[i] = region.Domain
 	}
 	r.localDomain = r.AccountV2.GetLocalRegion().Domain
-	r.jwtManager = utils.NewJWTManager(os.Getenv(EnvJwtSecret), 10*time.Minute)
+	jwtSecret := os.Getenv(EnvJwtSecret)
+	if jwtSecret == "" {
+		return fmt.Errorf("empty jwt secret env: %s", EnvJwtSecret)
+	}
+	adminJwtSecret := os.Getenv(EnvAdminJwtSecret)
+	if adminJwtSecret == "" {
+		return fmt.Errorf("empty admin jwt secret env: %s", EnvAdminJwtSecret)
+	}
+	if adminJwtSecret == jwtSecret {
+		return fmt.Errorf("admin jwt secret must differ from %s", EnvJwtSecret)
+	}
+	r.jwtManager = utils.NewJWTManager(jwtSecret, 10*time.Minute)
+	r.adminJwtManager = utils.NewJWTManager(adminJwtSecret, 10*time.Minute)
 	plans, err := r.AccountV2.GetWorkspaceSubscriptionPlanList()
 	if err != nil {
 		return fmt.Errorf("failed to get workspace subscription plans: %w", err)

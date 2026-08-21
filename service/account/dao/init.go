@@ -61,6 +61,7 @@ var (
 	K8sManager            ctrl.Manager
 	Logger                *logger.Logger
 	HasGpuNode            bool
+	AdminJwtMgr           *utils.JWTManager
 
 	// TODO: need init
 	UserContactProvider     usernotify.UserContactProvider
@@ -155,6 +156,14 @@ func Init(ctx context.Context) error {
 		return fmt.Errorf("empty jwt secret env: %s", helper.EnvJwtSecret)
 	}
 	JwtMgr = utils.NewJWTManager(os.Getenv(helper.EnvJwtSecret), time.Minute*30)
+	adminJwtSecret := os.Getenv(helper.EnvAdminJwtSecret)
+	if adminJwtSecret == "" {
+		return fmt.Errorf("empty admin jwt secret env: %s", helper.EnvAdminJwtSecret)
+	}
+	if adminJwtSecret == jwtSecret {
+		return fmt.Errorf("admin jwt secret must differ from %s", helper.EnvJwtSecret)
+	}
+	AdminJwtMgr = utils.NewJWTManager(adminJwtSecret, time.Minute*30)
 
 	gatewayURL, clientID, privateKey, publicKey := os.Getenv(
 		helper.EnvAlipayGatewayURL,

@@ -73,6 +73,9 @@ serviceAccountName: account-controller-manager
 # ConfigMap for environment variables
 envConfigMapName: account-manager-env
 
+# Secret containing the dedicated admin API signing key
+adminJwtSecretName: account-admin-jwt
+
 # Secret for payment configuration
 paymentSecretName: payment-secret
 
@@ -95,5 +98,7 @@ ingress:
   enabled: true
   hostname: "" # Default: account-api.{cloudDomain}
   certSecretName: "wildcard-cert" # TLS certificate secret name
-  cloudDomain: "cloud.sealos.io"
-  cloudPort: ""
+
+# Cloud configuration
+cloudDomain: "cloud.sealos.io"
+cloudPort: ""

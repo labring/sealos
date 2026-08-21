@@ -63,6 +63,19 @@ const (
 
 	AdminRefundForms     = "/refund-forms"
 	AdminCreateCorporate = "/corporate"
+
+	// Admin read-only account management routes.
+	AdminUserList                 = "/users"
+	AdminUserDetailPath           = "/user"
+	AdminUserRechargeRecordsPath  = "/user/recharge-records"
+	AdminUserBalanceAdjustRecords = "/user/balance-adjust-records"
+	AdminGiftCodeList             = "/gift-codes"
+	AdminGiftCodeUsagePath        = "/gift-codes/usage"
+	AdminInvoiceList              = "/invoices"
+	AdminInvoiceDetail            = "/invoice"
+	AdminRefundStatus             = "/refund-status"
+	AdminRechargeGiftPolicyPath   = "/recharge-gift-policy"
+	AdminRegionList               = "/regions"
 )
 
 const (
@@ -113,6 +126,7 @@ const (
 	ENVLocalCockroach  = "LOCAL_COCKROACH_URI"
 	EnvLocalRegion     = "LOCAL_REGION"
 	EnvJwtSecret       = "ACCOUNT_API_JWT_SECRET"
+	EnvAdminJwtSecret  = "ACCOUNT_ADMIN_JWT_SECRET"
 
 	EnvSubscriptionEnabled = "SUBSCRIPTION_ENABLED"
 	EnvKycProcessEnabled   = "KYC_PROCESS_ENABLED"

@@ -101,6 +101,17 @@ func RegisterPayRouter() {
 	adminGroup := router.Group(helper.AdminGroup).
 		GET(helper.AdminGetAccountWithWorkspace, api.AdminGetAccountWithWorkspaceID).
 		GET(helper.AdminGetUserRealNameInfo, api.AdminGetUserRealNameInfo).
+		GET(helper.AdminUserList, api.AdminListUsers).
+		GET(helper.AdminUserDetailPath, api.AdminGetUser).
+		GET(helper.AdminUserRechargeRecordsPath, api.AdminListUserRechargeRecords).
+		GET(helper.AdminUserBalanceAdjustRecords, api.AdminListUserBalanceAdjustRecords).
+		GET(helper.AdminGiftCodeList, api.AdminListGiftCodes).
+		GET(helper.AdminGiftCodeUsagePath, api.AdminListGiftCodeUsage).
+		GET(helper.AdminInvoiceList, api.AdminListInvoices).
+		GET(helper.AdminInvoiceDetail, api.AdminGetInvoice).
+		GET(helper.AdminRefundStatus, api.AdminGetRefundStatus).
+		GET(helper.AdminRechargeGiftPolicyPath, api.AdminGetRechargeGiftPolicy).
+		GET(helper.AdminRegionList, api.AdminListRegions).
 		GET(helper.AdminWorkspaceSubscriptionList, api.AdminWorkspaceSubscriptionListGET).
 		GET(helper.AdminSubscriptionPlans, api.AdminSubscriptionPlansGET).
 		POST(helper.AdminCreateCorporate, api.AdminCreateCorporate).

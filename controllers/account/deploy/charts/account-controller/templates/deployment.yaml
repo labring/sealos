@@ -15,6 +15,7 @@ spec:
       annotations:
         kubectl.kubernetes.io/default-container: manager
         checksum/account-manager-env: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/account-admin-secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
         {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -63,6 +64,8 @@ spec:
                 optional: true
             - configMapRef:
                 name: account-manager-env
+            - secretRef:
+                name: {{ .Values.adminJwtSecretName }}
           ports:
             - containerPort: 9443
               name: webhook-server

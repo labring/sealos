@@ -49,6 +49,8 @@ spec:
         - configMapRef:
             name: {{ .Values.envConfigMapName }}
         - secretRef:
+            name: {{ .Values.adminJwtSecretName }}
+        - secretRef:
             name: {{ .Values.paymentSecretName }}
             optional: true
         ports:

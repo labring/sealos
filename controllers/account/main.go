@@ -316,11 +316,13 @@ func main() {
 		mgr.GetWebhookServer().
 			Register("/validate-v1-sealos-cloud", &webhook.Admission{Handler: &accountv1.DebtValidate{Client: mgr.GetClient(), AccountV2: v2Account, TTLUserMap: maps.New[*types.UsableBalanceWithCredits](env.GetIntEnvWithDefault("DEBT_WEBHOOK_CACHE_USER_TTL", 15))}})
 		// Start HTTP server for property reload handler (without TLS)
-		jwtSecret := os.Getenv("ACCOUNT_API_JWT_SECRET")
+		jwtSecret := os.Getenv(controllers.EnvJwtSecret)
+		adminJwtSecret := os.Getenv(controllers.EnvAdminJwtSecret)
 		reloadHandler := &controllers.PropertyReloadHandler{
 			AccountReconciler: accountReconciler,
 			DBClient:          dbClient,
 			JwtSecret:         jwtSecret,
+			AdminJwtSecret:    adminJwtSecret,
 		}
 		go func() {
 			setupLog.Info("starting property reload HTTP server", "port", 9444)
