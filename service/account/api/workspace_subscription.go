@@ -2738,6 +2738,7 @@ func finalizeWorkspaceSubscriptionSuccess(
 	workspaceSubscription *types.WorkspaceSubscription,
 	wsTransaction *types.WorkspaceSubscriptionTransaction,
 	payment *types.Payment,
+	periodSource subscriptionPeriodSource,
 ) error {
 	if wsTransaction.PayID == "" {
 		wsTransaction.PayID = payment.ID
@@ -2799,12 +2800,14 @@ func finalizeWorkspaceSubscriptionSuccess(
 	}
 
 	// Update or create workspace subscription
-	oldPlanName := ""
+	isFirstUpgrade := false
 	if workspaceSubscription != nil {
-		oldPlanName = workspaceSubscription.PlanName
+		// A replayed upgrade arrives with PlanName already rotated, so only the
+		// first application of the transaction sees the old plan here.
+		isFirstUpgrade = wsTransaction.Operator == types.SubscriptionTransactionTypeUpgraded &&
+			workspaceSubscription.PlanName != wsTransaction.NewPlanName
 		workspaceSubscription.PlanName = wsTransaction.NewPlanName
 		workspaceSubscription.PayStatus = types.SubscriptionPayStatusPaid
-		workspaceSubscription.TrafficStatus = types.WorkspaceTrafficStatusActive
 		workspaceSubscription.PayMethod = payment.Method
 	} else {
 		// Create new for initial if not exists
@@ -2835,21 +2838,14 @@ func finalizeWorkspaceSubscriptionSuccess(
 			}
 		}
 	}
-	if wsTransaction.Operator == types.SubscriptionTransactionTypeRenewed ||
-		wsTransaction.Operator == types.SubscriptionTransactionTypeUpgraded {
-		periodDuration, err := types.ParsePeriod(wsTransaction.Period)
-		if err != nil {
-			// Fallback to monthly if parsing fails
-			periodDuration = 30 * 24 * time.Hour
-		}
-		if time.Since(workspaceSubscription.CurrentPeriodStartAt) > 24*time.Hour {
-			workspaceSubscription.CurrentPeriodStartAt = time.Now().UTC()
-			workspaceSubscription.CurrentPeriodEndAt = time.Now().UTC().Add(periodDuration)
-		}
-		if workspaceSubscription.ExpireAt.Before(workspaceSubscription.CurrentPeriodEndAt) {
-			workspaceSubscription.ExpireAt = stripe.Time(workspaceSubscription.CurrentPeriodEndAt)
-		}
-	}
+	updateWorkspaceSubscriptionPeriodAfterPaymentSuccess(
+		workspaceSubscription,
+		wsTransaction.Operator,
+		wsTransaction.Period,
+		isFirstUpgrade,
+		periodSource,
+		time.Now().UTC(),
+	)
 
 	if err := tx.Save(workspaceSubscription).Error; err != nil {
 		return fmt.Errorf("failed to save workspace subscription: %w", err)
@@ -2871,69 +2867,14 @@ func finalizeWorkspaceSubscriptionSuccess(
 		return fmt.Errorf("failed to get workspace subscription plan: %w", err)
 	}
 
-	var oldPlan *types.WorkspaceSubscriptionPlan
-	var oldPlanTraffic int64
-	var oldPlanAIQuota int64
-
-	// Get old plan info for upgrades
-	if (wsTransaction.Operator == types.SubscriptionTransactionTypeUpgraded || wsTransaction.Operator == types.SubscriptionTransactionTypeRenewed) &&
-		oldPlanName != "" &&
-		oldPlanName != types.FreeSubscriptionPlanName &&
-		oldPlanName != wsTransaction.NewPlanName {
-		oldPlan, err = dao.DBClient.GetWorkspaceSubscriptionPlan(oldPlanName)
-		if err != nil {
-			return fmt.Errorf("failed to get old workspace subscription plan: %w", err)
-		}
-		oldPlanTraffic = oldPlan.Traffic
-		oldPlanAIQuota = oldPlan.AIQuota
-	}
-
-	// Handle traffic package with upgrade-aware logic
-	if wsTransaction.Operator != types.SubscriptionTransactionTypeDowngraded && plan.Traffic > 0 {
-		// Use upgrade-aware traffic package method
-		err = helper.AddTrafficPackageWithUpgrade(
-			tx,
-			dao.K8sManager.GetClient(),
-			workspaceSubscription,
-			plan,
-			workspaceSubscription.CurrentPeriodEndAt,
-			types.WorkspaceTrafficFromWorkspaceSubscription,
-			wsTransaction.ID.String(),
-			wsTransaction.Operator == types.SubscriptionTransactionTypeUpgraded,
-			oldPlanTraffic,
-		)
-		if err != nil {
-			return fmt.Errorf("failed to add traffic package: %w", err)
-		}
-	}
-
-	// Handle AI quota package with upgrade-aware logic
-	if wsTransaction.Operator != types.SubscriptionTransactionTypeDowngraded && plan.AIQuota > 0 {
-		// Calculate additional AI quota (only for upgrades)
-		additionalAIQuota := plan.AIQuota
-		if wsTransaction.Operator == types.SubscriptionTransactionTypeUpgraded && oldPlan != nil {
-			additionalAIQuota -= oldPlanAIQuota
-			if additionalAIQuota < 0 {
-				additionalAIQuota = 0
-			}
-		}
-
-		// Use upgrade-aware AI quota package method
-		if additionalAIQuota > 0 {
-			err = cockroach.AddWorkspaceSubscriptionAIQuotaPackageWithUpgrade(
-				tx,
-				workspaceSubscription.ID,
-				additionalAIQuota,
-				workspaceSubscription.CurrentPeriodEndAt,
-				types.PKGFromWorkspaceSubscription,
-				wsTransaction.ID.String(),
-				wsTransaction.Operator == types.SubscriptionTransactionTypeUpgraded,
-				oldPlanAIQuota,
-			)
-			if err != nil {
-				return fmt.Errorf("failed to add AI quota package: %w", err)
-			}
-		}
+	if err := grantSubscriptionPackages(
+		tx,
+		wsTransaction.Operator,
+		plan,
+		workspaceSubscription,
+		wsTransaction.ID.String(),
+	); err != nil {
+		return err
 	}
 
 	if err := updateWorkspaceSubscriptionNamespaceStatus(
@@ -2945,7 +2886,47 @@ func finalizeWorkspaceSubscriptionSuccess(
 	return nil
 }
 
-// updateWorkspaceSubscriptionNamespaceStatus updates the workspace subscription status annotation on namespace
+type subscriptionPeriodSource uint8
+
+const (
+	subscriptionPeriodUnspecified subscriptionPeriodSource = iota
+	subscriptionPeriodAuthoritative
+)
+
+func updateWorkspaceSubscriptionPeriodAfterPaymentSuccess(
+	workspaceSubscription *types.WorkspaceSubscription,
+	operator types.SubscriptionOperator,
+	period types.SubscriptionPeriod,
+	isFirstUpgrade bool,
+	periodSource subscriptionPeriodSource,
+	now time.Time,
+) {
+	if operator != types.SubscriptionTransactionTypeRenewed &&
+		operator != types.SubscriptionTransactionTypeUpgraded {
+		return
+	}
+
+	periodDuration, err := types.ParsePeriod(period)
+	if err != nil {
+		periodDuration = 30 * 24 * time.Hour
+	}
+
+	shouldReset := isFirstUpgrade
+	if operator == types.SubscriptionTransactionTypeRenewed {
+		shouldReset = now.Sub(workspaceSubscription.CurrentPeriodStartAt) > 24*time.Hour
+	}
+	if shouldReset && periodSource == subscriptionPeriodUnspecified {
+		workspaceSubscription.CurrentPeriodStartAt = now
+		workspaceSubscription.CurrentPeriodEndAt = now.Add(periodDuration)
+	}
+	if workspaceSubscription.ExpireAt == nil ||
+		workspaceSubscription.ExpireAt.Before(workspaceSubscription.CurrentPeriodEndAt) {
+		workspaceSubscription.ExpireAt = stripe.Time(workspaceSubscription.CurrentPeriodEndAt)
+	}
+}
+
+// updateWorkspaceSubscriptionNamespaceStatus updates subscription and debt
+// annotations. Traffic grants own the separate network-resume side effect.
 func updateWorkspaceSubscriptionNamespaceStatus(workspace string) error {
 	ctx := context.Background()
 
@@ -2966,20 +2947,11 @@ func updateWorkspaceSubscriptionNamespaceStatus(workspace string) error {
 			return fmt.Errorf("failed to get namespace %s: %w", workspace, err)
 		}
 
-		// Initialize annotations if needed
-		if ns.Annotations == nil {
-			ns.Annotations = make(map[string]string)
-		}
-
-		// Check if the annotation already matches the desired status
 		if ns.Status.Phase == corev1.NamespaceTerminating {
 			return nil
 		}
 		original := ns.DeepCopy()
-		// Update the annotation
-		ns.Annotations[types.WorkspaceSubscriptionStatusAnnoKey] = types.NormalDebtNamespaceAnnoStatus
-		ns.Annotations[DebtNamespaceAnnoStatusKey] = ResumeDebtNamespaceAnnoStatus
-		ns.Annotations[NetworkStatusAnnoKey] = ResumeDebtNamespaceAnnoStatus
+		applyWorkspaceSubscriptionNamespaceStatus(ns)
 		if err := dao.K8sManager.GetClient().
 			Patch(ctx, ns, client.MergeFrom(original)); err != nil {
 			return fmt.Errorf("patch namespace annotation failed: %w", err)
@@ -2995,6 +2967,14 @@ func updateWorkspaceSubscriptionNamespaceStatus(workspace string) error {
 		)
 		return nil
 	})
+}
+
+func applyWorkspaceSubscriptionNamespaceStatus(ns *corev1.Namespace) {
+	if ns.Annotations == nil {
+		ns.Annotations = make(map[string]string)
+	}
+	ns.Annotations[types.WorkspaceSubscriptionStatusAnnoKey] = types.NormalDebtNamespaceAnnoStatus
+	ns.Annotations[DebtNamespaceAnnoStatusKey] = ResumeDebtNamespaceAnnoStatus
 }
 
 // renewalFailureMetadata holds parsed metadata from invoice/subscription
@@ -3271,6 +3251,7 @@ func handleRenewalBalancePayment(
 		workspaceSubscription,
 		&wsTransaction,
 		&payment,
+		subscriptionPeriodUnspecified,
 	); err != nil {
 		return nil, err
 	}
@@ -3742,6 +3723,7 @@ func handleWorkspaceSubscriptionDeleted(event *stripe.Event) error {
 				&workspaceSubscription,
 				&wsTransaction,
 				&payment,
+				subscriptionPeriodUnspecified,
 			); err != nil {
 				return err
 			}
@@ -4501,7 +4483,6 @@ func createOrUpdateWorkspaceSubscription(
 	if existingSubscription != nil {
 		workspaceSubscription = existingSubscription
 		workspaceSubscription.PayStatus = types.SubscriptionPayStatusNoNeed
-		workspaceSubscription.TrafficStatus = types.WorkspaceTrafficStatusActive
 		workspaceSubscription.Status = types.SubscriptionStatusNormal
 		workspaceSubscription.PayMethod = types.PaymentMethodBalance // Admin operations use balance payment
 
@@ -4584,7 +4565,7 @@ func addTrafficAndAIPackages(
 	tx *gorm.DB,
 	req *helper.AdminWorkspaceSubscriptionAddReq,
 	plan *types.WorkspaceSubscriptionPlan,
-	existingSubscription, workspaceSubscription *types.WorkspaceSubscription,
+	workspaceSubscription *types.WorkspaceSubscription,
 	transactionID string,
 ) error {
 	// For renewal operations, skip adding packages - they will be handled by the processor
@@ -4597,88 +4578,53 @@ func addTrafficAndAIPackages(
 	}
 
 	// For upgrade/downgrade/create operations, add packages immediately
-	var oldPlan *types.WorkspaceSubscriptionPlan
-	var isUpgrade bool
+	return grantSubscriptionPackages(
+		tx,
+		req.Operator,
+		plan,
+		workspaceSubscription,
+		transactionID,
+	)
+}
 
-	// Get old plan for upgrade scenarios
-	if req.Operator == types.SubscriptionTransactionTypeUpgraded &&
-		existingSubscription != nil &&
-		existingSubscription.PlanName != types.FreeSubscriptionPlanName {
-		plan, err := dao.DBClient.GetWorkspaceSubscriptionPlan(
-			existingSubscription.PlanName,
-		)
-		if err != nil {
-			return fmt.Errorf("failed to get old workspace subscription plan: %w", err)
-		}
-		oldPlan = plan
-		isUpgrade = true
+// grantSubscriptionPackages grants the plan's traffic and AI quota for one
+// subscription transaction. A downgrade grants nothing; an upgrade expires the
+// old plan's packages and grants the new plan's full allowance for the reset
+// billing cycle (labring/sealos-private#108).
+func grantSubscriptionPackages(
+	tx *gorm.DB,
+	operator types.SubscriptionOperator,
+	plan *types.WorkspaceSubscriptionPlan,
+	workspaceSubscription *types.WorkspaceSubscription,
+	transactionID string,
+) error {
+	if operator == types.SubscriptionTransactionTypeDowngraded {
+		return nil
 	}
-
-	// Add traffic package
-	if plan.Traffic > 0 && req.Operator != types.SubscriptionTransactionTypeDowngraded {
-		// Calculate additional traffic for upgrades
-		additionalTraffic := plan.Traffic
-		if isUpgrade && oldPlan != nil {
-			additionalTraffic -= oldPlan.Traffic
-			if additionalTraffic < 0 {
-				additionalTraffic = 0
-			}
-		}
-
-		if additionalTraffic > 0 {
-			var oldPlanTraffic int64
-			if isUpgrade && oldPlan != nil {
-				oldPlanTraffic = oldPlan.Traffic
-			}
-			err := helper.AddTrafficPackageWithUpgrade(
-				tx,
-				dao.K8sManager.GetClient(),
-				workspaceSubscription,
-				plan,
-				workspaceSubscription.CurrentPeriodEndAt,
-				types.WorkspaceTrafficFromWorkspaceSubscription,
-				transactionID,
-				isUpgrade,
-				oldPlanTraffic,
-			)
-			if err != nil {
-				return fmt.Errorf("failed to add traffic package: %w", err)
-			}
-		}
+	isUpgrade := operator == types.SubscriptionTransactionTypeUpgraded
+	if err := helper.AddTrafficPackageWithUpgrade(
+		tx,
+		dao.K8sManager.GetClient(),
+		workspaceSubscription,
+		plan,
+		workspaceSubscription.CurrentPeriodEndAt,
+		types.WorkspaceTrafficFromWorkspaceSubscription,
+		transactionID,
+		isUpgrade,
+	); err != nil {
+		return fmt.Errorf("failed to add traffic package: %w", err)
 	}
-
-	// Add AI quota package
-	if plan.AIQuota > 0 && req.Operator != types.SubscriptionTransactionTypeDowngraded {
-		// Calculate additional AI quota for upgrades
-		additionalAIQuota := plan.AIQuota
-		if isUpgrade && oldPlan != nil {
-			additionalAIQuota -= oldPlan.AIQuota
-			if additionalAIQuota < 0 {
-				additionalAIQuota = 0
-			}
-		}
-
-		if additionalAIQuota > 0 {
-			var oldPlanAIQuota int64
-			if isUpgrade && oldPlan != nil {
-				oldPlanAIQuota = oldPlan.AIQuota
-			}
-			err := cockroach.AddWorkspaceSubscriptionAIQuotaPackageWithUpgrade(
-				tx,
-				workspaceSubscription.ID,
-				additionalAIQuota,
-				workspaceSubscription.CurrentPeriodEndAt,
-				types.PKGFromWorkspaceSubscription,
-				transactionID,
-				isUpgrade,
-				oldPlanAIQuota,
-			)
-			if err != nil {
-				return fmt.Errorf("failed to add AI quota package: %w", err)
-			}
-		}
+	if err := cockroach.AddWorkspaceSubscriptionAIQuotaPackageWithUpgrade(
+		tx,
+		workspaceSubscription.ID,
+		plan.AIQuota,
+		workspaceSubscription.CurrentPeriodEndAt,
+		types.PKGFromWorkspaceSubscription,
+		transactionID,
+		isUpgrade,
+	); err != nil {
+		return fmt.Errorf("failed to add AI quota package: %w", err)
 	}
-
 	return nil
 }
 
@@ -4728,7 +4674,6 @@ func processSubscriptionTransaction(
 			tx,
 			req,
 			plan,
-			existingSubscription,
 			workspaceSubscription,
 			transaction.ID.String(),
 		); err != nil {
