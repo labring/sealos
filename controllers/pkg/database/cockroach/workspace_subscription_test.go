@@ -383,6 +383,47 @@ func TestUpgradeTrafficPackageSemantics(t *testing.T) {
 		}
 	})
 
+	t.Run("upgrade expires exhausted old traffic", func(t *testing.T) {
+		sub := seedWorkspaceSubscription(t, db)
+		oldFromID := uuid.NewString()
+		grantTraffic(t, db, sub.ID, 1_024, oldFromID, false)
+
+		var oldPackage types.WorkspaceTraffic
+		if err := db.Where("from_id = ?", oldFromID).First(&oldPackage).Error; err != nil {
+			t.Fatalf("failed to load old traffic package: %v", err)
+		}
+		if err := db.Model(&oldPackage).Updates(map[string]any{
+			"status":     types.WorkspaceTrafficStatusExhausted,
+			"used_bytes": oldPackage.TotalBytes,
+		}).Error; err != nil {
+			t.Fatalf("failed to exhaust old traffic package: %v", err)
+		}
+
+		grantTraffic(t, db, sub.ID, 10_240, uuid.NewString(), true)
+
+		if err := db.First(&oldPackage, "id = ?", oldPackage.ID).Error; err != nil {
+			t.Fatalf("failed to reload old traffic package: %v", err)
+		}
+		if oldPackage.Status != types.WorkspaceTrafficStatusExpired {
+			t.Fatalf("want exhausted old package expired, got %s", oldPackage.Status)
+		}
+
+		ck := &Cockroach{DB: db}
+		total, used, err := ck.GetWorkspaceSubscriptionTraffic(sub.Workspace, sub.RegionDomain)
+		if err != nil {
+			t.Fatalf("GetWorkspaceSubscriptionTraffic() error = %v", err)
+		}
+		wantTotal := int64(10_240) * 1024 * 1024
+		if total != wantTotal || used != 0 {
+			t.Fatalf(
+				"want reset traffic total=%d used=0, got total=%d used=%d",
+				wantTotal,
+				total,
+				used,
+			)
+		}
+	})
+
 	t.Run("replay is idempotent", func(t *testing.T) {
 		sub := seedWorkspaceSubscription(t, db)
 		fromID := uuid.NewString()
@@ -453,6 +494,7 @@ func TestUpgradeTrafficPackageSemantics(t *testing.T) {
 
 func TestEnsureWorkspacePackageFromIDIndexes(t *testing.T) {
 	db := setupWorkspacePackageTestDB(t)
+	var duplicateTrafficID, duplicateAIQuotaID uuid.UUID
 
 	t.Run("fresh table has unique indexes", func(t *testing.T) {
 		if !db.Migrator().HasIndex(&types.WorkspaceTraffic{}, "uniq_workspace_traffic_from_id") {
@@ -492,7 +534,7 @@ func TestEnsureWorkspacePackageFromIDIndexes(t *testing.T) {
 		sub := seedWorkspaceSubscription(t, db)
 		fromID := uuid.NewString()
 		now := time.Now()
-		for range 2 {
+		for i := range 2 {
 			traffic := types.WorkspaceTraffic{
 				ID:                      uuid.New(),
 				WorkspaceSubscriptionID: sub.ID,
@@ -507,6 +549,9 @@ func TestEnsureWorkspacePackageFromIDIndexes(t *testing.T) {
 			if err := db.Create(&traffic).Error; err != nil {
 				t.Fatalf("seed duplicate traffic: %v", err)
 			}
+			if i == 0 {
+				duplicateTrafficID = traffic.ID
+			}
 			ai := types.WorkspaceAIQuotaPackage{
 				ID:                      uuid.New(),
 				WorkspaceSubscriptionID: sub.ID,
@@ -520,6 +565,9 @@ func TestEnsureWorkspacePackageFromIDIndexes(t *testing.T) {
 			}
 			if err := db.Create(&ai).Error; err != nil {
 				t.Fatalf("seed duplicate AI quota: %v", err)
+			}
+			if i == 0 {
+				duplicateAIQuotaID = ai.ID
 			}
 		}
 
@@ -537,6 +585,37 @@ func TestEnsureWorkspacePackageFromIDIndexes(t *testing.T) {
 		}
 		if !db.Migrator().HasIndex(&types.WorkspaceAIQuotaPackage{}, "idx_workspace_ai_quota_package_from_id") {
 			t.Fatal("want AI lookup index after duplicate fallback")
+		}
+	})
+
+	t.Run("cleaned duplicates promote lookup indexes", func(t *testing.T) {
+		if err := db.Delete(&types.WorkspaceTraffic{}, "id = ?", duplicateTrafficID).
+			Error; err != nil {
+			t.Fatalf("delete duplicate traffic package: %v", err)
+		}
+		if err := db.Delete(&types.WorkspaceAIQuotaPackage{}, "id = ?", duplicateAIQuotaID).
+			Error; err != nil {
+			t.Fatalf("delete duplicate AI quota package: %v", err)
+		}
+
+		if err := ensureWorkspacePackageFromIDIndexes(db); err != nil {
+			t.Fatalf("ensureWorkspacePackageFromIDIndexes() error = %v", err)
+		}
+		if !db.Migrator().
+			HasIndex(&types.WorkspaceTraffic{}, "uniq_workspace_traffic_from_id") {
+			t.Fatal("want traffic lookup index promoted to unique after cleanup")
+		}
+		if db.Migrator().
+			HasIndex(&types.WorkspaceTraffic{}, "idx_workspace_traffic_from_id") {
+			t.Fatal("traffic lookup index should be removed after promotion")
+		}
+		if !db.Migrator().
+			HasIndex(&types.WorkspaceAIQuotaPackage{}, "uniq_workspace_ai_quota_package_from_id") {
+			t.Fatal("want AI lookup index promoted to unique after cleanup")
+		}
+		if db.Migrator().
+			HasIndex(&types.WorkspaceAIQuotaPackage{}, "idx_workspace_ai_quota_package_from_id") {
+			t.Fatal("AI lookup index should be removed after promotion")
 		}
 	})
 }

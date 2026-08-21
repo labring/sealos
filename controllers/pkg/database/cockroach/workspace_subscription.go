@@ -193,7 +193,6 @@ func AddWorkspaceSubscriptionTrafficPackageWithUpgrade(
 		packageGrantSpec{
 			name:          "traffic",
 			model:         &types.WorkspaceTraffic{},
-			activeStatus:  types.WorkspaceTrafficStatusActive,
 			expiredStatus: types.WorkspaceTrafficStatusExpired,
 			planFrom:      types.WorkspaceTrafficFromWorkspaceSubscription,
 			newRow: func(
@@ -267,7 +266,6 @@ func AddWorkspaceSubscriptionAIQuotaPackageWithUpgrade(
 		packageGrantSpec{
 			name:          "AI quota",
 			model:         &types.WorkspaceAIQuotaPackage{},
-			activeStatus:  types.PackageStatusActive,
 			expiredStatus: types.PackageStatusExpired,
 			planFrom:      types.PKGFromWorkspaceSubscription,
 			newRow: func(
@@ -302,14 +300,14 @@ func AddWorkspaceSubscriptionAIQuotaPackageWithUpgrade(
 
 // packageGrantSpec describes one subscription-package table. The traffic and AI
 // quota grants run the same algorithm and differ only in the row type, the
-// status constants, and the "from" value that marks a plan-granted package.
+// expired status, and the "from" value that marks a plan-granted package.
 type packageGrantSpec struct {
 	// name labels the package in error messages.
 	name string
 	// model is an empty row of the package type, used to scope queries.
 	model any
-	// activeStatus and expiredStatus are the table's status constants.
-	activeStatus, expiredStatus any
+	// expiredStatus is the table's terminal status constant.
+	expiredStatus any
 	// planFrom marks plan-granted packages, the only ones an upgrade rotates.
 	planFrom any
 	// newRow builds the row to insert. total is the caller's allowance in the
@@ -397,8 +395,8 @@ func expireOldPlanPackages(
 ) error {
 	now := time.Now()
 	return globalDB.Model(spec.model).
-		Where(`workspace_subscription_id = ? AND status = ? AND "from" = ? AND from_id <> ?`,
-			subscriptionID, spec.activeStatus, spec.planFrom, newFromID).
+		Where(`workspace_subscription_id = ? AND status <> ? AND "from" = ? AND from_id IS DISTINCT FROM ?`,
+			subscriptionID, spec.expiredStatus, spec.planFrom, newFromID).
 		Updates(map[string]any{
 			"status":     spec.expiredStatus,
 			"expired_at": now,

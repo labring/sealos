@@ -89,6 +89,7 @@ func AddTrafficPackageWithUpgrade(
 		if err != nil {
 			return fmt.Errorf("failed to update workspace traffic status: %w", err)
 		}
+		sub.TrafficStatus = types.WorkspaceTrafficStatusActive
 		// Send resume request (outside transaction)
 	}
 	err = resumeWorkspaceTraffic(client, sub.Workspace)

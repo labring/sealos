@@ -2739,6 +2739,10 @@ func finalizeWorkspaceSubscriptionSuccess(
 	wsTransaction *types.WorkspaceSubscriptionTransaction,
 	payment *types.Payment,
 ) error {
+	isFirstUpgrade := workspaceSubscription != nil &&
+		wsTransaction.Operator == types.SubscriptionTransactionTypeUpgraded &&
+		workspaceSubscription.PlanName != wsTransaction.NewPlanName
+
 	if wsTransaction.PayID == "" {
 		wsTransaction.PayID = payment.ID
 		if payment.ID == "" {
@@ -2832,21 +2836,13 @@ func finalizeWorkspaceSubscriptionSuccess(
 			}
 		}
 	}
-	if wsTransaction.Operator == types.SubscriptionTransactionTypeRenewed ||
-		wsTransaction.Operator == types.SubscriptionTransactionTypeUpgraded {
-		periodDuration, err := types.ParsePeriod(wsTransaction.Period)
-		if err != nil {
-			// Fallback to monthly if parsing fails
-			periodDuration = 30 * 24 * time.Hour
-		}
-		if time.Since(workspaceSubscription.CurrentPeriodStartAt) > 24*time.Hour {
-			workspaceSubscription.CurrentPeriodStartAt = time.Now().UTC()
-			workspaceSubscription.CurrentPeriodEndAt = time.Now().UTC().Add(periodDuration)
-		}
-		if workspaceSubscription.ExpireAt.Before(workspaceSubscription.CurrentPeriodEndAt) {
-			workspaceSubscription.ExpireAt = stripe.Time(workspaceSubscription.CurrentPeriodEndAt)
-		}
-	}
+	updateWorkspaceSubscriptionPeriodAfterPaymentSuccess(
+		workspaceSubscription,
+		wsTransaction.Operator,
+		wsTransaction.Period,
+		isFirstUpgrade,
+		time.Now().UTC(),
+	)
 
 	if err := tx.Save(workspaceSubscription).Error; err != nil {
 		return fmt.Errorf("failed to save workspace subscription: %w", err)
@@ -2878,11 +2874,44 @@ func finalizeWorkspaceSubscriptionSuccess(
 		return err
 	}
 
-	if err := updateWorkspaceSubscriptionNamespaceStatus(workspaceSubscription.Workspace); err != nil {
+	if err := updateWorkspaceSubscriptionNamespaceStatus(
+		workspaceSubscription.Workspace,
+	); err != nil {
 		// dao.Logger.Errorf("Failed to update workspace subscription namespace annotation: %v", err)
 		return fmt.Errorf("failed to update workspace subscription namespace annotation: %w", err)
 	}
 	return nil
+}
+
+func updateWorkspaceSubscriptionPeriodAfterPaymentSuccess(
+	workspaceSubscription *types.WorkspaceSubscription,
+	operator types.SubscriptionOperator,
+	period types.SubscriptionPeriod,
+	isFirstUpgrade bool,
+	now time.Time,
+) {
+	if operator != types.SubscriptionTransactionTypeRenewed &&
+		operator != types.SubscriptionTransactionTypeUpgraded {
+		return
+	}
+
+	periodDuration, err := types.ParsePeriod(period)
+	if err != nil {
+		periodDuration = 30 * 24 * time.Hour
+	}
+
+	shouldReset := operator == types.SubscriptionTransactionTypeUpgraded && isFirstUpgrade
+	if operator == types.SubscriptionTransactionTypeRenewed {
+		shouldReset = now.Sub(workspaceSubscription.CurrentPeriodStartAt) > 24*time.Hour
+	}
+	if shouldReset {
+		workspaceSubscription.CurrentPeriodStartAt = now
+		workspaceSubscription.CurrentPeriodEndAt = now.Add(periodDuration)
+	}
+	if workspaceSubscription.ExpireAt == nil ||
+		workspaceSubscription.ExpireAt.Before(workspaceSubscription.CurrentPeriodEndAt) {
+		workspaceSubscription.ExpireAt = stripe.Time(workspaceSubscription.CurrentPeriodEndAt)
+	}
 }
 
 // updateWorkspaceSubscriptionNamespaceStatus updates subscription and debt

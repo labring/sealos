@@ -2309,67 +2309,114 @@ func ensureBillingQueryIndexes(db *gorm.DB) error {
 // block it, a non-unique lookup index still avoids a full scan. The
 // subscription row lock remains the correctness backstop either way.
 func ensureWorkspacePackageFromIDIndexes(db *gorm.DB) error {
-	indexes := []struct {
-		model          interface{ TableName() string }
-		unique, lookup string
-	}{
+	indexes := []fromIDIndexSpec{
 		{
-			model:  types.WorkspaceTraffic{},
-			unique: "uniq_workspace_traffic_from_id",
-			lookup: "idx_workspace_traffic_from_id",
+			model:           types.WorkspaceTraffic{},
+			uniqueName:      "uniq_workspace_traffic_from_id",
+			lookupName:      "idx_workspace_traffic_from_id",
+			createUniqueSQL: `CREATE UNIQUE INDEX IF NOT EXISTS uniq_workspace_traffic_from_id ON "WorkspaceTraffic" (from_id)`,
+			createLookupSQL: `CREATE INDEX IF NOT EXISTS idx_workspace_traffic_from_id ON "WorkspaceTraffic" (from_id)`,
+			hasDuplicatesSQL: `SELECT EXISTS (
+				SELECT 1 FROM "WorkspaceTraffic"
+				WHERE from_id IS NOT NULL
+				GROUP BY from_id HAVING count(*) > 1
+			)`,
+			duplicatesSQL: `SELECT from_id, count(*) FROM "WorkspaceTraffic" GROUP BY 1 HAVING count(*) > 1`,
 		},
 		{
-			model:  types.WorkspaceAIQuotaPackage{},
-			unique: "uniq_workspace_ai_quota_package_from_id",
-			lookup: "idx_workspace_ai_quota_package_from_id",
+			model:      types.WorkspaceAIQuotaPackage{},
+			uniqueName: "uniq_workspace_ai_quota_package_from_id",
+			lookupName: "idx_workspace_ai_quota_package_from_id",
+			createUniqueSQL: `CREATE UNIQUE INDEX IF NOT EXISTS
+				uniq_workspace_ai_quota_package_from_id ON "WorkspaceAIQuotaPackage" (from_id)`,
+			createLookupSQL: `CREATE INDEX IF NOT EXISTS
+				idx_workspace_ai_quota_package_from_id ON "WorkspaceAIQuotaPackage" (from_id)`,
+			hasDuplicatesSQL: `SELECT EXISTS (
+				SELECT 1 FROM "WorkspaceAIQuotaPackage"
+				WHERE from_id IS NOT NULL
+				GROUP BY from_id HAVING count(*) > 1
+			)`,
+			duplicatesSQL: `SELECT from_id, count(*) FROM "WorkspaceAIQuotaPackage" GROUP BY 1 HAVING count(*) > 1`,
 		},
 	}
 	for _, index := range indexes {
-		if err := ensureFromIDIndex(db, index.model, index.unique, index.lookup); err != nil {
+		if err := ensureFromIDIndex(db, index); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func ensureFromIDIndex(
-	db *gorm.DB,
-	model interface{ TableName() string },
-	uniqueName, lookupName string,
-) error {
-	// The precheck is not redundant with IF NOT EXISTS: on a table holding
-	// duplicate from_id values the unique index never gets created, so without
-	// it every boot would re-run an online index backfill only to fail again.
-	if db.Migrator().HasIndex(model, uniqueName) || db.Migrator().HasIndex(model, lookupName) {
+type fromIDIndexSpec struct {
+	model                            interface{ TableName() string }
+	uniqueName, lookupName           string
+	createUniqueSQL, createLookupSQL string
+	hasDuplicatesSQL, duplicatesSQL  string
+}
+
+func ensureFromIDIndex(db *gorm.DB, index fromIDIndexSpec) error {
+	if db.Migrator().HasIndex(index.model, index.uniqueName) {
 		return nil
 	}
-	table := model.TableName()
-	uniqueSQL := fmt.Sprintf(`CREATE UNIQUE INDEX IF NOT EXISTS %s ON %q (from_id)`, uniqueName, table)
-	if err := db.Exec(uniqueSQL).Error; err != nil {
-		if !isUniqueViolation(err) {
-			return fmt.Errorf("failed to create from_id unique index %s: %w", uniqueName, err)
-		}
-		// Duplicate from_id values mean an allowance was already granted twice.
-		// Degrading to a lookup index keeps the service starting, but the data
-		// needs cleaning before ON CONFLICT can backstop the dedup again.
-		logrus.Errorf(
-			"table %s holds duplicate from_id values, so unique index %s could not be created; "+
-				"falling back to lookup index %s. Deduplicate with: "+
-				"SELECT from_id, count(*) FROM %q GROUP BY 1 HAVING count(*) > 1",
-			table, uniqueName, lookupName, table,
-		)
-		lookupSQL := fmt.Sprintf(`CREATE INDEX IF NOT EXISTS %s ON %q (from_id)`, lookupName, table)
-		if lookupErr := db.Exec(lookupSQL).Error; lookupErr != nil {
+
+	hasLookup := db.Migrator().HasIndex(index.model, index.lookupName)
+	if hasLookup {
+		var hasDuplicates bool
+		if err := db.Raw(index.hasDuplicatesSQL).Scan(&hasDuplicates).Error; err != nil {
 			return fmt.Errorf(
-				"failed to create from_id unique index %s: %w; lookup index %s: %v",
-				uniqueName,
+				"failed to check duplicate from_id values on %s: %w",
+				index.model.TableName(),
 				err,
-				lookupName,
+			)
+		}
+		if hasDuplicates {
+			logDuplicateFromIDs(index)
+			return nil
+		}
+	}
+
+	if err := db.Exec(index.createUniqueSQL).Error; err != nil {
+		if !isUniqueViolation(err) {
+			return fmt.Errorf("failed to create from_id unique index %s: %w", index.uniqueName, err)
+		}
+		logDuplicateFromIDs(index)
+		if hasLookup {
+			return nil
+		}
+		if lookupErr := db.Exec(index.createLookupSQL).Error; lookupErr != nil {
+			return fmt.Errorf(
+				"failed to create from_id unique index %s: %w; lookup index %s: %w",
+				index.uniqueName,
+				err,
+				index.lookupName,
 				lookupErr,
+			)
+		}
+		return nil
+	}
+
+	if hasLookup {
+		if err := db.Migrator().DropIndex(index.model, index.lookupName); err != nil {
+			return fmt.Errorf(
+				"created from_id unique index %s but failed to drop lookup index %s: %w",
+				index.uniqueName,
+				index.lookupName,
+				err,
 			)
 		}
 	}
 	return nil
+}
+
+func logDuplicateFromIDs(index fromIDIndexSpec) {
+	logrus.Errorf(
+		"table %s holds duplicate from_id values, so unique index %s could not be created; "+
+			"using lookup index %s until the duplicates are removed. Deduplicate with: %s",
+		index.model.TableName(),
+		index.uniqueName,
+		index.lookupName,
+		index.duplicatesSQL,
+	)
 }
 
 // isUniqueViolation reports a 23505. The connections built here set
