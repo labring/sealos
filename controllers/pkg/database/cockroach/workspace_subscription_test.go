@@ -16,6 +16,7 @@ package cockroach
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -53,7 +54,9 @@ func setupWorkspacePackageTestDB(t *testing.T) *gorm.DB {
 	if err != nil {
 		t.Fatal(err)
 	}
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	// Match the production connection: TranslateError changes which branch of
+	// isUniqueViolation fires on a duplicate-key failure.
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{TranslateError: true})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -106,6 +109,29 @@ func grantAIQuota(t *testing.T, db *gorm.DB, subID uuid.UUID, quota int64, fromI
 	if err != nil {
 		t.Fatalf("AddWorkspaceSubscriptionAIQuotaPackageWithUpgrade() error = %v", err)
 	}
+}
+
+func activeTrafficPackages(t *testing.T, db *gorm.DB, subID uuid.UUID) []types.WorkspaceTraffic {
+	t.Helper()
+	var pkgs []types.WorkspaceTraffic
+	err := db.Where("workspace_subscription_id = ? AND status = ?",
+		subID, types.WorkspaceTrafficStatusActive).Find(&pkgs).Error
+	if err != nil {
+		t.Fatalf("failed to list traffic packages: %v", err)
+	}
+	return pkgs
+}
+
+func grantTraffic(t *testing.T, db *gorm.DB, subID uuid.UUID, totalMiB int64, fromID string, isUpgrade bool) bool {
+	t.Helper()
+	granted, err := AddWorkspaceSubscriptionTrafficPackageWithUpgrade(
+		db, subID, totalMiB, time.Now().Add(30*24*time.Hour),
+		types.WorkspaceTrafficFromWorkspaceSubscription, fromID, isUpgrade,
+	)
+	if err != nil {
+		t.Fatalf("AddWorkspaceSubscriptionTrafficPackageWithUpgrade() error = %v", err)
+	}
+	return granted
 }
 
 func TestUpgradeAIQuotaPackageSemantics(t *testing.T) {
@@ -204,6 +230,51 @@ func TestUpgradeAIQuotaPackageSemantics(t *testing.T) {
 			)
 		}
 	})
+
+	// A later replay of an older upgrade must not expire the current package.
+	t.Run("replay of older upgrade does not expire later package", func(t *testing.T) {
+		sub := seedWorkspaceSubscription(t, db)
+		fromA := uuid.NewString()
+		fromB := uuid.NewString()
+		grantAIQuota(t, db, sub.ID, 1_000_000, fromA, true)
+		grantAIQuota(t, db, sub.ID, 20_000_000, fromB, true)
+		grantAIQuota(t, db, sub.ID, 1_000_000, fromA, true)
+
+		pkgs := activeAIQuotaPackages(t, db, sub.ID)
+		if len(pkgs) != 1 {
+			t.Fatalf("want exactly 1 active package after replaying older upgrade, got %d", len(pkgs))
+		}
+		if pkgs[0].FromID != fromB || pkgs[0].Total != 20_000_000 {
+			t.Fatalf(
+				"replay of older upgrade expired the later package: from_id=%s total=%d",
+				pkgs[0].FromID,
+				pkgs[0].Total,
+			)
+		}
+	})
+
+	// A zero-quota upgrade still needs a durable idempotency marker. Without
+	// one, replaying it after a later positive grant expires that later grant.
+	t.Run("replay of zero quota upgrade does not expire later package", func(t *testing.T) {
+		sub := seedWorkspaceSubscription(t, db)
+		fromA := uuid.NewString()
+		fromB := uuid.NewString()
+		grantAIQuota(t, db, sub.ID, 0, fromA, true)
+		grantAIQuota(t, db, sub.ID, 20_000_000, fromB, true)
+		grantAIQuota(t, db, sub.ID, 0, fromA, true)
+
+		pkgs := activeAIQuotaPackages(t, db, sub.ID)
+		if len(pkgs) != 1 {
+			t.Fatalf("want exactly 1 active package after replaying zero-quota upgrade, got %d", len(pkgs))
+		}
+		if pkgs[0].FromID != fromB || pkgs[0].Total != 20_000_000 {
+			t.Fatalf(
+				"replay of zero-quota upgrade expired the later package: from_id=%s total=%d",
+				pkgs[0].FromID,
+				pkgs[0].Total,
+			)
+		}
+	})
 }
 
 // concurrentGrants runs grant in parallel transactions, modeling concurrent
@@ -267,12 +338,7 @@ func TestConcurrentReplayGrantsSinglePackage(t *testing.T) {
 		grantConcurrently(t, seedWorkspaceSubscription(t, db))
 	})
 
-	t.Run("traffic without unique index", func(t *testing.T) {
-		err := db.Exec("DROP INDEX IF EXISTS uniq_workspace_traffic_from_id").Error
-		if err != nil {
-			t.Fatalf("failed to drop unique index: %v", err)
-		}
-		sub := seedWorkspaceSubscription(t, db)
+	grantTrafficConcurrently := func(t *testing.T, sub *types.WorkspaceSubscription) {
 		fromID := uuid.NewString()
 		concurrentGrants(t, db, func(tx *gorm.DB) error {
 			return AddWorkspaceSubscriptionTrafficPackage(
@@ -280,14 +346,221 @@ func TestConcurrentReplayGrantsSinglePackage(t *testing.T) {
 				types.WorkspaceTrafficFromWorkspaceSubscription, fromID,
 			)
 		})
-		var pkgs []types.WorkspaceTraffic
-		err = db.Where("workspace_subscription_id = ? AND status = ?",
-			sub.ID, types.WorkspaceTrafficStatusActive).Find(&pkgs).Error
-		if err != nil {
-			t.Fatalf("failed to list traffic packages: %v", err)
-		}
+		pkgs := activeTrafficPackages(t, db, sub.ID)
 		if len(pkgs) != 1 {
 			t.Fatalf("want exactly 1 active traffic package after concurrent replay, got %d", len(pkgs))
 		}
+	}
+
+	t.Run("traffic with unique index", func(t *testing.T) {
+		grantTrafficConcurrently(t, seedWorkspaceSubscription(t, db))
 	})
+
+	t.Run("traffic without unique index", func(t *testing.T) {
+		err := db.Exec("DROP INDEX IF EXISTS uniq_workspace_traffic_from_id").Error
+		if err != nil {
+			t.Fatalf("failed to drop unique index: %v", err)
+		}
+		grantTrafficConcurrently(t, seedWorkspaceSubscription(t, db))
+	})
+}
+
+func TestUpgradeTrafficPackageSemantics(t *testing.T) {
+	db := setupWorkspacePackageTestDB(t)
+
+	t.Run("upgrade grants full traffic", func(t *testing.T) {
+		sub := seedWorkspaceSubscription(t, db)
+		grantTraffic(t, db, sub.ID, 1_024, uuid.NewString(), false)
+		grantTraffic(t, db, sub.ID, 10_240, uuid.NewString(), true)
+
+		pkgs := activeTrafficPackages(t, db, sub.ID)
+		if len(pkgs) != 1 {
+			t.Fatalf("want exactly 1 active package after upgrade, got %d", len(pkgs))
+		}
+		wantBytes := int64(10_240) * 1024 * 1024
+		if pkgs[0].TotalBytes != wantBytes {
+			t.Fatalf("want full new plan traffic %d, got %d", wantBytes, pkgs[0].TotalBytes)
+		}
+	})
+
+	t.Run("replay is idempotent", func(t *testing.T) {
+		sub := seedWorkspaceSubscription(t, db)
+		fromID := uuid.NewString()
+		grantTraffic(t, db, sub.ID, 1_024, uuid.NewString(), false)
+		if !grantTraffic(t, db, sub.ID, 10_240, fromID, true) {
+			t.Fatal("first delivery should report a new traffic grant")
+		}
+		if grantTraffic(t, db, sub.ID, 10_240, fromID, true) {
+			t.Fatal("replay should not report a new traffic grant")
+		}
+
+		pkgs := activeTrafficPackages(t, db, sub.ID)
+		if len(pkgs) != 1 {
+			t.Fatalf("want exactly 1 active package after replay, got %d", len(pkgs))
+		}
+		if pkgs[0].FromID != fromID {
+			t.Fatalf("replay corrupted the package: from_id=%s", pkgs[0].FromID)
+		}
+	})
+
+	t.Run("replay of older upgrade does not expire later package", func(t *testing.T) {
+		sub := seedWorkspaceSubscription(t, db)
+		fromA := uuid.NewString()
+		fromB := uuid.NewString()
+		grantTraffic(t, db, sub.ID, 1_024, fromA, true)
+		grantTraffic(t, db, sub.ID, 10_240, fromB, true)
+		grantTraffic(t, db, sub.ID, 1_024, fromA, true)
+
+		pkgs := activeTrafficPackages(t, db, sub.ID)
+		if len(pkgs) != 1 {
+			t.Fatalf("want exactly 1 active package after replaying older upgrade, got %d", len(pkgs))
+		}
+		if pkgs[0].FromID != fromB {
+			t.Fatalf("replay of older upgrade expired the later package: from_id=%s", pkgs[0].FromID)
+		}
+	})
+
+	t.Run("zero traffic upgrade expires old package and grants nothing", func(t *testing.T) {
+		sub := seedWorkspaceSubscription(t, db)
+		grantTraffic(t, db, sub.ID, 1_024, uuid.NewString(), false)
+		if grantTraffic(t, db, sub.ID, 0, uuid.NewString(), true) {
+			t.Fatal("zero-traffic upgrade should not report a new traffic grant")
+		}
+
+		pkgs := activeTrafficPackages(t, db, sub.ID)
+		if len(pkgs) != 0 {
+			t.Fatalf("want no active subscription traffic after zero-traffic upgrade, got %d", len(pkgs))
+		}
+	})
+
+	t.Run("replay of zero traffic upgrade does not expire later package", func(t *testing.T) {
+		sub := seedWorkspaceSubscription(t, db)
+		fromA := uuid.NewString()
+		fromB := uuid.NewString()
+		grantTraffic(t, db, sub.ID, 0, fromA, true)
+		grantTraffic(t, db, sub.ID, 10_240, fromB, true)
+		grantTraffic(t, db, sub.ID, 0, fromA, true)
+
+		pkgs := activeTrafficPackages(t, db, sub.ID)
+		if len(pkgs) != 1 {
+			t.Fatalf("want exactly 1 active package after replaying zero-traffic upgrade, got %d", len(pkgs))
+		}
+		if pkgs[0].FromID != fromB {
+			t.Fatalf("replay of zero-traffic upgrade expired the later package: from_id=%s", pkgs[0].FromID)
+		}
+	})
+}
+
+func TestEnsureWorkspacePackageFromIDIndexes(t *testing.T) {
+	db := setupWorkspacePackageTestDB(t)
+
+	t.Run("fresh table has unique indexes", func(t *testing.T) {
+		if !db.Migrator().HasIndex(&types.WorkspaceTraffic{}, "uniq_workspace_traffic_from_id") {
+			t.Fatal("want unique traffic from_id index on a fresh table")
+		}
+		if !db.Migrator().HasIndex(&types.WorkspaceAIQuotaPackage{}, "uniq_workspace_ai_quota_package_from_id") {
+			t.Fatal("want unique AI from_id index on a fresh table")
+		}
+	})
+
+	t.Run("existing table without duplicates gets unique indexes", func(t *testing.T) {
+		if err := db.Exec("DROP INDEX IF EXISTS uniq_workspace_traffic_from_id").Error; err != nil {
+			t.Fatalf("drop traffic unique index: %v", err)
+		}
+		if err := db.Exec("DROP INDEX IF EXISTS uniq_workspace_ai_quota_package_from_id").Error; err != nil {
+			t.Fatalf("drop AI unique index: %v", err)
+		}
+		if err := ensureWorkspacePackageFromIDIndexes(db); err != nil {
+			t.Fatalf("ensureWorkspacePackageFromIDIndexes() error = %v", err)
+		}
+		if !db.Migrator().HasIndex(&types.WorkspaceTraffic{}, "uniq_workspace_traffic_from_id") {
+			t.Fatal("want unique traffic from_id index after ensure")
+		}
+		if !db.Migrator().HasIndex(&types.WorkspaceAIQuotaPackage{}, "uniq_workspace_ai_quota_package_from_id") {
+			t.Fatal("want unique AI from_id index after ensure")
+		}
+	})
+
+	t.Run("duplicates fall back to lookup indexes", func(t *testing.T) {
+		if err := db.Exec("DROP INDEX IF EXISTS uniq_workspace_traffic_from_id").Error; err != nil {
+			t.Fatalf("drop traffic unique index: %v", err)
+		}
+		if err := db.Exec("DROP INDEX IF EXISTS uniq_workspace_ai_quota_package_from_id").Error; err != nil {
+			t.Fatalf("drop AI unique index: %v", err)
+		}
+
+		sub := seedWorkspaceSubscription(t, db)
+		fromID := uuid.NewString()
+		now := time.Now()
+		for range 2 {
+			traffic := types.WorkspaceTraffic{
+				ID:                      uuid.New(),
+				WorkspaceSubscriptionID: sub.ID,
+				Workspace:               sub.Workspace,
+				RegionDomain:            sub.RegionDomain,
+				From:                    types.WorkspaceTrafficFromWorkspaceSubscription,
+				FromID:                  fromID,
+				TotalBytes:              1024,
+				Status:                  types.WorkspaceTrafficStatusActive,
+				ExpiredAt:               now.Add(24 * time.Hour),
+			}
+			if err := db.Create(&traffic).Error; err != nil {
+				t.Fatalf("seed duplicate traffic: %v", err)
+			}
+			ai := types.WorkspaceAIQuotaPackage{
+				ID:                      uuid.New(),
+				WorkspaceSubscriptionID: sub.ID,
+				Workspace:               sub.Workspace,
+				RegionDomain:            sub.RegionDomain,
+				From:                    types.PKGFromWorkspaceSubscription,
+				FromID:                  fromID,
+				Total:                   1000,
+				Status:                  types.PackageStatusActive,
+				ExpiredAt:               now.Add(24 * time.Hour),
+			}
+			if err := db.Create(&ai).Error; err != nil {
+				t.Fatalf("seed duplicate AI quota: %v", err)
+			}
+		}
+
+		if err := ensureWorkspacePackageFromIDIndexes(db); err != nil {
+			t.Fatalf("ensureWorkspacePackageFromIDIndexes() error = %v", err)
+		}
+		if db.Migrator().HasIndex(&types.WorkspaceTraffic{}, "uniq_workspace_traffic_from_id") {
+			t.Fatal("unique traffic index should not exist when from_id has duplicates")
+		}
+		if !db.Migrator().HasIndex(&types.WorkspaceTraffic{}, "idx_workspace_traffic_from_id") {
+			t.Fatal("want traffic lookup index after duplicate fallback")
+		}
+		if db.Migrator().HasIndex(&types.WorkspaceAIQuotaPackage{}, "uniq_workspace_ai_quota_package_from_id") {
+			t.Fatal("unique AI index should not exist when from_id has duplicates")
+		}
+		if !db.Migrator().HasIndex(&types.WorkspaceAIQuotaPackage{}, "idx_workspace_ai_quota_package_from_id") {
+			t.Fatal("want AI lookup index after duplicate fallback")
+		}
+	})
+}
+
+type testSQLStateError string
+
+func (e testSQLStateError) Error() string {
+	return string(e)
+}
+
+func (e testSQLStateError) SQLState() string {
+	return string(e)
+}
+
+func TestIsUniqueViolation(t *testing.T) {
+	// TranslateError is what fires in production: it swaps the driver error for
+	// the sentinel, which carries no SQLState.
+	if !isUniqueViolation(fmt.Errorf("create index: %w", gorm.ErrDuplicatedKey)) {
+		t.Fatal("expected translated duplicate-key error to allow lookup-index fallback")
+	}
+	if !isUniqueViolation(testSQLStateError("23505")) {
+		t.Fatal("expected duplicate-data SQLSTATE to allow lookup-index fallback")
+	}
+	if isUniqueViolation(testSQLStateError("40001")) {
+		t.Fatal("retryable schema error must not allow lookup-index fallback")
+	}
 }

@@ -2802,7 +2802,6 @@ func finalizeWorkspaceSubscriptionSuccess(
 	if workspaceSubscription != nil {
 		workspaceSubscription.PlanName = wsTransaction.NewPlanName
 		workspaceSubscription.PayStatus = types.SubscriptionPayStatusPaid
-		workspaceSubscription.TrafficStatus = types.WorkspaceTrafficStatusActive
 		workspaceSubscription.PayMethod = payment.Method
 	} else {
 		// Create new for initial if not exists
@@ -2869,53 +2868,25 @@ func finalizeWorkspaceSubscriptionSuccess(
 		return fmt.Errorf("failed to get workspace subscription plan: %w", err)
 	}
 
-	// Upgrade semantics: expire the old plan's packages and grant the new plan's
-	// full allowance for the reset billing cycle (labring/sealos-private#108).
-	isUpgrade := wsTransaction.Operator == types.SubscriptionTransactionTypeUpgraded
-
-	if wsTransaction.Operator != types.SubscriptionTransactionTypeDowngraded &&
-		(plan.Traffic > 0 || isUpgrade) {
-		err = helper.AddTrafficPackageWithUpgrade(
-			tx,
-			dao.K8sManager.GetClient(),
-			workspaceSubscription,
-			plan,
-			workspaceSubscription.CurrentPeriodEndAt,
-			types.WorkspaceTrafficFromWorkspaceSubscription,
-			wsTransaction.ID.String(),
-			isUpgrade,
-		)
-		if err != nil {
-			return fmt.Errorf("failed to add traffic package: %w", err)
-		}
-	}
-
-	if wsTransaction.Operator != types.SubscriptionTransactionTypeDowngraded &&
-		(plan.AIQuota > 0 || isUpgrade) {
-		err = cockroach.AddWorkspaceSubscriptionAIQuotaPackageWithUpgrade(
-			tx,
-			workspaceSubscription.ID,
-			plan.AIQuota,
-			workspaceSubscription.CurrentPeriodEndAt,
-			types.PKGFromWorkspaceSubscription,
-			wsTransaction.ID.String(),
-			isUpgrade,
-		)
-		if err != nil {
-			return fmt.Errorf("failed to add AI quota package: %w", err)
-		}
-	}
-
-	if err := updateWorkspaceSubscriptionNamespaceStatus(
-		workspaceSubscription.Workspace,
+	if err := grantSubscriptionPackages(
+		tx,
+		wsTransaction.Operator,
+		plan,
+		workspaceSubscription,
+		wsTransaction.ID.String(),
 	); err != nil {
+		return err
+	}
+
+	if err := updateWorkspaceSubscriptionNamespaceStatus(workspaceSubscription.Workspace); err != nil {
 		// dao.Logger.Errorf("Failed to update workspace subscription namespace annotation: %v", err)
 		return fmt.Errorf("failed to update workspace subscription namespace annotation: %w", err)
 	}
 	return nil
 }
 
-// updateWorkspaceSubscriptionNamespaceStatus updates the workspace subscription status annotation on namespace
+// updateWorkspaceSubscriptionNamespaceStatus updates subscription and debt
+// annotations. Traffic grants own the separate network-resume side effect.
 func updateWorkspaceSubscriptionNamespaceStatus(workspace string) error {
 	ctx := context.Background()
 
@@ -2936,20 +2907,11 @@ func updateWorkspaceSubscriptionNamespaceStatus(workspace string) error {
 			return fmt.Errorf("failed to get namespace %s: %w", workspace, err)
 		}
 
-		// Initialize annotations if needed
-		if ns.Annotations == nil {
-			ns.Annotations = make(map[string]string)
-		}
-
-		// Check if the annotation already matches the desired status
 		if ns.Status.Phase == corev1.NamespaceTerminating {
 			return nil
 		}
 		original := ns.DeepCopy()
-		// Update the annotation
-		ns.Annotations[types.WorkspaceSubscriptionStatusAnnoKey] = types.NormalDebtNamespaceAnnoStatus
-		ns.Annotations[DebtNamespaceAnnoStatusKey] = ResumeDebtNamespaceAnnoStatus
-		ns.Annotations[NetworkStatusAnnoKey] = ResumeDebtNamespaceAnnoStatus
+		applyWorkspaceSubscriptionNamespaceStatus(ns)
 		if err := dao.K8sManager.GetClient().
 			Patch(ctx, ns, client.MergeFrom(original)); err != nil {
 			return fmt.Errorf("patch namespace annotation failed: %w", err)
@@ -2965,6 +2927,14 @@ func updateWorkspaceSubscriptionNamespaceStatus(workspace string) error {
 		)
 		return nil
 	})
+}
+
+func applyWorkspaceSubscriptionNamespaceStatus(ns *corev1.Namespace) {
+	if ns.Annotations == nil {
+		ns.Annotations = make(map[string]string)
+	}
+	ns.Annotations[types.WorkspaceSubscriptionStatusAnnoKey] = types.NormalDebtNamespaceAnnoStatus
+	ns.Annotations[DebtNamespaceAnnoStatusKey] = ResumeDebtNamespaceAnnoStatus
 }
 
 // renewalFailureMetadata holds parsed metadata from invoice/subscription
@@ -4471,7 +4441,6 @@ func createOrUpdateWorkspaceSubscription(
 	if existingSubscription != nil {
 		workspaceSubscription = existingSubscription
 		workspaceSubscription.PayStatus = types.SubscriptionPayStatusNoNeed
-		workspaceSubscription.TrafficStatus = types.WorkspaceTrafficStatusActive
 		workspaceSubscription.Status = types.SubscriptionStatusNormal
 		workspaceSubscription.PayMethod = types.PaymentMethodBalance // Admin operations use balance payment
 
@@ -4567,45 +4536,53 @@ func addTrafficAndAIPackages(
 	}
 
 	// For upgrade/downgrade/create operations, add packages immediately
-	// Upgrade semantics: expire the old plan's packages and grant the new plan's
-	// full allowance for the reset billing cycle (labring/sealos-private#108).
-	isUpgrade := req.Operator == types.SubscriptionTransactionTypeUpgraded
+	return grantSubscriptionPackages(
+		tx,
+		req.Operator,
+		plan,
+		workspaceSubscription,
+		transactionID,
+	)
+}
 
-	// Add traffic package
-	if req.Operator != types.SubscriptionTransactionTypeDowngraded &&
-		(plan.Traffic > 0 || isUpgrade) {
-		err := helper.AddTrafficPackageWithUpgrade(
-			tx,
-			dao.K8sManager.GetClient(),
-			workspaceSubscription,
-			plan,
-			workspaceSubscription.CurrentPeriodEndAt,
-			types.WorkspaceTrafficFromWorkspaceSubscription,
-			transactionID,
-			isUpgrade,
-		)
-		if err != nil {
-			return fmt.Errorf("failed to add traffic package: %w", err)
-		}
+// grantSubscriptionPackages grants the plan's traffic and AI quota for one
+// subscription transaction. A downgrade grants nothing; an upgrade expires the
+// old plan's packages and grants the new plan's full allowance for the reset
+// billing cycle (labring/sealos-private#108).
+func grantSubscriptionPackages(
+	tx *gorm.DB,
+	operator types.SubscriptionOperator,
+	plan *types.WorkspaceSubscriptionPlan,
+	workspaceSubscription *types.WorkspaceSubscription,
+	transactionID string,
+) error {
+	if operator == types.SubscriptionTransactionTypeDowngraded {
+		return nil
 	}
-
-	// Add AI quota package
-	if req.Operator != types.SubscriptionTransactionTypeDowngraded &&
-		(plan.AIQuota > 0 || isUpgrade) {
-		err := cockroach.AddWorkspaceSubscriptionAIQuotaPackageWithUpgrade(
-			tx,
-			workspaceSubscription.ID,
-			plan.AIQuota,
-			workspaceSubscription.CurrentPeriodEndAt,
-			types.PKGFromWorkspaceSubscription,
-			transactionID,
-			isUpgrade,
-		)
-		if err != nil {
-			return fmt.Errorf("failed to add AI quota package: %w", err)
-		}
+	isUpgrade := operator == types.SubscriptionTransactionTypeUpgraded
+	if err := helper.AddTrafficPackageWithUpgrade(
+		tx,
+		dao.K8sManager.GetClient(),
+		workspaceSubscription,
+		plan,
+		workspaceSubscription.CurrentPeriodEndAt,
+		types.WorkspaceTrafficFromWorkspaceSubscription,
+		transactionID,
+		isUpgrade,
+	); err != nil {
+		return fmt.Errorf("failed to add traffic package: %w", err)
 	}
-
+	if err := cockroach.AddWorkspaceSubscriptionAIQuotaPackageWithUpgrade(
+		tx,
+		workspaceSubscription.ID,
+		plan.AIQuota,
+		workspaceSubscription.CurrentPeriodEndAt,
+		types.PKGFromWorkspaceSubscription,
+		transactionID,
+		isUpgrade,
+	); err != nil {
+		return fmt.Errorf("failed to add AI quota package: %w", err)
+	}
 	return nil
 }
 

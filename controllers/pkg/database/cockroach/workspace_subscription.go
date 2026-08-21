@@ -155,53 +155,74 @@ func AddWorkspaceSubscriptionTrafficPackage(
 	from types.WorkspaceTrafficFrom,
 	fromID string,
 ) error {
-	totalBytes := totalMiB * 1024 * 1024 // Convert MiB to Bytes
-	// Lock the subscription row so concurrent grants for the same subscription
-	// (e.g. replayed Stripe webhooks) serialize: the second transaction blocks
-	// here until the first commits, then its dedup check sees the created row.
-	// Callers run inside a transaction, which the lock requires to be effective.
-	var subscription types.WorkspaceSubscription
-	err := globalDB.Clauses(clause.Locking{Strength: "UPDATE"}).
-		Where(&types.WorkspaceSubscription{ID: subscriptionID}).
-		Find(&subscription).
-		Error
-	if err != nil {
-		return fmt.Errorf("failed to get workspace subscription: %w", err)
-	}
-	// Create new traffic package
-	trafficPackage := types.WorkspaceTraffic{
-		ID:                      uuid.New(),
-		WorkspaceSubscriptionID: subscriptionID,
-		Workspace:               subscription.Workspace,
-		RegionDomain:            subscription.RegionDomain,
-		From:                    from,
-		FromID:                  fromID,
-		TotalBytes:              totalBytes,
-		UsedBytes:               0,
-		ExpiredAt:               expireAt,
-		Status:                  types.WorkspaceTrafficStatusActive,
-		CreatedAt:               time.Now(),
-		UpdatedAt:               time.Now(),
-	}
-	// Look up by from_id explicitly: FirstOrCreate on a struct with a preset
-	// primary key adds that key to the query and never finds the existing row.
-	var existingCount int64
-	err = globalDB.Model(&types.WorkspaceTraffic{}).
-		Where("from_id = ?", fromID).
-		Count(&existingCount).Error
-	if err != nil {
-		return fmt.Errorf("failed to check existing traffic package: %w", err)
-	}
-	if existingCount == 0 {
-		// ON CONFLICT DO NOTHING backstops the dedup where the from_id unique
-		// index exists; it is a no-op (and still valid SQL) on tables that
-		// predate the index, where the subscription row lock alone serializes.
-		if err := globalDB.Clauses(clause.OnConflict{DoNothing: true}).
-			Create(&trafficPackage).Error; err != nil {
-			return fmt.Errorf("failed to create traffic package: %w", err)
-		}
-	}
-	return nil
+	_, err := AddWorkspaceSubscriptionTrafficPackageWithUpgrade(
+		globalDB,
+		subscriptionID,
+		totalMiB,
+		expireAt,
+		from,
+		fromID,
+		false,
+	)
+	return err
+}
+
+// AddWorkspaceSubscriptionTrafficPackageWithUpgrade adds a traffic package with upgrade support.
+// On upgrade the old plan's packages are expired and the new plan's full traffic is granted,
+// so the workspace always holds the new plan's allowance for the reset billing cycle
+// (labring/sealos-private#108).
+//
+// It reports whether a package carrying usable traffic was inserted; see
+// grantSubscriptionPackage.
+func AddWorkspaceSubscriptionTrafficPackageWithUpgrade(
+	globalDB *gorm.DB,
+	subscriptionID uuid.UUID,
+	totalMiB int64,
+	expireAt time.Time,
+	from types.WorkspaceTrafficFrom,
+	fromID string,
+	isUpgrade bool,
+) (bool, error) {
+	return grantSubscriptionPackage(
+		globalDB,
+		subscriptionID,
+		totalMiB,
+		expireAt,
+		fromID,
+		isUpgrade,
+		packageGrantSpec{
+			name:          "traffic",
+			model:         &types.WorkspaceTraffic{},
+			activeStatus:  types.WorkspaceTrafficStatusActive,
+			expiredStatus: types.WorkspaceTrafficStatusExpired,
+			planFrom:      types.WorkspaceTrafficFromWorkspaceSubscription,
+			newRow: func(
+				sub types.WorkspaceSubscription,
+				totalMiB int64,
+				expired bool,
+				expireAt time.Time,
+			) any {
+				status := types.WorkspaceTrafficStatusActive
+				if expired {
+					status = types.WorkspaceTrafficStatusExpired
+				}
+				now := time.Now()
+				return &types.WorkspaceTraffic{
+					ID:                      uuid.New(),
+					WorkspaceSubscriptionID: subscriptionID,
+					Workspace:               sub.Workspace,
+					RegionDomain:            sub.RegionDomain,
+					From:                    from,
+					FromID:                  fromID,
+					TotalBytes:              totalMiB * 1024 * 1024, // Convert MiB to Bytes
+					ExpiredAt:               expireAt,
+					Status:                  status,
+					CreatedAt:               now,
+					UpdatedAt:               now,
+				}
+			},
+		},
+	)
 }
 
 func AddWorkspaceSubscriptionAIQuotaPackage(
@@ -223,9 +244,10 @@ func AddWorkspaceSubscriptionAIQuotaPackage(
 	)
 }
 
-// AddWorkspaceSubscriptionAIQuotaPackageWithUpgrade adds AI quota package with upgrade support.
-// On upgrade the old plan's packages are expired and the new plan's full quota is granted,
-// so the workspace always holds the new plan's allowance for the reset billing cycle.
+// AddWorkspaceSubscriptionAIQuotaPackageWithUpgrade adds an AI quota package with
+// upgrade support; see AddWorkspaceSubscriptionTrafficPackageWithUpgrade for the
+// upgrade semantics. AI quota has no side effect gated on a fresh grant, so the
+// caller is not told whether one happened.
 func AddWorkspaceSubscriptionAIQuotaPackageWithUpgrade(
 	globalDB *gorm.DB,
 	subscriptionID uuid.UUID,
@@ -235,88 +257,153 @@ func AddWorkspaceSubscriptionAIQuotaPackageWithUpgrade(
 	fromID string,
 	isUpgrade bool,
 ) error {
-	// Lock the subscription row before any package mutation so concurrent
-	// grants for the same subscription (e.g. replayed Stripe webhooks)
-	// serialize: the second transaction blocks here until the first commits,
-	// then its dedup check sees the created row and the expiry query sees the
-	// rotated packages. Callers run inside a transaction, which the lock
-	// requires to be effective.
+	_, err := grantSubscriptionPackage(
+		globalDB,
+		subscriptionID,
+		aiQuota,
+		expireAt,
+		fromID,
+		isUpgrade,
+		packageGrantSpec{
+			name:          "AI quota",
+			model:         &types.WorkspaceAIQuotaPackage{},
+			activeStatus:  types.PackageStatusActive,
+			expiredStatus: types.PackageStatusExpired,
+			planFrom:      types.PKGFromWorkspaceSubscription,
+			newRow: func(
+				sub types.WorkspaceSubscription,
+				aiQuota int64,
+				expired bool,
+				expireAt time.Time,
+			) any {
+				status := types.PackageStatusActive
+				if expired {
+					status = types.PackageStatusExpired
+				}
+				now := time.Now()
+				return &types.WorkspaceAIQuotaPackage{
+					ID:                      uuid.New(),
+					WorkspaceSubscriptionID: subscriptionID,
+					Workspace:               sub.Workspace,
+					RegionDomain:            sub.RegionDomain,
+					From:                    from,
+					FromID:                  fromID,
+					Total:                   aiQuota,
+					Status:                  status,
+					ExpiredAt:               expireAt,
+					CreatedAt:               now,
+					UpdatedAt:               now,
+				}
+			},
+		},
+	)
+	return err
+}
+
+// packageGrantSpec describes one subscription-package table. The traffic and AI
+// quota grants run the same algorithm and differ only in the row type, the
+// status constants, and the "from" value that marks a plan-granted package.
+type packageGrantSpec struct {
+	// name labels the package in error messages.
+	name string
+	// model is an empty row of the package type, used to scope queries.
+	model any
+	// activeStatus and expiredStatus are the table's status constants.
+	activeStatus, expiredStatus any
+	// planFrom marks plan-granted packages, the only ones an upgrade rotates.
+	planFrom any
+	// newRow builds the row to insert. total is the caller's allowance in the
+	// table's own unit; expired marks a zero-allowance marker row.
+	newRow func(sub types.WorkspaceSubscription, total int64, expired bool, expireAt time.Time) any
+}
+
+// grantSubscriptionPackage locks the subscription, dedups on fromID, rotates the
+// old plan's packages on upgrade, and inserts the new package row.
+//
+// The lock serializes concurrent grants for the same subscription (e.g. replayed
+// Stripe webhooks): the second transaction blocks until the first commits, so its
+// dedup check sees the created row and its expiry query sees the rotated packages.
+// Callers must run inside a transaction for the lock to be effective.
+//
+// It reports whether a package carrying a usable allowance was inserted, which is
+// false both for a replay and for a zero-allowance upgrade.
+func grantSubscriptionPackage(
+	globalDB *gorm.DB,
+	subscriptionID uuid.UUID,
+	total int64,
+	expireAt time.Time,
+	fromID string,
+	isUpgrade bool,
+	spec packageGrantSpec,
+) (bool, error) {
 	var subscription types.WorkspaceSubscription
 	err := globalDB.Clauses(clause.Locking{Strength: "UPDATE"}).
 		Where(&types.WorkspaceSubscription{ID: subscriptionID}).
 		Find(&subscription).
 		Error
 	if err != nil {
-		return fmt.Errorf("failed to get workspace subscription: %w", err)
+		return false, fmt.Errorf("failed to get workspace subscription: %w", err)
 	}
-
-	// Expire before the aiQuota guard: an upgrade must retire the old plan's
-	// packages even when the new plan grants no AI quota.
-	if isUpgrade {
-		err := expireOldAIQuotaPackages(globalDB, subscriptionID, fromID)
-		if err != nil {
-			return fmt.Errorf("failed to expire old AI quota packages: %w", err)
-		}
-	}
-	if aiQuota <= 0 {
-		return nil
-	}
-	// Create new AI quota package
-	aiQuotaPackage := types.WorkspaceAIQuotaPackage{
-		ID:                      uuid.New(),
-		WorkspaceSubscriptionID: subscriptionID,
-		Workspace:               subscription.Workspace,
-		RegionDomain:            subscription.RegionDomain,
-		From:                    from,
-		FromID:                  fromID,
-		Total:                   aiQuota,
-		Usage:                   0,
-		Status:                  types.PackageStatusActive,
-		ExpiredAt:               expireAt,
-		CreatedAt:               time.Now(),
-		UpdatedAt:               time.Now(),
-	}
-	// Look up by from_id explicitly: FirstOrCreate on a struct with a preset
-	// primary key adds that key to the query and never finds the existing row.
+	// Dedup on from_id before expiry. A later replay of an older transaction
+	// (A, then B, then replay A) must not expire B's package.
 	var existingCount int64
-	err = globalDB.Model(&types.WorkspaceAIQuotaPackage{}).
+	err = globalDB.Model(spec.model).
 		Where("from_id = ?", fromID).
 		Count(&existingCount).Error
 	if err != nil {
-		return fmt.Errorf("failed to check existing AI quota package: %w", err)
+		return false, fmt.Errorf("failed to check existing %s package: %w", spec.name, err)
 	}
-	if existingCount == 0 {
-		// ON CONFLICT DO NOTHING backstops the dedup where the from_id unique
-		// index exists; it is a no-op (and still valid SQL) on tables that
-		// predate the index, where the subscription row lock alone serializes.
-		if err := globalDB.Clauses(clause.OnConflict{DoNothing: true}).
-			Create(&aiQuotaPackage).Error; err != nil {
-			return fmt.Errorf("failed to create AI quota package: %w", err)
+	if existingCount > 0 {
+		return false, nil
+	}
+
+	// Expire before the allowance guard below: an upgrade must retire the old
+	// plan's packages even when the new plan grants nothing.
+	if isUpgrade {
+		if err := expireOldPlanPackages(globalDB, subscriptionID, fromID, spec); err != nil {
+			return false, fmt.Errorf("failed to expire old %s packages: %w", spec.name, err)
 		}
 	}
-	return nil
+
+	// A zero-allowance upgrade still writes an expired marker. The marker keeps
+	// from_id durable, so replaying this transaction cannot expire a package
+	// granted by a later transaction.
+	expired := false
+	if total <= 0 {
+		if !isUpgrade {
+			return false, nil
+		}
+		total, expired, expireAt = 0, true, time.Now()
+	}
+	// ON CONFLICT DO NOTHING backstops the dedup where the from_id unique
+	// index exists; it is a no-op (and still valid SQL) on tables that
+	// predate the index, where the subscription row lock alone serializes.
+	result := globalDB.Clauses(clause.OnConflict{DoNothing: true}).
+		Create(spec.newRow(subscription, total, expired, expireAt))
+	if result.Error != nil {
+		return false, fmt.Errorf("failed to create %s package: %w", spec.name, result.Error)
+	}
+	return !expired && result.RowsAffected > 0, nil
 }
 
-// expireOldAIQuotaPackages expires existing AI quota packages from old subscription plan
-func expireOldAIQuotaPackages(globalDB *gorm.DB, subscriptionID uuid.UUID, newFromID string) error {
+// expireOldPlanPackages retires the packages the old plan granted. Packages from
+// other sources (purchased or promotional) must survive, and excluding newFromID
+// keeps a replayed transaction from expiring the package it created.
+func expireOldPlanPackages(
+	globalDB *gorm.DB,
+	subscriptionID uuid.UUID,
+	newFromID string,
+	spec packageGrantSpec,
+) error {
 	now := time.Now()
-
-	// Only plan-granted packages are rotated on upgrade; packages from other
-	// sources (purchased or promotional) must survive.
-	// Exclude newFromID so a replayed transaction cannot expire the package it created.
-	err := globalDB.Model(&types.WorkspaceAIQuotaPackage{}).
+	return globalDB.Model(spec.model).
 		Where(`workspace_subscription_id = ? AND status = ? AND "from" = ? AND from_id <> ?`,
-			subscriptionID, types.PackageStatusActive, types.PKGFromWorkspaceSubscription, newFromID).
+			subscriptionID, spec.activeStatus, spec.planFrom, newFromID).
 		Updates(map[string]any{
-			"status":     types.PackageStatusExpired,
+			"status":     spec.expiredStatus,
 			"expired_at": now,
 			"updated_at": now,
 		}).Error
-	if err != nil {
-		return fmt.Errorf("failed to expire old AI quota packages: %w", err)
-	}
-
-	return nil
 }
 
 func (c *Cockroach) SetWorkspaceSubscriptionPlanList(

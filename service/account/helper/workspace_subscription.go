@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	"github.com/google/uuid"
 	"github.com/labring/sealos/controllers/pkg/database/cockroach"
 	"github.com/labring/sealos/controllers/pkg/types"
 	"github.com/sirupsen/logrus"
@@ -40,9 +39,10 @@ func AddTrafficPackage(
 	)
 }
 
-// AddTrafficPackageWithUpgrade adds traffic package with upgrade support.
-// On upgrade the old plan's packages are expired and the new plan's full traffic is granted,
-// so the workspace always holds the new plan's allowance for the reset billing cycle.
+// AddTrafficPackageWithUpgrade grants the plan's traffic and, when the grant
+// hands the workspace usable traffic, resumes its network. See
+// cockroach.AddWorkspaceSubscriptionTrafficPackageWithUpgrade for the upgrade
+// semantics.
 func AddTrafficPackageWithUpgrade(
 	globalDB *gorm.DB,
 	client client.Client,
@@ -59,33 +59,31 @@ func AddTrafficPackageWithUpgrade(
 		plan.Name,
 		isUpgrade,
 	)
-	// Expire before the traffic guard: an upgrade must retire the old plan's
-	// packages even when the new plan grants no traffic.
-	if isUpgrade {
-		err := expireOldTrafficPackages(globalDB, sub.ID, fromID)
-		if err != nil {
-			return fmt.Errorf("failed to expire old traffic packages: %w", err)
-		}
+	// The grant function owns the whole rule, including whether a zero-traffic
+	// plan writes anything: dedup and expiry run there under the subscription
+	// row lock, so a replay of an older transaction cannot expire a later grant.
+	granted, err := cockroach.AddWorkspaceSubscriptionTrafficPackageWithUpgrade(
+		globalDB,
+		sub.ID,
+		plan.Traffic,
+		expireAt,
+		from,
+		fromID,
+		isUpgrade,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create traffic package: %w", err)
 	}
-
-	if plan.Traffic > 0 {
-		err := cockroach.AddWorkspaceSubscriptionTrafficPackage(
-			globalDB,
-			sub.ID,
-			plan.Traffic,
-			expireAt,
-			from,
-			fromID,
-		)
-		if err != nil {
-			return fmt.Errorf("failed to create traffic package: %w", err)
-		}
+	// A zero-traffic upgrade and a replay grant no new allowance. Neither may
+	// mark an exhausted workspace active or reopen its network.
+	if !granted {
+		return nil
 	}
 	// Check if workspace was previously exhausted and needs to be resumed
 	if sub.TrafficStatus == types.WorkspaceTrafficStatusUsedUp ||
 		sub.TrafficStatus == types.WorkspaceTrafficStatusExhausted {
 		// Update workspace status to available
-		err := globalDB.Model(&types.WorkspaceSubscription{}).
+		err = globalDB.Model(&types.WorkspaceSubscription{}).
 			Where("id = ?", sub.ID).
 			Update("traffic_status", types.WorkspaceTrafficStatusActive).Error
 		if err != nil {
@@ -93,33 +91,11 @@ func AddTrafficPackageWithUpgrade(
 		}
 		// Send resume request (outside transaction)
 	}
-	err := resumeWorkspaceTraffic(client, sub.Workspace)
+	err = resumeWorkspaceTraffic(client, sub.Workspace)
 	if err != nil {
 		return fmt.Errorf("failed to resume workspace traffic: %w", err)
 		// Note: We don't rollback here as the traffic package was successfully added
 	}
-	return nil
-}
-
-// expireOldTrafficPackages expires existing traffic packages from old subscription plan
-func expireOldTrafficPackages(globalDB *gorm.DB, subscriptionID uuid.UUID, newFromID string) error {
-	now := time.Now()
-
-	// Only plan-granted packages are rotated on upgrade; packages from other
-	// sources (purchased or promotional) must survive.
-	// Exclude newFromID so a replayed transaction cannot expire the package it created.
-	err := globalDB.Debug().Model(&types.WorkspaceTraffic{}).
-		Where(`workspace_subscription_id = ? AND status = ? AND "from" = ? AND from_id <> ?`,
-			subscriptionID, types.WorkspaceTrafficStatusActive, types.WorkspaceTrafficFromWorkspaceSubscription, newFromID).
-		Updates(map[string]any{
-			"status":     types.WorkspaceTrafficStatusExpired,
-			"expired_at": now,
-			"updated_at": now,
-		}).Error
-	if err != nil {
-		return fmt.Errorf("failed to expire old traffic packages: %w", err)
-	}
-
 	return nil
 }
 

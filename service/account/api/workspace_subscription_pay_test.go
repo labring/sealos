@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/controllers/pkg/types"
 	"github.com/labring/sealos/service/account/helper"
+	corev1 "k8s.io/api/core/v1"
 )
 
 func TestParseWorkspaceSubscriptionPayReqRejectsInvalidPayApp(t *testing.T) {
@@ -66,5 +67,43 @@ func TestSamePendingWorkspaceSubscriptionRequestIncludesPayApp(t *testing.T) {
 	lastTransaction.PayApp = ""
 	if !samePendingWorkspaceSubscriptionRequest(lastTransaction, &omittedReq) {
 		t.Fatal("expected an omitted payApp to match a legacy pending request")
+	}
+}
+
+func TestAdminUpgradePreservesExhaustedTrafficUntilGrant(t *testing.T) {
+	existing := &types.WorkspaceSubscription{
+		PlanName:      "starter",
+		TrafficStatus: types.WorkspaceTrafficStatusExhausted,
+	}
+	req := &helper.AdminWorkspaceSubscriptionAddReq{
+		PlanName: "zero-traffic",
+		Period:   types.SubscriptionPeriodMonthly,
+		Operator: types.SubscriptionTransactionTypeUpgraded,
+	}
+
+	updated, err := createOrUpdateWorkspaceSubscription(req, existing)
+	if err != nil {
+		t.Fatalf("createOrUpdateWorkspaceSubscription() error = %v", err)
+	}
+	if updated.TrafficStatus != types.WorkspaceTrafficStatusExhausted {
+		t.Fatalf(
+			"upgrade activated traffic before a package was granted: got %s",
+			updated.TrafficStatus,
+		)
+	}
+}
+
+func TestWorkspaceSubscriptionNamespaceStatusDoesNotResumeNetwork(t *testing.T) {
+	ns := &corev1.Namespace{}
+	ns.Annotations = map[string]string{
+		NetworkStatusAnnoKey: SuspendNetworkNamespaceAnnoStatus,
+	}
+
+	applyWorkspaceSubscriptionNamespaceStatus(ns)
+	if got := ns.Annotations[NetworkStatusAnnoKey]; got != SuspendNetworkNamespaceAnnoStatus {
+		t.Fatalf("zero-traffic plan changed network status: got %s", got)
+	}
+	if got := ns.Annotations[types.WorkspaceSubscriptionStatusAnnoKey]; got != types.NormalDebtNamespaceAnnoStatus {
+		t.Fatalf("subscription status annotation was not updated: got %s", got)
 	}
 }

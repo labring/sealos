@@ -15,10 +15,8 @@ type WorkspaceAIQuotaPackage struct {
 	Total int64       `gorm:"type:bigint;not null;default:0"                                                     json:"total_quota"               bson:"total_quota"`
 	Usage int64       `gorm:"type:bigint;not null;default:0"                                                     json:"usage"                     bson:"usage"`
 	From  PackageFrom `gorm:"type:varchar(50)"                                                                   json:"from"                      bson:"from"`
-	// FromID is the granting transaction's ID and is the grant's idempotency key.
-	// The unique index only reaches tables created after its introduction
-	// (CreateTableIfNotExist skips existing tables); pre-existing deployments
-	// rely on the subscription row lock taken by the grant functions.
+	// FromID is the granting transaction's ID and the grant's idempotency key.
+	// See ensureFromIDIndex for how the index reaches pre-existing tables.
 	FromID string `gorm:"type:varchar(50);uniqueIndex:uniq_workspace_ai_quota_package_from_id"              json:"from_id"                   bson:"from_id"`
 	// RemainingQuota float64         `gorm:"type:decimal(15,2);generated:total_quota - usage" json:"remaining_quota" bson:"remaining_quota"`
 	Status                  PackageStatus `gorm:"type:varchar(20);not null;default:'active'"                                         json:"status"                    bson:"status"`
