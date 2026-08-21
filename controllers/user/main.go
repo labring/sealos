@@ -228,12 +228,12 @@ func main() {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
-
 	if err := controllers.SetupLicenseGate(mgr); err != nil {
 		setupLog.Error(err, "unable to set up license gate")
 		os.Exit(1)
 	}
-	if err := controllers.SetupUserCount(mgr); err != nil {
+	userCounter, err := controllers.SetupUserCount(mgr)
+	if err != nil {
 		setupLog.Error(err, "unable to set up user count cache")
 		os.Exit(1)
 	}
@@ -244,6 +244,7 @@ func main() {
 		minRequeueDuration,
 		maxRequeueDuration,
 		restartPredicateDuration,
+		userCounter,
 	); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "User")
 		os.Exit(1)
@@ -252,7 +253,7 @@ func main() {
 	if os.Getenv("DISABLE_WEBHOOKS") == "true" {
 		setupLog.Info("disable all webhooks")
 	} else {
-		if err = (&userv1.User{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = (&userv1.User{}).SetupWebhookWithManager(mgr, userCounter); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "User")
 			os.Exit(1)
 		}
