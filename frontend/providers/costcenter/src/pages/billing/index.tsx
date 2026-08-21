@@ -5,7 +5,7 @@ import { TrendBar as TrendOverviewBar } from '@/components/cost_overview/trendBa
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@sealos/shadcn-ui/tabs';
 import { DateRangePicker } from '@sealos/shadcn-ui/date-range-picker';
 import { useState, useMemo, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQueries, useQuery } from '@tanstack/react-query';
 import { DateRange } from 'react-day-picker';
 import request from '@/service/request';
 import useBillingStore from '@/stores/billing';
@@ -165,35 +165,53 @@ function Billing() {
     enabled: !!currentRegionUid
   });
 
-  // Fetch region-level PAYG consumption for ALL regions and map by region key
-  const { data: allRegionConsumptions } = useQuery({
-    queryKey: ['regionConsumptionAll', regionUids, effectiveStartTime, effectiveEndTime],
-    queryFn: async () => {
-      const results = await Promise.all(
-        (regionUids || []).map(async (uid) => {
-          try {
-            const body = {
-              appType: '',
-              namespace: '',
-              startTime: effectiveStartTime,
-              endTime: effectiveEndTime,
-              regionUid: uid,
-              appName: ''
-            };
-            const resp = await request.post<{ amount: number }>('/api/billing/consumption', body);
-            return { regionKey: uid, amount: resp.data.amount };
-          } catch (e) {
-            return { regionKey: uid, amount: 0 };
-          }
-        })
-      );
-      return results.reduce<Record<string, number>>((acc, cur) => {
-        acc[cur.regionKey] = cur.amount;
-        return acc;
-      }, {});
-    },
-    enabled: (regionUids?.length || 0) > 0
+  // Fetch each region independently so one slow or failed region does not block the others.
+  const regionConsumptionQueries = useQueries({
+    queries: regionUids.map((uid) => ({
+      queryKey: ['regionConsumption', uid, effectiveStartTime, effectiveEndTime],
+      queryFn: async () => {
+        const resp = await request.post<{ amount: number }>('/api/billing/consumption', {
+          appType: '',
+          namespace: '',
+          startTime: effectiveStartTime,
+          endTime: effectiveEndTime,
+          regionUid: uid,
+          appName: ''
+        });
+        return resp.data.amount;
+      },
+      enabled: !!uid,
+      retry: false
+    }))
   });
+
+  const regionConsumptionByUid = useMemo(() => {
+    return regionUids.reduce<
+      Record<string, { amount?: number; status: 'loading' | 'success' | 'error' }>
+    >((acc, uid, index) => {
+      const query = regionConsumptionQueries[index];
+      acc[uid] = query.isError
+        ? { status: 'error' }
+        : query.isLoading
+        ? { status: 'loading' }
+        : { amount: query.data ?? 0, status: 'success' };
+      return acc;
+    }, {});
+  }, [regionUids, regionConsumptionQueries]);
+
+  const failedRegionCount = regions.filter(
+    (region) => regionConsumptionByUid[region.uid]?.status === 'error'
+  ).length;
+  const loadingRegionCount = regions.filter(
+    (region) => regionConsumptionByUid[region.uid]?.status === 'loading'
+  ).length;
+
+  const retryRegionConsumption = (regionUid: string) => {
+    const queryIndex = regionUids.indexOf(regionUid);
+    if (queryIndex !== -1) {
+      void regionConsumptionQueries[queryIndex]?.refetch();
+    }
+  };
 
   const { nodes, totalCost } = useMemo(() => {
     const namespaces = (nsListData?.data || []) as [string, string][];
@@ -219,8 +237,6 @@ function Billing() {
     }, {});
 
     // Build region costs
-    const regionConsumptions: Record<string, number> = allRegionConsumptions || {};
-
     // Map payments to regions using namespace-region association (following OrderList.tsx pattern)
     const regionPayments: Record<string, number> = paymentList.reduce<Record<string, number>>(
       (acc, payment) => {
@@ -239,15 +255,14 @@ function Billing() {
       {}
     );
 
-    const allRegionKeys = Array.from(
-      new Set([...Object.keys(regionConsumptions), ...Object.keys(regionPayments)])
-    );
-    const regionCosts: Record<string, number> = allRegionKeys.reduce((acc, regionKey) => {
-      return {
-        ...acc,
-        [regionKey]: (regionConsumptions[regionKey] || 0) + (regionPayments[regionKey] || 0)
-      };
-    }, {});
+    const regionCosts: Record<string, number> = regions.reduce((acc, region) => {
+      const consumption = regionConsumptionByUid[region.uid];
+      acc[region.uid] =
+        consumption?.status === 'success'
+          ? (consumption.amount || 0) + (regionPayments[region.uid] || 0)
+          : 0;
+      return acc;
+    }, {} as Record<string, number>);
 
     // Compute total amount
     const totalCost = Object.values(regionCosts).reduce((sum, cost) => sum + cost, 0);
@@ -258,7 +273,8 @@ function Billing() {
       name: 'Total Cost',
       cost: totalCost,
       type: 'total',
-      dependsOn: null
+      dependsOn: null,
+      status: failedRegionCount || loadingRegionCount ? 'partial' : 'success'
     };
 
     // Region nodes
@@ -269,7 +285,8 @@ function Billing() {
         name: region.name.en,
         cost: regionCosts[regionId] || 0,
         type: 'region',
-        dependsOn: 'total_cost'
+        dependsOn: 'total_cost',
+        status: regionConsumptionByUid[regionId]?.status || 'loading'
       };
     });
 
@@ -292,7 +309,9 @@ function Billing() {
     regions,
     nsListData,
     allPaymentsData,
-    allRegionConsumptions,
+    regionConsumptionByUid,
+    failedRegionCount,
+    loadingRegionCount,
     workspaceConsumptionData,
     selectedRegion,
     allNamespaces
@@ -437,6 +456,7 @@ function Billing() {
               selectedRegion={selectedRegion}
               selectedWorkspace={selectedWorkspace}
               onRegionSelect={handleRegionSelect}
+              onRegionRetry={retryRegionConsumption}
               onWorkspaceSelect={handleWorkspaceSelect}
             >
               <CostPanel
@@ -447,6 +467,14 @@ function Billing() {
               >
                 {config.features.subscriptionEnabled && (
                   <SubscriptionCostTable data={subscriptionData} />
+                )}
+
+                {(failedRegionCount > 0 || loadingRegionCount > 0) && (
+                  <div className="px-4 text-sm text-amber-700">
+                    {t('common:billing_partial_data', {
+                      count: failedRegionCount + loadingRegionCount
+                    })}
+                  </div>
                 )}
 
                 {selectedRegion && (
