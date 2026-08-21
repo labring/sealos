@@ -30,6 +30,7 @@ func newRegistryCmd(examplePrefix string) *cobra.Command {
 	}
 	examplePrefix = examplePrefix + " registry"
 	cmd.AddCommand(commands.NewRegistryPasswdCmd())
+	cmd.AddCommand(commands.NewRegistryProxyCmd())
 	cmd.AddCommand(sregcmd.NewServeRegistryCommand())
 	cmd.AddCommand(sregcmd.NewRegistryImageSaveCmd(examplePrefix))
 	cmd.AddCommand(sregcmd.NewSyncRegistryCommand(examplePrefix))
