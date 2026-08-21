@@ -16,15 +16,65 @@ package controllers
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"net/http"
 
+	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	"github.com/labring/sealos/controllers/user/pkg/usercount"
+	toolscache "k8s.io/client-go/tools/cache"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-func SetupUserCount(mgr ctrl.Manager) error {
-	logger := ctrl.Log.WithName("user-count")
-	if err := usercount.Init(context.Background(), mgr.GetAPIReader()); err != nil {
-		logger.Error(err, "initial user count init failed")
+type userCountRunnable struct {
+	counter             *usercount.Counter
+	handlerRegistration toolscache.ResourceEventHandlerRegistration
+}
+
+func (r *userCountRunnable) Start(ctx context.Context) error {
+	if !toolscache.WaitForCacheSync(ctx.Done(), r.handlerRegistration.HasSynced) {
+		if ctx.Err() != nil {
+			return nil
+		}
+		return errors.New("user count event handler failed to sync")
 	}
+	r.counter.MarkInitialized()
+	<-ctx.Done()
 	return nil
+}
+
+func (r *userCountRunnable) NeedLeaderElection() bool {
+	return false
+}
+
+func SetupUserCount(mgr ctrl.Manager) (*usercount.Counter, error) {
+	counter := usercount.NewCounter()
+	informer, err := mgr.GetCache().GetInformer(context.Background(), &userv1.User{})
+	if err != nil {
+		return nil, fmt.Errorf("get user informer: %w", err)
+	}
+	registration, err := informer.AddEventHandler(toolscache.ResourceEventHandlerFuncs{
+		AddFunc:    counter.Add,
+		UpdateFunc: counter.Update,
+		DeleteFunc: counter.Delete,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("add user count event handler: %w", err)
+	}
+
+	if err := mgr.Add(&userCountRunnable{
+		counter:             counter,
+		handlerRegistration: registration,
+	}); err != nil {
+		return nil, fmt.Errorf("add user count runnable: %w", err)
+	}
+	if err := mgr.AddReadyzCheck("user-count-cache", func(_ *http.Request) error {
+		if !counter.Initialized() {
+			return errors.New("user count cache is not initialized")
+		}
+		return nil
+	}); err != nil {
+		return nil, fmt.Errorf("add user count readiness check: %w", err)
+	}
+	return counter, nil
 }
