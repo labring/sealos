@@ -468,6 +468,7 @@ func handleSubscriptionUpdate(
 			sub,
 			wsTransaction,
 			&payment,
+			subscriptionPeriodAuthoritative,
 		); err != nil {
 			return err
 		}
@@ -619,6 +620,7 @@ func handleSubscriptionCreateOrRenew(
 			)
 		}
 
+		periodSource := subscriptionPeriodUnspecified
 		if ws != nil {
 			payment.WorkspaceSubscriptionID = &ws.ID
 			if isInitial && ws.Status == types.SubscriptionStatusDeleted {
@@ -646,6 +648,7 @@ func handleSubscriptionCreateOrRenew(
 				UTC().
 				Add(1 * time.Hour)
 			ws.ExpireAt = stripe.Time(ws.CurrentPeriodEndAt)
+			periodSource = subscriptionPeriodAuthoritative
 		}
 
 		if err := finalizeWorkspaceSubscriptionSuccess(
@@ -653,6 +656,7 @@ func handleSubscriptionCreateOrRenew(
 			ws,
 			wsTransaction,
 			&payment,
+			periodSource,
 		); err != nil {
 			return err
 		}

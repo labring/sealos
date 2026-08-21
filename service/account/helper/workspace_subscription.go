@@ -62,7 +62,7 @@ func AddTrafficPackageWithUpgrade(
 	// The grant function owns the whole rule, including whether a zero-traffic
 	// plan writes anything: dedup and expiry run there under the subscription
 	// row lock, so a replay of an older transaction cannot expire a later grant.
-	granted, err := cockroach.AddWorkspaceSubscriptionTrafficPackageWithUpgrade(
+	granted, shouldSuspend, err := cockroach.AddWorkspaceSubscriptionTrafficPackageWithUpgrade(
 		globalDB,
 		sub.ID,
 		plan.Traffic,
@@ -74,8 +74,11 @@ func AddTrafficPackageWithUpgrade(
 	if err != nil {
 		return fmt.Errorf("failed to create traffic package: %w", err)
 	}
-	// A zero-traffic upgrade and a replay grant no new allowance. Neither may
-	// mark an exhausted workspace active or reopen its network.
+	if shouldSuspend {
+		return suspendWorkspaceTrafficAfterZeroAllowance(client, sub)
+	}
+	// A replay or a zero-traffic upgrade with surviving traffic grants no new
+	// allowance here. Neither may reopen the network as if a new grant arrived.
 	if !granted {
 		return nil
 	}
@@ -100,11 +103,31 @@ func AddTrafficPackageWithUpgrade(
 	return nil
 }
 
+func suspendWorkspaceTrafficAfterZeroAllowance(
+	client client.Client,
+	sub *types.WorkspaceSubscription,
+) error {
+	sub.TrafficStatus = types.WorkspaceTrafficStatusUsedUp
+	if err := suspendWorkspaceTraffic(client, sub.Workspace); err != nil {
+		return fmt.Errorf("failed to suspend workspace traffic: %w", err)
+	}
+	return nil
+}
+
 func resumeWorkspaceTraffic(client client.Client, workspace string) error {
 	return updateNamespaceStatus(
 		client,
 		context.Background(),
 		types.NetworkResume,
+		[]string{workspace},
+	)
+}
+
+func suspendWorkspaceTraffic(client client.Client, workspace string) error {
+	return updateNamespaceStatus(
+		client,
+		context.Background(),
+		types.NetworkSuspend,
 		[]string{workspace},
 	)
 }

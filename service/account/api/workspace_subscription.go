@@ -2738,6 +2738,7 @@ func finalizeWorkspaceSubscriptionSuccess(
 	workspaceSubscription *types.WorkspaceSubscription,
 	wsTransaction *types.WorkspaceSubscriptionTransaction,
 	payment *types.Payment,
+	periodSource subscriptionPeriodSource,
 ) error {
 	isFirstUpgrade := workspaceSubscription != nil &&
 		wsTransaction.Operator == types.SubscriptionTransactionTypeUpgraded &&
@@ -2841,6 +2842,7 @@ func finalizeWorkspaceSubscriptionSuccess(
 		wsTransaction.Operator,
 		wsTransaction.Period,
 		isFirstUpgrade,
+		periodSource,
 		time.Now().UTC(),
 	)
 
@@ -2883,11 +2885,19 @@ func finalizeWorkspaceSubscriptionSuccess(
 	return nil
 }
 
+type subscriptionPeriodSource uint8
+
+const (
+	subscriptionPeriodUnspecified subscriptionPeriodSource = iota
+	subscriptionPeriodAuthoritative
+)
+
 func updateWorkspaceSubscriptionPeriodAfterPaymentSuccess(
 	workspaceSubscription *types.WorkspaceSubscription,
 	operator types.SubscriptionOperator,
 	period types.SubscriptionPeriod,
 	isFirstUpgrade bool,
+	periodSource subscriptionPeriodSource,
 	now time.Time,
 ) {
 	if operator != types.SubscriptionTransactionTypeRenewed &&
@@ -2904,7 +2914,7 @@ func updateWorkspaceSubscriptionPeriodAfterPaymentSuccess(
 	if operator == types.SubscriptionTransactionTypeRenewed {
 		shouldReset = now.Sub(workspaceSubscription.CurrentPeriodStartAt) > 24*time.Hour
 	}
-	if shouldReset {
+	if shouldReset && periodSource == subscriptionPeriodUnspecified {
 		workspaceSubscription.CurrentPeriodStartAt = now
 		workspaceSubscription.CurrentPeriodEndAt = now.Add(periodDuration)
 	}
@@ -3240,6 +3250,7 @@ func handleRenewalBalancePayment(
 		workspaceSubscription,
 		&wsTransaction,
 		&payment,
+		subscriptionPeriodUnspecified,
 	); err != nil {
 		return nil, err
 	}
@@ -3711,6 +3722,7 @@ func handleWorkspaceSubscriptionDeleted(event *stripe.Event) error {
 				&workspaceSubscription,
 				&wsTransaction,
 				&payment,
+				subscriptionPeriodUnspecified,
 			); err != nil {
 				return err
 			}

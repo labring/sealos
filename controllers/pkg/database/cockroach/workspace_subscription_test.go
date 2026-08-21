@@ -122,16 +122,28 @@ func activeTrafficPackages(t *testing.T, db *gorm.DB, subID uuid.UUID) []types.W
 	return pkgs
 }
 
-func grantTraffic(t *testing.T, db *gorm.DB, subID uuid.UUID, totalMiB int64, fromID string, isUpgrade bool) bool {
+type trafficGrantOutcome struct {
+	granted       bool
+	shouldSuspend bool
+}
+
+func grantTraffic(
+	t *testing.T,
+	db *gorm.DB,
+	subID uuid.UUID,
+	totalMiB int64,
+	fromID string,
+	isUpgrade bool,
+) trafficGrantOutcome {
 	t.Helper()
-	granted, err := AddWorkspaceSubscriptionTrafficPackageWithUpgrade(
+	granted, shouldSuspend, err := AddWorkspaceSubscriptionTrafficPackageWithUpgrade(
 		db, subID, totalMiB, time.Now().Add(30*24*time.Hour),
 		types.WorkspaceTrafficFromWorkspaceSubscription, fromID, isUpgrade,
 	)
 	if err != nil {
 		t.Fatalf("AddWorkspaceSubscriptionTrafficPackageWithUpgrade() error = %v", err)
 	}
-	return granted
+	return trafficGrantOutcome{granted: granted, shouldSuspend: shouldSuspend}
 }
 
 func TestUpgradeAIQuotaPackageSemantics(t *testing.T) {
@@ -428,10 +440,10 @@ func TestUpgradeTrafficPackageSemantics(t *testing.T) {
 		sub := seedWorkspaceSubscription(t, db)
 		fromID := uuid.NewString()
 		grantTraffic(t, db, sub.ID, 1_024, uuid.NewString(), false)
-		if !grantTraffic(t, db, sub.ID, 10_240, fromID, true) {
+		if !grantTraffic(t, db, sub.ID, 10_240, fromID, true).granted {
 			t.Fatal("first delivery should report a new traffic grant")
 		}
-		if grantTraffic(t, db, sub.ID, 10_240, fromID, true) {
+		if grantTraffic(t, db, sub.ID, 10_240, fromID, true).granted {
 			t.Fatal("replay should not report a new traffic grant")
 		}
 
@@ -464,13 +476,53 @@ func TestUpgradeTrafficPackageSemantics(t *testing.T) {
 	t.Run("zero traffic upgrade expires old package and grants nothing", func(t *testing.T) {
 		sub := seedWorkspaceSubscription(t, db)
 		grantTraffic(t, db, sub.ID, 1_024, uuid.NewString(), false)
-		if grantTraffic(t, db, sub.ID, 0, uuid.NewString(), true) {
+		outcome := grantTraffic(t, db, sub.ID, 0, uuid.NewString(), true)
+		if outcome.granted {
 			t.Fatal("zero-traffic upgrade should not report a new traffic grant")
+		}
+		if !outcome.shouldSuspend {
+			t.Fatal("zero-traffic upgrade without surviving traffic should request suspension")
 		}
 
 		pkgs := activeTrafficPackages(t, db, sub.ID)
 		if len(pkgs) != 0 {
 			t.Fatalf("want no active subscription traffic after zero-traffic upgrade, got %d", len(pkgs))
+		}
+		if err := db.First(sub, "id = ?", sub.ID).Error; err != nil {
+			t.Fatalf("failed to reload subscription: %v", err)
+		}
+		if sub.TrafficStatus != types.WorkspaceTrafficStatusUsedUp {
+			t.Fatalf("want traffic status used_up, got %s", sub.TrafficStatus)
+		}
+	})
+
+	t.Run("zero traffic upgrade preserves surviving promotional traffic", func(t *testing.T) {
+		sub := seedWorkspaceSubscription(t, db)
+		grantTraffic(t, db, sub.ID, 1_024, uuid.NewString(), false)
+		promotional := &types.WorkspaceTraffic{
+			ID:                      uuid.New(),
+			WorkspaceSubscriptionID: sub.ID,
+			Workspace:               sub.Workspace,
+			RegionDomain:            sub.RegionDomain,
+			From:                    types.WorkspaceTrafficFrom("promotion"),
+			FromID:                  uuid.NewString(),
+			TotalBytes:              512 * 1024 * 1024,
+			Status:                  types.WorkspaceTrafficStatusActive,
+			ExpiredAt:               time.Now().Add(7 * 24 * time.Hour),
+		}
+		if err := db.Create(promotional).Error; err != nil {
+			t.Fatalf("failed to seed promotional traffic: %v", err)
+		}
+
+		outcome := grantTraffic(t, db, sub.ID, 0, uuid.NewString(), true)
+		if outcome.granted || outcome.shouldSuspend {
+			t.Fatalf("want surviving promotional traffic to stay usable, got %+v", outcome)
+		}
+		if err := db.First(sub, "id = ?", sub.ID).Error; err != nil {
+			t.Fatalf("failed to reload subscription: %v", err)
+		}
+		if sub.TrafficStatus != types.WorkspaceTrafficStatusActive {
+			t.Fatalf("want traffic status active, got %s", sub.TrafficStatus)
 		}
 	})
 

@@ -155,7 +155,7 @@ func AddWorkspaceSubscriptionTrafficPackage(
 	from types.WorkspaceTrafficFrom,
 	fromID string,
 ) error {
-	_, err := AddWorkspaceSubscriptionTrafficPackageWithUpgrade(
+	_, _, err := AddWorkspaceSubscriptionTrafficPackageWithUpgrade(
 		globalDB,
 		subscriptionID,
 		totalMiB,
@@ -172,8 +172,8 @@ func AddWorkspaceSubscriptionTrafficPackage(
 // so the workspace always holds the new plan's allowance for the reset billing cycle
 // (labring/sealos-private#108).
 //
-// It reports whether a package carrying usable traffic was inserted; see
-// grantSubscriptionPackage.
+// It reports whether a package carrying usable traffic was inserted and whether
+// a zero-allowance upgrade left the workspace without any usable traffic.
 func AddWorkspaceSubscriptionTrafficPackageWithUpgrade(
 	globalDB *gorm.DB,
 	subscriptionID uuid.UUID,
@@ -182,8 +182,8 @@ func AddWorkspaceSubscriptionTrafficPackageWithUpgrade(
 	from types.WorkspaceTrafficFrom,
 	fromID string,
 	isUpgrade bool,
-) (bool, error) {
-	return grantSubscriptionPackage(
+) (granted bool, shouldSuspend bool, err error) {
+	result, err := grantSubscriptionPackage(
 		globalDB,
 		subscriptionID,
 		totalMiB,
@@ -222,6 +222,35 @@ func AddWorkspaceSubscriptionTrafficPackageWithUpgrade(
 			},
 		},
 	)
+	if err != nil {
+		return false, false, err
+	}
+	if result.usable {
+		return true, false, nil
+	}
+	if !result.inserted {
+		return false, false, nil
+	}
+
+	var usablePackageCount int64
+	err = globalDB.Model(&types.WorkspaceTraffic{}).
+		Where("workspace_subscription_id = ? AND status = ? AND expired_at > ? AND total_bytes > used_bytes",
+			subscriptionID, types.WorkspaceTrafficStatusActive, time.Now()).
+		Count(&usablePackageCount).Error
+	if err != nil {
+		return false, false, fmt.Errorf("failed to check remaining workspace traffic: %w", err)
+	}
+	if usablePackageCount > 0 {
+		return false, false, nil
+	}
+
+	err = globalDB.Model(&types.WorkspaceSubscription{}).
+		Where("id = ?", subscriptionID).
+		Update("traffic_status", types.WorkspaceTrafficStatusUsedUp).Error
+	if err != nil {
+		return false, false, fmt.Errorf("failed to mark workspace traffic used up: %w", err)
+	}
+	return false, true, nil
 }
 
 func AddWorkspaceSubscriptionAIQuotaPackage(
@@ -315,6 +344,11 @@ type packageGrantSpec struct {
 	newRow func(sub types.WorkspaceSubscription, total int64, expired bool, expireAt time.Time) any
 }
 
+type packageGrantResult struct {
+	inserted bool
+	usable   bool
+}
+
 // grantSubscriptionPackage locks the subscription, dedups on fromID, rotates the
 // old plan's packages on upgrade, and inserts the new package row.
 //
@@ -323,8 +357,8 @@ type packageGrantSpec struct {
 // dedup check sees the created row and its expiry query sees the rotated packages.
 // Callers must run inside a transaction for the lock to be effective.
 //
-// It reports whether a package carrying a usable allowance was inserted, which is
-// false both for a replay and for a zero-allowance upgrade.
+// It reports whether a row was inserted and whether that row carries usable
+// allowance, so callers can distinguish a replay from a zero-allowance marker.
 func grantSubscriptionPackage(
 	globalDB *gorm.DB,
 	subscriptionID uuid.UUID,
@@ -333,14 +367,14 @@ func grantSubscriptionPackage(
 	fromID string,
 	isUpgrade bool,
 	spec packageGrantSpec,
-) (bool, error) {
+) (packageGrantResult, error) {
 	var subscription types.WorkspaceSubscription
 	err := globalDB.Clauses(clause.Locking{Strength: "UPDATE"}).
 		Where(&types.WorkspaceSubscription{ID: subscriptionID}).
 		Find(&subscription).
 		Error
 	if err != nil {
-		return false, fmt.Errorf("failed to get workspace subscription: %w", err)
+		return packageGrantResult{}, fmt.Errorf("failed to get workspace subscription: %w", err)
 	}
 	// Dedup on from_id before expiry. A later replay of an older transaction
 	// (A, then B, then replay A) must not expire B's package.
@@ -349,17 +383,17 @@ func grantSubscriptionPackage(
 		Where("from_id = ?", fromID).
 		Count(&existingCount).Error
 	if err != nil {
-		return false, fmt.Errorf("failed to check existing %s package: %w", spec.name, err)
+		return packageGrantResult{}, fmt.Errorf("failed to check existing %s package: %w", spec.name, err)
 	}
 	if existingCount > 0 {
-		return false, nil
+		return packageGrantResult{}, nil
 	}
 
 	// Expire before the allowance guard below: an upgrade must retire the old
 	// plan's packages even when the new plan grants nothing.
 	if isUpgrade {
 		if err := expireOldPlanPackages(globalDB, subscriptionID, fromID, spec); err != nil {
-			return false, fmt.Errorf("failed to expire old %s packages: %w", spec.name, err)
+			return packageGrantResult{}, fmt.Errorf("failed to expire old %s packages: %w", spec.name, err)
 		}
 	}
 
@@ -369,7 +403,7 @@ func grantSubscriptionPackage(
 	expired := false
 	if total <= 0 {
 		if !isUpgrade {
-			return false, nil
+			return packageGrantResult{}, nil
 		}
 		total, expired, expireAt = 0, true, time.Now()
 	}
@@ -379,9 +413,10 @@ func grantSubscriptionPackage(
 	result := globalDB.Clauses(clause.OnConflict{DoNothing: true}).
 		Create(spec.newRow(subscription, total, expired, expireAt))
 	if result.Error != nil {
-		return false, fmt.Errorf("failed to create %s package: %w", spec.name, result.Error)
+		return packageGrantResult{}, fmt.Errorf("failed to create %s package: %w", spec.name, result.Error)
 	}
-	return !expired && result.RowsAffected > 0, nil
+	inserted := result.RowsAffected > 0
+	return packageGrantResult{inserted: inserted, usable: inserted && !expired}, nil
 }
 
 // expireOldPlanPackages retires the packages the old plan granted. Packages from

@@ -124,6 +124,7 @@ func TestUpdateWorkspaceSubscriptionPeriodAfterPaymentSuccessResetsFirstUpgrade(
 		types.SubscriptionTransactionTypeUpgraded,
 		types.SubscriptionPeriodMonthly,
 		true,
+		subscriptionPeriodUnspecified,
 		now,
 	)
 
@@ -155,6 +156,7 @@ func TestUpdateWorkspaceSubscriptionPeriodAfterPaymentSuccessDoesNotExtendUpgrad
 		types.SubscriptionTransactionTypeUpgraded,
 		types.SubscriptionPeriodMonthly,
 		false,
+		subscriptionPeriodUnspecified,
 		periodStart.Add(2*time.Hour),
 	)
 
@@ -166,5 +168,41 @@ func TestUpdateWorkspaceSubscriptionPeriodAfterPaymentSuccessDoesNotExtendUpgrad
 			sub.CurrentPeriodStartAt,
 			sub.CurrentPeriodEndAt,
 		)
+	}
+}
+
+func TestUpdateWorkspaceSubscriptionPeriodAfterPaymentSuccessPreservesAuthoritativePeriod(
+	t *testing.T,
+) {
+	now := time.Date(2026, time.August, 21, 3, 0, 0, 0, time.UTC)
+	providerStart := now.Add(-15 * time.Minute)
+	providerEnd := time.Date(2026, time.September, 21, 3, 0, 0, 0, time.UTC)
+	sub := &types.WorkspaceSubscription{
+		CurrentPeriodStartAt: providerStart,
+		CurrentPeriodEndAt:   providerEnd,
+		ExpireAt:             &providerEnd,
+	}
+
+	updateWorkspaceSubscriptionPeriodAfterPaymentSuccess(
+		sub,
+		types.SubscriptionTransactionTypeUpgraded,
+		types.SubscriptionPeriodMonthly,
+		true,
+		subscriptionPeriodAuthoritative,
+		now,
+	)
+
+	if !sub.CurrentPeriodStartAt.Equal(providerStart) ||
+		!sub.CurrentPeriodEndAt.Equal(providerEnd) {
+		t.Fatalf(
+			"authoritative period moved from %s-%s to %s-%s",
+			providerStart,
+			providerEnd,
+			sub.CurrentPeriodStartAt,
+			sub.CurrentPeriodEndAt,
+		)
+	}
+	if sub.ExpireAt == nil || !sub.ExpireAt.Equal(providerEnd) {
+		t.Fatalf("want subscription expiry %s, got %v", providerEnd, sub.ExpireAt)
 	}
 }
