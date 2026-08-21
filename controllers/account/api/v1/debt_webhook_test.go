@@ -148,10 +148,10 @@ func TestHandle_UserSA_AdminBypass(t *testing.T) {
 }
 
 func TestHandle_WhitelistBypass(t *testing.T) {
-	t.Setenv("WHITELIST", "payments.Payment.account.sealos.io/v1")
+	t.Setenv("WHITELIST", "terminals.Terminal.terminal.sealos.io/v1")
 
 	d := &DebtValidate{}
-	req := makeReq(admissionv1.Create, "Payment", "account.sealos.io", "v1", "payments")
+	req := makeReq(admissionv1.Create, "Terminal", "terminal.sealos.io", "v1", "terminals")
 	req.UserInfo = authenticationv1.UserInfo{
 		Username: "test-user",
 		Groups:   []string{"system:serviceaccounts:user-system"},
@@ -163,7 +163,7 @@ func TestHandle_WhitelistBypass(t *testing.T) {
 }
 
 func TestHandle_WhitelistNoMatch_EntersCheck(t *testing.T) {
-	t.Setenv("WHITELIST", "payments.Payment.account.sealos.io/v1")
+	t.Setenv("WHITELIST", "terminals.Terminal.terminal.sealos.io/v1")
 
 	d := newDebtWithNS(&corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "ns-test"}})
 	req := makeReq(admissionv1.Create, "Pod", "", "v1", "pods")
