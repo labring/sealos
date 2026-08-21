@@ -2740,10 +2740,6 @@ func finalizeWorkspaceSubscriptionSuccess(
 	payment *types.Payment,
 	periodSource subscriptionPeriodSource,
 ) error {
-	isFirstUpgrade := workspaceSubscription != nil &&
-		wsTransaction.Operator == types.SubscriptionTransactionTypeUpgraded &&
-		workspaceSubscription.PlanName != wsTransaction.NewPlanName
-
 	if wsTransaction.PayID == "" {
 		wsTransaction.PayID = payment.ID
 		if payment.ID == "" {
@@ -2804,7 +2800,12 @@ func finalizeWorkspaceSubscriptionSuccess(
 	}
 
 	// Update or create workspace subscription
+	isFirstUpgrade := false
 	if workspaceSubscription != nil {
+		// A replayed upgrade arrives with PlanName already rotated, so only the
+		// first application of the transaction sees the old plan here.
+		isFirstUpgrade = wsTransaction.Operator == types.SubscriptionTransactionTypeUpgraded &&
+			workspaceSubscription.PlanName != wsTransaction.NewPlanName
 		workspaceSubscription.PlanName = wsTransaction.NewPlanName
 		workspaceSubscription.PayStatus = types.SubscriptionPayStatusPaid
 		workspaceSubscription.PayMethod = payment.Method
@@ -2910,7 +2911,7 @@ func updateWorkspaceSubscriptionPeriodAfterPaymentSuccess(
 		periodDuration = 30 * 24 * time.Hour
 	}
 
-	shouldReset := operator == types.SubscriptionTransactionTypeUpgraded && isFirstUpgrade
+	shouldReset := isFirstUpgrade
 	if operator == types.SubscriptionTransactionTypeRenewed {
 		shouldReset = now.Sub(workspaceSubscription.CurrentPeriodStartAt) > 24*time.Hour
 	}

@@ -197,9 +197,9 @@ func AddWorkspaceSubscriptionTrafficPackageWithUpgrade(
 			planFrom:      types.WorkspaceTrafficFromWorkspaceSubscription,
 			newRow: func(
 				sub types.WorkspaceSubscription,
-				totalMiB int64,
+				grantMiB int64,
 				expired bool,
-				expireAt time.Time,
+				grantExpireAt time.Time,
 			) any {
 				status := types.WorkspaceTrafficStatusActive
 				if expired {
@@ -208,13 +208,13 @@ func AddWorkspaceSubscriptionTrafficPackageWithUpgrade(
 				now := time.Now()
 				return &types.WorkspaceTraffic{
 					ID:                      uuid.New(),
-					WorkspaceSubscriptionID: subscriptionID,
+					WorkspaceSubscriptionID: sub.ID,
 					Workspace:               sub.Workspace,
 					RegionDomain:            sub.RegionDomain,
 					From:                    from,
 					FromID:                  fromID,
-					TotalBytes:              totalMiB * 1024 * 1024, // Convert MiB to Bytes
-					ExpiredAt:               expireAt,
+					TotalBytes:              grantMiB * 1024 * 1024, // Convert MiB to Bytes
+					ExpiredAt:               grantExpireAt,
 					Status:                  status,
 					CreatedAt:               now,
 					UpdatedAt:               now,
@@ -299,9 +299,9 @@ func AddWorkspaceSubscriptionAIQuotaPackageWithUpgrade(
 			planFrom:      types.PKGFromWorkspaceSubscription,
 			newRow: func(
 				sub types.WorkspaceSubscription,
-				aiQuota int64,
+				grantQuota int64,
 				expired bool,
-				expireAt time.Time,
+				grantExpireAt time.Time,
 			) any {
 				status := types.PackageStatusActive
 				if expired {
@@ -310,14 +310,14 @@ func AddWorkspaceSubscriptionAIQuotaPackageWithUpgrade(
 				now := time.Now()
 				return &types.WorkspaceAIQuotaPackage{
 					ID:                      uuid.New(),
-					WorkspaceSubscriptionID: subscriptionID,
+					WorkspaceSubscriptionID: sub.ID,
 					Workspace:               sub.Workspace,
 					RegionDomain:            sub.RegionDomain,
 					From:                    from,
 					FromID:                  fromID,
-					Total:                   aiQuota,
+					Total:                   grantQuota,
 					Status:                  status,
-					ExpiredAt:               expireAt,
+					ExpiredAt:               grantExpireAt,
 					CreatedAt:               now,
 					UpdatedAt:               now,
 				}
@@ -339,8 +339,11 @@ type packageGrantSpec struct {
 	expiredStatus any
 	// planFrom marks plan-granted packages, the only ones an upgrade rotates.
 	planFrom any
-	// newRow builds the row to insert. total is the caller's allowance in the
-	// table's own unit; expired marks a zero-allowance marker row.
+	// newRow builds the row to insert. Its parameters carry the grant values as
+	// possibly rewritten by grantSubscriptionPackage (a zero-allowance upgrade
+	// replaces the caller's total and expiry), so the row must be built from
+	// them, not from the caller's originals. total is in the table's own unit;
+	// expired marks a zero-allowance marker row.
 	newRow func(sub types.WorkspaceSubscription, total int64, expired bool, expireAt time.Time) any
 }
 
@@ -368,6 +371,11 @@ func grantSubscriptionPackage(
 	isUpgrade bool,
 	spec packageGrantSpec,
 ) (packageGrantResult, error) {
+	// A zero-allowance grant writes nothing unless it is an upgrade (which must
+	// still rotate the old plan's packages), so skip the lock and dedup queries.
+	if total <= 0 && !isUpgrade {
+		return packageGrantResult{}, nil
+	}
 	var subscription types.WorkspaceSubscription
 	err := globalDB.Clauses(clause.Locking{Strength: "UPDATE"}).
 		Where(&types.WorkspaceSubscription{ID: subscriptionID}).
@@ -402,9 +410,6 @@ func grantSubscriptionPackage(
 	// granted by a later transaction.
 	expired := false
 	if total <= 0 {
-		if !isUpgrade {
-			return packageGrantResult{}, nil
-		}
 		total, expired, expireAt = 0, true, time.Now()
 	}
 	// ON CONFLICT DO NOTHING backstops the dedup where the from_id unique

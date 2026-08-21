@@ -2311,32 +2311,14 @@ func ensureBillingQueryIndexes(db *gorm.DB) error {
 func ensureWorkspacePackageFromIDIndexes(db *gorm.DB) error {
 	indexes := []fromIDIndexSpec{
 		{
-			model:           types.WorkspaceTraffic{},
-			uniqueName:      "uniq_workspace_traffic_from_id",
-			lookupName:      "idx_workspace_traffic_from_id",
-			createUniqueSQL: `CREATE UNIQUE INDEX IF NOT EXISTS uniq_workspace_traffic_from_id ON "WorkspaceTraffic" (from_id)`,
-			createLookupSQL: `CREATE INDEX IF NOT EXISTS idx_workspace_traffic_from_id ON "WorkspaceTraffic" (from_id)`,
-			hasDuplicatesSQL: `SELECT EXISTS (
-				SELECT 1 FROM "WorkspaceTraffic"
-				WHERE from_id IS NOT NULL
-				GROUP BY from_id HAVING count(*) > 1
-			)`,
-			duplicatesSQL: `SELECT from_id, count(*) FROM "WorkspaceTraffic" GROUP BY 1 HAVING count(*) > 1`,
+			model:      types.WorkspaceTraffic{},
+			uniqueName: "uniq_workspace_traffic_from_id",
+			lookupName: "idx_workspace_traffic_from_id",
 		},
 		{
 			model:      types.WorkspaceAIQuotaPackage{},
 			uniqueName: "uniq_workspace_ai_quota_package_from_id",
 			lookupName: "idx_workspace_ai_quota_package_from_id",
-			createUniqueSQL: `CREATE UNIQUE INDEX IF NOT EXISTS
-				uniq_workspace_ai_quota_package_from_id ON "WorkspaceAIQuotaPackage" (from_id)`,
-			createLookupSQL: `CREATE INDEX IF NOT EXISTS
-				idx_workspace_ai_quota_package_from_id ON "WorkspaceAIQuotaPackage" (from_id)`,
-			hasDuplicatesSQL: `SELECT EXISTS (
-				SELECT 1 FROM "WorkspaceAIQuotaPackage"
-				WHERE from_id IS NOT NULL
-				GROUP BY from_id HAVING count(*) > 1
-			)`,
-			duplicatesSQL: `SELECT from_id, count(*) FROM "WorkspaceAIQuotaPackage" GROUP BY 1 HAVING count(*) > 1`,
 		},
 	}
 	for _, index := range indexes {
@@ -2348,10 +2330,8 @@ func ensureWorkspacePackageFromIDIndexes(db *gorm.DB) error {
 }
 
 type fromIDIndexSpec struct {
-	model                            interface{ TableName() string }
-	uniqueName, lookupName           string
-	createUniqueSQL, createLookupSQL string
-	hasDuplicatesSQL, duplicatesSQL  string
+	model                  interface{ TableName() string }
+	uniqueName, lookupName string
 }
 
 func ensureFromIDIndex(db *gorm.DB, index fromIDIndexSpec) error {
@@ -2361,8 +2341,16 @@ func ensureFromIDIndex(db *gorm.DB, index fromIDIndexSpec) error {
 
 	hasLookup := db.Migrator().HasIndex(index.model, index.lookupName)
 	if hasLookup {
+		// A lookup index means an earlier run already hit duplicates. Re-check
+		// instead of retrying the unique build: a failing CREATE UNIQUE INDEX
+		// backfills the whole table before erroring, and this path runs on
+		// every startup until the duplicates are removed.
+		hasDuplicatesSQL := fmt.Sprintf(
+			`SELECT EXISTS (SELECT 1 FROM %q WHERE from_id IS NOT NULL GROUP BY from_id HAVING count(*) > 1)`,
+			index.model.TableName(),
+		)
 		var hasDuplicates bool
-		if err := db.Raw(index.hasDuplicatesSQL).Scan(&hasDuplicates).Error; err != nil {
+		if err := db.Raw(hasDuplicatesSQL).Scan(&hasDuplicates).Error; err != nil {
 			return fmt.Errorf(
 				"failed to check duplicate from_id values on %s: %w",
 				index.model.TableName(),
@@ -2375,7 +2363,12 @@ func ensureFromIDIndex(db *gorm.DB, index fromIDIndexSpec) error {
 		}
 	}
 
-	if err := db.Exec(index.createUniqueSQL).Error; err != nil {
+	createUniqueSQL := fmt.Sprintf(
+		`CREATE UNIQUE INDEX IF NOT EXISTS %s ON %q (from_id)`,
+		index.uniqueName,
+		index.model.TableName(),
+	)
+	if err := db.Exec(createUniqueSQL).Error; err != nil {
 		if !isUniqueViolation(err) {
 			return fmt.Errorf("failed to create from_id unique index %s: %w", index.uniqueName, err)
 		}
@@ -2383,7 +2376,12 @@ func ensureFromIDIndex(db *gorm.DB, index fromIDIndexSpec) error {
 		if hasLookup {
 			return nil
 		}
-		if lookupErr := db.Exec(index.createLookupSQL).Error; lookupErr != nil {
+		createLookupSQL := fmt.Sprintf(
+			`CREATE INDEX IF NOT EXISTS %s ON %q (from_id)`,
+			index.lookupName,
+			index.model.TableName(),
+		)
+		if lookupErr := db.Exec(createLookupSQL).Error; lookupErr != nil {
 			return fmt.Errorf(
 				"failed to create from_id unique index %s: %w; lookup index %s: %w",
 				index.uniqueName,
@@ -2411,11 +2409,12 @@ func ensureFromIDIndex(db *gorm.DB, index fromIDIndexSpec) error {
 func logDuplicateFromIDs(index fromIDIndexSpec) {
 	logrus.Errorf(
 		"table %s holds duplicate from_id values, so unique index %s could not be created; "+
-			"using lookup index %s until the duplicates are removed. Deduplicate with: %s",
+			"using lookup index %s until the duplicates are removed. Deduplicate with: "+
+			`SELECT from_id, count(*) FROM %q GROUP BY 1 HAVING count(*) > 1`,
 		index.model.TableName(),
 		index.uniqueName,
 		index.lookupName,
-		index.duplicatesSQL,
+		index.model.TableName(),
 	)
 }
 
