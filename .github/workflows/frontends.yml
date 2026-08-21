@@ -88,8 +88,6 @@ jobs:
               - 'frontend/providers/template/**'
             applaunchpad:
               - 'frontend/providers/applaunchpad/**'
-            terminal:
-              - 'frontend/providers/terminal/**'
             dbprovider:
               - 'frontend/providers/dbprovider/**'
             costcenter:
@@ -106,7 +104,6 @@ jobs:
           LICENSE_CHANGED: ${{ steps.filter.outputs.license }}
           TEMPLATE_CHANGED: ${{ steps.filter.outputs.template }}
           APPLAUNCHPAD_CHANGED: ${{ steps.filter.outputs.applaunchpad }}
-          TERMINAL_CHANGED: ${{ steps.filter.outputs.terminal }}
           DBPROVIDER_CHANGED: ${{ steps.filter.outputs.dbprovider }}
           COSTCENTER_CHANGED: ${{ steps.filter.outputs.costcenter }}
           DESKTOP_CHANGED: ${{ steps.filter.outputs.desktop }}
@@ -122,7 +119,6 @@ jobs:
               "providers/license"
               "providers/template"
               "providers/applaunchpad"
-              "providers/terminal"
               "providers/dbprovider"
               "providers/costcenter"
               "desktop"
@@ -132,7 +128,6 @@ jobs:
             [[ "$LICENSE_CHANGED" == "true" ]] && modules+=("providers/license")
             [[ "$TEMPLATE_CHANGED" == "true" ]] && modules+=("providers/template")
             [[ "$APPLAUNCHPAD_CHANGED" == "true" ]] && modules+=("providers/applaunchpad")
-            [[ "$TERMINAL_CHANGED" == "true" ]] && modules+=("providers/terminal")
             [[ "$DBPROVIDER_CHANGED" == "true" ]] && modules+=("providers/dbprovider")
             [[ "$COSTCENTER_CHANGED" == "true" ]] && modules+=("providers/costcenter")
             [[ "$DESKTOP_CHANGED" == "true" ]] && modules+=("desktop")

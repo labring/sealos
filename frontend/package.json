@@ -8,7 +8,6 @@
     "dev-app": "pnpm -r --filter ./providers/applaunchpad  run dev",
     "dev-db": "pnpm -r --filter ./providers/dbprovider  run dev",
     "dev-cost": "pnpm -r --filter ./providers/costcenter  run dev",
-    "dev-terminal": "pnpm -r --filter ./providers/terminal  run dev",
     "dev-template": "pnpm -r --filter ./providers/template  run dev",
     "dev-license": "pnpm -r --filter ./providers/license  run dev",
     "gen:theme-typings": "pnpm chakra-cli tokens packages/ui/src/theme/theme.ts --out node_modules/.pnpm/node_modules/@chakra-ui/styled-system/dist/theming.types.d.ts",
