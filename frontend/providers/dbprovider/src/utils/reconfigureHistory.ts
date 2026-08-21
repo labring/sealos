@@ -48,16 +48,18 @@ export const getReconfigureHistoryConfigurations = (
   const previousConfigurations = parsePreviousConfigurations(
     item.metadata?.annotations?.[previousConfigKey]
   );
+  const parameters =
+    item.spec?.reconfigure?.configurations?.flatMap(
+      (configuration) => configuration.keys?.flatMap((key) => key.parameters || []) || []
+    ) || [];
 
-  return (
-    item.spec?.reconfigure?.configurations?.[0]?.keys?.[0]?.parameters?.map((param) => ({
-      parameterName: param.key,
-      newValue: param.value,
-      ...(previousConfigurations[param.key] !== undefined
-        ? { oldValue: previousConfigurations[param.key] }
-        : missingOldValue !== undefined
-        ? { oldValue: missingOldValue }
-        : {})
-    })) || []
-  );
+  return parameters.map((param) => ({
+    parameterName: param.key,
+    newValue: param.value,
+    ...(previousConfigurations[param.key] !== undefined
+      ? { oldValue: previousConfigurations[param.key] }
+      : missingOldValue !== undefined
+      ? { oldValue: missingOldValue }
+      : {})
+  }));
 };
