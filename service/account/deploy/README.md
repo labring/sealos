@@ -85,6 +85,7 @@ sealos run labring/account-service:latest \
 
 - `serviceAccountName`: 服务账户名称，默认 `account-controller-manager`
 - `envConfigMapName`: 环境 ConfigMap 名称，默认 `account-manager-env`
+- `adminJwtSecretName`: admin API JWT Secret 名称，默认 `account-admin-jwt`
 - `paymentSecretName`: 支付密钥名称，默认 `payment-secret`
 - `regionInfoConfigMapName`: 区域信息 ConfigMap 名称，默认 `region-info`
 - `nameOverride`: 名称覆盖，默认 `""`
@@ -148,7 +149,7 @@ sealos run labring/account-service:latest \
 
 ### 依赖组件
 
-- **account-controller**: 提供 account-manager-env ConfigMap 和 service account
+- **account-controller**: 提供 account-manager-env ConfigMap、account-admin-jwt Secret 和 service account
 - **payment-secret**: 支付配置密钥（可选）
 
 ## 部署流程

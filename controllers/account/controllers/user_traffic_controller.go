@@ -271,7 +271,7 @@ func (c *UserTrafficController) sendResumeUserTrafficRequest(userUID uuid.UUID) 
 
 func (c *UserTrafficController) sendUserTrafficRequest(userUID uuid.UUID, operator string) error {
 	for _, domain := range c.allRegionDomain {
-		token, err := c.jwtManager.GenerateToken(utils.JwtUser{
+		token, err := c.adminJwtManager.GenerateAdminToken(utils.JwtUser{
 			Requester: AdminUserName,
 		})
 		if err != nil {

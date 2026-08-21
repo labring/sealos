@@ -22,13 +22,14 @@ sealos run account-controller:latest \
 
 ## 配置说明
 
-### 自动配置（从 ConfigMap 获取）
+### 自动配置（从 ConfigMap 和 Secret 获取）
 
 以下配置会自动从 `sealos-system/sealos-config` ConfigMap 中读取（如果存在）：
 
 - `cloudDomain` - 云平台域名
 - `cloudPort` - 云平台端口
 - `accountApiJwtSecret` - JWT 密钥
+- `accountAdminJwtSecret` - admin API 专用 JWT 密钥，由脚本从 `account-admin-jwt` Secret 读取，不存在时自动生成
 - `localRegion` - 本地区域 UID
 - `globalCockroachURI` - 全局 CockroachDB URI
 - `localCockroachURI` - 本地 CockroachDB URI
@@ -52,6 +53,7 @@ sealos run account-controller:latest \
 | `accountEnv.cloudDomain` | `cloud.sealos.io` | 云平台域名 |
 | `accountEnv.cloudPort` | - | 云平台端口 |
 | `accountEnv.accountApiJwtSecret` | `secret` | JWT 密钥 |
+| `accountEnv.accountAdminJwtSecret` | - | admin API 专用 JWT 密钥 |
 | `accountEnv.localRegion` | - | 本地区域 UID |
 | `accountEnv.globalCockroachURI` | - | 全局 CockroachDB URI |
 | `accountEnv.localCockroachURI` | - | 本地 CockroachDB URI |
@@ -165,7 +167,7 @@ sealos run account-controller:latest \
 - CRD 资源（accounts、debts、payments）
 - RBAC 资源（ClusterRole、ClusterRoleBinding）
 - Namespace 资源
-- 命名空间内资源（ConfigMap、Service、Deployment、ServiceAccount、Role、RoleBinding、Issuer、Certificate）
+- 命名空间内资源（ConfigMap、Secret、Service、Deployment、ServiceAccount、Role、RoleBinding、Issuer、Certificate）
 
 如需禁用备份：
 
@@ -185,5 +187,5 @@ sealos run account-controller:latest --env ACCOUNT_BACKUP_ENABLED=false
 
 1. **自动配置**：脚本会自动从 `sealos-system/sealos-config` ConfigMap 读取基础配置，无需手动传入
 2. **配置覆盖**：通过 `HELM_OPTS` 传入的参数会覆盖自动获取的配置和默认值
-3. **Secret 安全**：生产环境请务必修改 `accountEnv.accountApiJwtSecret` 等敏感配置
+3. **Secret 安全**：生产环境请妥善保护 `accountEnv.accountApiJwtSecret` 和 `accountEnv.accountAdminJwtSecret`，两者用途不同
 4. **持久化存储**：确保 MongoDB 和 CockroachDB 的连接配置正确

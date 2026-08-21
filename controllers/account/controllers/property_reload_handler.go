@@ -33,6 +33,7 @@ type PropertyReloadHandler struct {
 	DBClient          database.Interface
 	AccountReconciler *AccountReconciler
 	JwtSecret         string
+	AdminJwtSecret    string
 }
 
 func (h *PropertyReloadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -42,7 +43,7 @@ func (h *PropertyReloadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 	}
 
 	// Authenticate admin request
-	if err := authenticateAdminRequest(r, h.JwtSecret); err != nil {
+	if err := authenticateAdminRequest(r, h.AdminJwtSecret, h.JwtSecret); err != nil {
 		reloadLogger.Error(err, "admin authentication failed")
 		http.Error(w, "Unauthorized: "+err.Error(), http.StatusUnauthorized)
 		return
@@ -83,7 +84,7 @@ func (h *PropertyReloadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 }
 
 // authenticateAdminRequest validates that the request is from an admin user
-func authenticateAdminRequest(r *http.Request, jwtSecret string) error {
+func authenticateAdminRequest(r *http.Request, adminJwtSecret, legacyJwtSecret string) error {
 	tokenString := r.Header.Get("Authorization")
 	if tokenString == "" {
 		return errors.New("authorization header is required")
@@ -95,13 +96,20 @@ func authenticateAdminRequest(r *http.Request, jwtSecret string) error {
 		return errors.New("invalid authorization token format")
 	}
 
-	// Create JWT manager and verify token
-	jwtMgr := utils.NewJWTManager(jwtSecret, 0)
+	if adminJwtSecret != "" {
+		jwtMgr := utils.NewJWTManager(adminJwtSecret, 0)
+		if _, err := jwtMgr.ParseAdminUser(token); err == nil {
+			return nil
+		}
+	}
+
+	// Keep accepting tokens signed with the legacy account secret during the
+	// admin-secret migration. Remove this fallback after all callers migrate.
+	jwtMgr := utils.NewJWTManager(legacyJwtSecret, 0)
 	user, err := jwtMgr.ParseUser(token)
 	if err != nil {
 		return err
 	}
-
 	if user == nil {
 		return errors.New("user not found in token")
 	}
