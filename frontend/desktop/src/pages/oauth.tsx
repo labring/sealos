@@ -74,6 +74,8 @@ export default function OAuth() {
       token,
       login,
       openapp,
+      githubRepo,
+      autoDeploy,
       templateName,
       templateForm,
       workspaceUid,
@@ -106,6 +108,28 @@ export default function OAuth() {
         raw: rawQuery
       });
       cancelAutoDeployTemplate();
+      await router.replace(appendMarketingQuery('/', activeMarketingQuery));
+
+      return true;
+    };
+
+    const openBrainGithubDeploy = async (activeMarketingQuery = marketingQuery) => {
+      if (openapp !== 'system-brain' || typeof githubRepo !== 'string') {
+        return false;
+      }
+
+      const brainDeployQuery = new URLSearchParams({
+        githubRepo
+      });
+      if (autoDeploy === '1') {
+        brainDeployQuery.set('autoDeploy', '1');
+      }
+      const rawQuery = mergeMarketingQuery(brainDeployQuery.toString(), activeMarketingQuery);
+
+      setAutoLaunch('system-brain', {
+        pathname: '/deploy',
+        raw: rawQuery
+      });
       await router.replace(appendMarketingQuery('/', activeMarketingQuery));
 
       return true;
@@ -163,7 +187,10 @@ export default function OAuth() {
           }
         }
 
-        if (await openBrainTemplateDeploy(marketingQuery)) {
+        if (
+          (await openBrainGithubDeploy(marketingQuery)) ||
+          (await openBrainTemplateDeploy(marketingQuery))
+        ) {
           return;
         }
 
@@ -414,7 +441,10 @@ export default function OAuth() {
       hasProcessedRef.current = true;
 
       (async () => {
-        if (await openBrainTemplateDeploy(marketingQuery)) {
+        if (
+          (await openBrainGithubDeploy(marketingQuery)) ||
+          (await openBrainTemplateDeploy(marketingQuery))
+        ) {
           return;
         }
 
