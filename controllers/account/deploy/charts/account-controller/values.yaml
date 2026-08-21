@@ -32,7 +32,7 @@ service:
 env:
   accountNamespace: sealos-system
   userNamespace: user-system
-  whitelist: "terminals.Terminal.terminal.sealos.io/v1,licenses.License.license.sealos.io/v1,notifications.Notification.notification.sealos.io/v1,payments.Payment.account.sealos.io/v1,billingrecordqueries.BillingRecordQuery.account.sealos.io/v1,billinginfoqueries.BillingInfoQuery.account.sealos.io/v1,pricequeries.PriceQuery.account.sealos.io/v1"
+  whitelist: "licenses.License.license.sealos.io/v1,notifications.Notification.notification.sealos.io/v1,payments.Payment.account.sealos.io/v1,billingrecordqueries.BillingRecordQuery.account.sealos.io/v1,billinginfoqueries.BillingInfoQuery.account.sealos.io/v1,pricequeries.PriceQuery.account.sealos.io/v1"
 
 # ============================================================================
 # Auto-configured values (from sealos-system/sealos-config ConfigMap)
