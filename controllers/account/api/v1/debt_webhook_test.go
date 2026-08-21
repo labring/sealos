@@ -2,6 +2,10 @@ package v1
 
 import (
 	"context"
+	"os"
+	"path/filepath"
+	"runtime"
+	"strings"
 	"testing"
 
 	pkgtype "github.com/labring/sealos/controllers/pkg/types"
@@ -11,7 +15,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
+	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -22,7 +26,7 @@ import (
 type stubClient struct {
 	client.WithWatch
 	nsMap  map[string]*corev1.Namespace
-	scheme *runtime.Scheme
+	scheme *k8sruntime.Scheme
 }
 
 func (s *stubClient) Get(
@@ -46,7 +50,7 @@ func (s *stubClient) List(_ context.Context, _ client.ObjectList, _ ...client.Li
 	return nil
 }
 
-func (s *stubClient) Scheme() *runtime.Scheme { return s.scheme }
+func (s *stubClient) Scheme() *k8sruntime.Scheme { return s.scheme }
 
 func newDebtWithNS(namespaces ...*corev1.Namespace) *DebtValidate {
 	nsMap := make(map[string]*corev1.Namespace)
@@ -174,6 +178,28 @@ func TestHandle_WhitelistNoMatch_EntersCheck(t *testing.T) {
 	resp := d.Handle(context.Background(), req)
 	if resp.Allowed {
 		t.Fatal("non-whitelisted Pod from user SA without owner label namespace should be denied")
+	}
+}
+
+func TestDefaultWhitelistIncludesTerminal(t *testing.T) {
+	const terminalGVK = "terminals.Terminal.terminal.sealos.io/v1"
+
+	_, sourceFile, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("failed to locate test source file")
+	}
+	configFiles := []string{
+		filepath.Join(filepath.Dir(sourceFile), "..", "..", "config", "default", "manager_auth_proxy_patch.yaml"),
+		filepath.Join(filepath.Dir(sourceFile), "..", "..", "deploy", "charts", "account-controller", "values.yaml"),
+	}
+	for _, configFile := range configFiles {
+		data, err := os.ReadFile(configFile)
+		if err != nil {
+			t.Fatalf("read %s: %v", configFile, err)
+		}
+		if !strings.Contains(string(data), terminalGVK) {
+			t.Errorf("%s must include %s in the default whitelist", configFile, terminalGVK)
+		}
 	}
 }
 
