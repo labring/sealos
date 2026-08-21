@@ -146,6 +146,9 @@ type Interface interface {
 
 	// Admin read-only account management methods.
 	ListAdminUsers(req helper.AdminUserListReq) (helper.AdminUserListResp, error)
+	ListAdminNotificationRecipients(
+		req helper.AdminNotificationRecipientsReq,
+	) (helper.AdminNotificationRecipientsResp, error)
 	GetAdminUser(id string) (*helper.AdminUserDetail, error)
 	ListAdminUserRechargeRecords(
 		id string, pageIndex, pageSize int,

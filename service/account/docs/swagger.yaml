@@ -1,4 +1,66 @@
 definitions:
+  helper.AdminNotificationContacts:
+    properties:
+      emails:
+        items:
+          type: string
+        type: array
+      phoneNumbers:
+        items:
+          type: string
+        type: array
+    type: object
+  helper.AdminNotificationRecipient:
+    properties:
+      type:
+        type: string
+      value:
+        type: string
+    type: object
+  helper.AdminNotificationRecipientsReq:
+    properties:
+      namespaces:
+        items:
+          type: string
+        type: array
+      notificationMethods:
+        items:
+          type: string
+        type: array
+    required:
+    - namespaces
+    type: object
+  helper.AdminNotificationRecipientsResp:
+    properties:
+      recipients:
+        items:
+          $ref: '#/definitions/helper.AdminNotificationRecipient'
+        type: array
+      unresolvedNamespaces:
+        items:
+          type: string
+        type: array
+      users:
+        items:
+          $ref: '#/definitions/helper.AdminNotificationUser'
+        type: array
+      usersWithoutRecipients:
+        items:
+          type: string
+        type: array
+    type: object
+  helper.AdminNotificationUser:
+    properties:
+      namespace:
+        type: string
+      notificationContacts:
+        $ref: '#/definitions/helper.AdminNotificationContacts'
+      oauthProviders:
+        $ref: '#/definitions/helper.AdminNotificationContacts'
+      userUid:
+        type: string
+        format: uuid
+    type: object
   common.PropertyQuery:
     properties:
       alias:
@@ -1739,6 +1801,40 @@ paths:
       summary: Get user account
       tags:
       - Account
+  /admin/v1alpha1/notification-recipients:
+    post:
+      consumes:
+      - application/json
+      description: Resolve workspace namespaces to notify-compatible email or phone recipients. Notification methods default to email.
+      parameters:
+      - description: Notification recipient request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/helper.AdminNotificationRecipientsReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: successful notification recipient lookup
+          schema:
+            $ref: '#/definitions/helper.AdminNotificationRecipientsResp'
+        "400":
+          description: invalid notification recipient request
+          schema:
+            $ref: '#/definitions/helper.ErrorMessage'
+        "401":
+          description: authentication failed
+          schema:
+            $ref: '#/definitions/helper.ErrorMessage'
+        "500":
+          description: internal server error
+          schema:
+            $ref: '#/definitions/helper.ErrorMessage'
+      summary: List notification recipients for admin
+      tags:
+      - AdminRead
   /admin/v1alpha1/charge:
     post:
       consumes:

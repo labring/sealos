@@ -1503,6 +1503,58 @@
                 }
             }
         },
+        "/admin/v1alpha1/notification-recipients": {
+            "post": {
+                "description": "Resolve workspace namespaces to notify-compatible email or phone recipients. Notification methods default to email.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "AdminRead"
+                ],
+                "summary": "List notification recipients for admin",
+                "parameters": [
+                    {
+                        "description": "Notification recipient request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.AdminNotificationRecipientsReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "successful notification recipient lookup",
+                        "schema": {
+                            "$ref": "#/definitions/helper.AdminNotificationRecipientsResp"
+                        }
+                    },
+                    "400": {
+                        "description": "invalid notification recipient request",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorMessage"
+                        }
+                    },
+                    "401": {
+                        "description": "authentication failed",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorMessage"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1alpha1/charge": {
             "post": {
                 "description": "Charge billing",
@@ -1581,6 +1633,101 @@
         }
     },
     "definitions": {
+        "helper.AdminNotificationContacts": {
+            "type": "object",
+            "properties": {
+                "emails": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "phoneNumbers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "helper.AdminNotificationRecipient": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "helper.AdminNotificationRecipientsReq": {
+            "type": "object",
+            "required": [
+                "namespaces"
+            ],
+            "properties": {
+                "namespaces": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "notificationMethods": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "helper.AdminNotificationRecipientsResp": {
+            "type": "object",
+            "properties": {
+                "recipients": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/helper.AdminNotificationRecipient"
+                    }
+                },
+                "unresolvedNamespaces": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "users": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/helper.AdminNotificationUser"
+                    }
+                },
+                "usersWithoutRecipients": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "helper.AdminNotificationUser": {
+            "type": "object",
+            "properties": {
+                "namespace": {
+                    "type": "string"
+                },
+                "notificationContacts": {
+                    "$ref": "#/definitions/helper.AdminNotificationContacts"
+                },
+                "oauthProviders": {
+                    "$ref": "#/definitions/helper.AdminNotificationContacts"
+                },
+                "userUid": {
+                    "type": "string",
+                    "format": "uuid"
+                }
+            }
+        },
         "common.PropertyQuery": {
             "type": "object",
             "properties": {
