@@ -1217,8 +1217,7 @@ func CreateWorkspaceSubscriptionPay(c *gin.Context) {
 		req.Operator != types.SubscriptionTransactionTypeRenewed &&
 		req.Operator != types.SubscriptionTransactionTypeResumed &&
 		req.Operator != types.SubscriptionTransactionTypeCanceled &&
-		currentSubscription.Status != types.SubscriptionStatusDebt &&
-		currentSubscription.Status != types.SubscriptionStatusDeleted {
+		!canRecreateWorkspaceSubscription(currentSubscription.Status) {
 		SetErrorResp(c, http.StatusBadRequest, gin.H{"error": "plan name is same as current plan"})
 		return
 	}
@@ -1304,13 +1303,13 @@ func CreateWorkspaceSubscriptionPay(c *gin.Context) {
 		// No additional validation needed for creation
 		if currentSubscription != nil &&
 			currentSubscription.PlanName != types.FreeSubscriptionPlanName {
-			// Allow re-creation for overdue subscriptions
-			if currentSubscription.Status == types.SubscriptionStatusDebt {
-				// Overdue status allowed, will cancel old subscription in payment flow
+			// Allow re-creation for inactive subscriptions
+			if canRecreateWorkspaceSubscription(currentSubscription.Status) {
 				logrus.Infof(
-					"Allowing subscription creation for overdue workspace %s/%s, will cancel old subscription",
+					"Allowing subscription creation for inactive workspace %s/%s with status %s",
 					req.Workspace,
 					req.RegionDomain,
+					currentSubscription.Status,
 				)
 			} else {
 				// Normal active subscription, reject creation
@@ -1450,8 +1449,7 @@ func CreateWorkspaceSubscriptionPay(c *gin.Context) {
 			return
 		}
 		now := time.Now().UTC()
-		if currentSubscription.Status == types.SubscriptionStatusDeleted ||
-			!currentSubscription.CurrentPeriodEndAt.After(now) {
+		if isWorkspaceSubscriptionExpired(currentSubscription, now) {
 			SetErrorResp(
 				c,
 				http.StatusBadRequest,
@@ -1479,6 +1477,19 @@ func CreateWorkspaceSubscriptionPay(c *gin.Context) {
 }
 
 // Helper functions for workspace subscription payment logic
+
+func canRecreateWorkspaceSubscription(status types.SubscriptionStatus) bool {
+	return status == types.SubscriptionStatusDebt ||
+		status == types.SubscriptionStatusDeleted
+}
+
+func isWorkspaceSubscriptionExpired(
+	subscription *types.WorkspaceSubscription,
+	now time.Time,
+) bool {
+	return subscription.Status == types.SubscriptionStatusDeleted ||
+		!subscription.CurrentPeriodEndAt.After(now)
+}
 
 var ErrSamePendingOperation = errors.New("same pending operation exists")
 

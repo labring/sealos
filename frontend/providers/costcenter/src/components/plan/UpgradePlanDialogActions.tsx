@@ -3,6 +3,7 @@ import { Checkbox } from '@sealos/shadcn-ui';
 import { SubscriptionPlan } from '@/types/plan';
 import usePlanStore from '@/stores/plan';
 import { useTranslation } from 'next-i18next';
+import { canRecreateSubscription, getSubscriptionOperator } from '@/utils/subscription';
 
 interface UpgradePlanDialogActionsProps {
   isCreateMode?: boolean;
@@ -169,21 +170,14 @@ export function UpgradeButton({
 
   const subscription = subscriptionData?.subscription;
   const inDebt = subscription?.Status?.toLowerCase() === 'debt';
+  const canRecreate = canRecreateSubscription(subscription?.Status);
 
   const handleUpgradeClick = () => {
     if (onUpgradeClick) {
       onUpgradeClick(plan);
     } else {
       // Fallback to default behavior
-      const getOperator = () => {
-        // If in debt state, always use 'created' operation
-        if (inDebt) return 'created';
-        if (!currentPlanObj) return 'created';
-        if (currentPlanObj.UpgradePlanList?.includes(plan.Name)) return 'upgraded';
-        if (currentPlanObj.DowngradePlanList?.includes(plan.Name)) return 'downgraded';
-        return 'upgraded';
-      };
-      const operator = getOperator();
+      const operator = getSubscriptionOperator(subscription?.Status, currentPlanObj, plan.Name);
       // Determine business operation for UI display
       let businessOperation: 'create' | 'upgrade' | 'downgrade' | 'renew' | undefined;
       if (inDebt) {
@@ -229,6 +223,7 @@ export function UpgradeButton({
 
   const getButtonText = () => {
     if (isSubscribing) return t('common:processing');
+    if (canRecreate && isCurrentPlan) return t('common:subscribe');
     if (isCurrentPlan) return t('common:your_current_plan');
     if (isNextPlan) return t('common:your_next_plan');
 
@@ -244,7 +239,7 @@ export function UpgradeButton({
 
   return (
     <Button
-      disabled={!selectedPlan || isSubscribing || isCurrentPlan || isNextPlan}
+      disabled={!selectedPlan || isSubscribing || (!canRecreate && (isCurrentPlan || isNextPlan))}
       onClick={handleUpgradeClick}
     >
       {getButtonText()}

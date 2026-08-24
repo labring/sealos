@@ -6,11 +6,56 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/controllers/pkg/types"
 	"github.com/labring/sealos/service/account/helper"
 )
+
+func TestCanRecreateWorkspaceSubscription(t *testing.T) {
+	tests := []struct {
+		name   string
+		status types.SubscriptionStatus
+		want   bool
+	}{
+		{
+			name:   "debt subscription",
+			status: types.SubscriptionStatusDebt,
+			want:   true,
+		},
+		{
+			name:   "deleted subscription",
+			status: types.SubscriptionStatusDeleted,
+			want:   true,
+		},
+		{
+			name:   "normal subscription",
+			status: types.SubscriptionStatusNormal,
+			want:   false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := canRecreateWorkspaceSubscription(tt.status); got != tt.want {
+				t.Fatalf("canRecreateWorkspaceSubscription(%q) = %v, want %v", tt.status, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestDeletedWorkspaceSubscriptionIsExpired(t *testing.T) {
+	now := time.Date(2026, time.August, 24, 0, 0, 0, 0, time.UTC)
+	subscription := &types.WorkspaceSubscription{
+		Status:             types.SubscriptionStatusDeleted,
+		CurrentPeriodEndAt: now.Add(24 * time.Hour),
+	}
+
+	if !isWorkspaceSubscriptionExpired(subscription, now) {
+		t.Fatal("expected a deleted subscription to be ineligible for resume")
+	}
+}
 
 func TestParseWorkspaceSubscriptionPayReqRejectsInvalidPayApp(t *testing.T) {
 	gin.SetMode(gin.TestMode)
