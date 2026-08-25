@@ -2395,19 +2395,24 @@ func (m *MongoDB) GetWorkspaceConsumptionAmount(
 		directMatchValue = append(directMatchValue, primitive.E{Key: "app_name", Value: appName})
 	}
 
+	appCostsPipeline := bson.A{}
+	if len(appCostsMatchValue) > 0 {
+		appCostsPipeline = append(appCostsPipeline, bson.D{{Key: "$match", Value: appCostsMatchValue}})
+	}
+	appCostsPipeline = append(appCostsPipeline, bson.D{{Key: "$unwind", Value: "$app_costs"}})
+	if len(unwindMatchValue) > 0 {
+		appCostsPipeline = append(appCostsPipeline, bson.D{{Key: "$match", Value: unwindMatchValue}})
+	}
+	appCostsPipeline = append(appCostsPipeline, bson.D{{Key: "$group", Value: bson.M{
+		"_id":   "$namespace", // group by namespace
+		"total": bson.M{"$sum": "$app_costs.amount"},
+	}}})
+
 	// Use $facet to query both types in parallel
 	pipeline := bson.A{
 		bson.D{{Key: "$match", Value: baseMatchValue}},
 		bson.D{{Key: "$facet", Value: bson.M{
-			"appCosts": bson.A{
-				bson.D{{Key: "$match", Value: appCostsMatchValue}},
-				bson.D{{Key: "$unwind", Value: "$app_costs"}},
-				bson.D{{Key: "$match", Value: unwindMatchValue}},
-				bson.D{{Key: "$group", Value: bson.M{
-					"_id":   "$namespace", // group by namespace
-					"total": bson.M{"$sum": "$app_costs.amount"},
-				}}},
-			},
+			"appCosts": appCostsPipeline,
 			"directAmount": bson.A{
 				bson.D{{Key: "$match", Value: directMatchValue}},
 				bson.D{{Key: "$group", Value: bson.M{
