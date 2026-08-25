@@ -2397,11 +2397,17 @@ func (m *MongoDB) GetWorkspaceConsumptionAmount(
 
 	appCostsPipeline := bson.A{}
 	if len(appCostsMatchValue) > 0 {
-		appCostsPipeline = append(appCostsPipeline, bson.D{{Key: "$match", Value: appCostsMatchValue}})
+		appCostsPipeline = append(
+			appCostsPipeline,
+			bson.D{{Key: "$match", Value: appCostsMatchValue}},
+		)
 	}
 	appCostsPipeline = append(appCostsPipeline, bson.D{{Key: "$unwind", Value: "$app_costs"}})
 	if len(unwindMatchValue) > 0 {
-		appCostsPipeline = append(appCostsPipeline, bson.D{{Key: "$match", Value: unwindMatchValue}})
+		appCostsPipeline = append(
+			appCostsPipeline,
+			bson.D{{Key: "$match", Value: unwindMatchValue}},
+		)
 	}
 	appCostsPipeline = append(appCostsPipeline, bson.D{{Key: "$group", Value: bson.M{
 		"_id":   "$namespace", // group by namespace
