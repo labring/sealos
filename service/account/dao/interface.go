@@ -2341,25 +2341,24 @@ func (m *MongoDB) GetWorkspaceConsumptionAmount(
 		primitive.E{Key: "$lte", Value: endTime},
 	}
 
-	// Build base match conditions for app_costs (sub-consumption type)
-	matchValue := bson.D{
+	// Apply common filters before $facet so MongoDB can use the billing index
+	// before executing either aggregation branch.
+	baseMatchValue := bson.D{
 		primitive.E{Key: "time", Value: timeMatchValue},
 		primitive.E{Key: "owner", Value: owner},
 		primitive.E{Key: "status", Value: resources.Settled},
 	}
 
-	// 添加app_type过滤条件
+	appCostsMatchValue := bson.D{}
 	if appType != "" {
-		matchValue = append(
-			matchValue,
+		appCostsMatchValue = append(
+			appCostsMatchValue,
 			primitive.E{Key: "app_type", Value: resources.AppType[strings.ToUpper(appType)]},
 		)
 	}
 
-	// 构建unwind后的匹配条件
-	unwindMatchValue := bson.D{
-		primitive.E{Key: "time", Value: timeMatchValue},
-	}
+	// Build the post-unwind filters for nested app costs.
+	unwindMatchValue := bson.D{}
 	if appType != "" && appName != "" {
 		if appType != resources.AppStore {
 			unwindMatchValue = append(
@@ -2374,12 +2373,8 @@ func (m *MongoDB) GetWorkspaceConsumptionAmount(
 		}
 	}
 
-	// Build match conditions for direct consumption (AppStore and LLMToken)
-	directMatchValue := bson.D{
-		primitive.E{Key: "time", Value: timeMatchValue},
-		primitive.E{Key: "owner", Value: owner},
-		primitive.E{Key: "status", Value: resources.Settled},
-	}
+	// Build branch-specific filters for direct consumption (AppStore and LLMToken).
+	directMatchValue := bson.D{}
 	// For direct consumption, match app_type to AppStore or LLMToken if not specified
 	if appType != "" {
 		directMatchValue = append(
@@ -2402,16 +2397,16 @@ func (m *MongoDB) GetWorkspaceConsumptionAmount(
 
 	// Use $facet to query both types in parallel
 	pipeline := bson.A{
+		bson.D{{Key: "$match", Value: baseMatchValue}},
 		bson.D{{Key: "$facet", Value: bson.M{
 			"appCosts": bson.A{
-				bson.D{{Key: "$match", Value: matchValue}},
+				bson.D{{Key: "$match", Value: appCostsMatchValue}},
 				bson.D{{Key: "$unwind", Value: "$app_costs"}},
 				bson.D{{Key: "$match", Value: unwindMatchValue}},
 				bson.D{{Key: "$group", Value: bson.M{
 					"_id":   "$namespace", // group by namespace
 					"total": bson.M{"$sum": "$app_costs.amount"},
 				}}},
-				bson.D{{Key: "$sort", Value: bson.M{"_id": 1}}},
 			},
 			"directAmount": bson.A{
 				bson.D{{Key: "$match", Value: directMatchValue}},
@@ -2419,7 +2414,6 @@ func (m *MongoDB) GetWorkspaceConsumptionAmount(
 					"_id":   "$namespace",
 					"total": bson.M{"$sum": "$amount"},
 				}}},
-				bson.D{{Key: "$sort", Value: bson.M{"_id": 1}}},
 			},
 		}}},
 	}

@@ -98,8 +98,8 @@ func TestBillingPersistenceWithMongoRuntime(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(indexSpecs) != 4 {
-		t.Fatalf("billing index count = %d, want 4", len(indexSpecs))
+	if len(indexSpecs) != 5 {
+		t.Fatalf("billing index count = %d, want 5", len(indexSpecs))
 	}
 	monitorTime := end.Add(-time.Hour)
 	namespaces, err := account.GetTimeUsedNamespaceList(monitorTime, end)
