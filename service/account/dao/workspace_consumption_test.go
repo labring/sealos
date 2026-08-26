@@ -91,8 +91,8 @@ func TestBuildWorkspaceConsumptionPipelineWithAppFilter(t *testing.T) {
 	if err != nil {
 		t.Fatalf("build pipeline: %v", err)
 	}
-	if len(pipeline) != 6 {
-		t.Fatalf("pipeline stage count = %d, want 6", len(pipeline))
+	if len(pipeline) != 4 {
+		t.Fatalf("pipeline stage count = %d, want 4", len(pipeline))
 	}
 
 	matchValue, ok := workspaceConsumptionStageValue(pipeline[0], "$match")
@@ -108,20 +108,13 @@ func TestBuildWorkspaceConsumptionPipelineWithAppFilter(t *testing.T) {
 		t.Fatalf("$match app_type = %#v, want %d", appType, resources.AppType[resources.APP])
 	}
 
-	unwindValue, ok := workspaceConsumptionStageValue(pipeline[2], "$unwind")
-	if !ok {
-		t.Fatal("app-filtered pipeline does not unwind app_costs")
-	}
-	unwind, ok := unwindValue.(bson.D)
-	if !ok {
-		t.Fatalf("$unwind value type = %T, want bson.D", unwindValue)
-	}
-	preserve, ok := workspaceConsumptionStageValue(unwind, "preserveNullAndEmptyArrays")
-	if !ok || preserve != true {
-		t.Fatalf("preserveNullAndEmptyArrays = %#v, want true", preserve)
-	}
-
 	if _, ok := workspaceConsumptionStageValue(pipeline[1], "$facet"); ok {
 		t.Fatal("app-filtered pipeline should not use $facet")
+	}
+	if _, ok := workspaceConsumptionStageValue(pipeline[1], "$unwind"); ok {
+		t.Fatal("app-filtered pipeline should keep one row per billing record")
+	}
+	if _, ok := workspaceConsumptionStageValue(pipeline[2], "$match"); !ok {
+		t.Fatal("app-filtered pipeline should discard zero matched amounts")
 	}
 }

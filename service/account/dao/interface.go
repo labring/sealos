@@ -2384,36 +2384,41 @@ func buildWorkspaceConsumptionPipeline(req helper.ConsumptionRecordReq) (mongo.P
 		resources.AppType[resources.AppStore],
 		resources.AppType[resources.LLMToken],
 	}
-	pipeline = append(pipeline,
-		bson.D{{Key: "$project", Value: bson.D{
-			{Key: "namespace", Value: 1},
-			{Key: "app_type", Value: 1},
-			{Key: "app_name", Value: 1},
-			{Key: "amount", Value: 1},
-			{Key: "app_costs.name", Value: 1},
-			{Key: "app_costs.amount", Value: 1},
-		}}},
-		bson.D{{Key: "$unwind", Value: bson.D{
-			{Key: "path", Value: "$app_costs"},
-			{Key: "preserveNullAndEmptyArrays", Value: true},
-		}}},
-		bson.D{{Key: "$match", Value: bson.D{{Key: "$or", Value: bson.A{
-			bson.D{
-				{Key: "app_type", Value: bson.D{{Key: "$in", Value: directAppTypes}}},
-				{Key: "app_name", Value: req.AppName},
+	matchedNestedAmount := bson.M{
+		"$sum": bson.M{
+			"$map": bson.M{
+				"input": bson.M{
+					"$filter": bson.M{
+						"input": bson.M{"$ifNull": bson.A{"$app_costs", bson.A{}}},
+						"as":    "appCost",
+						"cond": bson.M{
+							"$eq": bson.A{"$$appCost.name", req.AppName},
+						},
+					},
+				},
+				"as": "appCost",
+				"in": "$$appCost.amount",
 			},
-			bson.D{
-				{Key: "app_type", Value: bson.D{{Key: "$nin", Value: directAppTypes}}},
-				{Key: "app_costs.name", Value: req.AppName},
-			},
-		}}}}},
+		},
+	}
+	pipeline = append(
+		pipeline,
 		bson.D{{Key: "$project", Value: bson.D{
 			{Key: "namespace", Value: 1},
 			{Key: "amount", Value: bson.D{{Key: "$cond", Value: bson.A{
 				bson.D{{Key: "$in", Value: bson.A{"$app_type", directAppTypes}}},
-				"$amount",
-				"$app_costs.amount",
+				bson.D{{Key: "$cond", Value: bson.A{
+					bson.D{{Key: "$eq", Value: bson.A{"$app_name", req.AppName}}},
+					"$amount",
+					int64(0),
+				}}},
+				matchedNestedAmount,
 			}}}},
+		}}},
+		bson.D{{Key: "$match", Value: bson.D{
+			{Key: "amount", Value: bson.D{
+				{Key: "$gt", Value: int64(0)},
+			}},
 		}}},
 		groupStage,
 	)
