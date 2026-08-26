@@ -2353,7 +2353,6 @@ func buildWorkspaceConsumptionPipeline(req helper.ConsumptionRecordReq) (mongo.P
 	matchValue := bson.D{
 		{Key: "owner", Value: req.Owner},
 		{Key: "status", Value: resources.Settled},
-		{Key: "type", Value: resources.Consumption},
 		{Key: "time", Value: bson.D{
 			{Key: "$gte", Value: req.StartTime},
 			{Key: "$lte", Value: req.EndTime},

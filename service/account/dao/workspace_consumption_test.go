@@ -69,7 +69,6 @@ func TestBuildWorkspaceConsumptionPipelineWithoutAppFilter(t *testing.T) {
 		"owner":     "owner-test",
 		"namespace": "ns-test",
 		"status":    resources.Settled,
-		"type":      resources.Consumption,
 	} {
 		got, ok := workspaceConsumptionStageValue(match, key)
 		if !ok || got != want {
