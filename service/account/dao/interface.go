@@ -2331,140 +2331,122 @@ func (m *MongoDB) GetConsumptionAmount(req helper.ConsumptionRecordReq) (int64, 
 	return totalAmount, nil
 }
 
+func normalizeWorkspaceConsumptionAppType(appType string) (string, uint8, error) {
+	normalized := strings.ToUpper(strings.TrimSpace(appType))
+	if normalized == "" {
+		return "", 0, nil
+	}
+
+	value, ok := resources.AppType[normalized]
+	if !ok {
+		return "", 0, fmt.Errorf("unsupported app type %q", appType)
+	}
+	return normalized, value, nil
+}
+
+func buildWorkspaceConsumptionPipeline(req helper.ConsumptionRecordReq) (mongo.Pipeline, error) {
+	normalizedAppType, appTypeValue, err := normalizeWorkspaceConsumptionAppType(req.AppType)
+	if err != nil {
+		return nil, err
+	}
+
+	matchValue := bson.D{
+		{Key: "owner", Value: req.Owner},
+		{Key: "status", Value: resources.Settled},
+		{Key: "type", Value: resources.Consumption},
+		{Key: "time", Value: bson.D{
+			{Key: "$gte", Value: req.StartTime},
+			{Key: "$lte", Value: req.EndTime},
+		}},
+	}
+	if req.Namespace != "" {
+		matchValue = append(matchValue, bson.E{Key: "namespace", Value: req.Namespace})
+	}
+	if normalizedAppType != "" {
+		matchValue = append(matchValue, bson.E{Key: "app_type", Value: appTypeValue})
+	}
+
+	groupStage := bson.D{{Key: "$group", Value: bson.D{
+		{Key: "_id", Value: "$namespace"},
+		{Key: "total", Value: bson.D{{Key: "$sum", Value: "$amount"}}},
+	}}}
+	pipeline := mongo.Pipeline{
+		{{Key: "$match", Value: matchValue}},
+	}
+
+	// Billing.Amount is the authoritative total for a billing record. Avoid
+	// unwinding app_costs unless the caller needs an app-level filter.
+	if req.AppName == "" {
+		return append(pipeline, groupStage), nil
+	}
+
+	directAppTypes := bson.A{
+		resources.AppType[resources.AppStore],
+		resources.AppType[resources.LLMToken],
+	}
+	pipeline = append(pipeline,
+		bson.D{{Key: "$project", Value: bson.D{
+			{Key: "namespace", Value: 1},
+			{Key: "app_type", Value: 1},
+			{Key: "app_name", Value: 1},
+			{Key: "amount", Value: 1},
+			{Key: "app_costs.name", Value: 1},
+			{Key: "app_costs.amount", Value: 1},
+		}}},
+		bson.D{{Key: "$unwind", Value: bson.D{
+			{Key: "path", Value: "$app_costs"},
+			{Key: "preserveNullAndEmptyArrays", Value: true},
+		}}},
+		bson.D{{Key: "$match", Value: bson.D{{Key: "$or", Value: bson.A{
+			bson.D{
+				{Key: "app_type", Value: bson.D{{Key: "$in", Value: directAppTypes}}},
+				{Key: "app_name", Value: req.AppName},
+			},
+			bson.D{
+				{Key: "app_type", Value: bson.D{{Key: "$nin", Value: directAppTypes}}},
+				{Key: "app_costs.name", Value: req.AppName},
+			},
+		}}}}},
+		bson.D{{Key: "$project", Value: bson.D{
+			{Key: "namespace", Value: 1},
+			{Key: "amount", Value: bson.D{{Key: "$cond", Value: bson.A{
+				bson.D{{Key: "$in", Value: bson.A{"$app_type", directAppTypes}}},
+				"$amount",
+				"$app_costs.amount",
+			}}}},
+		}}},
+		groupStage,
+	)
+	return pipeline, nil
+}
+
 func (m *MongoDB) GetWorkspaceConsumptionAmount(
 	req helper.ConsumptionRecordReq,
 ) (map[string]int64, error) {
-	// 获取各个 namespace的费用
-	owner, appType, appName, startTime, endTime := req.Owner, req.AppType, req.AppName, req.StartTime, req.EndTime
-	timeMatchValue := bson.D{
-		primitive.E{Key: "$gte", Value: startTime},
-		primitive.E{Key: "$lte", Value: endTime},
+	pipeline, err := buildWorkspaceConsumptionPipeline(req)
+	if err != nil {
+		return nil, err
 	}
 
-	// Apply common filters before $facet so MongoDB can use the billing index
-	// before executing either aggregation branch.
-	baseMatchValue := bson.D{
-		primitive.E{Key: "time", Value: timeMatchValue},
-		primitive.E{Key: "owner", Value: owner},
-		primitive.E{Key: "status", Value: resources.Settled},
-	}
-
-	appCostsMatchValue := bson.D{}
-	if appType != "" {
-		appCostsMatchValue = append(
-			appCostsMatchValue,
-			primitive.E{Key: "app_type", Value: resources.AppType[strings.ToUpper(appType)]},
-		)
-	}
-
-	// Build the post-unwind filters for nested app costs.
-	unwindMatchValue := bson.D{}
-	if appType != "" && appName != "" {
-		if appType != resources.AppStore {
-			unwindMatchValue = append(
-				unwindMatchValue,
-				primitive.E{Key: "app_costs.name", Value: appName},
-			)
-		} else {
-			unwindMatchValue = append(
-				unwindMatchValue,
-				primitive.E{Key: "app_name", Value: appName},
-			)
-		}
-	}
-
-	// Build branch-specific filters for direct consumption (AppStore and LLMToken).
-	directMatchValue := bson.D{}
-	// For direct consumption, match app_type to AppStore or LLMToken if not specified
-	if appType != "" {
-		directMatchValue = append(
-			directMatchValue,
-			primitive.E{Key: "app_type", Value: resources.AppType[strings.ToUpper(appType)]},
-		)
-	} else {
-		// If no appType specified, match both AppStore and LLMToken
-		directMatchValue = append(
-			directMatchValue,
-			primitive.E{Key: "app_type", Value: bson.D{{Key: "$in", Value: bson.A{
-				resources.AppType[resources.AppStore],
-				resources.AppType[resources.LLMToken],
-			}}}},
-		)
-	}
-	if appName != "" {
-		directMatchValue = append(directMatchValue, primitive.E{Key: "app_name", Value: appName})
-	}
-
-	appCostsPipeline := bson.A{}
-	if len(appCostsMatchValue) > 0 {
-		appCostsPipeline = append(
-			appCostsPipeline,
-			bson.D{{Key: "$match", Value: appCostsMatchValue}},
-		)
-	}
-	appCostsPipeline = append(appCostsPipeline, bson.D{{Key: "$unwind", Value: "$app_costs"}})
-	if len(unwindMatchValue) > 0 {
-		appCostsPipeline = append(
-			appCostsPipeline,
-			bson.D{{Key: "$match", Value: unwindMatchValue}},
-		)
-	}
-	appCostsPipeline = append(appCostsPipeline, bson.D{{Key: "$group", Value: bson.M{
-		"_id":   "$namespace", // group by namespace
-		"total": bson.M{"$sum": "$app_costs.amount"},
-	}}})
-
-	// Use $facet to query both types in parallel
-	pipeline := bson.A{
-		bson.D{{Key: "$match", Value: baseMatchValue}},
-		bson.D{{Key: "$facet", Value: bson.M{
-			"appCosts": appCostsPipeline,
-			"directAmount": bson.A{
-				bson.D{{Key: "$match", Value: directMatchValue}},
-				bson.D{{Key: "$group", Value: bson.M{
-					"_id":   "$namespace",
-					"total": bson.M{"$sum": "$amount"},
-				}}},
-			},
-		}}},
-	}
-
-	cursor, err := m.getBillingCollection().Aggregate(context.Background(), pipeline)
+	ctx := context.Background()
+	cursor, err := m.getBillingCollection().Aggregate(ctx, pipeline)
 	if err != nil {
 		return nil, fmt.Errorf("failed to aggregate billing collection: %w", err)
 	}
-	defer cursor.Close(context.Background())
+	defer cursor.Close(ctx)
 
-	var result struct {
-		AppCosts []struct {
-			Namespace string `bson:"_id"`
-			Total     int64  `bson:"total"`
-		} `bson:"appCosts"`
-		DirectAmount []struct {
-			Namespace string `bson:"_id"`
-			Total     int64  `bson:"total"`
-		} `bson:"directAmount"`
+	var results []struct {
+		Namespace string `bson:"_id"`
+		Total     int64  `bson:"total"`
+	}
+	if err := cursor.All(ctx, &results); err != nil {
+		return nil, fmt.Errorf("failed to decode workspace consumption result: %w", err)
 	}
 
-	if cursor.Next(context.Background()) {
-		if err := cursor.Decode(&result); err != nil {
-			return nil, fmt.Errorf("failed to decode result: %w", err)
-		}
+	resultMap := make(map[string]int64, len(results))
+	for _, item := range results {
+		resultMap[item.Namespace] = item.Total
 	}
-
-	// Merge results from both queries
-	resultMap := make(map[string]int64)
-
-	// Add app_costs totals
-	for _, item := range result.AppCosts {
-		resultMap[item.Namespace] += item.Total
-	}
-
-	// Add direct amount totals (AppStore and LLMToken)
-	for _, item := range result.DirectAmount {
-		resultMap[item.Namespace] += item.Total
-	}
-
 	return resultMap, nil
 }
 
