@@ -23,10 +23,12 @@ import (
 	services "github.com/labring/sealos/service/pkg/pay"
 	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
+	ctrlcache "sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -265,6 +267,12 @@ func Init(ctx context.Context) error {
 
 	K8sManager, err = ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme: scheme,
+		Cache:  cacheOptions(),
+		Client: client.Options{Cache: &client.CacheOptions{DisableFor: []client.Object{
+			&corev1.Node{},
+			&corev1.ResourceQuota{},
+			&v1.Notification{},
+		}}},
 	})
 	if err != nil {
 		return fmt.Errorf("unable to start manager: %w", err)
@@ -298,6 +306,75 @@ func Init(ctx context.Context) error {
 }
 
 const UserOwnerLabel = "user.sealos.io/owner"
+
+func cacheOptions() ctrlcache.Options {
+	return ctrlcache.Options{
+		DefaultTransform: ctrlcache.TransformStripManagedFields(),
+		ByObject: map[client.Object]ctrlcache.ByObject{
+			&corev1.Namespace{}: {Transform: transformNamespace},
+		},
+	}
+}
+
+func transformNamespace(obj any) (any, error) {
+	ns, ok := obj.(*corev1.Namespace)
+	if !ok {
+		return obj, nil
+	}
+
+	metadata := projectObjectMeta(ns.ObjectMeta)
+	metadata.Labels = copyMapValues(ns.Labels, UserOwnerLabel)
+	metadata.Annotations = copyMapValues(
+		ns.Annotations,
+		types.DebtNamespaceAnnoStatusKey,
+		types.FinalDeletionReplayAnnotationKey,
+		types.NetworkStatusAnnoKey,
+		types.WorkspaceSubscriptionStatusAnnoKey,
+		types.WorkspaceSubscriptionStatusUpdateTimeAnnoKey,
+	)
+	return &corev1.Namespace{
+		TypeMeta:   ns.TypeMeta,
+		ObjectMeta: metadata,
+		Spec: corev1.NamespaceSpec{
+			Finalizers: append([]corev1.FinalizerName(nil), ns.Spec.Finalizers...),
+		},
+		Status: corev1.NamespaceStatus{
+			Phase: ns.Status.Phase,
+		},
+	}, nil
+}
+
+func projectObjectMeta(in metav1.ObjectMeta) metav1.ObjectMeta {
+	out := metav1.ObjectMeta{
+		Name:              in.Name,
+		Namespace:         in.Namespace,
+		UID:               in.UID,
+		ResourceVersion:   in.ResourceVersion,
+		Generation:        in.Generation,
+		CreationTimestamp: in.CreationTimestamp,
+	}
+	if in.DeletionTimestamp != nil {
+		out.DeletionTimestamp = in.DeletionTimestamp.DeepCopy()
+	}
+	if in.DeletionGracePeriodSeconds != nil {
+		gracePeriod := *in.DeletionGracePeriodSeconds
+		out.DeletionGracePeriodSeconds = &gracePeriod
+	}
+	return out
+}
+
+func copyMapValues(source map[string]string, keys ...string) map[string]string {
+	var result map[string]string
+	for _, key := range keys {
+		if value, ok := source[key]; ok {
+			if result == nil {
+				result = make(map[string]string)
+			}
+			result[key] = value
+		}
+	}
+	return result
+}
 
 func SetupCache(mgr ctrl.Manager) error {
 	ns := &corev1.Namespace{}

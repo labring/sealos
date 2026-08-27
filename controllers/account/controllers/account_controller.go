@@ -144,7 +144,8 @@ type AccountReconciler struct {
 //+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
 
 func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	user := &userv1.User{}
+	user := &metav1.PartialObjectMetadata{}
+	user.SetGroupVersionKind(userv1.GroupVersion.WithKind("User"))
 	if err := r.Get(
 		ctx,
 		client.ObjectKey{Namespace: req.Namespace, Name: req.Name},
@@ -165,8 +166,12 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			return ctrl.Result{}, nil
 		}
 		if err == nil {
+			original := user.DeepCopy()
+			if user.Annotations == nil {
+				user.Annotations = make(map[string]string)
+			}
 			user.Annotations[InitAccountTimeAnnotation] = time.Now().Format(time.RFC3339)
-			return ctrl.Result{}, r.Update(ctx, user)
+			return ctrl.Result{}, r.Patch(ctx, user, client.MergeFrom(original))
 		}
 		return ctrl.Result{}, err
 	} else if client.IgnoreNotFound(
@@ -180,7 +185,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 func (r *AccountReconciler) syncAccount(
 	ctx context.Context,
-	userCr *userv1.User,
+	userCr *metav1.PartialObjectMetadata,
 ) (account *pkgtypes.Account, err error) {
 	owner := userCr.Annotations[userv1.UserAnnotationOwnerKey]
 	userNamespace := "ns-" + userCr.Name
@@ -473,7 +478,7 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controll
 	}
 	// r.SyncNSQuotaFunc = r.syncResourceQuotaAndLimitRange
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&userv1.User{}, builder.WithPredicates(OnlyCreatePredicate{})).
+		For(&userv1.User{}, builder.WithPredicates(OnlyCreatePredicate{}), builder.OnlyMetadata).
 		WithOptions(rateOpts).
 		Complete(r)
 }
