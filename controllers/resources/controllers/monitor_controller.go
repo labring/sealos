@@ -38,6 +38,7 @@ import (
 	"github.com/labring/sealos/controllers/pkg/utils/env"
 	"github.com/labring/sealos/controllers/pkg/utils/logger"
 	"github.com/labring/sealos/controllers/pkg/utils/retry"
+	resourcecache "github.com/labring/sealos/controllers/resources/controllers/cache"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	"github.com/labring/sealos/controllers/user/controllers/helper/config"
 	"github.com/minio/minio-go/v7"
@@ -57,6 +58,7 @@ import (
 // MonitorReconciler reconciles a Monitor object
 type MonitorReconciler struct {
 	client.Client
+	cache client.Reader
 	logr.Logger
 	Interval                 time.Duration
 	Scheme                   *runtime.Scheme
@@ -135,6 +137,7 @@ const (
 func NewMonitorReconciler(mgr ctrl.Manager) (*MonitorReconciler, error) {
 	r := &MonitorReconciler{
 		Client:                mgr.GetClient(),
+		cache:                 mgr.GetCache(),
 		Logger:                ctrl.Log.WithName("controllers").WithName("Monitor"),
 		stopCh:                make(chan struct{}),
 		periodicReconcile:     1 * time.Minute,
@@ -164,7 +167,7 @@ func NewMonitorReconciler(mgr ctrl.Manager) (*MonitorReconciler, error) {
 
 func InitIndexField(mgr ctrl.Manager) error {
 	if err := mgr.GetFieldIndexer().
-		IndexField(context.Background(), &corev1.PersistentVolumeClaim{}, "status.phase", func(rawObj client.Object) []string {
+		IndexField(context.Background(), &corev1.PersistentVolumeClaim{}, resourcecache.PersistentVolumeClaimPhaseKey, func(rawObj client.Object) []string {
 			pvc, ok := rawObj.(*corev1.PersistentVolumeClaim)
 			if !ok {
 				return nil
@@ -174,7 +177,7 @@ func InitIndexField(mgr ctrl.Manager) error {
 		return err
 	}
 	if err := mgr.GetFieldIndexer().
-		IndexField(context.Background(), &kbv1alpha1.Backup{}, "status.phase", func(rawObj client.Object) []string {
+		IndexField(context.Background(), &kbv1alpha1.Backup{}, resourcecache.BackupPhaseKey, func(rawObj client.Object) []string {
 			backup, ok := rawObj.(*kbv1alpha1.Backup)
 			if !ok {
 				return nil
@@ -184,7 +187,7 @@ func InitIndexField(mgr ctrl.Manager) error {
 		return err
 	}
 	return mgr.GetFieldIndexer().
-		IndexField(context.Background(), &corev1.Service{}, "spec.type", func(rawObj client.Object) []string {
+		IndexField(context.Background(), &corev1.Service{}, resourcecache.ServiceTypeKey, func(rawObj client.Object) []string {
 			svc, ok := rawObj.(*corev1.Service)
 			if !ok {
 				return nil
@@ -230,7 +233,7 @@ func (r *MonitorReconciler) getNamespaceList() (*corev1.NamespaceList, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create label requirement: %w", err)
 	}
-	return namespaceList, r.List(context.Background(), namespaceList, &client.ListOptions{
+	return namespaceList, r.cache.List(context.Background(), namespaceList, &client.ListOptions{
 		LabelSelector: labels.NewSelector().Add(*req),
 	})
 }
@@ -467,7 +470,11 @@ func (r *MonitorReconciler) getInstances(namespace string) (map[string]struct{},
 	instances := make(map[string]struct{})
 	insList := metav1.PartialObjectMetadataList{}
 	insList.SetGroupVersionKind(appv1.GroupVersion.WithKind("InstanceList"))
-	if err := r.List(context.Background(), &insList, client.InNamespace(namespace)); err != nil {
+	if err := r.cache.List(
+		context.Background(),
+		&insList,
+		client.InNamespace(namespace),
+	); err != nil {
 		return nil, fmt.Errorf("failed to list instances: %w", err)
 	}
 	for i := range insList.Items {
@@ -487,7 +494,7 @@ func (r *MonitorReconciler) monitorPodResourceUsage(
 	instances map[string]struct{},
 ) error {
 	podList := &corev1.PodList{}
-	if err := r.List(context.Background(), podList, &client.ListOptions{
+	if err := r.cache.List(context.Background(), podList, &client.ListOptions{
 		Namespace: namespace,
 	}); err != nil {
 		return fmt.Errorf("failed to list pods: %w", err)
@@ -584,9 +591,12 @@ func (r *MonitorReconciler) monitorPVCResourceUsage(
 	instances map[string]struct{},
 ) error {
 	pvcList := &corev1.PersistentVolumeClaimList{}
-	if err := r.List(context.Background(), pvcList, &client.ListOptions{
-		Namespace:     namespace,
-		FieldSelector: fields.OneTermEqualSelector("status.phase", string(corev1.ClaimBound)),
+	if err := r.cache.List(context.Background(), pvcList, &client.ListOptions{
+		Namespace: namespace,
+		FieldSelector: fields.OneTermEqualSelector(
+			resourcecache.PersistentVolumeClaimPhaseKey,
+			string(corev1.ClaimBound),
+		),
 	}); err != nil {
 		return fmt.Errorf("failed to list pvc: %w", err)
 	}
@@ -614,10 +624,10 @@ func (r *MonitorReconciler) monitorDatabaseBackupUsage(
 	resNamed map[string]*resources.ResourceNamed,
 ) error {
 	backupList := &kbv1alpha1.BackupList{}
-	if err := r.List(context.Background(), backupList, &client.ListOptions{
+	if err := r.cache.List(context.Background(), backupList, &client.ListOptions{
 		Namespace: namespace,
 		FieldSelector: fields.OneTermEqualSelector(
-			"status.phase",
+			resourcecache.BackupPhaseKey,
 			string(kbv1alpha1.BackupPhaseCompleted),
 		),
 	}); err != nil {
@@ -649,9 +659,12 @@ func (r *MonitorReconciler) monitorServiceResourceUsage(
 	instances map[string]struct{},
 ) error {
 	svcList := &corev1.ServiceList{}
-	if err := r.List(context.Background(), svcList, &client.ListOptions{
-		Namespace:     namespace,
-		FieldSelector: fields.OneTermEqualSelector("spec.type", string(corev1.ServiceTypeNodePort)),
+	if err := r.cache.List(context.Background(), svcList, &client.ListOptions{
+		Namespace: namespace,
+		FieldSelector: fields.OneTermEqualSelector(
+			resourcecache.ServiceTypeKey,
+			string(corev1.ServiceTypeNodePort),
+		),
 	}); err != nil {
 		return fmt.Errorf("failed to list svc: %w", err)
 	}
@@ -916,7 +929,7 @@ func (r *MonitorReconciler) handlerTrafficUsed(
 
 func (r *MonitorReconciler) refreshGPUConfig(ctx context.Context) error {
 	configmap := &corev1.ConfigMap{}
-	if err := r.Get(ctx, client.ObjectKey{
+	if err := r.cache.Get(ctx, client.ObjectKey{
 		Namespace: gpu.NodeInfoConfigmapNamespace,
 		Name:      gpu.NodeInfoConfigmapName,
 	}, configmap); err != nil {
