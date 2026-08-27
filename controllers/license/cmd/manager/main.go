@@ -22,15 +22,18 @@ import (
 	"os"
 
 	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
+	licensecache "github.com/labring/sealos/controllers/license/internal/cache"
 	"github.com/labring/sealos/controllers/license/internal/controller"
 	utilid "github.com/labring/sealos/controllers/license/internal/util/clusterid"
 	"github.com/labring/sealos/controllers/license/internal/util/rate"
 	notificationv1 "github.com/labring/sealos/controllers/pkg/notification/api/v1"
+	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	ccontroler "sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -48,6 +51,7 @@ func init() {
 
 	utilruntime.Must(licensev1.AddToScheme(scheme))
 	utilruntime.Must(notificationv1.AddToScheme(scheme))
+	utilruntime.Must(userv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -131,7 +135,11 @@ func main() {
 	}
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:                 scheme,
+		Scheme: scheme,
+		Cache:  licensecache.Options(),
+		Client: client.Options{Cache: &client.CacheOptions{
+			DisableFor: licensecache.UncachedObjects(),
+		}},
 		Metrics:                metricsServerOptions,
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
@@ -179,6 +187,10 @@ func main() {
 	reconciler := &controller.LicenseReconciler{
 		ClusterID:       clusterID,
 		CreateTimestamp: *createTime,
+	}
+	if err = licensecache.SetupInformers(mgr); err != nil {
+		setupLog.Error(err, "unable to set up license cache informers")
+		os.Exit(1)
 	}
 	if err = reconciler.SetupWithManager(mgr, rateOpts); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "License")
