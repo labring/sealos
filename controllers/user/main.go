@@ -26,6 +26,7 @@ import (
 	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	"github.com/labring/sealos/controllers/user/controllers"
+	usercache "github.com/labring/sealos/controllers/user/controllers/cache"
 	ratelimiter "github.com/labring/sealos/controllers/user/controllers/helper/ratelimiter"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -36,7 +37,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/config"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -200,15 +201,16 @@ func main() {
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
 		Scheme:  scheme,
 		Metrics: metricsServerOptions,
+		Cache:   usercache.Options(&syncPeriod),
+		Client: client.Options{Cache: &client.CacheOptions{
+			DisableFor: usercache.UncachedObjects(),
+		}},
 		// WebhookServer: webhook.NewServer(webhook.Options{
 		//	Port: 9443,
 		// }),
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "785548a1.sealos.io",
-		Cache: cache.Options{
-			SyncPeriod: &syncPeriod,
-		},
 		Controller: config.Controller{
 			UsePriorityQueue: ptr.To(true),
 		},

@@ -144,11 +144,12 @@ func (sac *ServiceAccountConfig) applyBoundTokenSecret(
 // CleanupLegacyBoundTokenSecrets removes stale bound token secrets for a user.
 func CleanupLegacyBoundTokenSecrets(
 	ctx context.Context,
-	cli client.Client,
+	reader client.Reader,
+	writer client.Writer,
 	userName, keepSecretName string,
 ) error {
 	secrets := &v1.SecretList{}
-	if err := cli.List(
+	if err := reader.List(
 		ctx,
 		secrets,
 		client.InNamespace(config2.GetUserSystemNamespace()),
@@ -167,7 +168,7 @@ func CleanupLegacyBoundTokenSecrets(
 		if secret.Annotations == nil || secret.Annotations[v1.ServiceAccountNameKey] != userName {
 			continue
 		}
-		if err := cli.Delete(ctx, secret); err != nil && !apierrors.IsNotFound(err) {
+		if err := writer.Delete(ctx, secret); err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to delete legacy bound token secret %s: %w", secret.Name, err)
 		}
 	}

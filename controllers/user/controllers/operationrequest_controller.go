@@ -77,7 +77,11 @@ func (r *OperationReqReconciler) SetupWithManager(
 	r.userLock = make(map[string]*sync.Mutex)
 	r.Logger.V(1).Info("init reconcile operationrequest controller")
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&userv1.Operationrequest{}, builder.WithPredicates(namespaceOnlyPredicate(config.GetUserSystemNamespace()))).
+		For(
+			&userv1.Operationrequest{},
+			builder.WithPredicates(namespaceOnlyPredicate(config.GetUserSystemNamespace())),
+			builder.OnlyMetadata,
+		).
 		WithOptions(controller.Options{
 			MaxConcurrentReconciles: ratelimiter.GetConcurrent(opts),
 			RateLimiter:             ratelimiter.GetRateLimiter(opts),
@@ -232,8 +236,7 @@ func (r *OperationReqReconciler) reconcile(
 		}
 		if request.Spec.Role == userv1.OwnerRoleType {
 			// update user annotation
-			user.Annotations[userv1.UserAnnotationOwnerKey] = request.Spec.User
-			if err := r.Update(ctx, user); err != nil {
+			if err := r.patchUserOwner(ctx, user, request.Spec.User); err != nil {
 				r.Recorder.Eventf(
 					request,
 					v1.EventTypeWarning,
@@ -308,8 +311,7 @@ func (r *OperationReqReconciler) reconcile(
 		}
 		if request.Spec.Role == userv1.OwnerRoleType {
 			// update user annotation
-			user.Annotations[userv1.UserAnnotationOwnerKey] = request.Spec.User
-			if err := r.Update(ctx, user); err != nil {
+			if err := r.patchUserOwner(ctx, user, request.Spec.User); err != nil {
 				r.Recorder.Eventf(
 					request,
 					v1.EventTypeWarning,
@@ -339,6 +341,19 @@ func (r *OperationReqReconciler) reconcile(
 		request.Name,
 	)
 	return ctrl.Result{RequeueAfter: OperationReqRequeueDuration}, nil
+}
+
+func (r *OperationReqReconciler) patchUserOwner(
+	ctx context.Context,
+	user *userv1.User,
+	owner string,
+) error {
+	original := user.DeepCopy()
+	if user.Annotations == nil {
+		user.Annotations = make(map[string]string)
+	}
+	user.Annotations[userv1.UserAnnotationOwnerKey] = owner
+	return r.Patch(ctx, user, client.MergeFrom(original))
 }
 
 // isRetained returns true if the request is isCompleted and exist for retention time

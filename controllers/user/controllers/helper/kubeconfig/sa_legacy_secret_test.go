@@ -100,6 +100,7 @@ func TestCleanupLegacyBoundTokenSecrets(t *testing.T) {
 	if err := CleanupLegacyBoundTokenSecrets(
 		context.Background(),
 		cli,
+		cli,
 		userName,
 		currentSecret,
 	); err != nil {
