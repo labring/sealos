@@ -74,7 +74,9 @@ export const resourcePropertyMap: Record<
 };
 
 export const formatResourceQuotaValue = (value: number, type: WorkspaceQuotaItemType) => {
-  const scale = resourcePropertyMap[type].scale;
+  const scale = resourcePropertyMap[type]?.scale;
+
+  if (scale === undefined) return '--';
 
   return (value / scale).toFixed(2);
 };

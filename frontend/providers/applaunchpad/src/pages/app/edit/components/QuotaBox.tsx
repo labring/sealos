@@ -8,7 +8,15 @@ import {
 } from '@sealos/shadcn-ui/tooltip';
 import { Progress } from '@sealos/shadcn-ui/progress';
 import { Card, CardContent, CardHeader, CardTitle } from '@sealos/shadcn-ui/card';
-import { Cpu, MemoryStick, HardDrive, CircuitBoard, HdmiPort, ArrowUpDown, Layers } from 'lucide-react';
+import {
+  Cpu,
+  MemoryStick,
+  HardDrive,
+  CircuitBoard,
+  HdmiPort,
+  ArrowUpDown,
+  Layers
+} from 'lucide-react';
 
 import { useUserQuota, resourcePropertyMap, formatResourceQuotaValue } from '@sealos/shared';
 
@@ -30,7 +38,7 @@ const QuotaBox = () => {
     if (!userQuota) return [];
 
     return userQuota
-      .filter((item) => item.limit > 0)
+      .filter((item) => item.limit > 0 && resourcePropertyMap[item.type])
       .map((item) => {
         const { limit, used, type } = item;
         const unit = resourcePropertyMap[type]?.unit;

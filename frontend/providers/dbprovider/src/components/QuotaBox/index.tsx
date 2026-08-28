@@ -38,7 +38,7 @@ const QuotaBox = () => {
     if (!userQuota) return [];
 
     return userQuota
-      .filter((item) => item.limit > 0)
+      .filter((item) => item.limit > 0 && resourcePropertyMap[item.type])
       .map((item) => {
         const { limit, used, type } = item;
         const unit = resourcePropertyMap[type]?.unit;
