@@ -194,6 +194,37 @@ func TestHandle_DeleteQuotaNotBypassed(t *testing.T) {
 	}
 }
 
+func TestHandle_SuspendedNamespace_NonDeleteDenied(t *testing.T) {
+	d := newDebtWithNS(&corev1.Namespace{ObjectMeta: metav1.ObjectMeta{
+		Name:   "ns-test",
+		Labels: map[string]string{"user.sealos.io/owner": "user-1"},
+		Annotations: map[string]string{
+			pkgtype.DebtNamespaceAnnoStatusKey: pkgtype.SuspendCompletedDebtNamespaceAnnoStatus,
+		},
+	}})
+	req := makeReq(admissionv1.Update, "Pod", "", "v1", "pods")
+	if resp := d.Handle(context.Background(), req); resp.Allowed {
+		t.Fatal("non-DELETE request in a suspended namespace should be denied")
+	}
+}
+
+func TestHandle_SuspendedNamespace_DeleteAllowed(t *testing.T) {
+	d := newDebtWithNS(&corev1.Namespace{ObjectMeta: metav1.ObjectMeta{
+		Name:   "ns-test",
+		Labels: map[string]string{"user.sealos.io/owner": "user-1"},
+		Annotations: map[string]string{
+			pkgtype.DebtNamespaceAnnoStatusKey: pkgtype.SuspendCompletedDebtNamespaceAnnoStatus,
+		},
+	}})
+	req := makeReq(admissionv1.Delete, "Pod", "", "v1", "pods")
+	if resp := d.Handle(context.Background(), req); !resp.Allowed {
+		t.Fatalf(
+			"DELETE request in a suspended namespace should be allowed, got: %s",
+			resp.Result.Message,
+		)
+	}
+}
+
 // --- Resource-type denial tests (no client/DB needed) ---
 
 func TestHandle_NamespaceDenied(t *testing.T) {
@@ -324,7 +355,156 @@ func TestCheckOption_CacheHit_SufficientBalance(t *testing.T) {
 	}
 }
 
+func TestCheckOption_SuspendedDebtStatus_Denied(t *testing.T) {
+	statuses := []string{
+		pkgtype.SuspendDebtNamespaceAnnoStatus,
+		pkgtype.SuspendCompletedDebtNamespaceAnnoStatus,
+		pkgtype.TerminateSuspendDebtNamespaceAnnoStatus,
+		pkgtype.TerminateSuspendCompletedDebtNamespaceAnnoStatus,
+		pkgtype.FinalDeletionDebtNamespaceAnnoStatus,
+		pkgtype.FinalDeletionCompletedDebtNamespaceAnnoStatus,
+	}
+
+	for _, status := range statuses {
+		t.Run(status, func(t *testing.T) {
+			d := newDebtWithNS(&corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:        "ns-test",
+					Labels:      map[string]string{"user.sealos.io/owner": "user-1"},
+					Annotations: map[string]string{pkgtype.DebtNamespaceAnnoStatusKey: status},
+				},
+			})
+			if resp := d.checkOption(
+				context.Background(),
+				logger,
+				d.Client,
+				"ns-test",
+			); resp.Allowed {
+				t.Fatalf("suspended namespace status %q should be denied", status)
+			}
+		})
+	}
+}
+
+func TestCheckOption_SuspendedNetworkStatus_Denied(t *testing.T) {
+	for _, status := range []string{pkgtype.NetworkSuspend, pkgtype.NetworkSuspendCompleted} {
+		t.Run(status, func(t *testing.T) {
+			d := newDebtWithNS(&corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:        "ns-test",
+					Labels:      map[string]string{"user.sealos.io/owner": "user-1"},
+					Annotations: map[string]string{pkgtype.NetworkStatusAnnoKey: status},
+				},
+			})
+			if resp := d.checkOption(
+				context.Background(),
+				logger,
+				d.Client,
+				"ns-test",
+			); resp.Allowed {
+				t.Fatalf("suspended network status %q should be denied", status)
+			}
+		})
+	}
+}
+
+func TestCheckOption_ActiveDebtStatus_AllowsWithSufficientBalance(t *testing.T) {
+	for _, status := range []string{
+		pkgtype.NormalDebtNamespaceAnnoStatus,
+		pkgtype.ResumeDebtNamespaceAnnoStatus,
+		pkgtype.ResumeCompletedDebtNamespaceAnnoStatus,
+	} {
+		t.Run(status, func(t *testing.T) {
+			d := newDebtWithNS(&corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:        "ns-test",
+					Labels:      map[string]string{"user.sealos.io/owner": "user-1"},
+					Annotations: map[string]string{pkgtype.DebtNamespaceAnnoStatusKey: status},
+				},
+			})
+			d.TTLUserMap.Put("account:user-1", &pkgtype.UsableBalanceWithCredits{
+				Balance: 100,
+			})
+			if resp := d.checkOption(
+				context.Background(),
+				logger,
+				d.Client,
+				"ns-test",
+			); !resp.Allowed {
+				t.Fatalf(
+					"active namespace status %q should be allowed, got: %s",
+					status,
+					resp.Result.Message,
+				)
+			}
+		})
+	}
+}
+
 // --- Helpers ---
+
+func TestGetSuspendedNamespaceStatus(t *testing.T) {
+	for _, status := range []string{
+		pkgtype.SuspendDebtNamespaceAnnoStatus,
+		pkgtype.SuspendCompletedDebtNamespaceAnnoStatus,
+		pkgtype.TerminateSuspendDebtNamespaceAnnoStatus,
+		pkgtype.TerminateSuspendCompletedDebtNamespaceAnnoStatus,
+		pkgtype.FinalDeletionDebtNamespaceAnnoStatus,
+		pkgtype.FinalDeletionCompletedDebtNamespaceAnnoStatus,
+	} {
+		ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{
+			Annotations: map[string]string{pkgtype.DebtNamespaceAnnoStatusKey: status},
+		}}
+		if got, ok := getSuspendedNamespaceStatus(ns); !ok || got != status {
+			t.Errorf(
+				"getSuspendedNamespaceStatus(%q) = (%q, %v), want (%q, true)",
+				status,
+				got,
+				ok,
+				status,
+			)
+		}
+	}
+	for _, status := range []string{pkgtype.NetworkSuspend, pkgtype.NetworkSuspendCompleted} {
+		ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{
+			Annotations: map[string]string{pkgtype.NetworkStatusAnnoKey: status},
+		}}
+		if got, ok := getSuspendedNamespaceStatus(ns); !ok || got != status {
+			t.Errorf(
+				"getSuspendedNamespaceStatus(%q) = (%q, %v), want (%q, true)",
+				status,
+				got,
+				ok,
+				status,
+			)
+		}
+	}
+
+	activeStatuses := []struct {
+		key    string
+		status string
+	}{
+		{pkgtype.DebtNamespaceAnnoStatusKey, ""},
+		{pkgtype.DebtNamespaceAnnoStatusKey, pkgtype.NormalDebtNamespaceAnnoStatus},
+		{pkgtype.DebtNamespaceAnnoStatusKey, pkgtype.ResumeDebtNamespaceAnnoStatus},
+		{pkgtype.DebtNamespaceAnnoStatusKey, pkgtype.ResumeCompletedDebtNamespaceAnnoStatus},
+		{pkgtype.NetworkStatusAnnoKey, pkgtype.NetworkResume},
+		{pkgtype.NetworkStatusAnnoKey, pkgtype.NetworkResumeCompleted},
+	}
+	for _, test := range activeStatuses {
+		ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{
+			Annotations: map[string]string{test.key: test.status},
+		}}
+		if got, ok := getSuspendedNamespaceStatus(ns); ok {
+			t.Errorf(
+				"getSuspendedNamespaceStatus(%s=%q) = (%q, true), want no suspension",
+				test.key,
+				test.status,
+				got,
+			)
+		}
+	}
+}
 
 func TestIsDefaultQuotaName(t *testing.T) {
 	tests := []struct {
