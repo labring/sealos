@@ -23,21 +23,13 @@ import (
 )
 
 func TestGetUserObjectStorageFlow(t *testing.T) {
-	requireObjectStorageTest(t,
-		"MINIO_ENDPOINT",
-		"MINIO_ACCESS_KEY",
-		"MINIO_SECRET_KEY",
-		"PROM_URL",
-		"MINIO_USERNAME",
-		"MINIO_INSTANCE",
-	)
 	cli, err := NewOSClient(
 		os.Getenv("MINIO_ENDPOINT"),
 		os.Getenv("MINIO_ACCESS_KEY"),
 		os.Getenv("MINIO_SECRET_KEY"),
 	)
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err)
 	}
 	start := time.Now().Truncate(time.Hour).Add(-time.Hour)
 	bytes, err := GetUserObjectStorageFlow(
@@ -49,7 +41,7 @@ func TestGetUserObjectStorageFlow(t *testing.T) {
 		start.Add(time.Hour),
 	)
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err)
 	}
 	t.Log(ConvertBytes(bytes))
 }
@@ -68,23 +60,18 @@ func ConvertBytes(bytes int64) string {
 }
 
 func TestQueryUserUsage(t *testing.T) {
-	requireObjectStorageTest(t,
-		"OBJECTSTORAGE_METRICS_ENDPOINT",
-		"OBJECTSTORAGE_METRICS_USERNAME",
-		"OBJECTSTORAGE_METRICS_PASSWORD",
-	)
 	obClient, err := NewMetricsClient(
-		os.Getenv("OBJECTSTORAGE_METRICS_ENDPOINT"),
-		os.Getenv("OBJECTSTORAGE_METRICS_USERNAME"),
-		os.Getenv("OBJECTSTORAGE_METRICS_PASSWORD"),
+		"objectstorageapi.192.168.0.55.nip.io",
+		"username",
+		"passw0rd",
 		false,
 	)
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err)
 	}
 	metrics, err := QueryUserUsage(obClient)
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err)
 	}
 	for _, metric := range metrics {
 		fmt.Println(metric)
@@ -92,23 +79,18 @@ func TestQueryUserUsage(t *testing.T) {
 }
 
 func TestQueryUserTraffic(t *testing.T) {
-	requireObjectStorageTest(t,
-		"OBJECTSTORAGE_METRICS_ENDPOINT",
-		"OBJECTSTORAGE_METRICS_USERNAME",
-		"OBJECTSTORAGE_METRICS_PASSWORD",
-	)
 	obClient, err := NewMetricsClient(
-		os.Getenv("OBJECTSTORAGE_METRICS_ENDPOINT"),
-		os.Getenv("OBJECTSTORAGE_METRICS_USERNAME"),
-		os.Getenv("OBJECTSTORAGE_METRICS_PASSWORD"),
+		"objectstorageapi.192.168.0.55.nip.io",
+		"username",
+		"passw0rd",
 		false,
 	)
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err)
 	}
 	metrics, err := QueryUserUsageAndTraffic(obClient)
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err)
 	}
 
 	for user, metric := range metrics {
@@ -119,14 +101,20 @@ func TestQueryUserTraffic(t *testing.T) {
 	}
 }
 
-func requireObjectStorageTest(t *testing.T, envNames ...string) {
-	t.Helper()
-	if os.Getenv("RUN_OBJECTSTORAGE_TESTS") != "true" {
-		t.Skip("set RUN_OBJECTSTORAGE_TESTS=true to run object storage tests")
+func TestGetUserWithBucket(t *testing.T) {
+	cases := []struct {
+		bucket string
+		want   string
+	}{
+		{"f5twmjcs-evomix", "f5twmjcs"},
+		{"admin-111", ""},
+		{"nodash", ""},
+		{"abc12345-x-y", "abc12345"},
+		{"toolongusername-x", ""},
 	}
-	for _, name := range envNames {
-		if os.Getenv(name) == "" {
-			t.Skipf("requires %s", name)
+	for _, c := range cases {
+		if got := GetUserWithBucket(c.bucket); got != c.want {
+			t.Errorf("GetUserWithBucket(%q) = %q, want %q", c.bucket, got, c.want)
 		}
 	}
 }
