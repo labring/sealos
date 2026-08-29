@@ -596,3 +596,54 @@ func requireMongoTest(t *testing.T) {
 		t.Skip("requires MONGODB_URI")
 	}
 }
+
+func TestGetTimeObjBucketExternalTraffic(t *testing.T) {
+	uri := os.Getenv("MONGODB_URI")
+	if uri == "" {
+		t.Skip("MONGODB_URI not set, skip mongo integration test")
+	}
+	ctx := context.Background()
+	m, err := NewMongoInterface(ctx, uri)
+	if err != nil {
+		t.Fatal(err)
+	}
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.Disconnect(ctx)
+	start := time.Date(2026, time.August, 29, 10, 0, 0, 0, time.UTC)
+	end := start.Add(2 * time.Hour)
+	coll := client.Database("objectstorage-audit").Collection("usage_hourly")
+	docs := []interface{}{
+		bson.M{"bucket": "abc12345-app", "direction": "external", "hour": start, "tx": int64(3 << 20), "rx": int64(0), "requests": 3, "user": "abc12345"},
+		bson.M{"bucket": "abc12345-app", "direction": "internal", "hour": start, "tx": int64(9 << 20), "rx": int64(0), "requests": 9, "user": "abc12345"},
+		bson.M{"bucket": "abc12345-app", "direction": "external", "hour": start.Add(time.Hour), "tx": int64(1 << 20), "rx": int64(0), "requests": 1, "user": "abc12345"},
+		bson.M{"bucket": "abc12345-app", "direction": "external", "hour": end, "tx": int64(7 << 20), "rx": int64(0), "requests": 7, "user": "abc12345"},
+		bson.M{"bucket": "zz999999-app", "direction": "external", "hour": start, "tx": int64(2 << 20), "rx": int64(0), "requests": 2, "user": "zz999999"},
+	}
+	_, err = coll.InsertMany(ctx, docs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		_, _ = coll.DeleteMany(ctx, bson.M{"bucket": bson.M{"$in": bson.A{"abc12345-app", "zz999999-app"}}})
+	}()
+
+	got, err := m.GetTimeObjBucketExternalTraffic(start, end)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Window (10:00, 12:00]: the 12:00 row is excluded; internal is excluded;
+	// external rows at 10:00+11:00 sum to 4Mi.
+	want := map[string]int64{"abc12345-app": 4 << 20, "zz999999-app": 2 << 20}
+	sum := map[string]int64{}
+	for _, r := range got {
+		sum[r.Bucket] += r.Tx
+	}
+	for b, w := range want {
+		if sum[b] != w {
+			t.Errorf("bucket %q tx = %d, want %d", b, sum[b], w)
+		}
+	}
+}

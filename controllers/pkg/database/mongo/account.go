@@ -550,6 +550,55 @@ func (m *mongoDB) GetTimeObjBucketBucket(startTime, endTime time.Time) ([]string
 	return nil, nil
 }
 
+// auditUsageDB is the database where the objectstorage audit receiver stores
+// per-hour, per-direction usage aggregates (collection usage_hourly). It lives
+// on the same Mongo cluster as the platform database.
+const auditUsageDB = "objectstorage-audit"
+
+func (m *mongoDB) getAuditUsageCollection() *mongo.Collection {
+	return m.Client.Database(auditUsageDB).Collection("usage_hourly")
+}
+
+func (m *mongoDB) GetTimeObjBucketExternalTraffic(
+	startTime, endTime time.Time,
+) ([]types.BucketExternalTraffic, error) {
+	pipeline := []bson.M{
+		{
+			"$match": bson.M{
+				"hour": bson.M{
+					"$gt":  startTime,
+					"$lte": endTime,
+				},
+				"direction": "external",
+			},
+		},
+		{
+			"$group": bson.M{
+				"_id": "$bucket",
+				"tx":  bson.M{"$sum": "$tx"},
+			},
+		},
+		{
+			"$project": bson.M{
+				"_id":    0,
+				"bucket": "$_id",
+				"tx":     1,
+			},
+		},
+	}
+	cursor, err := m.getAuditUsageCollection().Aggregate(context.Background(), pipeline)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(context.Background())
+
+	var results []types.BucketExternalTraffic
+	if err = cursor.All(context.Background(), &results); err != nil {
+		return nil, err
+	}
+	return results, nil
+}
+
 // InsertMonitor insert monitor data to mongodb collection monitor + time (eg: monitor_20200101)
 // The monitor data is saved daily 2020-12-01 00:00:00 - 2020-12-01 23:59:59 => monitor_20201201
 func (m *mongoDB) InsertMonitor(ctx context.Context, monitors ...*resources.Monitor) error {
