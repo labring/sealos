@@ -650,4 +650,20 @@ func TestGetTimeObjBucketExternalTraffic(t *testing.T) {
 			t.Errorf("bucket %q tx = %d, want %d", b, sum[b], w)
 		}
 	}
+
+	// A mid-hour window start (restart scenario) is clamped down to the hour,
+	// so it must yield the same totals as the hour-aligned window.
+	got2, err := m.GetTimeObjBucketExternalTraffic(start.Add(30*time.Minute), end)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sum2 := map[string]int64{}
+	for _, r := range got2 {
+		sum2[r.Bucket] += r.Tx
+	}
+	for b, w := range want {
+		if sum2[b] != w {
+			t.Errorf("clamped bucket %q tx = %d, want %d", b, sum2[b], w)
+		}
+	}
 }

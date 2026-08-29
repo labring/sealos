@@ -562,6 +562,12 @@ func (m *mongoDB) getAuditUsageCollection() *mongo.Collection {
 func (m *mongoDB) GetTimeObjBucketExternalTraffic(
 	startTime, endTime time.Time,
 ) ([]types.BucketExternalTraffic, error) {
+	// The first run after a controller restart has a mid-hour window start
+	// (e.g. 15:05 after a 15:05 restart). Clamp it to the hour so the bucket
+	// holding that partial hour is still billed: its pre-restart share was
+	// never billed (the previous run consumed only earlier buckets), and the
+	// bucket is consumed by exactly one run, so nothing double-bills.
+	startTime = startTime.Truncate(time.Hour)
 	pipeline := []bson.M{
 		{
 			// usage_hourly buckets are [hour, hour+1): the billing window
