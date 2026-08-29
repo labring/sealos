@@ -636,10 +636,11 @@ func TestGetTimeObjBucketExternalTraffic(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Window (10:00, 12:00] ($gt start, $lte end): external rows at 11:00
-	// (1Mi) and 12:00 (7Mi) sum to 8Mi; the 10:00 rows are excluded ($gt) and
-	// the internal row is excluded by direction.
-	want := map[string]int64{"abc12345-app": 8 << 20, "zz999999-app": 0}
+	// usage_hourly buckets are [hour, hour+1); the query window maps to
+	// [start, end) = [10:00, 12:00): the 10:00 external rows (3Mi + 2Mi) and
+	// 11:00 external row (1Mi) are included; the 12:00 row is excluded; the
+	// 10:00 internal row is excluded by direction. Totals: abc=4Mi, zz=2Mi.
+	want := map[string]int64{"abc12345-app": 4 << 20, "zz999999-app": 2 << 20}
 	sum := map[string]int64{}
 	for _, r := range got {
 		sum[r.Bucket] += r.Tx

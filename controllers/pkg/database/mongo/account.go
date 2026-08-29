@@ -564,10 +564,13 @@ func (m *mongoDB) GetTimeObjBucketExternalTraffic(
 ) ([]types.BucketExternalTraffic, error) {
 	pipeline := []bson.M{
 		{
+			// usage_hourly buckets are [hour, hour+1): the billing window
+			// (startTime, endTime] therefore maps to hour >= startTime &&
+			// hour < endTime, so each completed hour is billed exactly once.
 			"$match": bson.M{
 				"hour": bson.M{
-					"$gt":  startTime,
-					"$lte": endTime,
+					"$gte": startTime,
+					"$lt":  endTime,
 				},
 				"direction": "external",
 			},
