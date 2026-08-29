@@ -60,6 +60,9 @@ type Account interface {
 	GetAllLatestObjTraffic(startTime, endTime time.Time) ([]types.ObjectStorageTraffic, error)
 	HandlerTimeObjBucketSentTraffic(startTime, endTime time.Time, bucket string) (int64, error)
 	GetTimeObjBucketBucket(startTime, endTime time.Time) ([]string, error)
+	// GetTimeObjBucketExternalTraffic returns per-bucket external egress bytes
+	// from the objectstorage audit database for (startTime, endTime].
+	GetTimeObjBucketExternalTraffic(startTime, endTime time.Time) ([]types.BucketExternalTraffic, error)
 	GetUnsettingBillingHandler(owner string) ([]resources.BillingHandler, error)
 	UpdateBillingStatus(orderIDs []string, status resources.BillingStatus) error
 	GetUpdateTimeForCategoryAndPropertyFromMetering(category, property string) (time.Time, error)

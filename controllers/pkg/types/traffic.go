@@ -31,6 +31,15 @@ type ObjectStorageTraffic struct {
 	Sent int64 `json:"sent" bson:"sent"`
 }
 
+// BucketExternalTraffic is one bucket's external-egress byte total for a time
+// window, aggregated from the objectstorage audit database (usage_hourly,
+// direction=external). It is the billing source for object storage traffic.
+type BucketExternalTraffic struct {
+	Bucket string `json:"bucket" bson:"bucket"`
+	// bytes
+	Tx int64 `json:"tx" bson:"tx"`
+}
+
 type UserTimeRangeTraffic struct {
 	CreatedAt     time.Time                  `gorm:"type:timestamp(3) with time zone;default:current_timestamp"`
 	UpdatedAt     time.Time                  `gorm:"type:timestamp(3) with time zone;autoUpdateTime;default:current_timestamp"`
