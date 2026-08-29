@@ -825,8 +825,11 @@ func (r *MonitorReconciler) monitorObjectStorageTrafficUsed(startTime, endTime t
 		if objstorage.GetUserWithBucket(t.Bucket) == "" {
 			continue
 		}
-		// Keep the historical threshold: sub-1MiB hourly egress is not billed.
-		if t.Tx < 1024*1024 {
+		// The old <1MiB skip existed to filter controller chatter that was
+		// mixed into the MinIO metrics; chatter is now excluded by the
+		// direction filter (it is internal), so every byte of external egress
+		// is billed at the Mi unit granularity (ceil).
+		if t.Tx <= 0 {
 			continue
 		}
 		used := int64(
