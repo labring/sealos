@@ -598,9 +598,11 @@ func requireMongoTest(t *testing.T) {
 }
 
 func TestGetTimeObjBucketExternalTraffic(t *testing.T) {
-	uri := os.Getenv("MONGODB_URI")
+	// An init() in this file unconditionally clears MONGODB_URI, so this test
+	// uses its own variable to receive the connection string.
+	uri := os.Getenv("TEST_MONGODB_URI")
 	if uri == "" {
-		t.Skip("MONGODB_URI not set, skip mongo integration test")
+		t.Skip("TEST_MONGODB_URI not set, skip mongo integration test")
 	}
 	ctx := context.Background()
 	m, err := NewMongoInterface(ctx, uri)
@@ -634,9 +636,10 @@ func TestGetTimeObjBucketExternalTraffic(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Window (10:00, 12:00]: the 12:00 row is excluded; internal is excluded;
-	// external rows at 10:00+11:00 sum to 4Mi.
-	want := map[string]int64{"abc12345-app": 4 << 20, "zz999999-app": 2 << 20}
+	// Window (10:00, 12:00] ($gt start, $lte end): external rows at 11:00
+	// (1Mi) and 12:00 (7Mi) sum to 8Mi; the 10:00 rows are excluded ($gt) and
+	// the internal row is excluded by direction.
+	want := map[string]int64{"abc12345-app": 8 << 20, "zz999999-app": 0}
 	sum := map[string]int64{}
 	for _, r := range got {
 		sum[r.Bucket] += r.Tx
