@@ -810,60 +810,47 @@ func (r *MonitorReconciler) MonitorTrafficUsed(startTime, endTime time.Time) err
 }
 
 func (r *MonitorReconciler) monitorObjectStorageTrafficUsed(startTime, endTime time.Time) error {
-	buckets, err := r.DBClient.GetTimeObjBucketBucket(startTime, endTime)
+	// Billing source is the objectstorage audit database: only external
+	// egress is billed; internal traffic is free. The per-minute MinIO
+	// metrics collector (monitorObjectStorageTraffic) keeps writing
+	// objectstorage-traffic for observability but no longer feeds billing.
+	traffics, err := r.DBClient.GetTimeObjBucketExternalTraffic(startTime, endTime)
 	if err != nil {
-		return fmt.Errorf("failed to get object storage buckets: %w", err)
-	}
-	r.Info("object storage buckets", "buckets len", len(buckets))
-	wg, _ := errgroup.WithContext(context.Background())
-	wg.SetLimit(10)
-	for i := range buckets {
-		bucket := buckets[i]
-		if !strings.Contains(bucket, "-") {
-			continue
-		}
-		wg.Go(func() error {
-			return r.handlerObjectStorageTrafficUsed(startTime, endTime, bucket)
-		})
-	}
-	return wg.Wait()
-}
-
-func (r *MonitorReconciler) handlerObjectStorageTrafficUsed(
-	startTime, endTime time.Time,
-	bucket string,
-) error {
-	bytes, err := r.DBClient.HandlerTimeObjBucketSentTraffic(startTime, endTime, bucket)
-	if err != nil {
-		return fmt.Errorf("failed to get object storage flow: %w", err)
-	}
-	// Because the obtained traffic includes traffic communicating with the controller, filter out traffic smaller than 1 MB
-	if bytes < 1024*1024 {
-		return nil
+		return fmt.Errorf("failed to get external object storage traffic: %w", err)
 	}
 	unit := r.Properties.StringMap[resources.ResourceNetwork].Unit
-	used := int64(
-		math.Ceil(
-			float64(
-				resource.NewQuantity(bytes, resource.BinarySI).MilliValue(),
-			) / float64(
-				unit.MilliValue(),
+	for _, t := range traffics {
+		// Preserve the historical metered-user scope: only usernames of 8
+		// alphanumeric characters are billed (e.g. "admin" buckets are not).
+		if objstorage.GetUserWithBucket(t.Bucket) == "" {
+			continue
+		}
+		// Keep the historical threshold: sub-1MiB hourly egress is not billed.
+		if t.Tx < 1024*1024 {
+			continue
+		}
+		used := int64(
+			math.Ceil(
+				float64(
+					resource.NewQuantity(t.Tx, resource.BinarySI).MilliValue(),
+				) / float64(
+					unit.MilliValue(),
+				),
 			),
-		),
-	)
-
-	namespace := "ns-" + strings.SplitN(bucket, "-", 2)[0]
-	ro := resources.Monitor{
-		Category: namespace,
-		Name:     bucket,
-		Used:     map[uint8]int64{r.Properties.StringMap[resources.ResourceNetwork].Enum: used},
-		Time:     endTime.Add(-1 * time.Minute),
-		Type:     resources.AppType[resources.ObjectStorage],
-	}
-	r.Info("object storage traffic used", "monitor", ro)
-	err = r.DBClient.InsertMonitor(context.Background(), &ro)
-	if err != nil {
-		return fmt.Errorf("failed to insert monitor: %w", err)
+		)
+		namespace := "ns-" + strings.SplitN(t.Bucket, "-", 2)[0]
+		ro := resources.Monitor{
+			Category: namespace,
+			Name:     t.Bucket,
+			Used:     map[uint8]int64{r.Properties.StringMap[resources.ResourceNetwork].Enum: used},
+			Time:     endTime.Add(-1 * time.Minute),
+			Type:     resources.AppType[resources.ObjectStorage],
+		}
+		r.Info("object storage traffic used", "monitor", ro)
+		err = r.DBClient.InsertMonitor(context.Background(), &ro)
+		if err != nil {
+			return fmt.Errorf("failed to insert monitor: %w", err)
+		}
 	}
 	return nil
 }
