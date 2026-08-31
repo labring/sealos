@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -20,7 +21,7 @@ import (
 // @Produce json
 // @Param req body CreditsInfoReq true "CreditsInfoReq"
 // @Success 200 {object} CreditsInfoResp
-// @Router /account/v1alpha1/credits/info [post]
+// @Router /payment/v1alpha1/credits/info [post]
 func GetCreditsInfo(c *gin.Context) {
 	req := &helper.AuthBase{}
 	if err := authenticateRequest(c, req); err != nil {
@@ -55,6 +56,20 @@ type CreditsInfoReq struct {
 	KYCDeductionCreditsBalance          int64 `json:"kycDeductionCreditsBalance"`
 	CurrentPlanCreditsBalance           int64 `json:"currentPlanCreditsBalance"`
 	CurrentPlanCreditsDeductionBalance  int64 `json:"currentPlanCreditsDeductionBalance"`
+
+	// CreditsList holds the same rows the aggregate fields above are summed
+	// from, so sum(amount) == Credits and sum(usedAmount) == DeductionCredits;
+	// exhausted rows stay in the list to keep that invariant. Callers filter
+	// for display (e.g. amount > usedAmount).
+	CreditsList []CreditsItem `json:"creditsList"`
+}
+
+type CreditsItem struct {
+	Amount     int64               `json:"amount"`
+	UsedAmount int64               `json:"usedAmount"`
+	StartAt    *time.Time          `json:"startAt"`
+	ExpireAt   *time.Time          `json:"expireAt"`
+	Status     types.CreditsStatus `json:"status"`
 }
 
 func getCreditsInfo(userUID uuid.UUID) (any, error) {
@@ -112,34 +127,55 @@ func getCreditsInfo(userUID uuid.UUID) (any, error) {
 		return nil, fmt.Errorf("failed to get available credits: %w", err)
 	}
 
-	var currentCredits, freeCredits types.Credits
+	creditsInfo = buildCreditsInfo(
+		credits,
+		currentPlan.ID.String(),
+		freePlan.ID.String(),
+		subscription.PlanName,
+	)
+	creditsInfo.UserUID = userUID
+	creditsInfo.Balance = account.Balance
+	creditsInfo.DeductionBalance = account.DeductionBalance
+	return creditsInfo, nil
+}
+
+func buildCreditsInfo(
+	credits []types.Credits,
+	currentPlanID, freePlanID, planName string,
+) CreditsInfoReq {
+	creditsInfo := CreditsInfoReq{CreditsList: make([]CreditsItem, 0, len(credits))}
 	for i := range credits {
 		switch credits[i].FromID {
-		case currentPlan.ID.String():
-			currentCredits = credits[i]
-			creditsInfo.CurrentPlanCreditsBalance = currentCredits.Amount
-			creditsInfo.CurrentPlanCreditsDeductionBalance = currentCredits.UsedAmount
-		case freePlan.ID.String():
-			freeCredits = credits[i]
-			creditsInfo.KYCDeductionCreditsBalance = freeCredits.Amount
-			creditsInfo.KYCDeductionCreditsDeductionBalance = freeCredits.UsedAmount
+		case currentPlanID:
+			creditsInfo.CurrentPlanCreditsBalance = credits[i].Amount
+			creditsInfo.CurrentPlanCreditsDeductionBalance = credits[i].UsedAmount
+		case freePlanID:
+			creditsInfo.KYCDeductionCreditsBalance = credits[i].Amount
+			creditsInfo.KYCDeductionCreditsDeductionBalance = credits[i].UsedAmount
 		}
 	}
-	if subscription.PlanName == types.FreeSubscriptionPlanName {
+	if planName == types.FreeSubscriptionPlanName {
 		creditsInfo.KYCDeductionCreditsBalance = creditsInfo.CurrentPlanCreditsBalance
 		creditsInfo.KYCDeductionCreditsDeductionBalance = creditsInfo.CurrentPlanCreditsDeductionBalance
 	}
 
-	var totalCredits, totalDeductionCredits int64
 	for _, c := range credits {
-		totalCredits += c.Amount
-		totalDeductionCredits += c.UsedAmount
+		creditsInfo.Credits += c.Amount
+		creditsInfo.DeductionCredits += c.UsedAmount
+		creditsInfo.CreditsList = append(creditsInfo.CreditsList, CreditsItem{
+			Amount:     c.Amount,
+			UsedAmount: c.UsedAmount,
+			StartAt:    nonZeroTime(c.StartAt),
+			ExpireAt:   nonZeroTime(c.ExpireAt),
+			Status:     c.Status,
+		})
 	}
+	return creditsInfo
+}
 
-	creditsInfo.UserUID = userUID
-	creditsInfo.Balance = account.Balance
-	creditsInfo.DeductionBalance = account.DeductionBalance
-	creditsInfo.Credits = totalCredits
-	creditsInfo.DeductionCredits = totalDeductionCredits
-	return creditsInfo, nil
+func nonZeroTime(t time.Time) *time.Time {
+	if t.IsZero() {
+		return nil
+	}
+	return &t
 }
