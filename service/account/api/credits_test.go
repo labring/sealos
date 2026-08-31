@@ -34,7 +34,7 @@ func Test_getCreditsInfo(t *testing.T) {
 func Test_buildCreditsInfo(t *testing.T) {
 	freePlanID := uuid.New().String()
 	paidPlanID := uuid.New().String()
-	expireAt := time.Date(2026, 9, 20, 0, 0, 0, 0, time.UTC)
+	expireAt := time.Date(2026, time.September, 20, 0, 0, 0, 0, time.UTC)
 	startAt := expireAt.AddDate(0, -1, 0)
 
 	rows := []types.Credits{
