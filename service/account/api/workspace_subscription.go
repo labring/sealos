@@ -36,8 +36,8 @@ import (
 // @Tags WorkspaceSubscription
 // @Accept json
 // @Produce json
-// @Param req body WorkspaceSubscriptionInfoReq true "WorkspaceSubscriptionInfoReq"
-// @Success 200 {object} WorkspaceSubscriptionInfoResp
+// @Param req body helper.WorkspaceSubscriptionInfoReq true "WorkspaceSubscriptionInfoReq"
+// @Success 200 {object} gin.H
 // @Router /payment/v1alpha1/workspace-subscription/info [post]
 func GetWorkspaceSubscriptionInfo(c *gin.Context) {
 	req, err := helper.ParseWorkspaceSubscriptionInfoReq(c)
@@ -459,8 +459,8 @@ func DeleteAccount(c *gin.Context) {
 // @Tags WorkspaceSubscription
 // @Accept json
 // @Produce json
-// @Param req body WorkspaceSubscriptionListReq true "WorkspaceSubscriptionListReq"
-// @Success 200 {object} WorkspaceSubscriptionListResp
+// @Param req body helper.AuthBase true "AuthBase"
+// @Success 200 {object} gin.H
 // @Router /payment/v1alpha1/workspace-subscription/list [post]
 func GetWorkspaceSubscriptionList(c *gin.Context) {
 	req := &helper.AuthBase{}
@@ -518,8 +518,8 @@ func GetWorkspaceSubscriptionList(c *gin.Context) {
 // @Tags WorkspaceSubscription
 // @Accept json
 // @Produce json
-// @Param req body WorkspaceSubscriptionInfoReq true "WorkspaceSubscriptionInfoReq"
-// @Success 200 {object} WorkspaceSubscriptionPaymentListResp
+// @Param req body helper.UserTimeRangeReq true "UserTimeRangeReq"
+// @Success 200 {object} gin.H
 // @Router /payment/v1alpha1/workspace-subscription/payment-list [post]
 func GetWorkspaceSubscriptionPaymentList(c *gin.Context) {
 	req, err := helper.ParseUserTimeRangeReq(c)
@@ -594,7 +594,7 @@ func GetWorkspaceSubscriptionPaymentList(c *gin.Context) {
 // @Tags WorkspaceSubscription
 // @Accept json
 // @Produce json
-// @Success 200 {object} WorkspaceSubscriptionPlanListResp
+// @Success 200 {object} gin.H
 // @Router /payment/v1alpha1/workspace-subscription/plan-list [post]
 func GetWorkspaceSubscriptionPlanList(c *gin.Context) {
 	plans, err := dao.DBClient.GetWorkspaceSubscriptionPlanList()
@@ -618,8 +618,8 @@ func GetWorkspaceSubscriptionPlanList(c *gin.Context) {
 // @Tags WorkspaceSubscription
 // @Accept json
 // @Produce json
-// @Param req body WorkspaceSubscriptionInfoReq true "WorkspaceSubscriptionInfoReq"
-// @Success 200 {object} WorkspaceSubscriptionLastTransactionResp
+// @Param req body helper.WorkspaceSubscriptionInfoReq true "WorkspaceSubscriptionInfoReq"
+// @Success 200 {object} gin.H
 // @Router /payment/v1alpha1/workspace-subscription/last-transaction [post]
 func GetLastWorkspaceSubscriptionTransaction(c *gin.Context) {
 	req, err := helper.ParseWorkspaceSubscriptionInfoReq(c)
@@ -668,8 +668,8 @@ func GetLastWorkspaceSubscriptionTransaction(c *gin.Context) {
 // @Tags WorkspaceSubscription
 // @Accept json
 // @Produce json
-// @Param req body WorkspaceSubscriptionUpgradeAmountReq true "WorkspaceSubscriptionUpgradeAmountReq"
-// @Success 200 {object} WorkspaceSubscriptionUpgradeAmountResp
+// @Param req body helper.WorkspaceSubscriptionOperatorReq true "WorkspaceSubscriptionOperatorReq"
+// @Success 200 {object} gin.H
 // @Router /payment/v1alpha1/workspace-subscription/upgrade-amount [post]
 func GetWorkspaceSubscriptionUpgradeAmount(c *gin.Context) {
 	req, err := helper.ParseWorkspaceSubscriptionOperatorReq(c)
@@ -1159,8 +1159,8 @@ func handleCalculatedUpgrade(
 // @Tags WorkspaceSubscription
 // @Accept json
 // @Produce json
-// @Param req body WorkspaceSubscriptionOperatorReq true "WorkspaceSubscriptionOperatorReq"
-// @Success 200 {object} WorkspaceSubscriptionPayResp
+// @Param req body helper.WorkspaceSubscriptionOperatorReq true "WorkspaceSubscriptionOperatorReq"
+// @Success 200 {object} gin.H
 // @Router /payment/v1alpha1/workspace-subscription/pay [post]
 func parseWorkspaceSubscriptionPayReq(
 	c *gin.Context,
@@ -4077,7 +4077,7 @@ func CreateWorkspaceSubscriptionSetupIntent(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param req body helper.WorkspaceSubscriptionCardInfoReq true "WorkspaceSubscriptionCardInfoReq"
-// @Success 200 {object} gin.H{payment_method:interface{},success:bool}
+// @Success 200 {object} gin.H
 // @Router /payment/v1alpha1/workspace-subscription/card-info [post]
 
 func GetWorkspaceSubscriptionCardInfo(c *gin.Context) {
@@ -4238,7 +4238,7 @@ func AdminProcessExpiredWorkspaceSubscriptions(c *gin.Context) {
 // @Tags WorkspaceSubscription
 // @Accept json
 // @Produce json
-// @Param req body AdminWorkspaceSubscriptionAddReq true "AdminWorkspaceSubscriptionAddReq"
+// @Param req body helper.AdminWorkspaceSubscriptionAddReq true "AdminWorkspaceSubscriptionAddReq"
 // @Success 200 {object} gin.H
 // @Router /admin/v1alpha1/workspace-subscription/add [post]
 
@@ -4758,7 +4758,7 @@ func processSubscriptionTransaction(
 // @Accept json
 // @Produce json
 // @Param req body helper.WorkspaceSubscriptionPlansReq true "WorkspaceSubscriptionPlansReq"
-// @Success 200 {object} WorkspaceSubscriptionPlansResp
+// @Success 200 {object} gin.H
 // @Router /account/v1alpha1/workspace-subscription/plans [post]
 func GetWorkspaceSubscriptionPlans(c *gin.Context) {
 	req, err := helper.ParseWorkspaceSubscriptionPlansReq(c)
@@ -4834,7 +4834,7 @@ func GetWorkspaceSubscriptionPlans(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param req body helper.WorkspaceSubscriptionInvoiceCancelReq true "WorkspaceSubscriptionInvoiceCancelReq"
-// @Success 200 {object} gin.H{success:bool,message:string}
+// @Success 200 {object} gin.H
 // @Router /account/v1alpha1/workspace-subscription/invoice-cancel [post]
 func CancelWorkspaceSubscriptionInvoice(c *gin.Context) {
 	req, err := helper.ParseWorkspaceSubscriptionInvoiceCancelReq(c)

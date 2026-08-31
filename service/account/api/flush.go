@@ -513,7 +513,7 @@ func AdminFlushSubscriptionQuota(c *gin.Context) {
 // @Tags Subscription
 // @Accept json
 // @Produce json
-// @Success 200 {object} SubscriptionFlushQuotaResp
+// @Success 200 {object} gin.H
 // @Router /payment/v1alpha1/subscription/flush-quota [post]
 func FlushSubscriptionQuota(c *gin.Context) {
 	// 初始化日志前的时间点

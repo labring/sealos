@@ -19,7 +19,7 @@ import (
 // @Tags Credits
 // @Accept json
 // @Produce json
-// @Param req body CreditsInfoReq true "CreditsInfoReq"
+// @Param req body helper.AuthBase true "AuthBase"
 // @Success 200 {object} CreditsInfoResp
 // @Router /payment/v1alpha1/credits/info [post]
 func GetCreditsInfo(c *gin.Context) {
@@ -40,12 +40,14 @@ func GetCreditsInfo(c *gin.Context) {
 		)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"credits": creditsInfo,
-	})
+	c.JSON(http.StatusOK, CreditsInfoResp{Credits: creditsInfo})
 }
 
-type CreditsInfoReq struct {
+type CreditsInfoResp struct {
+	Credits CreditsInfo `json:"credits"`
+}
+
+type CreditsInfo struct {
 	UserUID          uuid.UUID `json:"userUid"`
 	Balance          int64     `json:"balance"`
 	DeductionBalance int64     `json:"deductionBalance"`
@@ -72,9 +74,9 @@ type CreditsItem struct {
 	Status     types.CreditsStatus `json:"status"`
 }
 
-func getCreditsInfo(userUID uuid.UUID) (any, error) {
+func getCreditsInfo(userUID uuid.UUID) (CreditsInfo, error) {
 	var (
-		creditsInfo  CreditsInfoReq
+		creditsInfo  CreditsInfo
 		subscription *types.Subscription
 		account      *types.Account
 		err          error
@@ -107,7 +109,7 @@ func getCreditsInfo(userUID uuid.UUID) (any, error) {
 
 	for e := range errChan {
 		if e != nil {
-			return nil, e
+			return CreditsInfo{}, e
 		}
 	}
 
@@ -115,16 +117,16 @@ func getCreditsInfo(userUID uuid.UUID) (any, error) {
 	currentPlan, err := dao.DBClient.GetSubscriptionPlan(subscription.PlanName)
 	// logrus.Printf("[DB] GetSubscriptionPlan (%s) took %v", subscription.PlanName, time.Since(start))
 	if err != nil {
-		return nil, fmt.Errorf("failed to get subscription plan info: %w", err)
+		return CreditsInfo{}, fmt.Errorf("failed to get subscription plan info: %w", err)
 	}
 	freePlan, err := dao.DBClient.GetSubscriptionPlan(types.FreeSubscriptionPlanName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get free plan info: %w", err)
+		return CreditsInfo{}, fmt.Errorf("failed to get free plan info: %w", err)
 	}
 
 	credits, err := dao.DBClient.GetAvailableCredits(&types.UserQueryOpts{UID: userUID})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get available credits: %w", err)
+		return CreditsInfo{}, fmt.Errorf("failed to get available credits: %w", err)
 	}
 
 	creditsInfo = buildCreditsInfo(
@@ -142,8 +144,8 @@ func getCreditsInfo(userUID uuid.UUID) (any, error) {
 func buildCreditsInfo(
 	credits []types.Credits,
 	currentPlanID, freePlanID, planName string,
-) CreditsInfoReq {
-	creditsInfo := CreditsInfoReq{CreditsList: make([]CreditsItem, 0, len(credits))}
+) CreditsInfo {
+	creditsInfo := CreditsInfo{CreditsList: make([]CreditsItem, 0, len(credits))}
 	for i := range credits {
 		switch credits[i].FromID {
 		case currentPlanID:

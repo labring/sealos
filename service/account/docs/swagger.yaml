@@ -1,9 +1,69 @@
 definitions:
+  api.CreditsInfo:
+    properties:
+      balance:
+        type: integer
+      credits:
+        type: integer
+      creditsList:
+        description: |-
+          CreditsList holds the same rows the aggregate fields above are summed
+          from, so sum(amount) == Credits and sum(usedAmount) == DeductionCredits;
+          exhausted rows stay in the list to keep that invariant. Callers filter
+          for display (e.g. amount > usedAmount).
+        items:
+          $ref: '#/definitions/api.CreditsItem'
+        type: array
+      currentPlanCreditsBalance:
+        type: integer
+      currentPlanCreditsDeductionBalance:
+        type: integer
+      deductionBalance:
+        type: integer
+      deductionCredits:
+        type: integer
+      kycDeductionCreditsBalance:
+        type: integer
+      kycDeductionCreditsDeductionBalance:
+        type: integer
+      userUid:
+        type: string
+    type: object
+  api.CreditsInfoResp:
+    properties:
+      credits:
+        $ref: '#/definitions/api.CreditsInfo'
+    type: object
+  api.CreditsItem:
+    properties:
+      amount:
+        type: integer
+      expireAt:
+        type: string
+      startAt:
+        type: string
+      status:
+        $ref: '#/definitions/types.CreditsStatus'
+      usedAmount:
+        type: integer
+    type: object
+  api.SubscriptionPlanManageRequest:
+    properties:
+      plan:
+        $ref: '#/definitions/types.WorkspaceSubscriptionPlan'
+      prices:
+        items:
+          $ref: '#/definitions/types.ProductPrice'
+        type: array
+    type: object
   common.PropertyQuery:
     properties:
       alias:
         example: gpu-tesla-v100
         type: string
+      enum:
+        example: 1
+        type: integer
       name:
         example: cpu
         type: string
@@ -13,6 +73,420 @@ definitions:
       unit_price:
         example: 10000
         type: number
+    type: object
+  gin.H:
+    additionalProperties: {}
+    type: object
+  helper.AdminBalanceAdjustRecord:
+    properties:
+      amount:
+        type: integer
+      balanceAfter:
+        type: integer
+      balanceBefore:
+        type: integer
+      createdAt:
+        type: string
+      id:
+        type: string
+      message:
+        type: string
+      type:
+        type: string
+    type: object
+  helper.AdminBalanceAdjustRecordsResp:
+    properties:
+      list:
+        items:
+          $ref: '#/definitions/helper.AdminBalanceAdjustRecord'
+        type: array
+      pageIndex:
+        type: integer
+      pageSize:
+        type: integer
+      totalItems:
+        type: integer
+      totalPages:
+        type: integer
+    type: object
+  helper.AdminGiftCode:
+    properties:
+      code:
+        type: string
+      comment:
+        type: string
+      createdAt:
+        type: string
+      createdBy:
+        type: string
+      createdById:
+        type: string
+      creditAmount:
+        type: integer
+      expiredAt:
+        type: string
+      id:
+        type: string
+      rechargeType:
+        type: string
+      used:
+        type: boolean
+      usedAt:
+        type: string
+      usedBy:
+        type: string
+    type: object
+  helper.AdminGiftCodeListResp:
+    properties:
+      list:
+        items:
+          $ref: '#/definitions/helper.AdminGiftCode'
+        type: array
+      pageIndex:
+        type: integer
+      pageSize:
+        type: integer
+      totalItems:
+        type: integer
+      totalPages:
+        type: integer
+    type: object
+  helper.AdminGiftCodeUsage:
+    properties:
+      code:
+        type: string
+      comment:
+        type: string
+      creditAmount:
+        type: integer
+      id:
+        type: string
+      rechargeType:
+        type: string
+      usedAt:
+        type: string
+    type: object
+  helper.AdminGiftCodeUsageResp:
+    properties:
+      list:
+        items:
+          $ref: '#/definitions/helper.AdminGiftCodeUsage'
+        type: array
+      pageIndex:
+        type: integer
+      pageSize:
+        type: integer
+      totalItems:
+        type: integer
+      totalPages:
+        type: integer
+    type: object
+  helper.AdminInvoice:
+    properties:
+      createdAt:
+        type: string
+      detail:
+        type: string
+      id:
+        type: string
+      remark:
+        type: string
+      status:
+        type: string
+      totalAmount:
+        type: integer
+      updatedAt:
+        type: string
+      userID:
+        type: string
+    type: object
+  helper.AdminInvoiceListResp:
+    properties:
+      list:
+        items:
+          $ref: '#/definitions/helper.AdminInvoice'
+        type: array
+      pageIndex:
+        type: integer
+      pageSize:
+        type: integer
+      totalItems:
+        type: integer
+      totalPages:
+        type: integer
+    type: object
+  helper.AdminRechargeGiftPolicy:
+    properties:
+      defaultDiscountSteps:
+        additionalProperties:
+          type: integer
+        type: object
+      firstRechargeDiscountSteps:
+        additionalProperties:
+          type: integer
+        type: object
+    type: object
+  helper.AdminRechargeRecord:
+    properties:
+      amount:
+        type: integer
+      chargeSource:
+        type: string
+      createdAt:
+        type: string
+      gift:
+        type: integer
+      id:
+        type: string
+      latestRefund:
+        $ref: '#/definitions/helper.AdminRefund'
+      method:
+        type: string
+      refundCount:
+        type: integer
+      refunded:
+        type: boolean
+      status:
+        type: string
+      tradeNo:
+        type: string
+      type:
+        type: string
+    type: object
+  helper.AdminRechargeRecordsResp:
+    properties:
+      list:
+        items:
+          $ref: '#/definitions/helper.AdminRechargeRecord'
+        type: array
+      pageIndex:
+        type: integer
+      pageSize:
+        type: integer
+      totalItems:
+        type: integer
+      totalPages:
+        type: integer
+    type: object
+  helper.AdminRefund:
+    properties:
+      createdAt:
+        type: string
+      deductAmount:
+        type: integer
+      id:
+        type: string
+      refundAmount:
+        type: integer
+      refundNo:
+        type: string
+      refundReason:
+        type: string
+    type: object
+  helper.AdminRefundStatusResp:
+    properties:
+      latestRefund:
+        $ref: '#/definitions/helper.AdminRefund'
+      refundCount:
+        type: integer
+      refunded:
+        type: boolean
+      tradeNo:
+        type: string
+    type: object
+  helper.AdminRegion:
+    properties:
+      description:
+        type: string
+      displayName:
+        type: string
+      domain:
+        type: string
+      location:
+        type: string
+      uid:
+        type: string
+    type: object
+  helper.AdminSubscriptionPlansReq:
+    properties:
+      includeInactive:
+        description: |-
+          @Summary Include inactive plans
+          @Description Include inactive plans in the response (optional, defaults to false)
+          @JSONSchema
+        example: false
+        type: boolean
+      planType:
+        description: |-
+          @Summary Plan type filter
+          @Description Filter by plan type (optional)
+          @JSONSchema
+        example: workspace
+        type: string
+    type: object
+  helper.AdminUser:
+    properties:
+      availableBalance:
+        type: integer
+      balance:
+        type: integer
+      billingStatus:
+        type: string
+      deductionBalance:
+        type: integer
+      email:
+        type: string
+      id:
+        type: string
+      nickname:
+        type: string
+      phone:
+        type: string
+      role:
+        type: string
+      sourceProviderTypes:
+        items:
+          type: string
+        type: array
+      sourceType:
+        type: string
+      status:
+        type: string
+      uid:
+        type: string
+      username:
+        type: string
+    type: object
+  helper.AdminUserDetail:
+    properties:
+      availableBalance:
+        type: integer
+      balance:
+        type: integer
+      billingStatus:
+        type: string
+      deductionBalance:
+        type: integer
+      email:
+        type: string
+      id:
+        type: string
+      idCard:
+        type: string
+      nickname:
+        type: string
+      phone:
+        type: string
+      productSeries:
+        items:
+          type: string
+        type: array
+      realName:
+        type: string
+      rechargeAmount:
+        type: integer
+      role:
+        type: string
+      sourceProviderTypes:
+        items:
+          type: string
+        type: array
+      sourceType:
+        type: string
+      status:
+        type: string
+      uid:
+        type: string
+      userType:
+        type: string
+      username:
+        type: string
+      workspaces:
+        items:
+          $ref: '#/definitions/helper.AdminWorkspace'
+        type: array
+    type: object
+  helper.AdminUserListResp:
+    properties:
+      list:
+        items:
+          $ref: '#/definitions/helper.AdminUser'
+        type: array
+      pageIndex:
+        type: integer
+      pageSize:
+        type: integer
+      totalItems:
+        type: integer
+      totalPages:
+        type: integer
+    type: object
+  helper.AdminWorkspace:
+    properties:
+      displayName:
+        type: string
+      id:
+        type: string
+      isPrivate:
+        type: boolean
+      role:
+        type: string
+      status:
+        type: string
+      uid:
+        type: string
+    type: object
+  helper.AdminWorkspaceSubscriptionListReq:
+    properties:
+      pageIndex:
+        description: |-
+          @Summary Page index
+          @Description Page index (0-based)
+          @JSONSchema
+        example: 0
+        type: integer
+      pageSize:
+        description: |-
+          @Summary Page size
+          @Description Page size (optional, defaults to 10)
+          @JSONSchema
+        example: 10
+        type: integer
+      planName:
+        description: |-
+          @Summary Plan name filter
+          @Description Filter by plan name (optional)
+          @JSONSchema
+        example: premium
+        type: string
+      regionDomain:
+        description: |-
+          @Summary Region domain filter
+          @Description Filter by region domain (optional)
+          @JSONSchema
+        example: example.com
+        type: string
+      status:
+        description: |-
+          @Summary Status filter
+          @Description Filter by subscription status (optional)
+          @JSONSchema
+        example: normal
+        type: string
+      userUID:
+        description: |-
+          @Summary User filter
+          @Description Filter by user ID (optional)
+          @JSONSchema
+        example: user-123
+        type: string
+      workspace:
+        description: |-
+          @Summary Workspace filter
+          @Description Filter by workspace name (optional)
+          @JSONSchema
+        example: my-workspace
+        type: string
     type: object
   helper.AppCostsReq:
     properties:
@@ -82,7 +556,6 @@ definitions:
           @Summary Invoice detail information
           @Description Invoice detail information
           @JSONSchema required
-        example: '{"title":"title","amount":100,"taxRate":0.06,"tax":6,"total":106,"invoiceType":1,"invoiceContent":1,"invoiceStatus":1,"invoiceTime":"2021-01-01T00:00:00Z","invoiceNumber":"invoice-number-1","invoiceCode":"invoice-code-1","invoiceFile":"invoice-file-1"}'
         type: string
       kubeConfig:
         type: string
@@ -96,8 +569,8 @@ definitions:
           @Description Payment ID list
           @JSONSchema required
         example:
-        - '["payment-id-1"'
-        - '"payment-id-2"]'
+        - '[payment-id-1'
+        - ' payment-id-2]'
         items:
           type: string
         type: array
@@ -116,6 +589,58 @@ definitions:
     type: object
   helper.Auth:
     properties:
+      kubeConfig:
+        type: string
+      owner:
+        example: admin
+        type: string
+      token:
+        example: token
+        type: string
+      userID:
+        example: admin
+        type: string
+      userUID:
+        example: user-123
+        type: string
+    type: object
+  helper.AuthBase:
+    properties:
+      kubeConfig:
+        type: string
+      owner:
+        example: admin
+        type: string
+      token:
+        example: token
+        type: string
+      userID:
+        example: admin
+        type: string
+      userUID:
+        example: user-123
+        type: string
+    type: object
+  helper.CardOperationReq:
+    properties:
+      cardBrand:
+        description: |-
+          @Summary CardBrand
+          @Description CardBrand
+        example: VISA
+        type: string
+      cardID:
+        description: |-
+          @Summary CardID
+          @Description CardID
+        example: 123e4567-e89b-12d3-a456-426614174000
+        type: string
+      cardNo:
+        description: |-
+          @Summary CardNo
+          @Description CardNo
+        example: "1234567890"
+        type: string
       kubeConfig:
         type: string
       owner:
@@ -255,6 +780,171 @@ definitions:
           @Summary Total page
           @Description Total page
         type: integer
+    type: object
+  helper.CreatePayReq:
+    properties:
+      amount:
+        description: |-
+          @Summary Amount
+          @Description Amount
+          @JSONSchema required
+        example: 100000000
+        type: integer
+      cardBrand:
+        description: |-
+          @Summary CardBrand
+          @Description CardBrand
+        example: VISA
+        type: string
+      cardID:
+        description: |-
+          @Summary CardID
+          @Description CardID
+        example: 123e4567-e89b-12d3-a456-426614174000
+        type: string
+      cardNo:
+        description: |-
+          @Summary CardNo
+          @Description CardNo
+        example: "1234567890"
+        type: string
+      kubeConfig:
+        type: string
+      method:
+        allOf:
+        - $ref: '#/definitions/types.PaymentMethod'
+        description: |-
+          @Summary Method
+          @Description Method
+          @JSONSchema required
+        example: CARD
+      owner:
+        example: admin
+        type: string
+      token:
+        example: token
+        type: string
+      userID:
+        example: admin
+        type: string
+      userUID:
+        example: user-123
+        type: string
+    type: object
+  helper.CreateUserAlertNotificationAccountReq:
+    properties:
+      kubeConfig:
+        type: string
+      owner:
+        example: admin
+        type: string
+      providerId:
+        description: |-
+          @Summary Provider ID
+          @Description Provider ID (email address, phone number, etc.)
+          @JSONSchema required
+        example: user@example.com
+        type: string
+      providerType:
+        allOf:
+        - $ref: '#/definitions/types.OauthProviderType'
+        description: |-
+          @Summary Provider type
+          @Description Provider type (Only EMAIL and PHONE are supported)
+          @JSONSchema required
+        example: EMAIL
+      token:
+        example: token
+        type: string
+      userID:
+        example: admin
+        type: string
+      userUID:
+        example: user-123
+        type: string
+      userUid:
+        description: |-
+          @Summary User UUID
+          @Description User UUID
+          @JSONSchema required
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+    required:
+    - providerId
+    - providerType
+    - userUid
+    type: object
+  helper.CreateUserAlertNotificationAccountResp:
+    properties:
+      data:
+        $ref: '#/definitions/helper.CreateUserAlertNotificationAccountRespData'
+      message:
+        type: string
+    type: object
+  helper.CreateUserAlertNotificationAccountRespData:
+    properties:
+      id:
+        type: string
+      providerId:
+        type: string
+      providerType:
+        $ref: '#/definitions/types.OauthProviderType'
+      userUid:
+        type: string
+    type: object
+  helper.DeleteUserAlertNotificationAccountReq:
+    properties:
+      ids:
+        description: |-
+          @Summary Account IDs
+          @Description List of account IDs to delete
+          @JSONSchema required
+        example:
+        - '[550e8400-e29b-41d4-a716-446655440000'
+        - ' 550e8400-e29b-41d4-a716-446655440001]'
+        items:
+          type: string
+        type: array
+      kubeConfig:
+        type: string
+      owner:
+        example: admin
+        type: string
+      token:
+        example: token
+        type: string
+      userID:
+        example: admin
+        type: string
+      userUID:
+        example: user-123
+        type: string
+      userUid:
+        description: |-
+          @Summary User UUID
+          @Description User UUID
+          @JSONSchema required
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+    required:
+    - ids
+    - userUid
+    type: object
+  helper.DeleteUserAlertNotificationAccountResp:
+    properties:
+      data:
+        $ref: '#/definitions/helper.DeleteUserAlertNotificationAccountRespData'
+      message:
+        type: string
+    type: object
+  helper.DeleteUserAlertNotificationAccountRespData:
+    properties:
+      deletedCount:
+        type: integer
+      deletedIds:
+        items:
+          type: string
+        type: array
     type: object
   helper.ErrorMessage:
     properties:
@@ -477,6 +1167,32 @@ definitions:
         example: user-123
         type: string
     type: object
+  helper.ListUserAlertNotificationAccountsReq:
+    properties:
+      kubeConfig:
+        type: string
+      owner:
+        example: admin
+        type: string
+      token:
+        example: token
+        type: string
+      userID:
+        example: admin
+        type: string
+      userUID:
+        example: user-123
+        type: string
+    type: object
+  helper.ListUserAlertNotificationAccountsResp:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/helper.UserAlertNotificationAccountData'
+        type: array
+      message:
+        type: string
+    type: object
   helper.NamespaceBillingHistoryReq:
     properties:
       endTime:
@@ -510,11 +1226,35 @@ definitions:
     properties:
       list:
         example:
-        - '["ns-admin"'
-        - '"ns-test1"]'
+        - '[ns-admin'
+        - ns-test1]
         items:
           type: string
         type: array
+    type: object
+  helper.PlanType:
+    enum:
+    - upgrade
+    - downgrade
+    - renewal
+    type: string
+    x-enum-varnames:
+    - Upgrade
+    - Downgrade
+    - Renewal
+  helper.ReloadPropertyTypesResp:
+    properties:
+      data:
+        $ref: '#/definitions/helper.ReloadPropertyTypesRespData'
+      message:
+        type: string
+    type: object
+  helper.ReloadPropertyTypesRespData:
+    properties:
+      count:
+        type: integer
+      status:
+        type: string
     type: object
   helper.SetInvoiceStatusReq:
     properties:
@@ -525,8 +1265,8 @@ definitions:
           @Description Invoice ID list
           @JSONSchema required
         example:
-        - '["invoice-id-1"'
-        - '"invoice-id-2"]'
+        - '[invoice-id-1'
+        - ' invoice-id-2]'
         items:
           type: string
         type: array
@@ -569,8 +1309,8 @@ definitions:
           @Description Payment ID list
           @JSONSchema required
         example:
-        - '["payment-id-1"'
-        - '"payment-id-2"]'
+        - '[payment-id-1'
+        - ' payment-id-2]'
         items:
           type: string
         type: array
@@ -585,6 +1325,159 @@ definitions:
         type: string
     required:
     - paymentIDList
+    type: object
+  helper.SubscriptionOperatorReq:
+    properties:
+      cardID:
+        description: |-
+          @Summary CardID
+          @Description CardID
+        example: 123e4567-e89b-12d3-a456-426614174000
+        type: string
+      kubeConfig:
+        type: string
+      owner:
+        example: admin
+        type: string
+      payMethod:
+        allOf:
+        - $ref: '#/definitions/types.PaymentMethod'
+        description: |-
+          @Summary PayMethod
+          @Description PayMethod
+        example: CARD
+      planID:
+        description: |-
+          @Summary PlanID
+          @Description PlanID
+        example: 123e4567-e89b-12d3-a456-426614174000
+        type: string
+      planName:
+        description: |-
+          @Summary PlanName
+          @Description PlanName
+        example: planName
+        type: string
+      planType:
+        allOf:
+        - $ref: '#/definitions/helper.PlanType'
+        description: |-
+          @Summary PlanType
+          @Description PlanType
+        example: upgrade;downgrade;renewal
+      token:
+        example: token
+        type: string
+      userID:
+        example: admin
+        type: string
+      userUID:
+        example: user-123
+        type: string
+    type: object
+  helper.SubscriptionQuotaCheckReq:
+    properties:
+      kubeConfig:
+        type: string
+      owner:
+        example: admin
+        type: string
+      planID:
+        description: |-
+          @Summary PlanID
+          @Description PlanID
+        example: 123e4567-e89b-12d3-a456-426614174000
+        type: string
+      planName:
+        description: |-
+          @Summary PlanName
+          @Description PlanName
+        example: planName
+        type: string
+      token:
+        example: token
+        type: string
+      userID:
+        example: admin
+        type: string
+      userUID:
+        example: user-123
+        type: string
+    type: object
+  helper.SubscriptionQuotaCheckResp:
+    properties:
+      allWorkspaceReady:
+        description: allWorkspaceReady
+        example: true
+        type: boolean
+      readyWorkspace:
+        example:
+        - workspace1
+        - workspace2
+        items:
+          type: string
+        type: array
+      unReadyWorkspace:
+        example:
+        - workspace3
+        - workspace4
+        items:
+          type: string
+        type: array
+    type: object
+  helper.ToggleUserAlertNotificationAccountsReq:
+    properties:
+      ids:
+        description: |-
+          @Summary Account IDs
+          @Description List of account IDs to toggle
+          @JSONSchema required
+        example:
+        - '[550e8400-e29b-41d4-a716-446655440000'
+        - ' 550e8400-e29b-41d4-a716-446655440001]'
+        items:
+          type: string
+        type: array
+      isEnabled:
+        description: |-
+          @Summary Enable flag
+          @Description Set to true to enable, false to disable
+          @JSONSchema required
+        example: true
+        type: boolean
+      kubeConfig:
+        type: string
+      owner:
+        example: admin
+        type: string
+      token:
+        example: token
+        type: string
+      userID:
+        example: admin
+        type: string
+      userUID:
+        example: user-123
+        type: string
+    required:
+    - ids
+    - isEnabled
+    type: object
+  helper.ToggleUserAlertNotificationAccountsResp:
+    properties:
+      data:
+        $ref: '#/definitions/helper.ToggleUserAlertNotificationAccountsRespData'
+      message:
+        type: string
+    type: object
+  helper.ToggleUserAlertNotificationAccountsRespData:
+    properties:
+      updatedCount:
+        type: integer
+      updatedIds:
+        items:
+          type: string
+        type: array
     type: object
   helper.TransferAmountReq:
     properties:
@@ -664,6 +1557,23 @@ definitions:
         example: user-123
         type: string
     type: object
+  helper.UserAlertNotificationAccountData:
+    properties:
+      createdAt:
+        type: string
+      id:
+        type: string
+      isEnabled:
+        type: boolean
+      providerId:
+        type: string
+      providerType:
+        $ref: '#/definitions/types.OauthProviderType'
+      updatedAt:
+        type: string
+      userUid:
+        type: string
+    type: object
   helper.UserTimeRangeReq:
     properties:
       endTime:
@@ -701,8 +1611,8 @@ definitions:
           @Description Namespace list
           @JSONSchema
         example:
-        - '["ns-admin"'
-        - '"ns-test1"]'
+        - '[ns-admin'
+        - ns-test1]
         items:
           type: string
         type: array
@@ -721,6 +1631,389 @@ definitions:
       userUID:
         example: user-123
         type: string
+    type: object
+  helper.WorkspaceInfoReq:
+    properties:
+      kubeConfig:
+        type: string
+      owner:
+        example: admin
+        type: string
+      token:
+        example: token
+        type: string
+      userID:
+        example: admin
+        type: string
+      userUID:
+        example: user-123
+        type: string
+      workspace:
+        description: |-
+          @Summary Workspace name
+          @Description Workspace name
+        example: my-workspace
+        type: string
+    required:
+    - workspace
+    type: object
+  helper.WorkspaceSubscriptionInfoReq:
+    properties:
+      kubeConfig:
+        type: string
+      owner:
+        example: admin
+        type: string
+      redirectUrl:
+        description: |-
+          @Summary Redirect Url
+          @Description Redirect Url for create session
+        example: https://example.com
+        type: string
+      regionDomain:
+        description: |-
+          @Summary Region domain
+          @Description Region domain
+          @JSONSchema required
+        example: example.com
+        type: string
+      token:
+        example: token
+        type: string
+      userID:
+        example: admin
+        type: string
+      userUID:
+        example: user-123
+        type: string
+      workspace:
+        description: |-
+          @Summary Workspace name
+          @Description Workspace name
+          @JSONSchema required
+        example: my-workspace
+        type: string
+    required:
+    - regionDomain
+    - workspace
+    type: object
+  helper.WorkspaceSubscriptionInvoiceCancelReq:
+    properties:
+      invoiceID:
+        description: |-
+          @Summary Invoice ID
+          @Description The Stripe invoice ID to cancel
+          @JSONSchema required
+        example: in_1234567890
+        type: string
+      kubeConfig:
+        type: string
+      owner:
+        example: admin
+        type: string
+      regionDomain:
+        description: |-
+          @Summary Region domain
+          @Description Region domain (for authorization)
+          @JSONSchema required
+        example: example.com
+        type: string
+      token:
+        example: token
+        type: string
+      userID:
+        example: admin
+        type: string
+      userUID:
+        example: user-123
+        type: string
+      workspace:
+        description: |-
+          @Summary Workspace name
+          @Description Workspace name (for authorization)
+          @JSONSchema required
+        example: my-workspace
+        type: string
+    required:
+    - invoiceID
+    - regionDomain
+    - workspace
+    type: object
+  helper.WorkspaceSubscriptionOperatorReq:
+    properties:
+      cardId:
+        description: |-
+          @Summary Card ID (optional for stripe payments)
+          @Description Card ID for stripe payments
+        type: string
+      kubeConfig:
+        type: string
+      operator:
+        allOf:
+        - $ref: '#/definitions/types.SubscriptionOperator'
+        description: |-
+          @Summary Subscription operator (created/upgraded/downgraded/canceled/renewed)
+          @Description Subscription operator type
+        example: created
+      owner:
+        example: admin
+        type: string
+      payApp:
+        allOf:
+        - $ref: '#/definitions/types.PayApp'
+        description: |-
+          @Summary Stripe return app
+          @Description Desktop app opened after returning from Stripe Checkout
+          @JSONSchema optional
+        example: system-costcenter
+      payMethod:
+        allOf:
+        - $ref: '#/definitions/types.PaymentMethod'
+        description: |-
+          @Summary Payment method
+          @Description Payment method (STRIPE, BALANCE)
+          @JSONSchema required
+        example: STRIPE
+      period:
+        allOf:
+        - $ref: '#/definitions/types.SubscriptionPeriod'
+        description: |-
+          @Summary Subscription period
+          @Description Subscription period (1m for monthly, 1y for yearly)
+          @JSONSchema required
+        example: 1m
+      planName:
+        description: |-
+          @Summary Plan name
+          @Description Plan name
+          @JSONSchema required
+        example: premium
+        type: string
+      promotionCode:
+        description: |-
+          @Summary Promotion code
+          @Description Promotion code for applying discount to the upgrade payment
+          @JSONSchema optional
+        example: SAVE20
+        type: string
+      regionDomain:
+        description: |-
+          @Summary Region domain
+          @Description Region domain
+          @JSONSchema required
+        example: example.com
+        type: string
+      token:
+        example: token
+        type: string
+      userID:
+        example: admin
+        type: string
+      userUID:
+        example: user-123
+        type: string
+      workspace:
+        description: |-
+          @Summary Workspace name
+          @Description Workspace name (optional for price preview, required for actual subscription)
+          @JSONSchema optional
+        example: my-workspace
+        type: string
+    required:
+    - operator
+    - payMethod
+    - planName
+    - regionDomain
+    type: object
+  helper.WorkspaceSubscriptionPlansReq:
+    properties:
+      kubeConfig:
+        type: string
+      namespaces:
+        description: |-
+          @Summary Namespace list
+          @Description List of workspace namespaces to query subscription plans for
+          @JSONSchema required
+        example:
+        - '[ns-admin'
+        - ' ns-test1'
+        - ' ns-dev]'
+        items:
+          type: string
+        type: array
+      owner:
+        example: admin
+        type: string
+      token:
+        example: token
+        type: string
+      userID:
+        example: admin
+        type: string
+      userUID:
+        example: user-123
+        type: string
+    required:
+    - namespaces
+    type: object
+  types.CreditsStatus:
+    enum:
+    - active
+    - expired
+    - used_up
+    type: string
+    x-enum-varnames:
+    - CreditsStatusActive
+    - CreditsStatusExpired
+    - CreditsStatusUsedUp
+  types.OauthProviderType:
+    enum:
+    - PHONE
+    - EMAIL
+    - PASSWORD
+    - GITHUB
+    type: string
+    x-enum-varnames:
+    - OauthProviderTypePhone
+    - OauthProviderTypeEmail
+    - OauthProviderTypePassword
+    - OauthProviderTypeGithub
+  types.PayApp:
+    enum:
+    - system-costcenter
+    - system-brain
+    type: string
+    x-enum-varnames:
+    - PayAppCostcenter
+    - PayAppBrain
+  types.PaymentMethod:
+    enum:
+    - err_and_use_balance
+    - corporate
+    - balance
+    - stripe
+    type: string
+    x-enum-comments:
+      PaymentMethodBalance: 余额支付
+      PaymentMethodCorporate: 企业转账支付
+      PaymentMethodErrAndUseBalance: 支付失败转余额支付
+      PaymentMethodStripe: Stripe 支付
+    x-enum-varnames:
+    - PaymentMethodErrAndUseBalance
+    - PaymentMethodCorporate
+    - PaymentMethodBalance
+    - PaymentMethodStripe
+  types.ProductPrice:
+    properties:
+      billingCycle:
+        allOf:
+        - $ref: '#/definitions/types.SubscriptionPeriod'
+        description: 计费周期, 年/季/月/周/天/次
+      createdAt:
+        description: Currency  string    `gorm:"type:varchar(10);not null;column:currency"`  //
+          货币
+        type: string
+      id:
+        type: string
+      originalPrice:
+        type: integer
+      price:
+        description: 价格
+        type: integer
+      productID:
+        type: string
+      stripePrice:
+        description: Stripe 价格 ID
+        type: string
+      updatedAt:
+        description: 更新时间
+        type: string
+    type: object
+  types.SubscriptionOperator:
+    enum:
+    - created
+    - upgraded
+    - downgraded
+    - canceled
+    - deleted
+    - renewed
+    - resumed
+    - renew_failed
+    - debt
+    - other
+    type: string
+    x-enum-varnames:
+    - SubscriptionTransactionTypeCreated
+    - SubscriptionTransactionTypeUpgraded
+    - SubscriptionTransactionTypeDowngraded
+    - SubscriptionTransactionTypeCanceled
+    - SubscriptionTransactionTypeDeleted
+    - SubscriptionTransactionTypeRenewed
+    - SubscriptionTransactionTypeResumed
+    - SubscriptionTransactionTypeRenewFailed
+    - SubscriptionTransactionTypeDebt
+    - SubscriptionTransactionTypeOther
+  types.SubscriptionPeriod:
+    enum:
+    - 1m
+    - 1y
+    type: string
+    x-enum-varnames:
+    - SubscriptionPeriodMonthly
+    - SubscriptionPeriodYearly
+  types.WorkspaceSubscriptionPlan:
+    properties:
+      aiquota:
+        description: 包含AI配额大小
+        type: integer
+      createdAt:
+        description: 创建时间
+        type: string
+      description:
+        description: 描述
+        type: string
+      downgradePlanList:
+        description: 可降级的计划列表
+        items:
+          type: string
+        type: array
+      id:
+        description: 计划 ID
+        type: string
+      maxResources:
+        description: '最大资源数: map[string]string: {"cpu": "4", "memory": "8Gi", "storage":
+          "100Gi"}'
+        type: string
+      maxSeats:
+        description: 最大席位数
+        type: integer
+      name:
+        description: 计划名称
+        type: string
+      order:
+        description: 排序号
+        type: integer
+      prices:
+        description: 一对多关联
+        items:
+          $ref: '#/definitions/types.ProductPrice'
+        type: array
+      tags:
+        description: 标签分类
+        items:
+          type: string
+        type: array
+      traffic:
+        description: '包含流量包大小, 单位: MB'
+        type: integer
+      updatedAt:
+        description: 更新时间
+        type: string
+      upgradePlanList:
+        description: 可升级的计划列表
+        items:
+          type: string
+        type: array
     type: object
 host: localhost:2333
 info:
@@ -1073,6 +2366,44 @@ paths:
       summary: Get app costs
       tags:
       - AppCosts
+  /account/v1alpha1/costs/app-type:
+    post:
+      consumes:
+      - application/json
+      description: Get app type costs within a specified time range
+      parameters:
+      - description: App type costs request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/helper.AppCostsReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: successfully retrieved app type costs
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: failed to parse get app type cost request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: authenticate error
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: failed to get app type cost
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get app type costs
+      tags:
+      - AppTypeCosts
   /account/v1alpha1/costs/consumption:
     post:
       consumes:
@@ -1225,6 +2556,104 @@ paths:
       summary: Get user recharge amount
       tags:
       - RechargeAmount
+  /account/v1alpha1/costs/workspace-app:
+    post:
+      consumes:
+      - application/json
+      description: Get workspace app costs within a specified time range
+      parameters:
+      - description: Workspace app costs request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/helper.AppCostsReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: successfully retrieved workspace app costs
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: failed to parse get workspace app cost request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: authenticate error
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: failed to get workspace app cost
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get workspace app costs
+      tags:
+      - WorkspaceAppCosts
+  /account/v1alpha1/costs/workspace-consumption:
+    post:
+      consumes:
+      - application/json
+      description: Get workspace consumption amount within a specified time range
+      parameters:
+      - description: Workspace consumption amount request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/helper.ConsumptionRecordReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: successfully retrieved workspace consumption amount
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: failed to parse workspace consumption amount request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: authenticate error
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: failed to get workspace consumption amount
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get workspace consumption amount
+      tags:
+      - ConsumptionAmount
+  /account/v1alpha1/createPay:
+    post:
+      consumes:
+      - application/json
+      description: Create a payment
+      parameters:
+      - description: CreatePayReq
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/helper.CreatePayReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: Create a payment
+      tags:
+      - account
   /account/v1alpha1/get-transfer:
     post:
       consumes:
@@ -1584,12 +3013,12 @@ paths:
       - application/json
       description: Get recharge discount
       parameters:
-      - description: Get recharge discount request
+      - description: AuthBase
         in: body
         name: request
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/helper.AuthBase'
       produces:
       - application/json
       responses:
@@ -1675,6 +3104,144 @@ paths:
       summary: Transfer amount
       tags:
       - TransferAmount
+  /account/v1alpha1/user-alert-notification-account:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user alert notification account. Only EMAIL and PHONE
+        provider types are supported.
+      parameters:
+      - description: Create user alert notification account request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/helper.CreateUserAlertNotificationAccountReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully created user alert notification account
+          schema:
+            $ref: '#/definitions/helper.CreateUserAlertNotificationAccountResp'
+        "400":
+          description: Failed to parse create user alert notification account request
+            or unsupported provider type
+          schema:
+            $ref: '#/definitions/helper.ErrorMessage'
+        "401":
+          description: Authentication error
+          schema:
+            $ref: '#/definitions/helper.ErrorMessage'
+        "500":
+          description: Failed to create user alert notification account
+          schema:
+            $ref: '#/definitions/helper.ErrorMessage'
+      summary: Create user alert notification account
+      tags:
+      - UserAlertNotificationAccount
+  /account/v1alpha1/user-alert-notification-account/delete:
+    post:
+      consumes:
+      - application/json
+      description: Delete multiple user alert notification accounts
+      parameters:
+      - description: Delete user alert notification accounts request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/helper.DeleteUserAlertNotificationAccountReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully deleted user alert notification accounts
+          schema:
+            $ref: '#/definitions/helper.DeleteUserAlertNotificationAccountResp'
+        "400":
+          description: Failed to parse delete user alert notification accounts request
+          schema:
+            $ref: '#/definitions/helper.ErrorMessage'
+        "401":
+          description: Authentication error
+          schema:
+            $ref: '#/definitions/helper.ErrorMessage'
+        "500":
+          description: Failed to delete user alert notification accounts
+          schema:
+            $ref: '#/definitions/helper.ErrorMessage'
+      summary: Delete user alert notification accounts
+      tags:
+      - UserAlertNotificationAccount
+  /account/v1alpha1/user-alert-notification-account/list:
+    post:
+      consumes:
+      - application/json
+      description: List all user alert notification accounts for a user
+      parameters:
+      - description: List user alert notification accounts request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/helper.ListUserAlertNotificationAccountsReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully listed user alert notification accounts
+          schema:
+            $ref: '#/definitions/helper.ListUserAlertNotificationAccountsResp'
+        "400":
+          description: Failed to parse list user alert notification accounts request
+          schema:
+            $ref: '#/definitions/helper.ErrorMessage'
+        "401":
+          description: Authentication error
+          schema:
+            $ref: '#/definitions/helper.ErrorMessage'
+        "500":
+          description: Failed to list user alert notification accounts
+          schema:
+            $ref: '#/definitions/helper.ErrorMessage'
+      summary: List user alert notification accounts
+      tags:
+      - UserAlertNotificationAccount
+  /account/v1alpha1/user-alert-notification-account/toggle:
+    post:
+      consumes:
+      - application/json
+      description: Enable or disable multiple user alert notification accounts
+      parameters:
+      - description: Toggle user alert notification accounts request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/helper.ToggleUserAlertNotificationAccountsReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully toggled user alert notification accounts
+          schema:
+            $ref: '#/definitions/helper.ToggleUserAlertNotificationAccountsResp'
+        "400":
+          description: Failed to parse toggle user alert notification accounts request
+          schema:
+            $ref: '#/definitions/helper.ErrorMessage'
+        "401":
+          description: Authentication error
+          schema:
+            $ref: '#/definitions/helper.ErrorMessage'
+        "500":
+          description: Failed to toggle user alert notification accounts
+          schema:
+            $ref: '#/definitions/helper.ErrorMessage'
+      summary: Toggle user alert notification accounts
+      tags:
+      - UserAlertNotificationAccount
   /account/v1alpha1/user-usage:
     post:
       consumes:
@@ -1713,6 +3280,51 @@ paths:
       summary: Get user usage
       tags:
       - UserUsage
+  /account/v1alpha1/workspace-subscription/invoice-cancel:
+    post:
+      consumes:
+      - application/json
+      description: Cancel an unpaid Stripe invoice for workspace subscription upgrade
+      parameters:
+      - description: WorkspaceSubscriptionInvoiceCancelReq
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/helper.WorkspaceSubscriptionInvoiceCancelReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: Cancel workspace subscription invoice
+      tags:
+      - WorkspaceSubscription
+  /account/v1alpha1/workspace-subscription/plans:
+    post:
+      consumes:
+      - application/json
+      description: Get subscription plan names for multiple namespaces, returning
+        "PAYG" for non-subscribed workspaces
+      parameters:
+      - description: WorkspaceSubscriptionPlansReq
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/helper.WorkspaceSubscriptionPlansReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: Get workspace subscription plans by namespaces
+      tags:
+      - WorkspaceSubscription
   /admin/v1alpha1/account:
     get:
       consumes:
@@ -1765,6 +3377,66 @@ paths:
       summary: Charge billing
       tags:
       - Account
+  /admin/v1alpha1/gift-codes:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/helper.AdminGiftCodeListResp'
+      summary: List gift codes for admin
+      tags:
+      - AdminRead
+  /admin/v1alpha1/gift-codes/usage:
+    get:
+      parameters:
+      - description: User ID
+        in: query
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/helper.AdminGiftCodeUsageResp'
+      summary: List user gift code usage for admin
+      tags:
+      - AdminRead
+  /admin/v1alpha1/invoice:
+    get:
+      parameters:
+      - description: Invoice ID
+        in: query
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/helper.AdminInvoice'
+      summary: Get invoice for admin
+      tags:
+      - AdminRead
+  /admin/v1alpha1/invoices:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/helper.AdminInvoiceListResp'
+      summary: List invoices for admin
+      tags:
+      - AdminRead
   /admin/v1alpha1/real-name-info:
     get:
       consumes:
@@ -1791,4 +3463,803 @@ paths:
       summary: Get user real name info
       tags:
       - Account
+  /admin/v1alpha1/recharge-gift-policy:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/helper.AdminRechargeGiftPolicy'
+      summary: Get recharge gift policy for admin
+      tags:
+      - AdminRead
+  /admin/v1alpha1/refund-status:
+    get:
+      parameters:
+      - description: Payment ID or trade number
+        in: query
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/helper.AdminRefundStatusResp'
+      summary: Get refund status for admin
+      tags:
+      - AdminRead
+  /admin/v1alpha1/regions:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/helper.AdminRegion'
+            type: array
+      summary: List regions for admin
+      tags:
+      - AdminRead
+  /admin/v1alpha1/reload-property-types:
+    post:
+      consumes:
+      - application/json
+      description: Reload property types from database and update the global DefaultPropertyTypeLS
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: successfully reloaded property types
+          schema:
+            $ref: '#/definitions/helper.ReloadPropertyTypesResp'
+        "401":
+          description: authenticate error
+          schema:
+            $ref: '#/definitions/helper.ErrorMessage'
+        "500":
+          description: failed to reload property types
+          schema:
+            $ref: '#/definitions/helper.ErrorMessage'
+      summary: Reload property types
+      tags:
+      - Admin
+  /admin/v1alpha1/subscription-plan/delete:
+    post:
+      consumes:
+      - application/json
+      description: Delete a WorkspaceSubscriptionPlan by ID or name
+      parameters:
+      - description: Delete request (id or name required)
+        in: body
+        name: request
+        required: true
+        schema:
+          additionalProperties: true
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: successfully deleted subscription plan
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: invalid request body
+          schema:
+            $ref: '#/definitions/helper.ErrorMessage'
+        "401":
+          description: authenticate error
+          schema:
+            $ref: '#/definitions/helper.ErrorMessage'
+        "404":
+          description: subscription plan not found
+          schema:
+            $ref: '#/definitions/helper.ErrorMessage'
+        "500":
+          description: failed to delete subscription plan
+          schema:
+            $ref: '#/definitions/helper.ErrorMessage'
+      summary: Delete WorkspaceSubscriptionPlan
+      tags:
+      - Admin
+  /admin/v1alpha1/subscription-plan/manage:
+    post:
+      consumes:
+      - application/json
+      description: Create a new WorkspaceSubscriptionPlan with prices or update existing
+        one with prices. Manages plan and prices as a single unit.
+      parameters:
+      - description: Subscription plan with prices data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.SubscriptionPlanManageRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: successfully created/updated subscription plan with prices
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: invalid request body
+          schema:
+            $ref: '#/definitions/helper.ErrorMessage'
+        "401":
+          description: authenticate error
+          schema:
+            $ref: '#/definitions/helper.ErrorMessage'
+        "500":
+          description: failed to create/update subscription plan with prices
+          schema:
+            $ref: '#/definitions/helper.ErrorMessage'
+      summary: Create or update WorkspaceSubscriptionPlan with prices
+      tags:
+      - Admin
+  /admin/v1alpha1/subscription-plans:
+    get:
+      consumes:
+      - application/json
+      description: Admin interface to get all available subscription plans using GET
+        method
+      parameters:
+      - description: Include inactive plans
+        example: false
+        in: query
+        name: includeInactive
+        type: boolean
+      - description: Filter by plan type
+        example: '"workspace"'
+        in: query
+        name: planType
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: Admin get subscription plans (GET)
+      tags:
+      - WorkspaceSubscription
+    post:
+      consumes:
+      - application/json
+      description: Admin interface to get all available subscription plans
+      parameters:
+      - description: AdminSubscriptionPlansReq
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/helper.AdminSubscriptionPlansReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: Admin get subscription plans
+      tags:
+      - WorkspaceSubscription
+  /admin/v1alpha1/user:
+    get:
+      parameters:
+      - description: User ID
+        in: query
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/helper.AdminUserDetail'
+      summary: Get user detail for admin
+      tags:
+      - AdminRead
+  /admin/v1alpha1/user/balance-adjust-records:
+    get:
+      parameters:
+      - description: User ID
+        in: query
+        name: id
+        required: true
+        type: string
+      - description: Zero-based page index
+        in: query
+        name: pageIndex
+        type: integer
+      - description: Page size, 1-100
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/helper.AdminBalanceAdjustRecordsResp'
+      summary: List user balance adjustments for admin
+      tags:
+      - AdminRead
+  /admin/v1alpha1/user/recharge-records:
+    get:
+      parameters:
+      - description: User ID
+        in: query
+        name: id
+        required: true
+        type: string
+      - description: Zero-based page index
+        in: query
+        name: pageIndex
+        type: integer
+      - description: Page size, 1-100
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/helper.AdminRechargeRecordsResp'
+      summary: List user recharge records for admin
+      tags:
+      - AdminRead
+  /admin/v1alpha1/users:
+    get:
+      parameters:
+      - description: Zero-based page index
+        in: query
+        name: pageIndex
+        type: integer
+      - description: Page size, 1-100
+        in: query
+        name: pageSize
+        type: integer
+      - description: User ID
+        in: query
+        name: id
+        type: string
+      - description: Password provider username
+        in: query
+        name: username
+        type: string
+      - description: Phone provider ID
+        in: query
+        name: phone
+        type: string
+      - description: Workspace ID
+        in: query
+        name: workspaceId
+        type: string
+      - description: Workspace display name
+        in: query
+        name: workspaceName
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/helper.AdminUserListResp'
+      summary: List users for admin
+      tags:
+      - AdminRead
+  /admin/v1alpha1/workspace-subscription/add:
+    post:
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+  /admin/v1alpha1/workspace-subscription/list:
+    get:
+      consumes:
+      - application/json
+      description: Admin interface to get paginated workspace subscription list with
+        filtering options using GET method
+      parameters:
+      - description: Page index (0-based)
+        example: 0
+        in: query
+        name: pageIndex
+        type: integer
+      - description: Page size (optional, defaults to 10)
+        example: 10
+        in: query
+        name: pageSize
+        type: integer
+      - description: Filter by workspace name
+        example: '"ns-8gmgq0jn"'
+        in: query
+        name: workspace
+        type: string
+      - description: Filter by user ID
+        example: '"36ca5ee6-7b6e-4c15-922b-e861b3fbc061"'
+        in: query
+        name: userUID
+        type: string
+      - description: Filter by plan name
+        example: '"Hobby"'
+        in: query
+        name: planName
+        type: string
+      - description: Filter by subscription status
+        example: '"NORMAL"'
+        in: query
+        name: status
+        type: string
+      - description: Filter by region domain
+        example: '"192.168.10.35.nip.io"'
+        in: query
+        name: regionDomain
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: Admin get workspace subscription list (GET)
+      tags:
+      - WorkspaceSubscription
+    post:
+      consumes:
+      - application/json
+      description: Admin interface to get paginated workspace subscription list with
+        filtering options
+      parameters:
+      - description: AdminWorkspaceSubscriptionListReq
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/helper.AdminWorkspaceSubscriptionListReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: Admin get workspace subscription list
+      tags:
+      - WorkspaceSubscription
+  /payment/v1alpha1/card/delete:
+    post:
+      consumes:
+      - application/json
+      description: Delete user card info
+      parameters:
+      - description: CardOperationReq
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/helper.CardOperationReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: Delete user card info
+      tags:
+      - Payment
+  /payment/v1alpha1/card/list:
+    post:
+      consumes:
+      - application/json
+      description: List user card info
+      parameters:
+      - description: AuthBase
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/helper.AuthBase'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: List user card info
+      tags:
+      - Payment
+  /payment/v1alpha1/card/set-default:
+    post:
+      consumes:
+      - application/json
+      description: Set default user card
+      parameters:
+      - description: CardOperationReq
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/helper.CardOperationReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: Set default user card
+      tags:
+      - Payment
+  /payment/v1alpha1/credits/info:
+    post:
+      consumes:
+      - application/json
+      description: Get credits info
+      parameters:
+      - description: AuthBase
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/helper.AuthBase'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.CreditsInfoResp'
+      summary: Get credits info
+      tags:
+      - Credits
+  /payment/v1alpha1/subscription/flush-quota:
+    post:
+      consumes:
+      - application/json
+      description: flush user quota with subscription
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: flush user quota with subscription
+      tags:
+      - Subscription
+  /payment/v1alpha1/subscription/last-transaction:
+    post:
+      consumes:
+      - application/json
+      description: Get user last subscription transaction
+      parameters:
+      - description: AuthBase
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/helper.AuthBase'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: Get user last subscription transaction
+      tags:
+      - Subscription
+  /payment/v1alpha1/subscription/pay:
+    post:
+      consumes:
+      - application/json
+      description: Subscription pay
+      parameters:
+      - description: SubscriptionOperatorReq
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/helper.SubscriptionOperatorReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: Subscription pay
+      tags:
+      - Subscription
+  /payment/v1alpha1/subscription/plan-list:
+    post:
+      consumes:
+      - application/json
+      description: Get subscription plan list
+      parameters:
+      - description: AuthBase
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/helper.AuthBase'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: Get subscription plan list
+      tags:
+      - Subscription
+  /payment/v1alpha1/subscription/quota-check:
+    post:
+      consumes:
+      - application/json
+      description: Check user subscription quota
+      parameters:
+      - description: SubscriptionQuotaCheckReq
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/helper.SubscriptionQuotaCheckReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/helper.SubscriptionQuotaCheckResp'
+      summary: Check user subscription quota
+      tags:
+      - Subscription
+  /payment/v1alpha1/subscription/upgrade-amount:
+    post:
+      consumes:
+      - application/json
+      description: Get subscription upgrade amount
+      parameters:
+      - description: SubscriptionOperatorReq
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/helper.SubscriptionOperatorReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: Get subscription upgrade amount
+      tags:
+      - Subscription
+  /payment/v1alpha1/subscription/user-info:
+    post:
+      consumes:
+      - application/json
+      description: Get user subscription info
+      parameters:
+      - description: AuthBase
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/helper.AuthBase'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: Get user subscription info
+      tags:
+      - Subscription
+  /payment/v1alpha1/workspace-subscription/info:
+    post:
+      consumes:
+      - application/json
+      description: Get workspace subscription info
+      parameters:
+      - description: WorkspaceSubscriptionInfoReq
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/helper.WorkspaceSubscriptionInfoReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: Get workspace subscription info
+      tags:
+      - WorkspaceSubscription
+  /payment/v1alpha1/workspace-subscription/last-transaction:
+    post:
+      consumes:
+      - application/json
+      description: Get last workspace subscription transaction
+      parameters:
+      - description: WorkspaceSubscriptionInfoReq
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/helper.WorkspaceSubscriptionInfoReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: Get last workspace subscription transaction
+      tags:
+      - WorkspaceSubscription
+  /payment/v1alpha1/workspace-subscription/list:
+    post:
+      consumes:
+      - application/json
+      description: Get workspace subscription list
+      parameters:
+      - description: AuthBase
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/helper.AuthBase'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: Get workspace subscription list
+      tags:
+      - WorkspaceSubscription
+  /payment/v1alpha1/workspace-subscription/notify:
+    post:
+      consumes:
+      - application/json
+      description: Handle Stripe webhook notifications for workspace subscription
+        events
+      produces:
+      - application/json
+      responses: {}
+      summary: Handle Stripe webhook for workspace subscription
+      tags:
+      - WorkspaceSubscription
+  /payment/v1alpha1/workspace-subscription/pay:
+    post:
+      consumes:
+      - application/json
+      description: Create workspace subscription payment with Stripe
+      parameters:
+      - description: WorkspaceSubscriptionOperatorReq
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/helper.WorkspaceSubscriptionOperatorReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: Create workspace subscription payment
+      tags:
+      - WorkspaceSubscription
+  /payment/v1alpha1/workspace-subscription/payment-list:
+    post:
+      consumes:
+      - application/json
+      description: Get workspace subscription payment list
+      parameters:
+      - description: UserTimeRangeReq
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/helper.UserTimeRangeReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: Get workspace subscription payment list
+      tags:
+      - WorkspaceSubscription
+  /payment/v1alpha1/workspace-subscription/plan-list:
+    post:
+      consumes:
+      - application/json
+      description: Get workspace subscription plan list
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: Get workspace subscription plan list
+      tags:
+      - WorkspaceSubscription
+  /payment/v1alpha1/workspace-subscription/upgrade-amount:
+    post:
+      consumes:
+      - application/json
+      description: Get workspace subscription upgrade amount
+      parameters:
+      - description: WorkspaceSubscriptionOperatorReq
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/helper.WorkspaceSubscriptionOperatorReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: Get workspace subscription upgrade amount
+      tags:
+      - WorkspaceSubscription
+  /workspace/v1alpha1/resource-quota:
+    post:
+      consumes:
+      - application/json
+      description: Get workspace resource quota
+      parameters:
+      - description: WorkspaceInfoReq
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/helper.WorkspaceInfoReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: Get workspace resource quota
+      tags:
+      - WorkspaceSubscription
 swagger: "2.0"

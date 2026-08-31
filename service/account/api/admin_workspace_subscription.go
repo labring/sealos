@@ -69,8 +69,8 @@ func AdminAddWorkspaceSubscription(c *gin.Context) {
 // @Tags WorkspaceSubscription
 // @Accept json
 // @Produce json
-// @Param req body AdminWorkspaceSubscriptionListReq true "AdminWorkspaceSubscriptionListReq"
-// @Success 200 {object} AdminWorkspaceSubscriptionListResp
+// @Param req body helper.AdminWorkspaceSubscriptionListReq true "AdminWorkspaceSubscriptionListReq"
+// @Success 200 {object} gin.H
 // @Router /admin/v1alpha1/workspace-subscription/list [post]
 func AdminWorkspaceSubscriptionList(c *gin.Context) {
 	// Authenticate admin request
@@ -189,8 +189,8 @@ func AdminWorkspaceSubscriptionList(c *gin.Context) {
 // @Tags WorkspaceSubscription
 // @Accept json
 // @Produce json
-// @Param req body AdminSubscriptionPlansReq true "AdminSubscriptionPlansReq"
-// @Success 200 {object} AdminSubscriptionPlansResp
+// @Param req body helper.AdminSubscriptionPlansReq true "AdminSubscriptionPlansReq"
+// @Success 200 {object} gin.H
 // @Router /admin/v1alpha1/subscription-plans [post]
 func AdminSubscriptionPlans(c *gin.Context) {
 	// Authenticate admin request
@@ -310,7 +310,7 @@ func AdminSubscriptionPlans(c *gin.Context) {
 // @Param planName query string false "Filter by plan name" example("Hobby")
 // @Param status query string false "Filter by subscription status" example("NORMAL")
 // @Param regionDomain query string false "Filter by region domain" example("192.168.10.35.nip.io")
-// @Success 200 {object} AdminWorkspaceSubscriptionListResp
+// @Success 200 {object} gin.H
 // @Router /admin/v1alpha1/workspace-subscription/list [get]
 func AdminWorkspaceSubscriptionListGET(c *gin.Context) {
 	// Authenticate admin request
@@ -459,7 +459,7 @@ func AdminWorkspaceSubscriptionListGET(c *gin.Context) {
 // @Produce json
 // @Param includeInactive query bool false "Include inactive plans" example(false)
 // @Param planType query string false "Filter by plan type" example("workspace")
-// @Success 200 {object} AdminSubscriptionPlansResp
+// @Success 200 {object} gin.H
 // @Router /admin/v1alpha1/subscription-plans [get]
 func AdminSubscriptionPlansGET(c *gin.Context) {
 	// Authenticate admin request

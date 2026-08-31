@@ -74,8 +74,8 @@ type CustomResourceQuotaStatus struct {
 // @Tags WorkspaceSubscription
 // @Accept json
 // @Produce json
-// @Param req body WorkspaceResourceQuotaReq true "WorkspaceResourceQuotaReq"
-// @Success 200 {object} WorkspaceResourceQuotaResp
+// @Param req body helper.WorkspaceInfoReq true "WorkspaceInfoReq"
+// @Success 200 {object} gin.H
 // @Router /workspace/v1alpha1/resource-quota [post]
 func GetWorkspaceResourceQuota(c *gin.Context) {
 	req, err := helper.ParseWorkspaceInfoReq(c)

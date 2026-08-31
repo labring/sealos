@@ -36,8 +36,8 @@ import (
 // @Tags Subscription
 // @Accept json
 // @Produce json
-// @Param req body SubscriptionUserInfoReq true "SubscriptionUserInfoReq"
-// @Success 200 {object} SubscriptionUserInfoResp
+// @Param req body helper.AuthBase true "AuthBase"
+// @Success 200 {object} gin.H
 // @Router /payment/v1alpha1/subscription/user-info [post]
 func GetSubscriptionUserInfo(c *gin.Context) {
 	req := &helper.AuthBase{}
@@ -67,8 +67,8 @@ func GetSubscriptionUserInfo(c *gin.Context) {
 // @Tags Subscription
 // @Accept json
 // @Produce json
-// @Param req body SubscriptionPlanListReq true "SubscriptionPlanListReq"
-// @Success 200 {object} SubscriptionPlanListResp
+// @Param req body helper.AuthBase true "AuthBase"
+// @Success 200 {object} gin.H
 // @Router /payment/v1alpha1/subscription/plan-list [post]
 func GetSubscriptionPlanList(c *gin.Context) {
 	plans, err := dao.DBClient.GetSubscriptionPlanList()
@@ -92,8 +92,8 @@ func GetSubscriptionPlanList(c *gin.Context) {
 // @Tags Subscription
 // @Accept json
 // @Produce json
-// @Param req body SubscriptionLastTransactionReq true "SubscriptionLastTransactionReq"
-// @Success 200 {object} SubscriptionLastTransactionResp
+// @Param req body helper.AuthBase true "AuthBase"
+// @Success 200 {object} gin.H
 // @Router /payment/v1alpha1/subscription/last-transaction [post]
 func GetLastSubscriptionTransaction(c *gin.Context) {
 	req := &helper.AuthBase{}
@@ -128,8 +128,8 @@ func GetLastSubscriptionTransaction(c *gin.Context) {
 // @Tags Subscription
 // @Accept json
 // @Produce json
-// @Param req body SubscriptionUpgradeAmountReq true "SubscriptionUpgradeAmountReq"
-// @Success 200 {object} SubscriptionUpgradeAmountResp
+// @Param req body helper.SubscriptionOperatorReq true "SubscriptionOperatorReq"
+// @Success 200 {object} gin.H
 // @Router /payment/v1alpha1/subscription/upgrade-amount [post]
 func GetSubscriptionUpgradeAmount(c *gin.Context) {
 	req, err := helper.ParseSubscriptionOperatorReq(c)
@@ -203,8 +203,8 @@ func GetSubscriptionUpgradeAmount(c *gin.Context) {
 // @Tags Subscription
 // @Accept json
 // @Produce json
-// @Param req body SubscriptionQuotaCheckReq true "SubscriptionQuotaCheckReq"
-// @Success 200 {object} SubscriptionQuotaCheckResp
+// @Param req body helper.SubscriptionQuotaCheckReq true "SubscriptionQuotaCheckReq"
+// @Success 200 {object} helper.SubscriptionQuotaCheckResp
 // @Router /payment/v1alpha1/subscription/quota-check [post]
 func CheckSubscriptionQuota(c *gin.Context) {
 	req, err := helper.ParseSubscriptionQuotaCheckReq(c)
@@ -433,8 +433,8 @@ func getDefaultResourceQuota(ns, name string, hard corev1.ResourceList) *corev1.
 // @Tags Subscription
 // @Accept json
 // @Produce json
-// @Param req body SubscriptionPayReq true "SubscriptionPayReq"
-// @Success 200 {object} SubscriptionPayResp
+// @Param req body helper.SubscriptionOperatorReq true "SubscriptionOperatorReq"
+// @Success 200 {object} gin.H
 // @Router /payment/v1alpha1/subscription/pay [post]
 func CreateSubscriptionPay(c *gin.Context) {
 	req, err := helper.ParseSubscriptionOperatorReq(c)

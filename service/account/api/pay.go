@@ -31,8 +31,8 @@ const (
 // @Tags account
 // @Accept json
 // @Produce json
-// @Param req body CreatePayReq true "CreatePayReq"
-// @Success 200 {object} CreatePayResp
+// @Param req body helper.CreatePayReq true "CreatePayReq"
+// @Success 200 {object} gin.H
 // @Router /account/v1alpha1/createPay [post]
 func CreateCardPay(c *gin.Context) {
 	req, err := helper.ParseCreatePayReq(c)

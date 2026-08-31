@@ -777,7 +777,7 @@ func GetAPPCosts(c *gin.Context) {
 // @Tags WorkspaceAppCosts
 // @Accept json
 // @Produce json
-// @Param request body helper.WorkspaceAppCostsReq true "Workspace app costs request"
+// @Param request body helper.AppCostsReq true "Workspace app costs request"
 // @Success 200 {object} map[string]interface{} "successfully retrieved workspace app costs"
 // @Failure 400 {object} map[string]interface{} "failed to parse get workspace app cost request"
 // @Failure 401 {object} map[string]interface{} "authenticate error"
@@ -1414,7 +1414,7 @@ func UserUsage(c *gin.Context) {
 // @Tags RechargeDiscount
 // @Accept json
 // @Produce json
-// @Param request body object true "Get recharge discount request"
+// @Param request body helper.AuthBase true "AuthBase"
 // @Success 200 {object} map[string]interface{} "successfully get recharge discount"
 // @Failure 400 {object} map[string]interface{} "failed to parse get recharge discount request"
 // @Failure 401 {object} map[string]interface{} "authenticate error"
