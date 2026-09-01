@@ -570,9 +570,9 @@ func (m *mongoDB) GetTimeObjBucketExternalTraffic(
 	startTime = startTime.Truncate(time.Hour)
 	pipeline := []bson.M{
 		{
-			// usage_hourly buckets are [hour, hour+1): the billing window
-			// (startTime, endTime] therefore maps to hour >= startTime &&
-			// hour < endTime, so each completed hour is billed exactly once.
+			// usage_hourly buckets are [hour, hour+1): the effective match
+			// window is [startTime, endTime) (endTime exclusive), so each
+			// completed hour bucket is billed exactly once.
 			"$match": bson.M{
 				"hour": bson.M{
 					"$gte": startTime,

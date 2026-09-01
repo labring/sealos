@@ -429,13 +429,16 @@ func isUsageAndTrafficBytesTargetMetric(name string) bool {
 	return false
 }
 
+// meteredUserRe matches buckets named "<username>-<suffix>" where the
+// username is exactly 8 alphanumeric characters.
+var meteredUserRe = regexp.MustCompile(`^([a-zA-Z0-9]{8})-(.*)$`)
+
 // GetUserWithBucket extracts the metered username from a bucket name
 // "<username>-<suffix>". Only 8-character alphanumeric usernames match,
 // mirroring the platform metered-user convention (e.g. "admin" is not
 // metered). Returns "" for non-metered buckets.
 func GetUserWithBucket(bucket string) string {
-	re := regexp.MustCompile(`^([a-zA-Z0-9]{8})-(.*)$`)
-	matches := re.FindStringSubmatch(bucket)
+	matches := meteredUserRe.FindStringSubmatch(bucket)
 	if len(matches) == 3 {
 		return matches[1]
 	}

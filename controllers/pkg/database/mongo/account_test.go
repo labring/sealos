@@ -604,6 +604,11 @@ func TestGetTimeObjBucketExternalTraffic(t *testing.T) {
 	if uri == "" {
 		t.Skip("TEST_MONGODB_URI not set, skip mongo integration test")
 	}
+	// The test seeds and deletes rows in the shared cluster's audit database;
+	// require an explicit second opt-in before writing anything.
+	if os.Getenv("TEST_MONGODB_ALLOW_WRITE") != "true" {
+		t.Skip("TEST_MONGODB_ALLOW_WRITE not set, refusing to write to a shared cluster")
+	}
 	ctx := context.Background()
 	m, err := NewMongoInterface(ctx, uri)
 	if err != nil {
