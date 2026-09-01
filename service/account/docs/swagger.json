@@ -515,6 +515,62 @@
                 }
             }
         },
+        "/account/v1alpha1/costs/app-type": {
+            "post": {
+                "description": "Get app type costs within a specified time range",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "AppTypeCosts"
+                ],
+                "summary": "Get app type costs",
+                "parameters": [
+                    {
+                        "description": "App type costs request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.AppCostsReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "successfully retrieved app type costs",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "failed to parse get app type cost request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "authenticate error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "failed to get app type cost",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/account/v1alpha1/costs/consumption": {
             "post": {
                 "description": "Get user consumption amount within a specified time range",
@@ -734,6 +790,152 @@
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/account/v1alpha1/costs/workspace-app": {
+            "post": {
+                "description": "Get workspace app costs within a specified time range",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "WorkspaceAppCosts"
+                ],
+                "summary": "Get workspace app costs",
+                "parameters": [
+                    {
+                        "description": "Workspace app costs request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.AppCostsReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "successfully retrieved workspace app costs",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "failed to parse get workspace app cost request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "authenticate error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "failed to get workspace app cost",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/account/v1alpha1/costs/workspace-consumption": {
+            "post": {
+                "description": "Get workspace consumption amount within a specified time range",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ConsumptionAmount"
+                ],
+                "summary": "Get workspace consumption amount",
+                "parameters": [
+                    {
+                        "description": "Workspace consumption amount request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.ConsumptionRecordReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "successfully retrieved workspace consumption amount",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "failed to parse workspace consumption amount request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "authenticate error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "failed to get workspace consumption amount",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/account/v1alpha1/createPay": {
+            "post": {
+                "description": "Create a payment",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "account"
+                ],
+                "summary": "Create a payment",
+                "parameters": [
+                    {
+                        "description": "CreatePayReq",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.CreatePayReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
                         }
                     }
                 }
@@ -1281,12 +1483,12 @@
                 "summary": "Get recharge discount",
                 "parameters": [
                     {
-                        "description": "Get recharge discount request",
+                        "description": "AuthBase",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/helper.AuthBase"
                         }
                     }
                 ],
@@ -1409,6 +1611,214 @@
                 }
             }
         },
+        "/account/v1alpha1/user-alert-notification-account": {
+            "post": {
+                "description": "Create a new user alert notification account. Only EMAIL and PHONE provider types are supported.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "UserAlertNotificationAccount"
+                ],
+                "summary": "Create user alert notification account",
+                "parameters": [
+                    {
+                        "description": "Create user alert notification account request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.CreateUserAlertNotificationAccountReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully created user alert notification account",
+                        "schema": {
+                            "$ref": "#/definitions/helper.CreateUserAlertNotificationAccountResp"
+                        }
+                    },
+                    "400": {
+                        "description": "Failed to parse create user alert notification account request or unsupported provider type",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorMessage"
+                        }
+                    },
+                    "401": {
+                        "description": "Authentication error",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to create user alert notification account",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorMessage"
+                        }
+                    }
+                }
+            }
+        },
+        "/account/v1alpha1/user-alert-notification-account/delete": {
+            "post": {
+                "description": "Delete multiple user alert notification accounts",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "UserAlertNotificationAccount"
+                ],
+                "summary": "Delete user alert notification accounts",
+                "parameters": [
+                    {
+                        "description": "Delete user alert notification accounts request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.DeleteUserAlertNotificationAccountReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully deleted user alert notification accounts",
+                        "schema": {
+                            "$ref": "#/definitions/helper.DeleteUserAlertNotificationAccountResp"
+                        }
+                    },
+                    "400": {
+                        "description": "Failed to parse delete user alert notification accounts request",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorMessage"
+                        }
+                    },
+                    "401": {
+                        "description": "Authentication error",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to delete user alert notification accounts",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorMessage"
+                        }
+                    }
+                }
+            }
+        },
+        "/account/v1alpha1/user-alert-notification-account/list": {
+            "post": {
+                "description": "List all user alert notification accounts for a user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "UserAlertNotificationAccount"
+                ],
+                "summary": "List user alert notification accounts",
+                "parameters": [
+                    {
+                        "description": "List user alert notification accounts request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.ListUserAlertNotificationAccountsReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully listed user alert notification accounts",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ListUserAlertNotificationAccountsResp"
+                        }
+                    },
+                    "400": {
+                        "description": "Failed to parse list user alert notification accounts request",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorMessage"
+                        }
+                    },
+                    "401": {
+                        "description": "Authentication error",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to list user alert notification accounts",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorMessage"
+                        }
+                    }
+                }
+            }
+        },
+        "/account/v1alpha1/user-alert-notification-account/toggle": {
+            "post": {
+                "description": "Enable or disable multiple user alert notification accounts",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "UserAlertNotificationAccount"
+                ],
+                "summary": "Toggle user alert notification accounts",
+                "parameters": [
+                    {
+                        "description": "Toggle user alert notification accounts request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.ToggleUserAlertNotificationAccountsReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully toggled user alert notification accounts",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ToggleUserAlertNotificationAccountsResp"
+                        }
+                    },
+                    "400": {
+                        "description": "Failed to parse toggle user alert notification accounts request",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorMessage"
+                        }
+                    },
+                    "401": {
+                        "description": "Authentication error",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to toggle user alert notification accounts",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorMessage"
+                        }
+                    }
+                }
+            }
+        },
         "/account/v1alpha1/user-usage": {
             "post": {
                 "description": "Get user usage within a specified time range",
@@ -1460,6 +1870,74 @@
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/account/v1alpha1/workspace-subscription/invoice-cancel": {
+            "post": {
+                "description": "Cancel an unpaid Stripe invoice for workspace subscription upgrade",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "WorkspaceSubscription"
+                ],
+                "summary": "Cancel workspace subscription invoice",
+                "parameters": [
+                    {
+                        "description": "WorkspaceSubscriptionInvoiceCancelReq",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.WorkspaceSubscriptionInvoiceCancelReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    }
+                }
+            }
+        },
+        "/account/v1alpha1/workspace-subscription/plans": {
+            "post": {
+                "description": "Get subscription plan names for multiple namespaces, returning \"PAYG\" for non-subscribed workspaces",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "WorkspaceSubscription"
+                ],
+                "summary": "Get workspace subscription plans by namespaces",
+                "parameters": [
+                    {
+                        "description": "WorkspaceSubscriptionPlansReq",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.WorkspaceSubscriptionPlansReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
                         }
                     }
                 }
@@ -1541,6 +2019,100 @@
                 }
             }
         },
+        "/admin/v1alpha1/gift-codes": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "AdminRead"
+                ],
+                "summary": "List gift codes for admin",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/helper.AdminGiftCodeListResp"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1alpha1/gift-codes/usage": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "AdminRead"
+                ],
+                "summary": "List user gift code usage for admin",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/helper.AdminGiftCodeUsageResp"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1alpha1/invoice": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "AdminRead"
+                ],
+                "summary": "Get invoice for admin",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Invoice ID",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/helper.AdminInvoice"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1alpha1/invoices": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "AdminRead"
+                ],
+                "summary": "List invoices for admin",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/helper.AdminInvoiceListResp"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1alpha1/real-name-info": {
             "get": {
                 "description": "Get user real name info",
@@ -1578,15 +2150,1317 @@
                     }
                 }
             }
+        },
+        "/admin/v1alpha1/recharge-gift-policy": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "AdminRead"
+                ],
+                "summary": "Get recharge gift policy for admin",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/helper.AdminRechargeGiftPolicy"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1alpha1/refund-status": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "AdminRead"
+                ],
+                "summary": "Get refund status for admin",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Payment ID or trade number",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/helper.AdminRefundStatusResp"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1alpha1/regions": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "AdminRead"
+                ],
+                "summary": "List regions for admin",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/helper.AdminRegion"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1alpha1/reload-property-types": {
+            "post": {
+                "description": "Reload property types from database and update the global DefaultPropertyTypeLS",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Reload property types",
+                "responses": {
+                    "200": {
+                        "description": "successfully reloaded property types",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ReloadPropertyTypesResp"
+                        }
+                    },
+                    "401": {
+                        "description": "authenticate error",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "failed to reload property types",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorMessage"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1alpha1/subscription-plan/delete": {
+            "post": {
+                "description": "Delete a WorkspaceSubscriptionPlan by ID or name",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Delete WorkspaceSubscriptionPlan",
+                "parameters": [
+                    {
+                        "description": "Delete request (id or name required)",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "successfully deleted subscription plan",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "invalid request body",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorMessage"
+                        }
+                    },
+                    "401": {
+                        "description": "authenticate error",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorMessage"
+                        }
+                    },
+                    "404": {
+                        "description": "subscription plan not found",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "failed to delete subscription plan",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorMessage"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1alpha1/subscription-plan/manage": {
+            "post": {
+                "description": "Create a new WorkspaceSubscriptionPlan with prices or update existing one with prices. Manages plan and prices as a single unit.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Create or update WorkspaceSubscriptionPlan with prices",
+                "parameters": [
+                    {
+                        "description": "Subscription plan with prices data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.SubscriptionPlanManageRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "successfully created/updated subscription plan with prices",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "invalid request body",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorMessage"
+                        }
+                    },
+                    "401": {
+                        "description": "authenticate error",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "failed to create/update subscription plan with prices",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorMessage"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1alpha1/subscription-plans": {
+            "get": {
+                "description": "Admin interface to get all available subscription plans using GET method",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "WorkspaceSubscription"
+                ],
+                "summary": "Admin get subscription plans (GET)",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "example": false,
+                        "description": "Include inactive plans",
+                        "name": "includeInactive",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"workspace\"",
+                        "description": "Filter by plan type",
+                        "name": "planType",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Admin interface to get all available subscription plans",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "WorkspaceSubscription"
+                ],
+                "summary": "Admin get subscription plans",
+                "parameters": [
+                    {
+                        "description": "AdminSubscriptionPlansReq",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.AdminSubscriptionPlansReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1alpha1/user": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "AdminRead"
+                ],
+                "summary": "Get user detail for admin",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/helper.AdminUserDetail"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1alpha1/user/balance-adjust-records": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "AdminRead"
+                ],
+                "summary": "List user balance adjustments for admin",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Zero-based page index",
+                        "name": "pageIndex",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size, 1-100",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/helper.AdminBalanceAdjustRecordsResp"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1alpha1/user/recharge-records": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "AdminRead"
+                ],
+                "summary": "List user recharge records for admin",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Zero-based page index",
+                        "name": "pageIndex",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size, 1-100",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/helper.AdminRechargeRecordsResp"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1alpha1/users": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "AdminRead"
+                ],
+                "summary": "List users for admin",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Zero-based page index",
+                        "name": "pageIndex",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size, 1-100",
+                        "name": "pageSize",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Password provider username",
+                        "name": "username",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Phone provider ID",
+                        "name": "phone",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Workspace ID",
+                        "name": "workspaceId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Workspace display name",
+                        "name": "workspaceName",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/helper.AdminUserListResp"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1alpha1/workspace-subscription/add": {
+            "post": {
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1alpha1/workspace-subscription/list": {
+            "get": {
+                "description": "Admin interface to get paginated workspace subscription list with filtering options using GET method",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "WorkspaceSubscription"
+                ],
+                "summary": "Admin get workspace subscription list (GET)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "example": 0,
+                        "description": "Page index (0-based)",
+                        "name": "pageIndex",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "example": 10,
+                        "description": "Page size (optional, defaults to 10)",
+                        "name": "pageSize",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"ns-8gmgq0jn\"",
+                        "description": "Filter by workspace name",
+                        "name": "workspace",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"36ca5ee6-7b6e-4c15-922b-e861b3fbc061\"",
+                        "description": "Filter by user ID",
+                        "name": "userUID",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"Hobby\"",
+                        "description": "Filter by plan name",
+                        "name": "planName",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"NORMAL\"",
+                        "description": "Filter by subscription status",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"192.168.10.35.nip.io\"",
+                        "description": "Filter by region domain",
+                        "name": "regionDomain",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Admin interface to get paginated workspace subscription list with filtering options",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "WorkspaceSubscription"
+                ],
+                "summary": "Admin get workspace subscription list",
+                "parameters": [
+                    {
+                        "description": "AdminWorkspaceSubscriptionListReq",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.AdminWorkspaceSubscriptionListReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    }
+                }
+            }
+        },
+        "/payment/v1alpha1/card/delete": {
+            "post": {
+                "description": "Delete user card info",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Payment"
+                ],
+                "summary": "Delete user card info",
+                "parameters": [
+                    {
+                        "description": "CardOperationReq",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.CardOperationReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    }
+                }
+            }
+        },
+        "/payment/v1alpha1/card/list": {
+            "post": {
+                "description": "List user card info",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Payment"
+                ],
+                "summary": "List user card info",
+                "parameters": [
+                    {
+                        "description": "AuthBase",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.AuthBase"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    }
+                }
+            }
+        },
+        "/payment/v1alpha1/card/set-default": {
+            "post": {
+                "description": "Set default user card",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Payment"
+                ],
+                "summary": "Set default user card",
+                "parameters": [
+                    {
+                        "description": "CardOperationReq",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.CardOperationReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    }
+                }
+            }
+        },
+        "/payment/v1alpha1/credits/info": {
+            "post": {
+                "description": "Get credits info",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Credits"
+                ],
+                "summary": "Get credits info",
+                "parameters": [
+                    {
+                        "description": "AuthBase",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.AuthBase"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.CreditsInfoResp"
+                        }
+                    }
+                }
+            }
+        },
+        "/payment/v1alpha1/subscription/flush-quota": {
+            "post": {
+                "description": "flush user quota with subscription",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Subscription"
+                ],
+                "summary": "flush user quota with subscription",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    }
+                }
+            }
+        },
+        "/payment/v1alpha1/subscription/last-transaction": {
+            "post": {
+                "description": "Get user last subscription transaction",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Subscription"
+                ],
+                "summary": "Get user last subscription transaction",
+                "parameters": [
+                    {
+                        "description": "AuthBase",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.AuthBase"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    }
+                }
+            }
+        },
+        "/payment/v1alpha1/subscription/pay": {
+            "post": {
+                "description": "Subscription pay",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Subscription"
+                ],
+                "summary": "Subscription pay",
+                "parameters": [
+                    {
+                        "description": "SubscriptionOperatorReq",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.SubscriptionOperatorReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    }
+                }
+            }
+        },
+        "/payment/v1alpha1/subscription/plan-list": {
+            "post": {
+                "description": "Get subscription plan list",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Subscription"
+                ],
+                "summary": "Get subscription plan list",
+                "parameters": [
+                    {
+                        "description": "AuthBase",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.AuthBase"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    }
+                }
+            }
+        },
+        "/payment/v1alpha1/subscription/quota-check": {
+            "post": {
+                "description": "Check user subscription quota",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Subscription"
+                ],
+                "summary": "Check user subscription quota",
+                "parameters": [
+                    {
+                        "description": "SubscriptionQuotaCheckReq",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.SubscriptionQuotaCheckReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/helper.SubscriptionQuotaCheckResp"
+                        }
+                    }
+                }
+            }
+        },
+        "/payment/v1alpha1/subscription/upgrade-amount": {
+            "post": {
+                "description": "Get subscription upgrade amount",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Subscription"
+                ],
+                "summary": "Get subscription upgrade amount",
+                "parameters": [
+                    {
+                        "description": "SubscriptionOperatorReq",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.SubscriptionOperatorReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    }
+                }
+            }
+        },
+        "/payment/v1alpha1/subscription/user-info": {
+            "post": {
+                "description": "Get user subscription info",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Subscription"
+                ],
+                "summary": "Get user subscription info",
+                "parameters": [
+                    {
+                        "description": "AuthBase",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.AuthBase"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    }
+                }
+            }
+        },
+        "/payment/v1alpha1/workspace-subscription/info": {
+            "post": {
+                "description": "Get workspace subscription info",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "WorkspaceSubscription"
+                ],
+                "summary": "Get workspace subscription info",
+                "parameters": [
+                    {
+                        "description": "WorkspaceSubscriptionInfoReq",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.WorkspaceSubscriptionInfoReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    }
+                }
+            }
+        },
+        "/payment/v1alpha1/workspace-subscription/last-transaction": {
+            "post": {
+                "description": "Get last workspace subscription transaction",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "WorkspaceSubscription"
+                ],
+                "summary": "Get last workspace subscription transaction",
+                "parameters": [
+                    {
+                        "description": "WorkspaceSubscriptionInfoReq",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.WorkspaceSubscriptionInfoReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    }
+                }
+            }
+        },
+        "/payment/v1alpha1/workspace-subscription/list": {
+            "post": {
+                "description": "Get workspace subscription list",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "WorkspaceSubscription"
+                ],
+                "summary": "Get workspace subscription list",
+                "parameters": [
+                    {
+                        "description": "AuthBase",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.AuthBase"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    }
+                }
+            }
+        },
+        "/payment/v1alpha1/workspace-subscription/notify": {
+            "post": {
+                "description": "Handle Stripe webhook notifications for workspace subscription events",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "WorkspaceSubscription"
+                ],
+                "summary": "Handle Stripe webhook for workspace subscription",
+                "responses": {}
+            }
+        },
+        "/payment/v1alpha1/workspace-subscription/pay": {
+            "post": {
+                "description": "Create workspace subscription payment with Stripe",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "WorkspaceSubscription"
+                ],
+                "summary": "Create workspace subscription payment",
+                "parameters": [
+                    {
+                        "description": "WorkspaceSubscriptionOperatorReq",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.WorkspaceSubscriptionOperatorReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    }
+                }
+            }
+        },
+        "/payment/v1alpha1/workspace-subscription/payment-list": {
+            "post": {
+                "description": "Get workspace subscription payment list",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "WorkspaceSubscription"
+                ],
+                "summary": "Get workspace subscription payment list",
+                "parameters": [
+                    {
+                        "description": "UserTimeRangeReq",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.UserTimeRangeReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    }
+                }
+            }
+        },
+        "/payment/v1alpha1/workspace-subscription/plan-list": {
+            "post": {
+                "description": "Get workspace subscription plan list",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "WorkspaceSubscription"
+                ],
+                "summary": "Get workspace subscription plan list",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    }
+                }
+            }
+        },
+        "/payment/v1alpha1/workspace-subscription/upgrade-amount": {
+            "post": {
+                "description": "Get workspace subscription upgrade amount",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "WorkspaceSubscription"
+                ],
+                "summary": "Get workspace subscription upgrade amount",
+                "parameters": [
+                    {
+                        "description": "WorkspaceSubscriptionOperatorReq",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.WorkspaceSubscriptionOperatorReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    }
+                }
+            }
+        },
+        "/workspace/v1alpha1/resource-quota": {
+            "post": {
+                "description": "Get workspace resource quota",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "WorkspaceSubscription"
+                ],
+                "summary": "Get workspace resource quota",
+                "parameters": [
+                    {
+                        "description": "WorkspaceInfoReq",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/helper.WorkspaceInfoReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "api.CreditsInfo": {
+            "type": "object",
+            "properties": {
+                "balance": {
+                    "type": "integer"
+                },
+                "credits": {
+                    "type": "integer"
+                },
+                "creditsList": {
+                    "description": "CreditsList holds the same rows the aggregate fields above are summed\nfrom, so sum(amount) == Credits and sum(usedAmount) == DeductionCredits;\nexhausted rows stay in the list to keep that invariant. Callers filter\nfor display (e.g. amount \u003e usedAmount).",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.CreditsItem"
+                    }
+                },
+                "currentPlanCreditsBalance": {
+                    "type": "integer"
+                },
+                "currentPlanCreditsDeductionBalance": {
+                    "type": "integer"
+                },
+                "deductionBalance": {
+                    "type": "integer"
+                },
+                "deductionCredits": {
+                    "type": "integer"
+                },
+                "kycDeductionCreditsBalance": {
+                    "type": "integer"
+                },
+                "kycDeductionCreditsDeductionBalance": {
+                    "type": "integer"
+                },
+                "userUid": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.CreditsInfoResp": {
+            "type": "object",
+            "properties": {
+                "credits": {
+                    "$ref": "#/definitions/api.CreditsInfo"
+                }
+            }
+        },
+        "api.CreditsItem": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "expireAt": {
+                    "type": "string"
+                },
+                "startAt": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/types.CreditsStatus"
+                },
+                "usedAmount": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api.SubscriptionPlanManageRequest": {
+            "type": "object",
+            "properties": {
+                "plan": {
+                    "$ref": "#/definitions/types.WorkspaceSubscriptionPlan"
+                },
+                "prices": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/types.ProductPrice"
+                    }
+                }
+            }
+        },
         "common.PropertyQuery": {
             "type": "object",
             "properties": {
                 "alias": {
                     "type": "string",
                     "example": "gpu-tesla-v100"
+                },
+                "enum": {
+                    "type": "integer",
+                    "example": 1
                 },
                 "name": {
                     "type": "string",
@@ -1599,6 +3473,587 @@
                 "unit_price": {
                     "type": "number",
                     "example": 10000
+                }
+            }
+        },
+        "gin.H": {
+            "type": "object",
+            "additionalProperties": {}
+        },
+        "helper.AdminBalanceAdjustRecord": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "balanceAfter": {
+                    "type": "integer"
+                },
+                "balanceBefore": {
+                    "type": "integer"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "helper.AdminBalanceAdjustRecordsResp": {
+            "type": "object",
+            "properties": {
+                "list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/helper.AdminBalanceAdjustRecord"
+                    }
+                },
+                "pageIndex": {
+                    "type": "integer"
+                },
+                "pageSize": {
+                    "type": "integer"
+                },
+                "totalItems": {
+                    "type": "integer"
+                },
+                "totalPages": {
+                    "type": "integer"
+                }
+            }
+        },
+        "helper.AdminGiftCode": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "comment": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "createdBy": {
+                    "type": "string"
+                },
+                "createdById": {
+                    "type": "string"
+                },
+                "creditAmount": {
+                    "type": "integer"
+                },
+                "expiredAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "rechargeType": {
+                    "type": "string"
+                },
+                "used": {
+                    "type": "boolean"
+                },
+                "usedAt": {
+                    "type": "string"
+                },
+                "usedBy": {
+                    "type": "string"
+                }
+            }
+        },
+        "helper.AdminGiftCodeListResp": {
+            "type": "object",
+            "properties": {
+                "list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/helper.AdminGiftCode"
+                    }
+                },
+                "pageIndex": {
+                    "type": "integer"
+                },
+                "pageSize": {
+                    "type": "integer"
+                },
+                "totalItems": {
+                    "type": "integer"
+                },
+                "totalPages": {
+                    "type": "integer"
+                }
+            }
+        },
+        "helper.AdminGiftCodeUsage": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "comment": {
+                    "type": "string"
+                },
+                "creditAmount": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "rechargeType": {
+                    "type": "string"
+                },
+                "usedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "helper.AdminGiftCodeUsageResp": {
+            "type": "object",
+            "properties": {
+                "list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/helper.AdminGiftCodeUsage"
+                    }
+                },
+                "pageIndex": {
+                    "type": "integer"
+                },
+                "pageSize": {
+                    "type": "integer"
+                },
+                "totalItems": {
+                    "type": "integer"
+                },
+                "totalPages": {
+                    "type": "integer"
+                }
+            }
+        },
+        "helper.AdminInvoice": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "detail": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "remark": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "totalAmount": {
+                    "type": "integer"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "userID": {
+                    "type": "string"
+                }
+            }
+        },
+        "helper.AdminInvoiceListResp": {
+            "type": "object",
+            "properties": {
+                "list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/helper.AdminInvoice"
+                    }
+                },
+                "pageIndex": {
+                    "type": "integer"
+                },
+                "pageSize": {
+                    "type": "integer"
+                },
+                "totalItems": {
+                    "type": "integer"
+                },
+                "totalPages": {
+                    "type": "integer"
+                }
+            }
+        },
+        "helper.AdminRechargeGiftPolicy": {
+            "type": "object",
+            "properties": {
+                "defaultDiscountSteps": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
+                    }
+                },
+                "firstRechargeDiscountSteps": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "helper.AdminRechargeRecord": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "chargeSource": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "gift": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "latestRefund": {
+                    "$ref": "#/definitions/helper.AdminRefund"
+                },
+                "method": {
+                    "type": "string"
+                },
+                "refundCount": {
+                    "type": "integer"
+                },
+                "refunded": {
+                    "type": "boolean"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "tradeNo": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "helper.AdminRechargeRecordsResp": {
+            "type": "object",
+            "properties": {
+                "list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/helper.AdminRechargeRecord"
+                    }
+                },
+                "pageIndex": {
+                    "type": "integer"
+                },
+                "pageSize": {
+                    "type": "integer"
+                },
+                "totalItems": {
+                    "type": "integer"
+                },
+                "totalPages": {
+                    "type": "integer"
+                }
+            }
+        },
+        "helper.AdminRefund": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "deductAmount": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "refundAmount": {
+                    "type": "integer"
+                },
+                "refundNo": {
+                    "type": "string"
+                },
+                "refundReason": {
+                    "type": "string"
+                }
+            }
+        },
+        "helper.AdminRefundStatusResp": {
+            "type": "object",
+            "properties": {
+                "latestRefund": {
+                    "$ref": "#/definitions/helper.AdminRefund"
+                },
+                "refundCount": {
+                    "type": "integer"
+                },
+                "refunded": {
+                    "type": "boolean"
+                },
+                "tradeNo": {
+                    "type": "string"
+                }
+            }
+        },
+        "helper.AdminRegion": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "displayName": {
+                    "type": "string"
+                },
+                "domain": {
+                    "type": "string"
+                },
+                "location": {
+                    "type": "string"
+                },
+                "uid": {
+                    "type": "string"
+                }
+            }
+        },
+        "helper.AdminSubscriptionPlansReq": {
+            "type": "object",
+            "properties": {
+                "includeInactive": {
+                    "description": "@Summary Include inactive plans\n@Description Include inactive plans in the response (optional, defaults to false)\n@JSONSchema",
+                    "type": "boolean",
+                    "example": false
+                },
+                "planType": {
+                    "description": "@Summary Plan type filter\n@Description Filter by plan type (optional)\n@JSONSchema",
+                    "type": "string",
+                    "example": "workspace"
+                }
+            }
+        },
+        "helper.AdminUser": {
+            "type": "object",
+            "properties": {
+                "availableBalance": {
+                    "type": "integer"
+                },
+                "balance": {
+                    "type": "integer"
+                },
+                "billingStatus": {
+                    "type": "string"
+                },
+                "deductionBalance": {
+                    "type": "integer"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "nickname": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string"
+                },
+                "sourceProviderTypes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "sourceType": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "uid": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "helper.AdminUserDetail": {
+            "type": "object",
+            "properties": {
+                "availableBalance": {
+                    "type": "integer"
+                },
+                "balance": {
+                    "type": "integer"
+                },
+                "billingStatus": {
+                    "type": "string"
+                },
+                "deductionBalance": {
+                    "type": "integer"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "idCard": {
+                    "type": "string"
+                },
+                "nickname": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "productSeries": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "realName": {
+                    "type": "string"
+                },
+                "rechargeAmount": {
+                    "type": "integer"
+                },
+                "role": {
+                    "type": "string"
+                },
+                "sourceProviderTypes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "sourceType": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "uid": {
+                    "type": "string"
+                },
+                "userType": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                },
+                "workspaces": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/helper.AdminWorkspace"
+                    }
+                }
+            }
+        },
+        "helper.AdminUserListResp": {
+            "type": "object",
+            "properties": {
+                "list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/helper.AdminUser"
+                    }
+                },
+                "pageIndex": {
+                    "type": "integer"
+                },
+                "pageSize": {
+                    "type": "integer"
+                },
+                "totalItems": {
+                    "type": "integer"
+                },
+                "totalPages": {
+                    "type": "integer"
+                }
+            }
+        },
+        "helper.AdminWorkspace": {
+            "type": "object",
+            "properties": {
+                "displayName": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "isPrivate": {
+                    "type": "boolean"
+                },
+                "role": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "uid": {
+                    "type": "string"
+                }
+            }
+        },
+        "helper.AdminWorkspaceSubscriptionListReq": {
+            "type": "object",
+            "properties": {
+                "pageIndex": {
+                    "description": "@Summary Page index\n@Description Page index (0-based)\n@JSONSchema",
+                    "type": "integer",
+                    "example": 0
+                },
+                "pageSize": {
+                    "description": "@Summary Page size\n@Description Page size (optional, defaults to 10)\n@JSONSchema",
+                    "type": "integer",
+                    "example": 10
+                },
+                "planName": {
+                    "description": "@Summary Plan name filter\n@Description Filter by plan name (optional)\n@JSONSchema",
+                    "type": "string",
+                    "example": "premium"
+                },
+                "regionDomain": {
+                    "description": "@Summary Region domain filter\n@Description Filter by region domain (optional)\n@JSONSchema",
+                    "type": "string",
+                    "example": "example.com"
+                },
+                "status": {
+                    "description": "@Summary Status filter\n@Description Filter by subscription status (optional)\n@JSONSchema",
+                    "type": "string",
+                    "example": "normal"
+                },
+                "userUID": {
+                    "description": "@Summary User filter\n@Description Filter by user ID (optional)\n@JSONSchema",
+                    "type": "string",
+                    "example": "user-123"
+                },
+                "workspace": {
+                    "description": "@Summary Workspace filter\n@Description Filter by workspace name (optional)\n@JSONSchema",
+                    "type": "string",
+                    "example": "my-workspace"
                 }
             }
         },
@@ -1673,8 +4128,7 @@
             "properties": {
                 "detail": {
                     "description": "invoice detail information json\n@Summary Invoice detail information\n@Description Invoice detail information\n@JSONSchema required",
-                    "type": "string",
-                    "example": "{\"title\":\"title\",\"amount\":100,\"taxRate\":0.06,\"tax\":6,\"total\":106,\"invoiceType\":1,\"invoiceContent\":1,\"invoiceStatus\":1,\"invoiceTime\":\"2021-01-01T00:00:00Z\",\"invoiceNumber\":\"invoice-number-1\",\"invoiceCode\":\"invoice-code-1\",\"invoiceFile\":\"invoice-file-1\"}"
+                    "type": "string"
                 },
                 "kubeConfig": {
                     "type": "string"
@@ -1690,8 +4144,8 @@
                         "type": "string"
                     },
                     "example": [
-                        "[\"payment-id-1\"",
-                        "\"payment-id-2\"]"
+                        "[payment-id-1",
+                        " payment-id-2]"
                     ]
                 },
                 "token": {
@@ -1711,6 +4165,69 @@
         "helper.Auth": {
             "type": "object",
             "properties": {
+                "kubeConfig": {
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "token": {
+                    "type": "string",
+                    "example": "token"
+                },
+                "userID": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "userUID": {
+                    "type": "string",
+                    "example": "user-123"
+                }
+            }
+        },
+        "helper.AuthBase": {
+            "type": "object",
+            "properties": {
+                "kubeConfig": {
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "token": {
+                    "type": "string",
+                    "example": "token"
+                },
+                "userID": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "userUID": {
+                    "type": "string",
+                    "example": "user-123"
+                }
+            }
+        },
+        "helper.CardOperationReq": {
+            "type": "object",
+            "properties": {
+                "cardBrand": {
+                    "description": "@Summary CardBrand\n@Description CardBrand",
+                    "type": "string",
+                    "example": "VISA"
+                },
+                "cardID": {
+                    "description": "@Summary CardID\n@Description CardID",
+                    "type": "string",
+                    "example": "123e4567-e89b-12d3-a456-426614174000"
+                },
+                "cardNo": {
+                    "description": "@Summary CardNo\n@Description CardNo",
+                    "type": "string",
+                    "example": "1234567890"
+                },
                 "kubeConfig": {
                     "type": "string"
                 },
@@ -1858,6 +4375,204 @@
                 "totalPage": {
                     "description": "@Summary Total page\n@Description Total page",
                     "type": "integer"
+                }
+            }
+        },
+        "helper.CreatePayReq": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "description": "@Summary Amount\n@Description Amount\n@JSONSchema required",
+                    "type": "integer",
+                    "example": 100000000
+                },
+                "cardBrand": {
+                    "description": "@Summary CardBrand\n@Description CardBrand",
+                    "type": "string",
+                    "example": "VISA"
+                },
+                "cardID": {
+                    "description": "@Summary CardID\n@Description CardID",
+                    "type": "string",
+                    "example": "123e4567-e89b-12d3-a456-426614174000"
+                },
+                "cardNo": {
+                    "description": "@Summary CardNo\n@Description CardNo",
+                    "type": "string",
+                    "example": "1234567890"
+                },
+                "kubeConfig": {
+                    "type": "string"
+                },
+                "method": {
+                    "description": "@Summary Method\n@Description Method\n@JSONSchema required",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.PaymentMethod"
+                        }
+                    ],
+                    "example": "CARD"
+                },
+                "owner": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "token": {
+                    "type": "string",
+                    "example": "token"
+                },
+                "userID": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "userUID": {
+                    "type": "string",
+                    "example": "user-123"
+                }
+            }
+        },
+        "helper.CreateUserAlertNotificationAccountReq": {
+            "type": "object",
+            "required": [
+                "providerId",
+                "providerType",
+                "userUid"
+            ],
+            "properties": {
+                "kubeConfig": {
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "providerId": {
+                    "description": "@Summary Provider ID\n@Description Provider ID (email address, phone number, etc.)\n@JSONSchema required",
+                    "type": "string",
+                    "example": "user@example.com"
+                },
+                "providerType": {
+                    "description": "@Summary Provider type\n@Description Provider type (Only EMAIL and PHONE are supported)\n@JSONSchema required",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.OauthProviderType"
+                        }
+                    ],
+                    "example": "EMAIL"
+                },
+                "token": {
+                    "type": "string",
+                    "example": "token"
+                },
+                "userID": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "userUID": {
+                    "type": "string",
+                    "example": "user-123"
+                },
+                "userUid": {
+                    "description": "@Summary User UUID\n@Description User UUID\n@JSONSchema required",
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                }
+            }
+        },
+        "helper.CreateUserAlertNotificationAccountResp": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/helper.CreateUserAlertNotificationAccountRespData"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "helper.CreateUserAlertNotificationAccountRespData": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "providerId": {
+                    "type": "string"
+                },
+                "providerType": {
+                    "$ref": "#/definitions/types.OauthProviderType"
+                },
+                "userUid": {
+                    "type": "string"
+                }
+            }
+        },
+        "helper.DeleteUserAlertNotificationAccountReq": {
+            "type": "object",
+            "required": [
+                "ids",
+                "userUid"
+            ],
+            "properties": {
+                "ids": {
+                    "description": "@Summary Account IDs\n@Description List of account IDs to delete\n@JSONSchema required",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "[550e8400-e29b-41d4-a716-446655440000",
+                        " 550e8400-e29b-41d4-a716-446655440001]"
+                    ]
+                },
+                "kubeConfig": {
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "token": {
+                    "type": "string",
+                    "example": "token"
+                },
+                "userID": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "userUID": {
+                    "type": "string",
+                    "example": "user-123"
+                },
+                "userUid": {
+                    "description": "@Summary User UUID\n@Description User UUID\n@JSONSchema required",
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                }
+            }
+        },
+        "helper.DeleteUserAlertNotificationAccountResp": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/helper.DeleteUserAlertNotificationAccountRespData"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "helper.DeleteUserAlertNotificationAccountRespData": {
+            "type": "object",
+            "properties": {
+                "deletedCount": {
+                    "type": "integer"
+                },
+                "deletedIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
@@ -2117,6 +4832,44 @@
                 }
             }
         },
+        "helper.ListUserAlertNotificationAccountsReq": {
+            "type": "object",
+            "properties": {
+                "kubeConfig": {
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "token": {
+                    "type": "string",
+                    "example": "token"
+                },
+                "userID": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "userUID": {
+                    "type": "string",
+                    "example": "user-123"
+                }
+            }
+        },
+        "helper.ListUserAlertNotificationAccountsResp": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/helper.UserAlertNotificationAccountData"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
         "helper.NamespaceBillingHistoryReq": {
             "type": "object",
             "properties": {
@@ -2162,9 +4915,44 @@
                         "type": "string"
                     },
                     "example": [
-                        "[\"ns-admin\"",
-                        "\"ns-test1\"]"
+                        "[ns-admin",
+                        "ns-test1]"
                     ]
+                }
+            }
+        },
+        "helper.PlanType": {
+            "type": "string",
+            "enum": [
+                "upgrade",
+                "downgrade",
+                "renewal"
+            ],
+            "x-enum-varnames": [
+                "Upgrade",
+                "Downgrade",
+                "Renewal"
+            ]
+        },
+        "helper.ReloadPropertyTypesResp": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/helper.ReloadPropertyTypesRespData"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "helper.ReloadPropertyTypesRespData": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
                 }
             }
         },
@@ -2182,8 +4970,8 @@
                         "type": "string"
                     },
                     "example": [
-                        "[\"invoice-id-1\"",
-                        "\"invoice-id-2\"]"
+                        "[invoice-id-1",
+                        " invoice-id-2]"
                     ]
                 },
                 "kubeConfig": {
@@ -2232,8 +5020,8 @@
                         "type": "string"
                     },
                     "example": [
-                        "[\"payment-id-1\"",
-                        "\"payment-id-2\"]"
+                        "[payment-id-1",
+                        " payment-id-2]"
                     ]
                 },
                 "token": {
@@ -2247,6 +5035,196 @@
                 "userUID": {
                     "type": "string",
                     "example": "user-123"
+                }
+            }
+        },
+        "helper.SubscriptionOperatorReq": {
+            "type": "object",
+            "properties": {
+                "cardID": {
+                    "description": "@Summary CardID\n@Description CardID",
+                    "type": "string",
+                    "example": "123e4567-e89b-12d3-a456-426614174000"
+                },
+                "kubeConfig": {
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "payMethod": {
+                    "description": "@Summary PayMethod\n@Description PayMethod",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.PaymentMethod"
+                        }
+                    ],
+                    "example": "CARD"
+                },
+                "planID": {
+                    "description": "@Summary PlanID\n@Description PlanID",
+                    "type": "string",
+                    "example": "123e4567-e89b-12d3-a456-426614174000"
+                },
+                "planName": {
+                    "description": "@Summary PlanName\n@Description PlanName",
+                    "type": "string",
+                    "example": "planName"
+                },
+                "planType": {
+                    "description": "@Summary PlanType\n@Description PlanType",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/helper.PlanType"
+                        }
+                    ],
+                    "example": "upgrade;downgrade;renewal"
+                },
+                "token": {
+                    "type": "string",
+                    "example": "token"
+                },
+                "userID": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "userUID": {
+                    "type": "string",
+                    "example": "user-123"
+                }
+            }
+        },
+        "helper.SubscriptionQuotaCheckReq": {
+            "type": "object",
+            "properties": {
+                "kubeConfig": {
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "planID": {
+                    "description": "@Summary PlanID\n@Description PlanID",
+                    "type": "string",
+                    "example": "123e4567-e89b-12d3-a456-426614174000"
+                },
+                "planName": {
+                    "description": "@Summary PlanName\n@Description PlanName",
+                    "type": "string",
+                    "example": "planName"
+                },
+                "token": {
+                    "type": "string",
+                    "example": "token"
+                },
+                "userID": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "userUID": {
+                    "type": "string",
+                    "example": "user-123"
+                }
+            }
+        },
+        "helper.SubscriptionQuotaCheckResp": {
+            "type": "object",
+            "properties": {
+                "allWorkspaceReady": {
+                    "description": "allWorkspaceReady",
+                    "type": "boolean",
+                    "example": true
+                },
+                "readyWorkspace": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "workspace1",
+                        "workspace2"
+                    ]
+                },
+                "unReadyWorkspace": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "workspace3",
+                        "workspace4"
+                    ]
+                }
+            }
+        },
+        "helper.ToggleUserAlertNotificationAccountsReq": {
+            "type": "object",
+            "required": [
+                "ids",
+                "isEnabled"
+            ],
+            "properties": {
+                "ids": {
+                    "description": "@Summary Account IDs\n@Description List of account IDs to toggle\n@JSONSchema required",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "[550e8400-e29b-41d4-a716-446655440000",
+                        " 550e8400-e29b-41d4-a716-446655440001]"
+                    ]
+                },
+                "isEnabled": {
+                    "description": "@Summary Enable flag\n@Description Set to true to enable, false to disable\n@JSONSchema required",
+                    "type": "boolean",
+                    "example": true
+                },
+                "kubeConfig": {
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "token": {
+                    "type": "string",
+                    "example": "token"
+                },
+                "userID": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "userUID": {
+                    "type": "string",
+                    "example": "user-123"
+                }
+            }
+        },
+        "helper.ToggleUserAlertNotificationAccountsResp": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/helper.ToggleUserAlertNotificationAccountsRespData"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "helper.ToggleUserAlertNotificationAccountsRespData": {
+            "type": "object",
+            "properties": {
+                "updatedCount": {
+                    "type": "integer"
+                },
+                "updatedIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
@@ -2344,6 +5322,32 @@
                 }
             }
         },
+        "helper.UserAlertNotificationAccountData": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "isEnabled": {
+                    "type": "boolean"
+                },
+                "providerId": {
+                    "type": "string"
+                },
+                "providerType": {
+                    "$ref": "#/definitions/types.OauthProviderType"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "userUid": {
+                    "type": "string"
+                }
+            }
+        },
         "helper.UserTimeRangeReq": {
             "type": "object",
             "properties": {
@@ -2393,8 +5397,8 @@
                         "type": "string"
                     },
                     "example": [
-                        "[\"ns-admin\"",
-                        "\"ns-test1\"]"
+                        "[ns-admin",
+                        "ns-test1]"
                     ]
                 },
                 "owner": {
@@ -2416,6 +5420,463 @@
                 "userUID": {
                     "type": "string",
                     "example": "user-123"
+                }
+            }
+        },
+        "helper.WorkspaceInfoReq": {
+            "type": "object",
+            "required": [
+                "workspace"
+            ],
+            "properties": {
+                "kubeConfig": {
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "token": {
+                    "type": "string",
+                    "example": "token"
+                },
+                "userID": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "userUID": {
+                    "type": "string",
+                    "example": "user-123"
+                },
+                "workspace": {
+                    "description": "@Summary Workspace name\n@Description Workspace name",
+                    "type": "string",
+                    "example": "my-workspace"
+                }
+            }
+        },
+        "helper.WorkspaceSubscriptionInfoReq": {
+            "type": "object",
+            "required": [
+                "regionDomain",
+                "workspace"
+            ],
+            "properties": {
+                "kubeConfig": {
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "redirectUrl": {
+                    "description": "@Summary Redirect Url\n@Description Redirect Url for create session",
+                    "type": "string",
+                    "example": "https://example.com"
+                },
+                "regionDomain": {
+                    "description": "@Summary Region domain\n@Description Region domain\n@JSONSchema required",
+                    "type": "string",
+                    "example": "example.com"
+                },
+                "token": {
+                    "type": "string",
+                    "example": "token"
+                },
+                "userID": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "userUID": {
+                    "type": "string",
+                    "example": "user-123"
+                },
+                "workspace": {
+                    "description": "@Summary Workspace name\n@Description Workspace name\n@JSONSchema required",
+                    "type": "string",
+                    "example": "my-workspace"
+                }
+            }
+        },
+        "helper.WorkspaceSubscriptionInvoiceCancelReq": {
+            "type": "object",
+            "required": [
+                "invoiceID",
+                "regionDomain",
+                "workspace"
+            ],
+            "properties": {
+                "invoiceID": {
+                    "description": "@Summary Invoice ID\n@Description The Stripe invoice ID to cancel\n@JSONSchema required",
+                    "type": "string",
+                    "example": "in_1234567890"
+                },
+                "kubeConfig": {
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "regionDomain": {
+                    "description": "@Summary Region domain\n@Description Region domain (for authorization)\n@JSONSchema required",
+                    "type": "string",
+                    "example": "example.com"
+                },
+                "token": {
+                    "type": "string",
+                    "example": "token"
+                },
+                "userID": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "userUID": {
+                    "type": "string",
+                    "example": "user-123"
+                },
+                "workspace": {
+                    "description": "@Summary Workspace name\n@Description Workspace name (for authorization)\n@JSONSchema required",
+                    "type": "string",
+                    "example": "my-workspace"
+                }
+            }
+        },
+        "helper.WorkspaceSubscriptionOperatorReq": {
+            "type": "object",
+            "required": [
+                "operator",
+                "payMethod",
+                "planName",
+                "regionDomain"
+            ],
+            "properties": {
+                "cardId": {
+                    "description": "@Summary Card ID (optional for stripe payments)\n@Description Card ID for stripe payments",
+                    "type": "string"
+                },
+                "kubeConfig": {
+                    "type": "string"
+                },
+                "operator": {
+                    "description": "@Summary Subscription operator (created/upgraded/downgraded/canceled/renewed)\n@Description Subscription operator type",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.SubscriptionOperator"
+                        }
+                    ],
+                    "example": "created"
+                },
+                "owner": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "payApp": {
+                    "description": "@Summary Stripe return app\n@Description Desktop app opened after returning from Stripe Checkout\n@JSONSchema optional",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.PayApp"
+                        }
+                    ],
+                    "example": "system-costcenter"
+                },
+                "payMethod": {
+                    "description": "@Summary Payment method\n@Description Payment method (STRIPE, BALANCE)\n@JSONSchema required",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.PaymentMethod"
+                        }
+                    ],
+                    "example": "STRIPE"
+                },
+                "period": {
+                    "description": "@Summary Subscription period\n@Description Subscription period (1m for monthly, 1y for yearly)\n@JSONSchema required",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.SubscriptionPeriod"
+                        }
+                    ],
+                    "example": "1m"
+                },
+                "planName": {
+                    "description": "@Summary Plan name\n@Description Plan name\n@JSONSchema required",
+                    "type": "string",
+                    "example": "premium"
+                },
+                "promotionCode": {
+                    "description": "@Summary Promotion code\n@Description Promotion code for applying discount to the upgrade payment\n@JSONSchema optional",
+                    "type": "string",
+                    "example": "SAVE20"
+                },
+                "regionDomain": {
+                    "description": "@Summary Region domain\n@Description Region domain\n@JSONSchema required",
+                    "type": "string",
+                    "example": "example.com"
+                },
+                "token": {
+                    "type": "string",
+                    "example": "token"
+                },
+                "userID": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "userUID": {
+                    "type": "string",
+                    "example": "user-123"
+                },
+                "workspace": {
+                    "description": "@Summary Workspace name\n@Description Workspace name (optional for price preview, required for actual subscription)\n@JSONSchema optional",
+                    "type": "string",
+                    "example": "my-workspace"
+                }
+            }
+        },
+        "helper.WorkspaceSubscriptionPlansReq": {
+            "type": "object",
+            "required": [
+                "namespaces"
+            ],
+            "properties": {
+                "kubeConfig": {
+                    "type": "string"
+                },
+                "namespaces": {
+                    "description": "@Summary Namespace list\n@Description List of workspace namespaces to query subscription plans for\n@JSONSchema required",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "[ns-admin",
+                        " ns-test1",
+                        " ns-dev]"
+                    ]
+                },
+                "owner": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "token": {
+                    "type": "string",
+                    "example": "token"
+                },
+                "userID": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "userUID": {
+                    "type": "string",
+                    "example": "user-123"
+                }
+            }
+        },
+        "types.CreditsStatus": {
+            "type": "string",
+            "enum": [
+                "active",
+                "expired",
+                "used_up"
+            ],
+            "x-enum-varnames": [
+                "CreditsStatusActive",
+                "CreditsStatusExpired",
+                "CreditsStatusUsedUp"
+            ]
+        },
+        "types.OauthProviderType": {
+            "type": "string",
+            "enum": [
+                "PHONE",
+                "EMAIL",
+                "PASSWORD",
+                "GITHUB"
+            ],
+            "x-enum-varnames": [
+                "OauthProviderTypePhone",
+                "OauthProviderTypeEmail",
+                "OauthProviderTypePassword",
+                "OauthProviderTypeGithub"
+            ]
+        },
+        "types.PayApp": {
+            "type": "string",
+            "enum": [
+                "system-costcenter",
+                "system-brain"
+            ],
+            "x-enum-varnames": [
+                "PayAppCostcenter",
+                "PayAppBrain"
+            ]
+        },
+        "types.PaymentMethod": {
+            "type": "string",
+            "enum": [
+                "err_and_use_balance",
+                "corporate",
+                "balance",
+                "stripe"
+            ],
+            "x-enum-comments": {
+                "PaymentMethodBalance": "余额支付",
+                "PaymentMethodCorporate": "企业转账支付",
+                "PaymentMethodErrAndUseBalance": "支付失败转余额支付",
+                "PaymentMethodStripe": "Stripe 支付"
+            },
+            "x-enum-varnames": [
+                "PaymentMethodErrAndUseBalance",
+                "PaymentMethodCorporate",
+                "PaymentMethodBalance",
+                "PaymentMethodStripe"
+            ]
+        },
+        "types.ProductPrice": {
+            "type": "object",
+            "properties": {
+                "billingCycle": {
+                    "description": "计费周期, 年/季/月/周/天/次",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.SubscriptionPeriod"
+                        }
+                    ]
+                },
+                "createdAt": {
+                    "description": "Currency  string    `gorm:\"type:varchar(10);not null;column:currency\"`  // 货币",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "originalPrice": {
+                    "type": "integer"
+                },
+                "price": {
+                    "description": "价格",
+                    "type": "integer"
+                },
+                "productID": {
+                    "type": "string"
+                },
+                "stripePrice": {
+                    "description": "Stripe 价格 ID",
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "description": "更新时间",
+                    "type": "string"
+                }
+            }
+        },
+        "types.SubscriptionOperator": {
+            "type": "string",
+            "enum": [
+                "created",
+                "upgraded",
+                "downgraded",
+                "canceled",
+                "deleted",
+                "renewed",
+                "resumed",
+                "renew_failed",
+                "debt",
+                "other"
+            ],
+            "x-enum-varnames": [
+                "SubscriptionTransactionTypeCreated",
+                "SubscriptionTransactionTypeUpgraded",
+                "SubscriptionTransactionTypeDowngraded",
+                "SubscriptionTransactionTypeCanceled",
+                "SubscriptionTransactionTypeDeleted",
+                "SubscriptionTransactionTypeRenewed",
+                "SubscriptionTransactionTypeResumed",
+                "SubscriptionTransactionTypeRenewFailed",
+                "SubscriptionTransactionTypeDebt",
+                "SubscriptionTransactionTypeOther"
+            ]
+        },
+        "types.SubscriptionPeriod": {
+            "type": "string",
+            "enum": [
+                "1m",
+                "1y"
+            ],
+            "x-enum-varnames": [
+                "SubscriptionPeriodMonthly",
+                "SubscriptionPeriodYearly"
+            ]
+        },
+        "types.WorkspaceSubscriptionPlan": {
+            "type": "object",
+            "properties": {
+                "aiquota": {
+                    "description": "包含AI配额大小",
+                    "type": "integer"
+                },
+                "createdAt": {
+                    "description": "创建时间",
+                    "type": "string"
+                },
+                "description": {
+                    "description": "描述",
+                    "type": "string"
+                },
+                "downgradePlanList": {
+                    "description": "可降级的计划列表",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "id": {
+                    "description": "计划 ID",
+                    "type": "string"
+                },
+                "maxResources": {
+                    "description": "最大资源数: map[string]string: {\"cpu\": \"4\", \"memory\": \"8Gi\", \"storage\": \"100Gi\"}",
+                    "type": "string"
+                },
+                "maxSeats": {
+                    "description": "最大席位数",
+                    "type": "integer"
+                },
+                "name": {
+                    "description": "计划名称",
+                    "type": "string"
+                },
+                "order": {
+                    "description": "排序号",
+                    "type": "integer"
+                },
+                "prices": {
+                    "description": "一对多关联",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/types.ProductPrice"
+                    }
+                },
+                "tags": {
+                    "description": "标签分类",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "traffic": {
+                    "description": "包含流量包大小, 单位: MB",
+                    "type": "integer"
+                },
+                "updatedAt": {
+                    "description": "更新时间",
+                    "type": "string"
+                },
+                "upgradePlanList": {
+                    "description": "可升级的计划列表",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         }

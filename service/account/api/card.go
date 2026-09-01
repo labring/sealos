@@ -17,8 +17,8 @@ import (
 // @Tags Payment
 // @Accept json
 // @Produce json
-// @Param req body CardListReq true "CardListReq"
-// @Success 200 {object} CardListResp
+// @Param req body helper.AuthBase true "AuthBase"
+// @Success 200 {object} gin.H
 // @Router /payment/v1alpha1/card/list [post]
 func ListCard(c *gin.Context) {
 	req := &helper.AuthBase{}
@@ -69,8 +69,8 @@ func ListCard(c *gin.Context) {
 // @Tags Payment
 // @Accept json
 // @Produce json
-// @Param req body CardDeleteReq true "CardDeleteReq"
-// @Success 200 {object} CardDeleteResp
+// @Param req body helper.CardOperationReq true "CardOperationReq"
+// @Success 200 {object} gin.H
 // @Router /payment/v1alpha1/card/delete [post]
 func DeleteCard(c *gin.Context) {
 	req, err := helper.ParseCardOperationReq(c)
@@ -107,8 +107,8 @@ func DeleteCard(c *gin.Context) {
 // @Tags Payment
 // @Accept json
 // @Produce json
-// @Param req body CardOperationReq true "CardOperationReq"
-// @Success 200 {object} CardOperationResp
+// @Param req body helper.CardOperationReq true "CardOperationReq"
+// @Success 200 {object} gin.H
 // @Router /payment/v1alpha1/card/set-default [post]
 func SetDefaultCard(c *gin.Context) {
 	req, err := helper.ParseCardOperationReq(c)
