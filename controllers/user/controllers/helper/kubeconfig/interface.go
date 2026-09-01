@@ -21,6 +21,7 @@ import (
 	"net"
 	"os"
 
+	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	csrv1 "k8s.io/api/certificates/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,7 +33,7 @@ import (
 
 var defaultLog = ctrl.Log.WithName("kubeconfig")
 
-const defaultCSRExpirationSeconds int32 = 1_000_000_000
+const defaultCSRExpirationSeconds int32 = userv1.DefaultCSRExpirationSeconds
 
 type Interface interface {
 	Apply(config *rest.Config, client client.Client) (*api.Config, error)
@@ -101,9 +102,7 @@ func NewConfig(user, clusterName string, expirationSeconds int32) *DefaultConfig
 	if clusterName == "" {
 		clusterName = "sealos"
 	}
-	if expirationSeconds == 0 {
-		expirationSeconds = defaultCSRExpirationSeconds
-	}
+	expirationSeconds = userv1.NormalizeCSRExpirationSeconds(expirationSeconds)
 	return &DefaultConfig{
 		user:              user,
 		clusterName:       clusterName,

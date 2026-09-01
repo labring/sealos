@@ -18,16 +18,56 @@ package kubeconfig
 
 import (
 	"context"
+	"errors"
 	"testing"
 
+	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	config2 "github.com/labring/sealos/controllers/user/controllers/helper/config"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
+
+type canceledContextClient struct {
+	client.Client
+}
+
+func (c canceledContextClient) Get(
+	ctx context.Context,
+	key client.ObjectKey,
+	obj client.Object,
+	opts ...client.GetOption,
+) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	return errors.New("service account read did not receive the canceled context")
+}
+
+func TestNewConfigNormalizesBelowMinimumExpiration(t *testing.T) {
+	t.Parallel()
+
+	cfg := NewConfig("alice", "", 7_200)
+	if cfg.expirationSeconds != userv1.DefaultCSRExpirationSeconds {
+		t.Fatalf(
+			"config expiration = %d, want minimum %d",
+			cfg.expirationSeconds,
+			userv1.DefaultCSRExpirationSeconds,
+		)
+	}
+	sac := cfg.WithServiceAccountConfig("user-system", nil)
+	if got := sac.tokenRequestExpirationSeconds(); got != userv1.DefaultCSRExpirationSeconds {
+		t.Fatalf(
+			"token request expiration = %d, want minimum %d",
+			got,
+			userv1.DefaultCSRExpirationSeconds,
+		)
+	}
+}
 
 func TestCleanupLegacyBoundTokenSecrets(t *testing.T) {
 	t.Parallel()
@@ -81,15 +121,16 @@ func TestCleanupLegacyBoundTokenSecrets(t *testing.T) {
 		Type: corev1.SecretTypeServiceAccountToken,
 	}
 
+	secretMetadata := &metav1.PartialObjectMetadata{}
+	secretMetadata.SetGroupVersionKind(corev1.SchemeGroupVersion.WithKind("Secret"))
 	cli := fake.NewClientBuilder().
 		WithScheme(scheme.Scheme).
 		WithObjects(current, legacy, duplicate, other).
-		WithIndex(&corev1.Secret{}, corev1.ServiceAccountNameKey, func(obj client.Object) []string {
-			secret, ok := obj.(*corev1.Secret)
-			if !ok || secret.Annotations == nil {
+		WithIndex(secretMetadata, corev1.ServiceAccountNameKey, func(obj client.Object) []string {
+			if obj.GetAnnotations() == nil {
 				return nil
 			}
-			value := secret.Annotations[corev1.ServiceAccountNameKey]
+			value := obj.GetAnnotations()[corev1.ServiceAccountNameKey]
 			if value == "" {
 				return nil
 			}
@@ -172,7 +213,7 @@ func TestServiceAccountConfigWithForceNewSecret(t *testing.T) {
 		forceNewSecret: true,
 	}
 
-	if err := cfg.applyServiceAccount(nil, cli); err != nil {
+	if err := cfg.applyServiceAccount(context.Background(), nil, cli); err != nil {
 		t.Fatalf("apply service account: %v", err)
 	}
 	if len(cfg.sa.Secrets) != 1 {
@@ -187,5 +228,52 @@ func TestServiceAccountConfigWithForceNewSecret(t *testing.T) {
 			cfg.secretName,
 			cfg.sa.Secrets[0].Name,
 		)
+	}
+}
+
+func TestApplyServiceAccountPropagatesCanceledContext(t *testing.T) {
+	t.Parallel()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	cfg := &ServiceAccountConfig{
+		DefaultConfig: &DefaultConfig{user: "alice"},
+		namespace:     "user-system",
+	}
+	err := cfg.applyServiceAccount(ctx, nil, canceledContextClient{})
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("apply service account error = %v, want context canceled", err)
+	}
+}
+
+func TestApplyBoundTokenSecretPreservesExistingType(t *testing.T) {
+	t.Parallel()
+
+	const (
+		userName   = "alice"
+		namespace  = "user-system"
+		secretName = "sealos-token-alice"
+	)
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      secretName,
+			Namespace: namespace,
+			UID:       types.UID("secret-alice"),
+		},
+		Type: corev1.SecretTypeServiceAccountToken,
+	}
+	cli := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(secret).Build()
+	cfg := &ServiceAccountConfig{
+		DefaultConfig: &DefaultConfig{user: userName},
+		namespace:     namespace,
+		secretName:    secretName,
+	}
+
+	got, err := cfg.applyBoundTokenSecret(context.Background(), cli)
+	if err != nil {
+		t.Fatalf("apply bound token secret: %v", err)
+	}
+	if got.Type != corev1.SecretTypeServiceAccountToken {
+		t.Fatalf("secret type = %s, want %s", got.Type, corev1.SecretTypeServiceAccountToken)
 	}
 }

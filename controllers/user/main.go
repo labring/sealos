@@ -17,7 +17,6 @@ limitations under the License.
 package main
 
 import (
-	"context"
 	"crypto/tls"
 	"flag"
 	"os"
@@ -62,7 +61,9 @@ func init() {
 func main() {
 	var (
 		metricsAddr                string
+		pprofBindAddress           string
 		enableLeaderElection       bool
+		gracefulShutdownTimeout    time.Duration
 		probeAddr                  string
 		rateLimiterOptions         ratelimiter.RateLimiterOptions
 		syncPeriod                 time.Duration
@@ -75,6 +76,8 @@ func main() {
 		kubeAPIBurst               int
 		secureMetrics              bool
 		enableHTTP2                bool
+		enableAdminClusterAdmin    bool
+		enableStrictNamespacePSA   bool
 		tlsOpts                    []func(*tls.Config)
 	)
 	flag.StringVar(
@@ -89,26 +92,38 @@ func main() {
 		":8081",
 		"The address the probe endpoint binds to.",
 	)
+	flag.StringVar(
+		&pprofBindAddress,
+		"pprof-bind-address",
+		"",
+		"The address the pprof endpoint binds to. Empty disables pprof.",
+	)
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
 	flag.DurationVar(
+		&gracefulShutdownTimeout,
+		"graceful-shutdown-timeout",
+		8*time.Second,
+		"Maximum time to stop manager runnables before releasing leadership.",
+	)
+	flag.DurationVar(
 		&syncPeriod,
 		"sync-period",
-		time.Hour*24*30,
-		"SyncPeriod determines the minimum frequency at which watched resources are reconciled.",
+		0,
+		"Informer synthetic resync period. Zero disables periodic resync.",
 	)
 	flag.DurationVar(
 		&minRequeueDuration,
 		"min-requeue-duration",
 		time.Hour*24,
-		"The minimum duration between requeue options of a resource.",
+		"Retry interval for a User blocked by the license limit.",
 	)
 	flag.DurationVar(
 		&maxRequeueDuration,
 		"max-requeue-duration",
 		time.Hour*24*2,
-		"The maximum duration between requeue options of a resource.",
+		"Deprecated: retained for compatibility and ignored.",
 	)
 	flag.DurationVar(
 		&operationReqExpirationTime,
@@ -126,7 +141,7 @@ func main() {
 		&restartPredicateDuration,
 		"restart-predicate-time",
 		time.Hour*2,
-		"Sets the restrat predicate time duration for user controller restart. By default, the duration is set to 2 hours.",
+		"Deprecated: retained for compatibility and ignored. User startup reconciliation processes all cached Users.",
 	)
 	flag.Float64Var(
 		&kubeAPIQPS,
@@ -148,6 +163,18 @@ func main() {
 	)
 	flag.BoolVar(&enableHTTP2, "enable-http2", false,
 		"If set, HTTP/2 will be enabled for the metrics and webhook servers")
+	flag.BoolVar(
+		&enableAdminClusterAdmin,
+		"enable-admin-cluster-admin",
+		false,
+		"Preserve the legacy cluster-admin binding and privileged admin namespace labels.",
+	)
+	flag.BoolVar(
+		&enableStrictNamespacePSA,
+		"enable-strict-namespace-pod-security",
+		true,
+		"Apply Pod Security labels to all ns-* namespaces, including namespaces without a Sealos User.",
+	)
 	rateLimiterOptions.BindFlags(flag.CommandLine)
 	opts := zap.Options{
 		Development: true,
@@ -199,32 +226,24 @@ func main() {
 	setupLog.Info("configured Kubernetes API client rate limit", "qps", cfg.QPS, "burst", cfg.Burst)
 
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme:  scheme,
-		Metrics: metricsServerOptions,
-		Cache:   usercache.Options(&syncPeriod),
+		Scheme:           scheme,
+		Metrics:          metricsServerOptions,
+		PprofBindAddress: pprofBindAddress,
+		Cache:            usercache.Options(&syncPeriod),
 		Client: client.Options{Cache: &client.CacheOptions{
 			DisableFor: usercache.UncachedObjects(),
 		}},
 		// WebhookServer: webhook.NewServer(webhook.Options{
 		//	Port: 9443,
 		// }),
-		HealthProbeBindAddress: probeAddr,
-		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "785548a1.sealos.io",
+		HealthProbeBindAddress:        probeAddr,
+		LeaderElection:                enableLeaderElection,
+		LeaderElectionID:              "785548a1.sealos.io",
+		LeaderElectionReleaseOnCancel: true,
+		GracefulShutdownTimeout:       &gracefulShutdownTimeout,
 		Controller: config.Controller{
 			UsePriorityQueue: ptr.To(true),
 		},
-		// LeaderElectionReleaseOnCancel defines if the leader should step down voluntarily
-		// when the Manager ends. This requires the binary to immediately end when the
-		// Manager is stopped, otherwise, this setting is unsafe. Setting this significantly
-		// speeds up voluntary leader transitions as the new leader don't have to wait
-		// LeaseDuration time first.
-		//
-		// In the default scaffold provided, the program ends immediately after
-		// the manager stops, so would be fine to enable this option. However,
-		// if you are doing or is intended to do any operation such as perform cleanups
-		// after the manager stops then its usage might be unsafe.
-		// LeaderElectionReleaseOnCancel: true,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
@@ -240,7 +259,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.UserReconciler{}).SetupWithManager(
+	if err = (&controllers.UserReconciler{
+		EnableAdminClusterAdmin:          enableAdminClusterAdmin,
+		EnableStrictNamespacePodSecurity: enableStrictNamespacePSA,
+	}).SetupWithManager(
 		mgr,
 		rateLimiterOptions,
 		minRequeueDuration,
@@ -302,10 +324,8 @@ func main() {
 		setupLog.Error(err, "unable to set up ready check")
 		os.Exit(1)
 	}
-	ctx, cancel := context.WithCancel(context.TODO())
-	defer cancel()
 	setupLog.Info("starting manager")
-	if err = mgr.Start(ctx); err != nil {
+	if err = mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "failed to running manager")
 		os.Exit(1)
 	}

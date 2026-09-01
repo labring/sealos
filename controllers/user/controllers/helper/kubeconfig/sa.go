@@ -23,11 +23,13 @@ import (
 	"errors"
 	"fmt"
 
+	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	config2 "github.com/labring/sealos/controllers/user/controllers/helper/config"
 	authenticationv1 "k8s.io/api/authentication/v1"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd/api"
@@ -49,7 +51,7 @@ func (sac *ServiceAccountConfig) ApplyWithTokenRequest(
 	config *rest.Config,
 	client client.Client,
 ) (*api.Config, metav1.Time, error) {
-	if err := sac.applyServiceAccount(config, client); err != nil {
+	if err := sac.applyServiceAccount(ctx, config, client); err != nil {
 		return nil, metav1.Time{}, fmt.Errorf("failed to apply service account error: %w", err)
 	}
 	boundSecret, err := sac.applyBoundTokenSecret(ctx, client)
@@ -67,7 +69,11 @@ func (sac *ServiceAccountConfig) ApplyWithTokenRequest(
 	return cfg, tokenRequest.Status.ExpirationTimestamp, nil
 }
 
-func (sac *ServiceAccountConfig) applyServiceAccount(_ *rest.Config, client client.Client) error {
+func (sac *ServiceAccountConfig) applyServiceAccount(
+	ctx context.Context,
+	_ *rest.Config,
+	client client.Client,
+) error {
 	sa := sac.sa
 	if sa == nil {
 		sa = &v1.ServiceAccount{
@@ -83,7 +89,7 @@ func (sac *ServiceAccountConfig) applyServiceAccount(_ *rest.Config, client clie
 	if sa.Namespace == "" {
 		sa.Namespace = sac.namespace
 	}
-	_, err := controllerutil.CreateOrUpdate(context.TODO(), client, sa, func() error {
+	_, err := controllerutil.CreateOrUpdate(ctx, client, sa, func() error {
 		if sac.forceNewSecret || len(sa.Secrets) == 0 {
 			sa.Secrets = []v1.ObjectReference{
 				{
@@ -118,7 +124,11 @@ func (sac *ServiceAccountConfig) applyBoundTokenSecret(
 		},
 	}
 	_, err := controllerutil.CreateOrUpdate(ctx, cli, secret, func() error {
-		secret.Type = v1.SecretTypeOpaque
+		// Secret type is immutable after creation. Keep the type of legacy
+		// bound secrets and use Opaque only for newly created secrets.
+		if secret.Type == "" {
+			secret.Type = v1.SecretTypeOpaque
+		}
 		if secret.Annotations == nil {
 			secret.Annotations = map[string]string{}
 		}
@@ -148,7 +158,8 @@ func CleanupLegacyBoundTokenSecrets(
 	writer client.Writer,
 	userName, keepSecretName string,
 ) error {
-	secrets := &v1.SecretList{}
+	secrets := &metav1.PartialObjectMetadataList{}
+	secrets.SetGroupVersionKind(schema.GroupVersion{Version: "v1"}.WithKind("SecretList"))
 	if err := reader.List(
 		ctx,
 		secrets,
@@ -168,7 +179,10 @@ func CleanupLegacyBoundTokenSecrets(
 		if secret.Annotations == nil || secret.Annotations[v1.ServiceAccountNameKey] != userName {
 			continue
 		}
-		if err := writer.Delete(ctx, secret); err != nil && !apierrors.IsNotFound(err) {
+		deleteTarget := &v1.Secret{ObjectMeta: metav1.ObjectMeta{
+			Name: secret.Name, Namespace: secret.Namespace,
+		}}
+		if err := writer.Delete(ctx, deleteTarget); err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to delete legacy bound token secret %s: %w", secret.Name, err)
 		}
 	}
@@ -211,10 +225,7 @@ func (sac *ServiceAccountConfig) requestToken(
 }
 
 func (sac *ServiceAccountConfig) tokenRequestExpirationSeconds() int32 {
-	if sac.expirationSeconds < defaultCSRExpirationSeconds {
-		return defaultCSRExpirationSeconds
-	}
-	return sac.expirationSeconds
+	return userv1.NormalizeCSRExpirationSeconds(sac.expirationSeconds)
 }
 
 func TokenSecretName(name string) string {

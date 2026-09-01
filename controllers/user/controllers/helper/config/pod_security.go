@@ -16,14 +16,23 @@ limitations under the License.
 
 package config
 
-const PodSecurityVersion = "v1.25"
+import "strings"
+
+const (
+	PodSecurityVersion     = "v1.25"
+	PodSecurityLabelPrefix = "pod-security.kubernetes.io/"
+)
+
+func IsPodSecurityLabel(key string) bool {
+	return strings.HasPrefix(key, PodSecurityLabelPrefix)
+}
 
 func SetPodSecurity(labels map[string]string) map[string]string {
-	labels["pod-security.kubernetes.io/enforce"] = "baseline"
-	labels["pod-security.kubernetes.io/enforce-version"] = PodSecurityVersion
-	labels["pod-security.kubernetes.io/audit"] = "restricted"
-	labels["pod-security.kubernetes.io/audit-version"] = PodSecurityVersion
-	labels["pod-security.kubernetes.io/warn"] = "restricted"
-	labels["pod-security.kubernetes.io/warn-version"] = PodSecurityVersion
+	labels[PodSecurityLabelPrefix+"enforce"] = "baseline"
+	labels[PodSecurityLabelPrefix+"enforce-version"] = PodSecurityVersion
+	labels[PodSecurityLabelPrefix+"audit"] = "restricted"
+	labels[PodSecurityLabelPrefix+"audit-version"] = PodSecurityVersion
+	labels[PodSecurityLabelPrefix+"warn"] = "restricted"
+	labels[PodSecurityLabelPrefix+"warn-version"] = PodSecurityVersion
 	return labels
 }

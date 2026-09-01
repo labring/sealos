@@ -24,27 +24,41 @@ import (
 	"github.com/labring/sealos/controllers/user/pkg/usercount"
 	toolscache "k8s.io/client-go/tools/cache"
 	ctrl "sigs.k8s.io/controller-runtime"
+	ctrlcache "sigs.k8s.io/controller-runtime/pkg/cache"
 )
 
 type userCountRunnable struct {
-	counter             *usercount.Counter
-	handlerRegistration toolscache.ResourceEventHandlerRegistration
+	cache ctrlcache.Cache
 }
 
 func (r *userCountRunnable) Start(ctx context.Context) error {
-	if !toolscache.WaitForCacheSync(ctx.Done(), r.handlerRegistration.HasSynced) {
-		if ctx.Err() != nil {
-			return nil
-		}
-		return errors.New("user count event handler failed to sync")
-	}
-	r.counter.MarkInitialized()
 	<-ctx.Done()
 	return nil
 }
 
+func (r *userCountRunnable) GetCache() ctrlcache.Cache {
+	return r.cache
+}
+
 func (r *userCountRunnable) NeedLeaderElection() bool {
 	return false
+}
+
+type userCountCache struct {
+	ctrlcache.Cache
+	counter             *usercount.Counter
+	handlerRegistration toolscache.ResourceEventHandlerRegistration
+}
+
+func (c *userCountCache) WaitForCacheSync(ctx context.Context) bool {
+	if !c.Cache.WaitForCacheSync(ctx) {
+		return false
+	}
+	if !toolscache.WaitForCacheSync(ctx.Done(), c.handlerRegistration.HasSynced) {
+		return false
+	}
+	c.counter.MarkInitialized()
+	return true
 }
 
 func SetupUserCount(mgr ctrl.Manager) (*usercount.Counter, error) {
@@ -63,8 +77,11 @@ func SetupUserCount(mgr ctrl.Manager) (*usercount.Counter, error) {
 	}
 
 	if err := mgr.Add(&userCountRunnable{
-		counter:             counter,
-		handlerRegistration: registration,
+		cache: &userCountCache{
+			Cache:               mgr.GetCache(),
+			counter:             counter,
+			handlerRegistration: registration,
+		},
 	}); err != nil {
 		return nil, fmt.Errorf("add user count runnable: %w", err)
 	}

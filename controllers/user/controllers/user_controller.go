@@ -20,12 +20,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
+	"reflect"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-logr/logr"
 	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
+	usercache "github.com/labring/sealos/controllers/user/controllers/cache"
 	"github.com/labring/sealos/controllers/user/controllers/helper"
 	"github.com/labring/sealos/controllers/user/controllers/helper/config"
 	"github.com/labring/sealos/controllers/user/controllers/helper/finalizer"
@@ -34,10 +38,10 @@ import (
 	"github.com/labring/sealos/controllers/user/controllers/helper/ratelimiter"
 	"github.com/labring/sealos/controllers/user/pkg/licensegate"
 	"github.com/labring/sealos/controllers/user/pkg/usercount"
-	"golang.org/x/exp/rand"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	apiMeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
@@ -47,7 +51,7 @@ import (
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
-	"sigs.k8s.io/controller-runtime/pkg/cache"
+	ctrlcache "sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	kubecontroller "sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -57,31 +61,57 @@ import (
 )
 
 const (
-	userAnnotationCreatorKey = userv1.UserAnnotationCreatorKey
-	userAnnotationOwnerKey   = userv1.UserAnnotationOwnerKey
-	userLabelOwnerKey        = userv1.UserLabelOwnerKey
-	licenseLimitedCondition  = userv1.ConditionType("LicenseLimited")
+	userAnnotationCreatorKey         = userv1.UserAnnotationCreatorKey
+	userAnnotationOwnerKey           = userv1.UserAnnotationOwnerKey
+	userLabelOwnerKey                = userv1.UserLabelOwnerKey
+	licenseLimitedCondition          = userv1.ConditionType("LicenseLimited")
+	adminUserName                    = "admin"
+	adminClusterRoleBindingName      = config.AdminClusterRoleBindingName
+	userFinalizerName                = "sealos.io/user.finalizers"
+	namespaceSyncReadyCondition      = userv1.ConditionType("NamespaceSyncReady")
+	serviceAccountReadyCondition     = userv1.ConditionType("ServiceAccountSyncReady")
+	kubeConfigReadyCondition         = userv1.ConditionType("KubeConfigSyncReady")
+	roleSyncReadyCondition           = userv1.ConditionType("RoleSyncReady")
+	roleBindingReadyCondition        = userv1.ConditionType("RoleBindingSyncReady")
+	clusterRoleBindingReadyCondition = userv1.ConditionType("ClusterRoleBindingSyncReady")
 )
 
 // UserReconciler reconciles a User object
 type UserReconciler struct {
 	Logger      logr.Logger
 	Recorder    record.EventRecorder
-	cache       cache.Cache
+	cache       client.Reader
 	userCounter *usercount.Counter
 	config      *rest.Config
 	*runtime.Scheme
 	client.Client
 	finalizer          *finalizer.Finalizer
 	minRequeueDuration time.Duration
-	maxRequeueDuration time.Duration
+	nextKubeConfigSync sync.Map
+	// EnableAdminClusterAdmin preserves the legacy cluster-admin binding for
+	// the admin user when explicitly enabled. It is disabled by default.
+	EnableAdminClusterAdmin bool
+	// EnableStrictNamespacePodSecurity applies Pod Security labels to every
+	// namespace whose name starts with ns-, including namespaces without a User.
+	// It is enabled by default by the controller entrypoint.
+	EnableStrictNamespacePodSecurity bool
 }
 
 type userReconcileState struct {
 	serviceAccount          *v1.ServiceAccount
 	tokenExpirationDeadline *metav1.Time
 	currentSecretName       string
+	kubeConfigSyncAttempted bool
+	kubeConfigSynced        bool
 	cleanupLegacySecrets    bool
+	syncError               error
+}
+
+func (s *userReconcileState) recordSyncError(err error) {
+	if s == nil || err == nil {
+		return
+	}
+	s.syncError = errors.Join(s.syncError, err)
 }
 
 // +kubebuilder:rbac:groups=*,resources=*,verbs=*
@@ -89,10 +119,6 @@ type userReconcileState struct {
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the User object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
@@ -100,6 +126,22 @@ func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	r.Logger.V(1).Info("start reconcile for users")
 	user := &userv1.User{}
 	if err := r.Get(ctx, req.NamespacedName, user); err != nil {
+		if apierrors.IsNotFound(err) {
+			r.nextKubeConfigSync.Delete(req.Name)
+			if req.Name == adminUserName {
+				if cleanupErr := r.cleanupDisabledAdminClusterRoleBinding(ctx); cleanupErr != nil {
+					return ctrl.Result{}, cleanupErr
+				}
+			}
+		}
+		if apierrors.IsNotFound(err) && r.EnableStrictNamespacePodSecurity {
+			if syncErr := r.syncOrphanNamespace(
+				ctx,
+				config.GetUsersNamespace(req.Name),
+			); syncErr != nil {
+				return ctrl.Result{}, syncErr
+			}
+		}
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
@@ -110,9 +152,13 @@ func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 			ns := &v1.Namespace{}
 			ns.Name = config.GetUsersNamespace(user.Name)
 			_ = r.Delete(ctx, ns)
+			if user.Name == adminUserName {
+				return r.cleanupDisabledAdminClusterRoleBinding(ctx)
+			}
 			return nil
 		},
 	); ok {
+		r.nextKubeConfigSync.Delete(user.Name)
 		return ctrl.Result{}, err
 	}
 
@@ -125,14 +171,420 @@ func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	return ctrl.Result{}, errors.New("reconcile error from Finalizer")
 }
 
-type ControllerRestartPredicate struct {
-	predicate.Funcs
-	duration  time.Duration
-	checkTime time.Time
-}
-
 type OwnerAnnotationChangedPredicate struct {
 	predicate.Funcs
+}
+
+type DeletionTimestampChangedPredicate struct {
+	predicate.Funcs
+}
+
+// NamespacePodSecurityPredicate reconciles ns-* namespaces when their
+// Pod Security Admission labels or User ownership metadata changes.
+type NamespacePodSecurityPredicate struct {
+	predicate.Funcs
+}
+
+type AdminClusterRoleBindingPredicate struct {
+	predicate.Funcs
+}
+
+// ignorePreStartCreatePredicate drops Create events for objects that already
+// existed when this controller was configured. Existing Users re-evaluate the
+// shared License and verify their children during startup. The manager starts
+// each informer once; watch reconnects relist through the same informer.
+//
+// TODO: after upgrading controller-runtime to v0.22+, use
+// event.CreateEvent.IsInInitialList and coalesce initial events for the same
+// User with a bounded debounce before enqueueing one reconciliation request.
+// When the minimum supported API server provides WatchList, validate its
+// compatibility and fallback behavior before enabling client-go's
+// KUBE_FEATURE_WatchListClient to reduce initial LIST peak memory.
+type ignorePreStartCreatePredicate struct {
+	predicate.Funcs
+	startedAt time.Time
+}
+
+func (p ignorePreStartCreatePredicate) Create(e event.CreateEvent) bool {
+	if e.Object == nil {
+		return false
+	}
+	createdAt := e.Object.GetCreationTimestamp().Time
+	if p.startedAt.IsZero() || createdAt.IsZero() {
+		return true
+	}
+	return !createdAt.Before(p.startedAt)
+}
+
+func (AdminClusterRoleBindingPredicate) Create(e event.CreateEvent) bool {
+	return e.Object.GetName() == adminClusterRoleBindingName
+}
+
+func (AdminClusterRoleBindingPredicate) Update(e event.UpdateEvent) bool {
+	return e.ObjectNew.GetName() == adminClusterRoleBindingName
+}
+
+func (AdminClusterRoleBindingPredicate) Delete(e event.DeleteEvent) bool {
+	return e.Object.GetName() == adminClusterRoleBindingName
+}
+
+func (AdminClusterRoleBindingPredicate) Generic(event.GenericEvent) bool {
+	return false
+}
+
+func (NamespacePodSecurityPredicate) Create(e event.CreateEvent) bool {
+	return isUserNamespace(e.Object.GetName())
+}
+
+func (NamespacePodSecurityPredicate) Update(e event.UpdateEvent) bool {
+	if !isUserNamespace(e.ObjectNew.GetName()) {
+		return false
+	}
+	return namespaceMetadataChanged(
+		e.ObjectOld.GetAnnotations(),
+		e.ObjectNew.GetAnnotations(),
+		e.ObjectOld.GetLabels(),
+		e.ObjectNew.GetLabels(),
+	) || e.ObjectOld.GetAnnotations()[userv1.UserAnnotationCreatorKey] !=
+		e.ObjectNew.GetAnnotations()[userv1.UserAnnotationCreatorKey] ||
+		!reflect.DeepEqual(e.ObjectOld.GetOwnerReferences(), e.ObjectNew.GetOwnerReferences())
+}
+
+func (NamespacePodSecurityPredicate) Delete(e event.DeleteEvent) bool {
+	return isUserNamespace(e.Object.GetName())
+}
+
+func (NamespacePodSecurityPredicate) Generic(event.GenericEvent) bool {
+	return false
+}
+
+func podSecurityLabelsChanged(oldLabels, newLabels map[string]string) bool {
+	for key := range oldLabels {
+		if config.IsPodSecurityLabel(key) && oldLabels[key] != newLabels[key] {
+			return true
+		}
+	}
+	for key := range newLabels {
+		if config.IsPodSecurityLabel(key) && oldLabels[key] != newLabels[key] {
+			return true
+		}
+	}
+	return false
+}
+
+func namespaceMetadataChanged(
+	oldAnnotations, newAnnotations, oldLabels, newLabels map[string]string,
+) bool {
+	return podSecurityLabelsChanged(oldLabels, newLabels) ||
+		oldAnnotations[userv1.UserAnnotationOwnerKey] != newAnnotations[userv1.UserAnnotationOwnerKey] ||
+		oldLabels[userv1.UserLabelOwnerKey] != newLabels[userv1.UserLabelOwnerKey]
+}
+
+func isUserNamespace(name string) bool {
+	return strings.HasPrefix(name, "ns-") && len(name) > len("ns-")
+}
+
+func (r *UserReconciler) namespaceToUserRequests(
+	_ context.Context,
+	obj client.Object,
+) []ctrl.Request {
+	if !isUserNamespace(obj.GetName()) {
+		return nil
+	}
+	return []ctrl.Request{{NamespacedName: client.ObjectKey{
+		Name: config.GetUserNameByNamespace(obj.GetName()),
+	}}}
+}
+
+func metadataValueMatches(values map[string]string, key, expected string) bool {
+	value, ok := values[key]
+	return ok && value == expected
+}
+
+func controlledByUser(obj metav1.Object, user *userv1.User) bool {
+	for _, ref := range obj.GetOwnerReferences() {
+		if ref.Controller != nil && *ref.Controller &&
+			ref.APIVersion == userv1.GroupVersion.String() &&
+			ref.Kind == "User" && ref.Name == user.Name && ref.UID == user.UID {
+			return true
+		}
+	}
+	return false
+}
+
+func userStatusNeedsSync(user *userv1.User) bool {
+	if user == nil {
+		return true
+	}
+	if user.Status.Phase != userv1.UserActive ||
+		user.Status.ObservedGeneration != user.Generation ||
+		!helper.IsConditionsTrue(user.Status.Conditions) ||
+		!helper.IsConditionTrue(user.Status.Conditions, userv1.Condition{
+			Type:   userv1.Ready,
+			Status: v1.ConditionTrue,
+		}) {
+		return true
+	}
+	if !csrExpirationStatusMatches(
+		user.Spec.CSRExpirationSeconds,
+		user.Status.ObservedCSRExpirationSeconds,
+	) {
+		return true
+	}
+	return user.Spec.KubeConfigRotateAt != nil &&
+		(user.Status.ObservedKubeConfigRotateAt == nil ||
+			!user.Spec.KubeConfigRotateAt.Equal(user.Status.ObservedKubeConfigRotateAt))
+}
+
+func csrExpirationStatusMatches(spec, observed int32) bool {
+	return userv1.NormalizeCSRExpirationSeconds(spec) ==
+		userv1.NormalizeCSRExpirationSeconds(observed)
+}
+
+func setObservedCSRExpirationSeconds(user *userv1.User) {
+	if user == nil {
+		return
+	}
+	user.Status.ObservedCSRExpirationSeconds = userv1.NormalizeCSRExpirationSeconds(
+		user.Spec.CSRExpirationSeconds,
+	)
+}
+
+func podSecurityLabelsNeedSync(
+	name string,
+	labels map[string]string,
+	enableAdminClusterAdmin bool,
+) bool {
+	desired := desiredNamespaceLabels(name, cloneStringMap(labels), enableAdminClusterAdmin)
+	return podSecurityLabelsChanged(labels, desired)
+}
+
+func cloneStringMap(source map[string]string) map[string]string {
+	if source == nil {
+		return make(map[string]string)
+	}
+	clone := make(map[string]string, len(source))
+	maps.Copy(clone, source)
+	return clone
+}
+
+func (r *UserReconciler) kubeConfigSyncDue(user *userv1.User) bool {
+	if user == nil {
+		return true
+	}
+	if value, ok := r.nextKubeConfigSync.Load(user.Name); ok {
+		deadline, valid := value.(time.Time)
+		return !valid || !deadline.After(time.Now())
+	}
+	if user.Status.KubeConfigRefreshAt == nil {
+		return true
+	}
+	return !user.Status.KubeConfigRefreshAt.After(time.Now())
+}
+
+func namespaceMatchesUser(
+	namespace metav1.Object,
+	user *userv1.User,
+	enableAdminClusterAdmin bool,
+) bool {
+	owner := user.Annotations[userv1.UserAnnotationOwnerKey]
+	securityLabelsNeedSync := podSecurityLabelsNeedSync(
+		namespace.GetName(),
+		namespace.GetLabels(),
+		enableAdminClusterAdmin,
+	)
+	return metadataValueMatches(
+		namespace.GetAnnotations(),
+		userv1.UserAnnotationCreatorKey,
+		user.Name,
+	) &&
+		metadataValueMatches(namespace.GetAnnotations(), userv1.UserAnnotationOwnerKey, owner) &&
+		metadataValueMatches(namespace.GetLabels(), userv1.UserLabelOwnerKey, owner) &&
+		controlledByUser(namespace, user) &&
+		!securityLabelsNeedSync
+}
+
+func roleMatchesUser(
+	ctx context.Context,
+	reader client.Reader,
+	key client.ObjectKey,
+	roleType userv1.RoleType,
+	user *userv1.User,
+) bool {
+	role := &rbacv1.Role{}
+	if err := reader.Get(ctx, key, role); err != nil {
+		return false
+	}
+	if !metadataMatchesUserResource(role, user) {
+		return false
+	}
+	if cachedRulesHash, ok := role.Annotations[config.RoleRulesHashAnnotation]; ok {
+		return cachedRulesHash == hash.HashToString(config.GetUserRole(roleType))
+	}
+	return reflect.DeepEqual(role.Rules, config.GetUserRole(roleType))
+}
+
+func roleBindingMatchesUser(roleBinding *rbacv1.RoleBinding, user *userv1.User) bool {
+	if !metadataMatchesUserResource(roleBinding, user) {
+		return false
+	}
+	if cachedSpecHash, ok := roleBinding.Annotations[usercache.RoleBindingSpecHashAnnotation]; ok {
+		return cachedSpecHash == usercache.RoleBindingSpecHash(
+			rbacv1.RoleRef{
+				APIGroup: rbacv1.GroupName,
+				Kind:     "Role",
+				Name:     string(userv1.OwnerRoleType),
+			},
+			config.GetUsersSubject(user.Name),
+		)
+	}
+	return reflect.DeepEqual(roleBinding.Subjects, config.GetUsersSubject(user.Name)) &&
+		reflect.DeepEqual(roleBinding.RoleRef, rbacv1.RoleRef{
+			APIGroup: rbacv1.GroupName,
+			Kind:     "Role",
+			Name:     string(userv1.OwnerRoleType),
+		})
+}
+
+func clusterRoleBindingMatchesUser(binding *rbacv1.ClusterRoleBinding, user *userv1.User) bool {
+	if !metadataMatchesUserResource(binding, user) {
+		return false
+	}
+	if cachedSpecHash, ok := binding.Annotations[usercache.RoleBindingSpecHashAnnotation]; ok {
+		return cachedSpecHash == usercache.RoleBindingSpecHash(
+			rbacv1.RoleRef{
+				APIGroup: rbacv1.GroupName,
+				Kind:     "ClusterRole",
+				Name:     "cluster-admin",
+			},
+			config.GetUsersSubject(user.Name),
+		)
+	}
+	return reflect.DeepEqual(binding.Subjects, config.GetUsersSubject(user.Name)) &&
+		reflect.DeepEqual(binding.RoleRef, rbacv1.RoleRef{
+			APIGroup: rbacv1.GroupName,
+			Kind:     "ClusterRole",
+			Name:     "cluster-admin",
+		})
+}
+
+func metadataMatchesUserResource(metadata metav1.Object, user *userv1.User) bool {
+	owner := user.Annotations[userv1.UserAnnotationOwnerKey]
+	return metadataValueMatches(
+		metadata.GetAnnotations(),
+		userv1.UserAnnotationCreatorKey,
+		user.Name,
+	) &&
+		metadataValueMatches(metadata.GetAnnotations(), userv1.UserAnnotationOwnerKey, owner) &&
+		controlledByUser(metadata, user)
+}
+
+func (r *UserReconciler) syncOrphanNamespace(ctx context.Context, namespaceName string) error {
+	if !r.EnableStrictNamespacePodSecurity || !isUserNamespace(namespaceName) {
+		return nil
+	}
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		ns := &v1.Namespace{}
+		if err := r.Get(ctx, client.ObjectKey{Name: namespaceName}, ns); err != nil {
+			if apierrors.IsNotFound(err) {
+				return nil
+			}
+			return err
+		}
+		if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, ns, func() error {
+			if ns.Labels == nil {
+				ns.Labels = make(map[string]string)
+			}
+			ns.Labels = config.SetPodSecurity(ns.Labels)
+			return nil
+		}); err != nil {
+			return fmt.Errorf(
+				"unable to apply Pod Security labels to orphan namespace %s: %w",
+				namespaceName,
+				err,
+			)
+		}
+		return nil
+	})
+}
+
+func (r *UserReconciler) cleanupDisabledAdminClusterRoleBinding(ctx context.Context) error {
+	if r.EnableAdminClusterAdmin {
+		return nil
+	}
+	binding := &rbacv1.ClusterRoleBinding{}
+	binding.Name = adminClusterRoleBindingName
+	if err := r.Delete(ctx, binding); err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("unable to remove disabled admin cluster role binding: %w", err)
+	}
+	return nil
+}
+
+func (r *UserReconciler) adminClusterRoleBindingToUserRequests(
+	_ context.Context,
+	obj client.Object,
+) []ctrl.Request {
+	if obj.GetName() != adminClusterRoleBindingName {
+		return nil
+	}
+	return []ctrl.Request{{NamespacedName: client.ObjectKey{Name: adminUserName}}}
+}
+
+func desiredNamespaceLabels(
+	name string,
+	labels map[string]string,
+	enableAdminClusterAdmin bool,
+) map[string]string {
+	if name == config.GetUsersNamespace(adminUserName) && enableAdminClusterAdmin {
+		for key := range labels {
+			if config.IsPodSecurityLabel(key) {
+				delete(labels, key)
+			}
+		}
+		return labels
+	}
+	return config.SetPodSecurity(labels)
+}
+
+type adminPrivilegeMigration struct {
+	client                  client.Client
+	reader                  client.Reader
+	reconciler              *UserReconciler
+	enableAdminClusterAdmin bool
+}
+
+func (c *adminPrivilegeMigration) Start(ctx context.Context) error {
+	if !c.enableAdminClusterAdmin {
+		binding := &rbacv1.ClusterRoleBinding{}
+		binding.Name = adminClusterRoleBindingName
+		if err := c.client.Delete(ctx, binding); err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("remove disabled admin cluster role binding: %w", err)
+		}
+	}
+	if c.reconciler == nil {
+		return nil
+	}
+	admin := &userv1.User{}
+	if c.reader == nil {
+		return errors.New("admin user privilege migration reader is nil")
+	}
+	if err := c.reader.Get(ctx, client.ObjectKey{Name: adminUserName}, admin); err != nil {
+		if apierrors.IsNotFound(err) || apiMeta.IsNoMatchError(err) {
+			return nil
+		}
+		return fmt.Errorf("get admin user for privilege migration: %w", err)
+	}
+	state := &userReconcileState{}
+	c.reconciler.syncNamespace(ctx, admin, state)
+	c.reconciler.syncClusterRoleBinding(ctx, admin, state)
+	if state.syncError != nil {
+		return fmt.Errorf("sync admin privileges: %w", state.syncError)
+	}
+	return nil
+}
+
+func (c *adminPrivilegeMigration) NeedLeaderElection() bool {
+	return true
 }
 
 func (OwnerAnnotationChangedPredicate) Update(e event.UpdateEvent) bool {
@@ -140,23 +592,21 @@ func (OwnerAnnotationChangedPredicate) Update(e event.UpdateEvent) bool {
 		e.ObjectNew.GetAnnotations()[userAnnotationOwnerKey]
 }
 
-func NewControllerRestartPredicate(duration time.Duration) *ControllerRestartPredicate {
-	return &ControllerRestartPredicate{
-		checkTime: time.Now().Add(-duration),
-		duration:  duration,
-	}
-}
-
-// skip create event p.duration ago
-func (p *ControllerRestartPredicate) Create(e event.CreateEvent) bool {
-	return e.Object.GetCreationTimestamp().After(p.checkTime)
+func (DeletionTimestampChangedPredicate) Update(e event.UpdateEvent) bool {
+	return !reflect.DeepEqual(
+		e.ObjectOld.GetDeletionTimestamp(),
+		e.ObjectNew.GetDeletionTimestamp(),
+	)
 }
 
 // SetupWithManager sets up the controller with the Manager.
+// The deprecated max-requeue-duration and restart-predicate-time arguments are
+// retained for compatibility and ignored.
 func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager, opts ratelimiter.RateLimiterOptions,
-	minRequeueDuration, maxRequeueDuration, restartPredicateDuration time.Duration,
+	minRequeueDuration, _, _ time.Duration,
 	userCounter *usercount.Counter,
 ) error {
+	controllerStartedAt := time.Now()
 	const controllerName = "user_controller"
 	if r.Client == nil {
 		r.Client = mgr.GetClient()
@@ -166,7 +616,7 @@ func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager, opts ratelimiter.Rat
 		r.Recorder = mgr.GetEventRecorderFor(controllerName)
 	}
 	if r.finalizer == nil {
-		r.finalizer = finalizer.NewFinalizer(r.Client, "sealos.io/user.finalizers").
+		r.finalizer = finalizer.NewFinalizer(r.Client, userFinalizerName).
 			WithReader(mgr.GetAPIReader())
 	}
 	r.Scheme = mgr.GetScheme()
@@ -175,24 +625,43 @@ func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager, opts ratelimiter.Rat
 	r.config = mgr.GetConfig()
 	r.Logger.V(1).Info("init reconcile controller user")
 	r.minRequeueDuration = minRequeueDuration
-	r.maxRequeueDuration = maxRequeueDuration
 
+	if err := mgr.Add(&adminPrivilegeMigration{
+		client:                  r.Client,
+		reader:                  mgr.GetAPIReader(),
+		reconciler:              r,
+		enableAdminClusterAdmin: r.EnableAdminClusterAdmin,
+	}); err != nil {
+		return fmt.Errorf("add admin privilege migration: %w", err)
+	}
+
+	secretMetadata := &metav1.PartialObjectMetadata{}
+	secretMetadata.SetGroupVersionKind(v1.SchemeGroupVersion.WithKind("Secret"))
 	if err := mgr.GetFieldIndexer().IndexField(
 		context.Background(),
-		&v1.Secret{},
+		secretMetadata,
 		v1.ServiceAccountNameKey,
 		func(rawObj client.Object) []string {
-			secret, ok := rawObj.(*v1.Secret)
-			if !ok || secret.Annotations == nil {
+			var annotations map[string]string
+			switch secret := rawObj.(type) {
+			case *v1.Secret:
+				annotations = secret.Annotations
+			case *metav1.PartialObjectMetadata:
+				annotations = secret.Annotations
+			}
+			if annotations == nil {
 				return nil
 			}
-			value := secret.Annotations[v1.ServiceAccountNameKey]
+			value := annotations[v1.ServiceAccountNameKey]
 			if value == "" {
 				return nil
 			}
 			return []string{value}
 		},
 	); err != nil {
+		return err
+	}
+	if err := registerStartupCacheInformers(mgr.GetCache()); err != nil {
 		return err
 	}
 
@@ -202,29 +671,84 @@ func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager, opts ratelimiter.Rat
 		&userv1.User{},
 		handler.OnlyControllerOwner(),
 	)
-
+	ignorePreStartCreate := ignorePreStartCreatePredicate{startedAt: controllerStartedAt}
+	// Preserve the name derived from For(&userv1.User{}) for metrics and queue identity.
 	return ctrl.NewControllerManagedBy(mgr).
-		For(
+		Named("user").
+		Watches(
 			&userv1.User{},
+			userEventHandler{},
 			builder.WithPredicates(predicate.Or(
 				predicate.GenerationChangedPredicate{},
 				OwnerAnnotationChangedPredicate{},
+				DeletionTimestampChangedPredicate{},
 			)),
+		).
+		WatchesMetadata(
+			&v1.Namespace{},
+			handler.EnqueueRequestsFromMapFunc(r.namespaceToUserRequests),
+			builder.WithPredicates(NamespacePodSecurityPredicate{}),
+		).
+		Watches(
+			&rbacv1.ClusterRoleBinding{},
+			handler.EnqueueRequestsFromMapFunc(r.adminClusterRoleBindingToUserRequests),
+			builder.WithPredicates(AdminClusterRoleBindingPredicate{}),
 		).
 		Watches(
 			&licensev1.License{},
 			handler.EnqueueRequestsFromMapFunc(r.licenseToUserRequests),
 			builder.OnlyMetadata,
+			builder.WithPredicates(ignorePreStartCreate),
 		).
-		Watches(&rbacv1.Role{}, ownerEventHandler, builder.OnlyMetadata).
-		Watches(&rbacv1.RoleBinding{}, ownerEventHandler, builder.OnlyMetadata).
-		Watches(&v1.ServiceAccount{}, ownerEventHandler, builder.OnlyMetadata).
+		Watches(
+			&rbacv1.Role{},
+			ownerEventHandler,
+			builder.WithPredicates(ignorePreStartCreate),
+		).
+		Watches(
+			&rbacv1.RoleBinding{},
+			ownerEventHandler,
+			builder.WithPredicates(ignorePreStartCreate),
+		).
+		Watches(
+			&v1.ServiceAccount{},
+			ownerEventHandler,
+			builder.WithPredicates(ignorePreStartCreate),
+		).
+		WatchesMetadata(
+			&v1.Secret{},
+			ownerEventHandler,
+			builder.WithPredicates(ignorePreStartCreate),
+		).
 		WithOptions(kubecontroller.Options{
 			MaxConcurrentReconciles: ratelimiter.GetConcurrent(opts),
 			RateLimiter:             ratelimiter.GetRateLimiter(opts),
 		}).
-		WithEventFilter(NewControllerRestartPredicate(restartPredicateDuration)).
 		Complete(r)
+}
+
+func registerStartupCacheInformers(informers ctrlcache.Informers) error {
+	if informers == nil {
+		return errors.New("user controller cache is nil")
+	}
+	namespaceMetadata := &metav1.PartialObjectMetadata{}
+	namespaceMetadata.SetGroupVersionKind(v1.SchemeGroupVersion.WithKind("Namespace"))
+	secretMetadata := &metav1.PartialObjectMetadata{}
+	secretMetadata.SetGroupVersionKind(v1.SchemeGroupVersion.WithKind("Secret"))
+	objects := []client.Object{
+		namespaceMetadata,
+		&v1.ServiceAccount{},
+		secretMetadata,
+		&rbacv1.Role{},
+		&rbacv1.RoleBinding{},
+		&rbacv1.ClusterRoleBinding{},
+	}
+	for _, object := range objects {
+		if _, err := informers.GetInformer(context.Background(), object); err != nil {
+			return fmt.Errorf("register startup cache informer for %T: %w", object, err)
+		}
+	}
+	return nil
 }
 
 func (r *UserReconciler) reconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
@@ -252,20 +776,16 @@ func (r *UserReconciler) reconcile(ctx context.Context, obj client.Object) (ctrl
 	}()
 
 	state := &userReconcileState{}
-	pipelines := []func(ctx context.Context, user *userv1.User, state *userReconcileState){
-		r.initStatus,
-		r.syncNamespace,
-		r.syncServiceAccount,
-		r.syncKubeConfig,
-		r.syncRole,
-		r.syncRoleBinding,
-		r.syncClusterRoleBinding,
-		r.syncFinalStatus,
+	if userStatusNeedsSync(user) {
+		r.initStatus(ctx, user, state)
 	}
-
-	for _, fn := range pipelines {
-		fn(ctx, user, state)
-	}
+	r.syncNamespaceIfNeeded(ctx, user, state)
+	r.syncServiceAccountIfNeeded(ctx, user, state)
+	r.syncKubeConfigIfNeeded(ctx, user, state)
+	r.syncRolesIfNeeded(ctx, user, state)
+	r.syncRoleBindingIfNeeded(ctx, user, state)
+	r.syncClusterRoleBindingIfNeeded(ctx, user, state)
+	r.syncFinalStatus(ctx, user, state)
 	if user.Status.Phase != userv1.UserUnknown {
 		user.Status.Phase = userv1.UserActive
 	}
@@ -289,8 +809,27 @@ func (r *UserReconciler) reconcile(ctx context.Context, obj client.Object) (ctrl
 			r.Logger.Error(err, "cleanup stale bound token secrets", "user", user.Name)
 		}
 	}
-	err = r.updateStatus(ctx, user, originalStatus)
-	if err != nil {
+	statusChanged := !reflect.DeepEqual(user.Status, *originalStatus)
+	if statusChanged && state.kubeConfigSynced {
+		// Normalize the observed duration only when this reconcile successfully
+		// refreshed kubeconfig and is about to persist its status.
+		setObservedCSRExpirationSeconds(user)
+	}
+	if !statusChanged {
+		requeueAfter := nextKubeConfigRequeueDuration(user, state)
+		if syncErr := r.finishKubeConfigSync(user, state); syncErr != nil {
+			return ctrl.Result{}, syncErr
+		}
+		if state.syncError != nil {
+			return ctrl.Result{}, state.syncError
+		}
+		return ctrl.Result{RequeueAfter: requeueAfter}, nil
+	}
+	if err = r.updateStatus(ctx, user, originalStatus); err != nil {
+		if state.kubeConfigSyncAttempted {
+			// The generated kubeconfig is not durable until the status patch succeeds.
+			r.nextKubeConfigSync.Store(user.Name, time.Now())
+		}
 		r.Recorder.Eventf(
 			user,
 			v1.EventTypeWarning,
@@ -301,9 +840,42 @@ func (r *UserReconciler) reconcile(ctx context.Context, obj client.Object) (ctrl
 		)
 		return ctrl.Result{}, err
 	}
-	return ctrl.Result{
-		RequeueAfter: r.nextRequeueDuration(state),
-	}, nil
+	requeueAfter := nextKubeConfigRequeueDuration(user, state)
+	if syncErr := r.finishKubeConfigSync(user, state); syncErr != nil {
+		return ctrl.Result{}, syncErr
+	}
+	if state.syncError != nil {
+		return ctrl.Result{}, state.syncError
+	}
+	return ctrl.Result{RequeueAfter: requeueAfter}, nil
+}
+
+func (r *UserReconciler) finishKubeConfigSync(
+	user *userv1.User,
+	state *userReconcileState,
+) error {
+	if state == nil || user == nil {
+		return nil
+	}
+	if !state.kubeConfigSyncAttempted {
+		return nil
+	}
+	if !state.kubeConfigSynced {
+		// Keep the in-memory deadline due so the next workqueue retry does not
+		// get hidden by a future persisted refresh time.
+		r.nextKubeConfigSync.Store(user.Name, time.Now())
+		return state.syncError
+	}
+	if user.Status.KubeConfigRefreshAt == nil || user.Status.KubeConfigRefreshAt.IsZero() {
+		// A successful refresh always persists this field. Clearing the entry
+		// keeps a malformed in-memory state from suppressing a retry.
+		r.nextKubeConfigSync.Delete(user.Name)
+		return nil
+	}
+	// The workqueue requeue interval is for ordinary drift checks. Kubeconfig
+	// refreshes must follow the persisted token deadline instead.
+	r.nextKubeConfigSync.Store(user.Name, user.Status.KubeConfigRefreshAt.Time)
+	return nil
 }
 
 func (r *UserReconciler) initStatus(_ context.Context, user *userv1.User, _ *userReconcileState) {
@@ -325,10 +897,193 @@ func (r *UserReconciler) initStatus(_ context.Context, user *userv1.User, _ *use
 	}
 }
 
+func (r *UserReconciler) markConditionReadyIfNeeded(
+	user *userv1.User,
+	conditionType userv1.ConditionType,
+) {
+	for i := range user.Status.Conditions {
+		if user.Status.Conditions[i].Type != conditionType ||
+			user.Status.Conditions[i].Status == v1.ConditionTrue {
+			continue
+		}
+		r.saveCondition(user, &userv1.Condition{
+			Type:               conditionType,
+			Status:             v1.ConditionTrue,
+			Reason:             string(userv1.Ready),
+			Message:            "cached resource matches desired state",
+			LastTransitionTime: metav1.Now(),
+			LastHeartbeatTime:  metav1.Now(),
+		})
+		return
+	}
+}
+
+func (r *UserReconciler) syncNamespaceIfNeeded(
+	ctx context.Context,
+	user *userv1.User,
+	state *userReconcileState,
+) {
+	if r.cache != nil {
+		namespace := &metav1.PartialObjectMetadata{}
+		namespace.SetGroupVersionKind(v1.SchemeGroupVersion.WithKind("Namespace"))
+		if err := r.cache.Get(
+			ctx,
+			client.ObjectKey{Name: config.GetUsersNamespace(user.Name)},
+			namespace,
+		); err == nil &&
+			namespaceMatchesUser(namespace, user, r.EnableAdminClusterAdmin) {
+			r.markConditionReadyIfNeeded(user, namespaceSyncReadyCondition)
+			return
+		}
+	}
+	r.syncNamespace(ctx, user, state)
+}
+
+func (r *UserReconciler) syncServiceAccountIfNeeded(
+	ctx context.Context,
+	user *userv1.User,
+	state *userReconcileState,
+) {
+	if r.cache != nil {
+		serviceAccount := &v1.ServiceAccount{}
+		if err := r.cache.Get(ctx, client.ObjectKey{
+			Name: user.Name, Namespace: config.GetUserSystemNamespace(),
+		}, serviceAccount); err == nil && metadataMatchesUserResource(serviceAccount, user) {
+			state.serviceAccount = serviceAccount
+			r.markConditionReadyIfNeeded(user, serviceAccountReadyCondition)
+			return
+		}
+	}
+	r.syncServiceAccount(ctx, user, state)
+}
+
+func (r *UserReconciler) syncKubeConfigIfNeeded(
+	ctx context.Context,
+	user *userv1.User,
+	state *userReconcileState,
+) {
+	if r.cache != nil && !kubeConfigSyncFailed(user) &&
+		!r.kubeConfigSyncDue(user) &&
+		csrExpirationStatusMatches(
+			user.Spec.CSRExpirationSeconds,
+			user.Status.ObservedCSRExpirationSeconds,
+		) &&
+		user.Status.KubeConfigRefreshAt != nil &&
+		!userKubeConfigNeedsRotation(user) && r.boundTokenSecretMatches(ctx, user, state) {
+		r.markConditionReadyIfNeeded(user, kubeConfigReadyCondition)
+		return
+	}
+	state.kubeConfigSyncAttempted = true
+	r.syncKubeConfig(ctx, user, state)
+}
+
+func (r *UserReconciler) boundTokenSecretMatches(
+	ctx context.Context,
+	user *userv1.User,
+	state *userReconcileState,
+) bool {
+	if state == nil || state.serviceAccount == nil || len(state.serviceAccount.Secrets) == 0 ||
+		state.serviceAccount.Secrets[0].Name == "" {
+		return false
+	}
+	secret := &metav1.PartialObjectMetadata{}
+	secret.SetGroupVersionKind(v1.SchemeGroupVersion.WithKind("Secret"))
+	if err := r.cache.Get(ctx, client.ObjectKey{
+		Name: state.serviceAccount.Secrets[0].Name, Namespace: config.GetUserSystemNamespace(),
+	}, secret); err != nil {
+		return false
+	}
+	if secret.Annotations[v1.ServiceAccountNameKey] != user.Name ||
+		!controlledByUser(secret, user) {
+		return false
+	}
+	if user.Status.ObservedKubeConfigSecretUID == "" {
+		// Legacy Users without an observed UID can keep using the current Secret.
+		// Persist the UID only after a successful kubeconfig refresh.
+		return true
+	}
+	return string(secret.UID) == user.Status.ObservedKubeConfigSecretUID
+}
+
+func (r *UserReconciler) syncRolesIfNeeded(
+	ctx context.Context,
+	user *userv1.User,
+	state *userReconcileState,
+) {
+	roleCondition := &userv1.Condition{
+		Type:               roleSyncReadyCondition,
+		Status:             v1.ConditionTrue,
+		LastTransitionTime: metav1.Now(),
+		LastHeartbeatTime:  metav1.Now(),
+		Reason:             string(userv1.Ready),
+		Message:            "sync namespace role successfully",
+	}
+	previousCondition := helper.GetCondition(user.Status.Conditions, roleCondition).DeepCopy()
+	defer func() {
+		if helper.DiffCondition(previousCondition, roleCondition) {
+			r.saveCondition(user, roleCondition.DeepCopy())
+		}
+	}()
+	for _, roleType := range []userv1.RoleType{
+		userv1.OwnerRoleType,
+		userv1.ManagerRoleType,
+		userv1.DeveloperRoleType,
+	} {
+		healthy := false
+		if r.cache != nil {
+			healthy = roleMatchesUser(ctx, r.cache, client.ObjectKey{
+				Name: string(roleType), Namespace: config.GetUsersNamespace(user.Name),
+			}, roleType, user)
+		}
+		if healthy {
+			continue
+		}
+		r.createRole(ctx, roleCondition, user, state, roleType)
+	}
+}
+
+func (r *UserReconciler) syncRoleBindingIfNeeded(
+	ctx context.Context,
+	user *userv1.User,
+	state *userReconcileState,
+) {
+	if r.cache != nil {
+		roleBinding := &rbacv1.RoleBinding{}
+		if err := r.cache.Get(ctx, client.ObjectKey{
+			Name: user.Name, Namespace: config.GetUsersNamespace(user.Name),
+		}, roleBinding); err == nil && roleBindingMatchesUser(roleBinding, user) {
+			r.markConditionReadyIfNeeded(user, roleBindingReadyCondition)
+			return
+		}
+	}
+	r.syncRoleBinding(ctx, user, state)
+}
+
+func (r *UserReconciler) syncClusterRoleBindingIfNeeded(
+	ctx context.Context,
+	user *userv1.User,
+	state *userReconcileState,
+) {
+	if user.Name != adminUserName {
+		return
+	}
+	if r.cache != nil {
+		binding := &rbacv1.ClusterRoleBinding{}
+		err := r.cache.Get(ctx, client.ObjectKey{Name: adminClusterRoleBindingName}, binding)
+		healthy := (!r.EnableAdminClusterAdmin && apierrors.IsNotFound(err)) ||
+			(r.EnableAdminClusterAdmin && err == nil && clusterRoleBindingMatchesUser(binding, user))
+		if healthy {
+			r.markConditionReadyIfNeeded(user, clusterRoleBindingReadyCondition)
+			return
+		}
+	}
+	r.syncClusterRoleBinding(ctx, user, state)
+}
+
 func (r *UserReconciler) syncNamespace(
 	ctx context.Context,
 	user *userv1.User,
-	_ *userReconcileState,
+	state *userReconcileState,
 ) {
 	namespaceConditionType := userv1.ConditionType("NamespaceSyncReady")
 	nsCondition := &userv1.Condition{
@@ -370,15 +1125,7 @@ func (r *UserReconciler) syncNamespace(
 			}
 			ns.Annotations[userAnnotationCreatorKey] = user.Name
 			ns.Annotations[userAnnotationOwnerKey] = user.Annotations[userAnnotationOwnerKey]
-			if ns.Name != "ns-admin" {
-				ns.Labels = config.SetPodSecurity(ns.Labels)
-			} else {
-				for k := range ns.Labels {
-					if strings.HasPrefix(k, "pod-security.") {
-						delete(ns.Labels, k)
-					}
-				}
-			}
+			ns.Labels = desiredNamespaceLabels(ns.Name, ns.Labels, r.EnableAdminClusterAdmin)
 			// add label for namespace to filter
 			ns.Labels[userLabelOwnerKey] = user.Annotations[userAnnotationOwnerKey]
 			ns.SetOwnerReferences([]metav1.OwnerReference{})
@@ -394,6 +1141,7 @@ func (r *UserReconciler) syncNamespace(
 		)
 		return nil
 	}); err != nil {
+		state.recordSyncError(err)
 		helper.SetConditionError(nsCondition, "SyncUserError", err)
 		r.Recorder.Eventf(
 			user,
@@ -406,32 +1154,11 @@ func (r *UserReconciler) syncNamespace(
 	}
 }
 
-func (r *UserReconciler) syncRole(ctx context.Context, user *userv1.User, _ *userReconcileState) {
-	roleConditionType := userv1.ConditionType("RoleSyncReady")
-	roleCondition := &userv1.Condition{
-		Type:               roleConditionType,
-		Status:             v1.ConditionTrue,
-		LastTransitionTime: metav1.Now(),
-		LastHeartbeatTime:  metav1.Now(),
-		Reason:             string(userv1.Ready),
-		Message:            "sync namespace role successfully",
-	}
-	condition := helper.GetCondition(user.Status.Conditions, roleCondition)
-	defer func() {
-		if helper.DiffCondition(condition, roleCondition) {
-			r.saveCondition(user, roleCondition.DeepCopy())
-		}
-	}()
-	// create three roles
-	r.createRole(ctx, roleCondition, user, userv1.OwnerRoleType)
-	r.createRole(ctx, roleCondition, user, userv1.ManagerRoleType)
-	r.createRole(ctx, roleCondition, user, userv1.DeveloperRoleType)
-}
-
 func (r *UserReconciler) createRole(
 	ctx context.Context,
 	condition *userv1.Condition,
 	user *userv1.User,
+	state *userReconcileState,
 	roleType userv1.RoleType,
 ) {
 	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
@@ -459,6 +1186,7 @@ func (r *UserReconciler) createRole(
 		)
 		return nil
 	}); err != nil {
+		state.recordSyncError(err)
 		helper.SetConditionError(condition, "SyncUserError", err)
 		r.Recorder.Eventf(
 			user,
@@ -474,7 +1202,7 @@ func (r *UserReconciler) createRole(
 func (r *UserReconciler) syncRoleBinding(
 	ctx context.Context,
 	user *userv1.User,
-	_ *userReconcileState,
+	state *userReconcileState,
 ) {
 	roleBindingConditionType := userv1.ConditionType("RoleBindingSyncReady")
 	rbCondition := &userv1.Condition{
@@ -522,6 +1250,7 @@ func (r *UserReconciler) syncRoleBinding(
 		)
 		return nil
 	}); err != nil {
+		state.recordSyncError(err)
 		helper.SetConditionError(rbCondition, "SyncUserError", err)
 		r.Recorder.Eventf(
 			user,
@@ -537,9 +1266,9 @@ func (r *UserReconciler) syncRoleBinding(
 func (r *UserReconciler) syncClusterRoleBinding(
 	ctx context.Context,
 	user *userv1.User,
-	_ *userReconcileState,
+	state *userReconcileState,
 ) {
-	if user.Name != "admin" {
+	if user.Name != adminUserName {
 		return
 	}
 	roleBindingConditionType := userv1.ConditionType("ClusterRoleBindingSyncReady")
@@ -557,11 +1286,31 @@ func (r *UserReconciler) syncClusterRoleBinding(
 			r.saveCondition(user, rbCondition.DeepCopy())
 		}
 	}()
+	if !r.EnableAdminClusterAdmin {
+		clusterRoleBinding := &rbacv1.ClusterRoleBinding{}
+		clusterRoleBinding.Name = adminClusterRoleBindingName
+		if err := r.Delete(ctx, clusterRoleBinding); err != nil && !apierrors.IsNotFound(err) {
+			err = fmt.Errorf("unable to remove disabled admin cluster role binding: %w", err)
+			state.recordSyncError(err)
+			helper.SetConditionError(rbCondition, "SyncUserError", err)
+			r.Recorder.Eventf(
+				user,
+				v1.EventTypeWarning,
+				"syncUserClusterRoleBinding",
+				"Remove User admin cluster role binding %s is error: %v",
+				user.Name,
+				err,
+			)
+			return
+		}
+		rbCondition.Message = "admin cluster role binding disabled"
+		return
+	}
 	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		var change controllerutil.OperationResult
 		var err error
 		clusterRoleBinding := &rbacv1.ClusterRoleBinding{}
-		clusterRoleBinding.Name = "sealos-cloud" + user.Name
+		clusterRoleBinding.Name = adminClusterRoleBindingName
 		clusterRoleBinding.Labels = map[string]string{}
 		if change, err = controllerutil.CreateOrUpdate(
 			ctx,
@@ -595,6 +1344,7 @@ func (r *UserReconciler) syncClusterRoleBinding(
 		)
 		return nil
 	}); err != nil {
+		state.recordSyncError(err)
 		helper.SetConditionError(rbCondition, "SyncUserError", err)
 		r.Recorder.Eventf(
 			user,
@@ -682,9 +1432,8 @@ func (r *UserReconciler) syncKubeConfig(
 	user *userv1.User,
 	state *userReconcileState,
 ) {
-	userConditionType := userv1.ConditionType("KubeConfigSyncReady")
 	userCondition := &userv1.Condition{
-		Type:               userConditionType,
+		Type:               kubeConfigReadyCondition,
 		Status:             v1.ConditionTrue,
 		LastTransitionTime: metav1.Now(),
 		LastHeartbeatTime:  metav1.Now(),
@@ -699,10 +1448,12 @@ func (r *UserReconciler) syncKubeConfig(
 	}()
 	sa := state.serviceAccount
 	if sa == nil {
+		saErr := errors.New("serviceAccount not found")
+		state.recordSyncError(saErr)
 		helper.SetConditionError(
 			userCondition,
 			"SyncUserError",
-			errors.New("serviceAccount not found"),
+			saErr,
 		)
 		r.Recorder.Eventf(
 			user,
@@ -710,13 +1461,15 @@ func (r *UserReconciler) syncKubeConfig(
 			"syncKubeConfig",
 			"Sync User namespace  kubeconfig %s is error: %v",
 			user.Name,
-			"serviceAccount not found",
+			saErr,
 		)
 		return
 	}
-	user.Status.ObservedCSRExpirationSeconds = user.Spec.CSRExpirationSeconds
+	// Keep an owned copy because kubeconfig generation may update metadata on it.
+	sa = sa.DeepCopy()
 	if r.shouldRotateKubeConfig(user) {
 		if err := r.deleteBoundTokenSecret(ctx, user); err != nil {
+			state.recordSyncError(err)
 			helper.SetConditionError(userCondition, "SyncKubeConfigError", err)
 			r.Recorder.Eventf(
 				user,
@@ -740,6 +1493,7 @@ func (r *UserReconciler) syncKubeConfig(
 		r.Client,
 	)
 	if err != nil {
+		state.recordSyncError(err)
 		helper.SetConditionError(userCondition, "SyncKubeConfigError", err)
 		r.Recorder.Eventf(
 			user,
@@ -752,10 +1506,12 @@ func (r *UserReconciler) syncKubeConfig(
 		return
 	}
 	if apiConfig == nil {
+		configErr := errors.New("api.config is nil")
+		state.recordSyncError(configErr)
 		helper.SetConditionError(
 			userCondition,
 			"SyncKubeConfigError",
-			errors.New("api.config is nil"),
+			configErr,
 		)
 		r.Recorder.Eventf(
 			user,
@@ -763,16 +1519,13 @@ func (r *UserReconciler) syncKubeConfig(
 			"syncKubeConfig",
 			"Sync KubeConfig apply %s is error: %v",
 			user.Name,
-			errors.New("api.config is nil"),
+			configErr,
 		)
 		return
 	}
-	state.tokenExpirationDeadline = &tokenExpiresAt
-	if r.shouldRotateKubeConfig(user) {
-		user.Status.ObservedKubeConfigRotateAt = user.Spec.KubeConfigRotateAt
-	}
 	kubeData, err := clientcmd.Write(*apiConfig)
 	if err != nil {
+		state.recordSyncError(err)
 		helper.SetConditionError(userCondition, "OutputKubeConfigError", err)
 		r.Recorder.Eventf(
 			user,
@@ -784,15 +1537,43 @@ func (r *UserReconciler) syncKubeConfig(
 		)
 		return
 	}
-	user.Status.KubeConfig = string(kubeData)
-	userCondition.Message = "renew sync kube config successfully hash " + hash.HashToString(
-		user.Status.KubeConfig,
-	)
 	keepSecretName := ""
 	if len(sa.Secrets) > 0 {
 		keepSecretName = sa.Secrets[0].Name
 	}
+	secretUID := ""
+	if keepSecretName != "" {
+		boundSecret := &v1.Secret{}
+		if err := r.Get(ctx, client.ObjectKey{
+			Name: keepSecretName, Namespace: config.GetUserSystemNamespace(),
+		}, boundSecret); err != nil {
+			state.recordSyncError(err)
+			helper.SetConditionError(userCondition, "SyncKubeConfigError", err)
+			r.Recorder.Eventf(
+				user,
+				v1.EventTypeWarning,
+				"syncKubeConfig",
+				"Get bound token secret %s is error: %v",
+				user.Name,
+				err,
+			)
+			return
+		}
+		secretUID = string(boundSecret.UID)
+	}
+	state.tokenExpirationDeadline = &tokenExpiresAt
+	refreshAt := metav1.NewTime(time.Now().Add(time.Until(tokenExpiresAt.Time) * 8 / 10))
+	user.Status.KubeConfigRefreshAt = &refreshAt
+	user.Status.ObservedKubeConfigSecretUID = secretUID
+	if r.shouldRotateKubeConfig(user) {
+		user.Status.ObservedKubeConfigRotateAt = user.Spec.KubeConfigRotateAt
+	}
+	user.Status.KubeConfig = string(kubeData)
+	userCondition.Message = "renew sync kube config successfully hash " + hash.HashToString(
+		user.Status.KubeConfig,
+	)
 	state.currentSecretName = keepSecretName
+	state.kubeConfigSynced = true
 	state.cleanupLegacySecrets = keepSecretName != ""
 }
 
@@ -824,7 +1605,10 @@ func syncReNewConfig(user *userv1.User) (*api.Config, *string, error) {
 	var err error
 	var event *string
 	if user.Status.KubeConfig != "" &&
-		user.Spec.CSRExpirationSeconds == user.Status.ObservedCSRExpirationSeconds {
+		csrExpirationStatusMatches(
+			user.Spec.CSRExpirationSeconds,
+			user.Status.ObservedCSRExpirationSeconds,
+		) {
 		apiConfig, err = clientcmd.Load([]byte(user.Status.KubeConfig))
 		if err != nil {
 			return nil, nil, err
@@ -890,6 +1674,13 @@ func (r *UserReconciler) syncFinalStatus(
 }
 
 func (r *UserReconciler) shouldRotateKubeConfig(user *userv1.User) bool {
+	return userKubeConfigNeedsRotation(user)
+}
+
+func userKubeConfigNeedsRotation(user *userv1.User) bool {
+	if user == nil {
+		return false
+	}
 	if user.Spec.KubeConfigRotateAt == nil {
 		return false
 	}
@@ -897,6 +1688,18 @@ func (r *UserReconciler) shouldRotateKubeConfig(user *userv1.User) bool {
 		return true
 	}
 	return !user.Spec.KubeConfigRotateAt.Equal(user.Status.ObservedKubeConfigRotateAt)
+}
+
+func kubeConfigSyncFailed(user *userv1.User) bool {
+	if user == nil {
+		return false
+	}
+	for _, condition := range user.Status.Conditions {
+		if condition.Type == kubeConfigReadyCondition {
+			return condition.Status == v1.ConditionFalse
+		}
+	}
+	return false
 }
 
 func (r *UserReconciler) updateStatus(
@@ -962,24 +1765,38 @@ func (r *UserReconciler) handleLicenseLimit(
 }
 
 func (r *UserReconciler) isNewUser(user *userv1.User) bool {
-	return user.Status.ObservedGeneration == 0 && len(user.Status.Conditions) == 0
+	if user == nil || user.Status.ObservedGeneration != 0 {
+		return false
+	}
+	for _, condition := range user.Status.Conditions {
+		if condition.Type != licenseLimitedCondition {
+			return false
+		}
+	}
+	return true
 }
 
-func (r *UserReconciler) nextRequeueDuration(state *userReconcileState) time.Duration {
-	duration := RandTimeDurationBetween(r.minRequeueDuration, r.maxRequeueDuration)
-	if state == nil ||
-		state.tokenExpirationDeadline == nil ||
-		state.tokenExpirationDeadline.IsZero() {
-		return duration
+func nextKubeConfigRequeueDuration(
+	user *userv1.User,
+	state *userReconcileState,
+) time.Duration {
+	if state != nil && state.tokenExpirationDeadline != nil &&
+		!state.tokenExpirationDeadline.IsZero() {
+		refreshDuration := time.Until(state.tokenExpirationDeadline.Time) * 8 / 10
+		if refreshDuration <= 0 {
+			return time.Second
+		}
+		return refreshDuration
 	}
-	tokenRefreshDuration := time.Until(state.tokenExpirationDeadline.Time) * 8 / 10
-	if tokenRefreshDuration <= 0 {
+	if user == nil || user.Status.KubeConfigRefreshAt == nil ||
+		user.Status.KubeConfigRefreshAt.IsZero() {
+		return 0
+	}
+	refreshDuration := time.Until(user.Status.KubeConfigRefreshAt.Time)
+	if refreshDuration <= 0 {
 		return time.Second
 	}
-	if tokenRefreshDuration < duration {
-		return tokenRefreshDuration
-	}
-	return duration
+	return refreshDuration
 }
 
 func (r *UserReconciler) licenseToUserRequests(
@@ -999,15 +1816,4 @@ func (r *UserReconciler) licenseToUserRequests(
 		)
 	}
 	return requests
-}
-
-// RandTimeDurationBetween get a random time duration between minDuration and maxDuration
-func RandTimeDurationBetween(minDuration, maxDuration time.Duration) time.Duration {
-	if minDuration >= maxDuration {
-		return minDuration
-	}
-	minInNano := minDuration.Nanoseconds()
-	maxInNano := maxDuration.Nanoseconds()
-	randDurationInNano := rand.Int63n(maxInNano-minInNano) + minInNano
-	return time.Duration(randDurationInNano) * time.Nanosecond
 }
