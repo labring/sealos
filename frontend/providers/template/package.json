@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:i18n": "node scripts/check-status-locales.mjs"
   },
   "dependencies": {
     "@chakra-ui/anatomy": "^2.2.1",
