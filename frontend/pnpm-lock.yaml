@@ -876,6 +876,9 @@ importers:
       sealos-desktop-sdk:
         specifier: workspace:*
         version: link:../../packages/client-sdk
+      sharp:
+        specifier: ^0.32.6
+        version: 0.32.6
       sonner:
         specifier: ^2.0.0
         version: 2.0.7(react-dom@18.3.1)(react@18.3.1)
