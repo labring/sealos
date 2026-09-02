@@ -102,6 +102,7 @@ func RegisterPayRouter() {
 		GET(helper.AdminGetAccountWithWorkspace, api.AdminGetAccountWithWorkspaceID).
 		GET(helper.AdminGetUserRealNameInfo, api.AdminGetUserRealNameInfo).
 		GET(helper.AdminUserList, api.AdminListUsers).
+		POST(helper.AdminNotificationRecipients, api.AdminListNotificationRecipients).
 		GET(helper.AdminUserDetailPath, api.AdminGetUser).
 		GET(helper.AdminUserRechargeRecordsPath, api.AdminListUserRechargeRecords).
 		GET(helper.AdminUserBalanceAdjustRecords, api.AdminListUserBalanceAdjustRecords).
