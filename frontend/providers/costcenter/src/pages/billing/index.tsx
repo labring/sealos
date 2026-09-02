@@ -23,6 +23,7 @@ import { PaymentRecord } from '@/types/plan';
 import { getWorkspacesConsumptions } from '@/api/billing';
 import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import RechargePanel from '@/components/billing/RechargePanel';
+import { getRegionCost, RegionConsumptionState } from '@/components/billing/regionConsumption';
 
 /**
  * Billing page container.
@@ -186,9 +187,7 @@ function Billing() {
   });
 
   const regionConsumptionByUid = useMemo(() => {
-    return regionUids.reduce<
-      Record<string, { amount?: number; status: 'loading' | 'success' | 'error' }>
-    >((acc, uid, index) => {
+    return regionUids.reduce<Record<string, RegionConsumptionState>>((acc, uid, index) => {
       const query = regionConsumptionQueries[index];
       acc[uid] = query.isError
         ? { status: 'error' }
@@ -198,20 +197,6 @@ function Billing() {
       return acc;
     }, {});
   }, [regionUids, regionConsumptionQueries]);
-
-  const failedRegionCount = regions.filter(
-    (region) => regionConsumptionByUid[region.uid]?.status === 'error'
-  ).length;
-  const loadingRegionCount = regions.filter(
-    (region) => regionConsumptionByUid[region.uid]?.status === 'loading'
-  ).length;
-
-  const retryRegionConsumption = (regionUid: string) => {
-    const queryIndex = regionUids.indexOf(regionUid);
-    if (queryIndex !== -1) {
-      void regionConsumptionQueries[queryIndex]?.refetch();
-    }
-  };
 
   const { nodes, totalCost } = useMemo(() => {
     const namespaces = (nsListData?.data || []) as [string, string][];
@@ -257,10 +242,7 @@ function Billing() {
 
     const regionCosts: Record<string, number> = regions.reduce((acc, region) => {
       const consumption = regionConsumptionByUid[region.uid];
-      acc[region.uid] =
-        consumption?.status === 'success'
-          ? (consumption.amount || 0) + (regionPayments[region.uid] || 0)
-          : 0;
+      acc[region.uid] = getRegionCost(consumption, regionPayments[region.uid] || 0);
       return acc;
     }, {} as Record<string, number>);
 
@@ -273,8 +255,7 @@ function Billing() {
       name: 'Total Cost',
       cost: totalCost,
       type: 'total',
-      dependsOn: null,
-      status: failedRegionCount || loadingRegionCount ? 'partial' : 'success'
+      dependsOn: null
     };
 
     // Region nodes
@@ -310,8 +291,6 @@ function Billing() {
     nsListData,
     allPaymentsData,
     regionConsumptionByUid,
-    failedRegionCount,
-    loadingRegionCount,
     workspaceConsumptionData,
     selectedRegion,
     allNamespaces
@@ -456,7 +435,6 @@ function Billing() {
               selectedRegion={selectedRegion}
               selectedWorkspace={selectedWorkspace}
               onRegionSelect={handleRegionSelect}
-              onRegionRetry={retryRegionConsumption}
               onWorkspaceSelect={handleWorkspaceSelect}
             >
               <CostPanel
@@ -467,14 +445,6 @@ function Billing() {
               >
                 {config.features.subscriptionEnabled && (
                   <SubscriptionCostTable data={subscriptionData} />
-                )}
-
-                {(failedRegionCount > 0 || loadingRegionCount > 0) && (
-                  <div className="px-4 text-sm text-amber-700">
-                    {t('common:billing_partial_data', {
-                      count: failedRegionCount + loadingRegionCount
-                    })}
-                  </div>
                 )}
 
                 {selectedRegion && (
