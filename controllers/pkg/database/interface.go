@@ -61,10 +61,10 @@ type Account interface {
 	HandlerTimeObjBucketSentTraffic(startTime, endTime time.Time, bucket string) (int64, error)
 	GetTimeObjBucketBucket(startTime, endTime time.Time) ([]string, error)
 	// GetTimeObjBucketExternalTraffic returns per-bucket external egress bytes
-	// from the objectstorage audit database. usage_hourly buckets are
-	// [hour, hour+1): startTime is truncated to the hour and the match window
-	// is [startTime, endTime), so passing a billing window consumes each
-	// completed hour bucket exactly once.
+	// from the objectstorage audit database. usage_minutes buckets are
+	// [minute, minute+1): startTime is truncated to the hour and the match
+	// window is [startTime, endTime), so passing a billing window consumes
+	// each completed minute bucket exactly once.
 	GetTimeObjBucketExternalTraffic(startTime, endTime time.Time) ([]types.BucketExternalTraffic, error)
 	GetUnsettingBillingHandler(owner string) ([]resources.BillingHandler, error)
 	UpdateBillingStatus(orderIDs []string, status resources.BillingStatus) error

@@ -621,13 +621,18 @@ func TestGetTimeObjBucketExternalTraffic(t *testing.T) {
 	defer client.Disconnect(ctx)
 	start := time.Date(2026, time.August, 29, 10, 0, 0, 0, time.UTC)
 	end := start.Add(2 * time.Hour)
-	coll := client.Database("objectstorage-audit").Collection("usage_hourly")
+	coll := client.Database("objectstorage-audit").Collection("usage_minutes")
+	minuteDoc := func(minute time.Time, bucket, user, direction string, tx int64) interface{} {
+		return bson.M{"bucket": bucket, "direction": direction, "minute": minute,
+			"tx": tx, "rx": int64(0), "requests": 1, "user": user}
+	}
 	docs := []interface{}{
-		bson.M{"bucket": "abc12345-app", "direction": "external", "hour": start, "tx": int64(3 << 20), "rx": int64(0), "requests": 3, "user": "abc12345"},
-		bson.M{"bucket": "abc12345-app", "direction": "internal", "hour": start, "tx": int64(9 << 20), "rx": int64(0), "requests": 9, "user": "abc12345"},
-		bson.M{"bucket": "abc12345-app", "direction": "external", "hour": start.Add(time.Hour), "tx": int64(1 << 20), "rx": int64(0), "requests": 1, "user": "abc12345"},
-		bson.M{"bucket": "abc12345-app", "direction": "external", "hour": end, "tx": int64(7 << 20), "rx": int64(0), "requests": 7, "user": "abc12345"},
-		bson.M{"bucket": "zz999999-app", "direction": "external", "hour": start, "tx": int64(2 << 20), "rx": int64(0), "requests": 2, "user": "zz999999"},
+		minuteDoc(start, "abc12345-app", "abc12345", "external", 3<<20),
+		minuteDoc(start.Add(30*time.Minute), "abc12345-app", "abc12345", "external", 1<<20),
+		minuteDoc(start.Add(time.Hour), "abc12345-app", "abc12345", "external", 1<<20),
+		minuteDoc(end, "abc12345-app", "abc12345", "external", 7<<20),
+		minuteDoc(start, "abc12345-app", "abc12345", "internal", 9<<20),
+		minuteDoc(start.Add(15*time.Minute), "zz999999-app", "zz999999", "external", 2<<20),
 	}
 	_, err = coll.InsertMany(ctx, docs)
 	if err != nil {
@@ -641,11 +646,12 @@ func TestGetTimeObjBucketExternalTraffic(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// usage_hourly buckets are [hour, hour+1); the query window maps to
-	// [start, end) = [10:00, 12:00): the 10:00 external rows (3Mi + 2Mi) and
-	// 11:00 external row (1Mi) are included; the 12:00 row is excluded; the
-	// 10:00 internal row is excluded by direction. Totals: abc=4Mi, zz=2Mi.
-	want := map[string]int64{"abc12345-app": 4 << 20, "zz999999-app": 2 << 20}
+	// usage_minutes buckets are [minute, minute+1); the query window maps to
+	// [start, end) = [10:00, 12:00): the 10:00 and 10:30 external rows
+	// (3Mi + 1Mi) and the 11:00 external row (1Mi) are included; the 12:00
+	// row is excluded (end-exclusive); the 10:00 internal row is excluded by
+	// direction. Totals: abc=5Mi, zz=2Mi.
+	want := map[string]int64{"abc12345-app": 5 << 20, "zz999999-app": 2 << 20}
 	sum := map[string]int64{}
 	for _, r := range got {
 		sum[r.Bucket] += r.Tx

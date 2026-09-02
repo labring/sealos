@@ -551,30 +551,32 @@ func (m *mongoDB) GetTimeObjBucketBucket(startTime, endTime time.Time) ([]string
 }
 
 // auditUsageDB is the database where the objectstorage audit receiver stores
-// per-hour, per-direction usage aggregates (collection usage_hourly). It lives
-// on the same Mongo cluster as the platform database.
+// per-minute, per-direction usage aggregates (collection usage_minutes). It
+// lives on the same Mongo cluster as the platform database.
 const auditUsageDB = "objectstorage-audit"
 
 func (m *mongoDB) getAuditUsageCollection() *mongo.Collection {
-	return m.Client.Database(auditUsageDB).Collection("usage_hourly")
+	return m.Client.Database(auditUsageDB).Collection("usage_minutes")
 }
 
 func (m *mongoDB) GetTimeObjBucketExternalTraffic(
 	startTime, endTime time.Time,
 ) ([]types.BucketExternalTraffic, error) {
 	// The first run after a controller restart has a mid-hour window start
-	// (e.g. 15:05 after a 15:05 restart). Clamp it to the hour so the bucket
-	// holding that partial hour is still billed: its pre-restart share was
-	// never billed (the previous run consumed only earlier buckets), and the
-	// bucket is consumed by exactly one run, so nothing double-bills.
+	// (e.g. 15:05 after a 15:05 restart). Clamp it to the hour so the minute
+	// buckets of that partial hour are still billed: their pre-restart share
+	// was never billed (the previous run consumed only earlier buckets), and
+	// each minute bucket is consumed by exactly one run, so nothing
+	// double-bills.
 	startTime = startTime.Truncate(time.Hour)
 	pipeline := []bson.M{
 		{
-			// usage_hourly buckets are [hour, hour+1): the effective match
-			// window is [startTime, endTime) (endTime exclusive), so each
-			// completed hour bucket is billed exactly once.
+			// usage_minutes buckets are [minute, minute+1) and tile the
+			// billing window: the match window is [startTime, endTime)
+			// (endTime exclusive), so each completed minute bucket is billed
+			// exactly once.
 			"$match": bson.M{
-				"hour": bson.M{
+				"minute": bson.M{
 					"$gte": startTime,
 					"$lt":  endTime,
 				},
