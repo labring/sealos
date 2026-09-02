@@ -819,10 +819,14 @@ func (r *MonitorReconciler) monitorObjectStorageTrafficUsed(startTime, endTime t
 		return fmt.Errorf("failed to get external object storage traffic: %w", err)
 	}
 	unit := r.Properties.StringMap[resources.ResourceNetwork].Unit
+	monitors := make([]*resources.Monitor, 0, len(traffics))
 	for _, t := range traffics {
 		// Preserve the historical metered-user scope: only usernames of 8
 		// alphanumeric characters are billed (e.g. "admin" buckets are not).
-		if objstorage.GetUserWithBucket(t.Bucket) == "" {
+		// The captured user is also the namespace owner: bucket names are
+		// "<user>-<suffix>" for metered users, so no second parse is needed.
+		user := objstorage.GetUserWithBucket(t.Bucket)
+		if user == "" {
 			continue
 		}
 		// The old <1MiB skip existed to filter controller chatter that was
@@ -841,19 +845,21 @@ func (r *MonitorReconciler) monitorObjectStorageTrafficUsed(startTime, endTime t
 				),
 			),
 		)
-		namespace := "ns-" + strings.SplitN(t.Bucket, "-", 2)[0]
 		ro := resources.Monitor{
-			Category: namespace,
+			Category: "ns-" + user,
 			Name:     t.Bucket,
 			Used:     map[uint8]int64{r.Properties.StringMap[resources.ResourceNetwork].Enum: used},
 			Time:     endTime.Add(-1 * time.Minute),
 			Type:     resources.AppType[resources.ObjectStorage],
 		}
 		r.Info("object storage traffic used", "monitor", ro)
-		err = r.DBClient.InsertMonitor(context.Background(), &ro)
-		if err != nil {
-			return fmt.Errorf("failed to insert monitor: %w", err)
-		}
+		monitors = append(monitors, &ro)
+	}
+	// One InsertMany for the whole window: InsertMonitor is variadic and
+	// batches internally, so this is a single round trip instead of one per
+	// bucket.
+	if err := r.DBClient.InsertMonitor(context.Background(), monitors...); err != nil {
+		return fmt.Errorf("failed to insert monitor: %w", err)
 	}
 	return nil
 }
