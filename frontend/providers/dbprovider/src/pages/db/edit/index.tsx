@@ -167,6 +167,15 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
       return router.push('/db/detail?name=hello-db&guide=true');
     }
 
+    const quotaTip = await checkQuotaAllow(formData, isEdit ? oldDBEditData.current : undefined);
+    if (quotaTip) {
+      toast({
+        title: t(quotaTip),
+        status: 'error'
+      });
+      return;
+    }
+
     const needMongoAdapter =
       formData.dbType === 'mongodb' && formData.replicas !== oldDBEditData.current?.replicas;
     setIsLoading(true);
