@@ -46,8 +46,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlconfig "sigs.k8s.io/controller-runtime/pkg/config"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
@@ -136,6 +136,12 @@ func main() {
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+	ctx := ctrl.SetupSignalHandler()
+	probeState := &probeState{}
+	if err := startProbeServer(ctx, probeAddr, probeState); err != nil {
+		setupLog.Error(err, "unable to start probe server")
+		os.Exit(1)
+	}
 	// local test env
 	// err := godotenv.Load()
 	// if err != nil {
@@ -149,7 +155,9 @@ func main() {
 		Metrics: metricsserver.Options{
 			BindAddress: metricsAddr,
 		},
-		HealthProbeBindAddress: probeAddr,
+		// Probes are served by the standalone server started before the expensive
+		// dependency and controller initialization below.
+		HealthProbeBindAddress: "0",
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "a63686c3.sealos.io",
 		LeaseDuration:          &leaseDuration,
@@ -175,7 +183,7 @@ func main() {
 		MaxConcurrentReconciles: concurrent,
 		RateLimiter:             utils.GetRateLimiter(rateLimiterOptions),
 	}
-	dbCtx, ctx := context.Background(), context.Background()
+	dbCtx := context.Background()
 	dbClient, err := mongo.NewMongoInterface(dbCtx, os.Getenv(database.MongoURI))
 	if err != nil {
 		setupLog.Error(err, "unable to connect to mongo")
@@ -415,12 +423,12 @@ func main() {
 
 	//+kubebuilder:scaffold:builder
 
-	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
-		setupLog.Error(err, "unable to set up health check")
-		os.Exit(1)
-	}
-	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
-		setupLog.Error(err, "unable to set up ready check")
+	if err := mgr.Add(manager.RunnableFunc(func(ctx context.Context) error {
+		probeState.markReady()
+		<-ctx.Done()
+		return nil
+	})); err != nil {
+		setupLog.Error(err, "unable to set up readiness marker")
 		os.Exit(1)
 	}
 
@@ -451,8 +459,9 @@ func main() {
 	//	}
 	// }()
 
+	probeState.markStartupReady()
 	setupLog.Info("starting manager")
-	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+	if err := mgr.Start(ctx); err != nil {
 		setupLog.Error(err, "fail to run manager")
 		os.Exit(1)
 	}

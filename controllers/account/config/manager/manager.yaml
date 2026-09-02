@@ -64,7 +64,7 @@ spec:
           periodSeconds: 10
         startupProbe:
           httpGet:
-            path: /healthz
+            path: /startupz
             port: 8081
           initialDelaySeconds: 5
           periodSeconds: 5
