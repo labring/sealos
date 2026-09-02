@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"testing"
 	"time"
@@ -15,14 +16,15 @@ import (
 )
 
 const (
-	workspaceConsumptionTestOwner = "workspace-consumption-test-owner"
-	workspaceConsumptionTestDB    = "workspace-consumption-test"
-	workspaceConsumptionTestColl  = "billing"
+	workspaceConsumptionTestOwner        = "workspace-consumption-test-owner"
+	workspaceConsumptionTestDB           = "workspace-consumption-test"
+	workspaceConsumptionTestColl         = "billing"
+	workspaceConsumptionBenchmarkRecords = 10000
 )
 
-func newWorkspaceConsumptionMongo(t *testing.T) (*MongoDB, context.Context) {
+func newWorkspaceConsumptionMongo(t testing.TB) (*MongoDB, context.Context) {
 	t.Helper()
-	testcontainers.SkipIfProviderIsNotHealthy(t)
+	skipIfWorkspaceConsumptionDockerIsNotHealthy(t)
 
 	ctx := context.Background()
 	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
@@ -70,6 +72,25 @@ func newWorkspaceConsumptionMongo(t *testing.T) (*MongoDB, context.Context) {
 		AccountDBName: workspaceConsumptionTestDB,
 		BillingConn:   workspaceConsumptionTestColl,
 	}, ctx
+}
+
+func skipIfWorkspaceConsumptionDockerIsNotHealthy(t testing.TB) {
+	t.Helper()
+	defer func() {
+		if r := recover(); r != nil {
+			t.Skipf("recovered from panic: %v; Docker is not running", r)
+		}
+	}()
+
+	ctx := context.Background()
+	provider, err := testcontainers.ProviderDocker.GetProvider()
+	if err != nil {
+		t.Skipf("Docker is not running: %v", err)
+	}
+	defer provider.Close()
+	if err := provider.Health(ctx); err != nil {
+		t.Skipf("Docker is not running: %v", err)
+	}
 }
 
 func TestGetWorkspaceConsumptionAmountWithMongoRuntime(t *testing.T) {
@@ -167,6 +188,67 @@ func TestGetWorkspaceConsumptionAmountWithMongoRuntime(t *testing.T) {
 			}
 			if !mapsEqual(got, test.want) {
 				t.Fatalf("workspace consumption = %#v, want %#v", got, test.want)
+			}
+		})
+	}
+}
+
+func BenchmarkGetWorkspaceConsumptionAmountWithMongoRuntime(b *testing.B) {
+	mongoDB, ctx := newWorkspaceConsumptionMongo(b)
+	startTime := time.Date(2026, time.January, 1, 0, 0, 0, 0, time.UTC)
+	endTime := startTime.Add(24 * time.Hour)
+	documents := make([]any, 0, workspaceConsumptionBenchmarkRecords)
+	for i := 0; i < workspaceConsumptionBenchmarkRecords; i++ {
+		documents = append(documents, resources.Billing{
+			Time:      startTime.Add(time.Duration(i%24) * time.Hour),
+			OrderID:   fmt.Sprintf("benchmark-%d", i),
+			Type:      resources.Consumption,
+			Namespace: fmt.Sprintf("ns-%02d", i%32),
+			AppCosts: []resources.AppCost{{
+				Name:   "app-a",
+				Amount: int64(i%100 + 1),
+			}},
+			AppType: resources.AppType[resources.APP],
+			Amount:  int64(i%100 + 1),
+			Owner:   workspaceConsumptionTestOwner,
+			Status:  resources.Settled,
+		})
+	}
+	if _, err := mongoDB.getBillingCollection().InsertMany(ctx, documents); err != nil {
+		b.Fatalf("insert billing benchmark fixtures: %v", err)
+	}
+
+	baseRequest := helper.ConsumptionRecordReq{
+		TimeRange: helper.TimeRange{StartTime: startTime, EndTime: endTime},
+		AuthBase:  helper.AuthBase{Auth: &helper.Auth{Owner: workspaceConsumptionTestOwner}},
+	}
+	benchmarks := []struct {
+		name string
+		req  helper.ConsumptionRecordReq
+	}{
+		{name: "all", req: baseRequest},
+		{
+			name: "namespace",
+			req:  withWorkspaceConsumptionRequest(baseRequest, func(req *helper.ConsumptionRecordReq) { req.Namespace = "ns-07" }),
+		},
+		{
+			name: "app_type",
+			req:  withWorkspaceConsumptionRequest(baseRequest, func(req *helper.ConsumptionRecordReq) { req.AppType = "app" }),
+		},
+		{
+			name: "app_name",
+			req:  withWorkspaceConsumptionRequest(baseRequest, func(req *helper.ConsumptionRecordReq) { req.AppName = "app-a" }),
+		},
+	}
+
+	for _, benchmark := range benchmarks {
+		b.Run(benchmark.name, func(b *testing.B) {
+			b.ReportAllocs()
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				if _, err := mongoDB.GetWorkspaceConsumptionAmount(benchmark.req); err != nil {
+					b.Fatalf("get workspace consumption amount: %v", err)
+				}
 			}
 		})
 	}
