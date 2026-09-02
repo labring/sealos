@@ -27,7 +27,7 @@ func newWorkspaceConsumptionMongo(t *testing.T) (*MongoDB, context.Context) {
 	ctx := context.Background()
 	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: testcontainers.ContainerRequest{
-			Image:        "mongo:7.0",
+			Image:        "mongo:4.4.29",
 			ExposedPorts: []string{"27017/tcp"},
 			WaitingFor: wait.ForListeningPort("27017/tcp").
 				WithStartupTimeout(2 * time.Minute),
