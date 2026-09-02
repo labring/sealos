@@ -24,9 +24,9 @@ const (
 	workspaceConsumptionRequiredEnv      = "TESTCONTAINERS_REQUIRED"
 )
 
-func newWorkspaceConsumptionMongo(t testing.TB) (*MongoDB, context.Context) {
-	t.Helper()
-	skipIfWorkspaceConsumptionDockerIsNotHealthy(t)
+func newWorkspaceConsumptionMongo(tb testing.TB) (*MongoDB, context.Context) {
+	tb.Helper()
+	skipIfWorkspaceConsumptionDockerIsNotHealthy(tb)
 
 	ctx := context.Background()
 	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
@@ -39,33 +39,36 @@ func newWorkspaceConsumptionMongo(t testing.TB) (*MongoDB, context.Context) {
 		Started: true,
 	})
 	if err != nil {
-		t.Fatalf("start MongoDB container: %v", err)
+		tb.Fatalf("start MongoDB container: %v", err)
 	}
-	t.Cleanup(func() {
+	tb.Cleanup(func() {
 		if err := container.Terminate(ctx); err != nil {
-			t.Errorf("terminate MongoDB container: %v", err)
+			tb.Errorf("terminate MongoDB container: %v", err)
 		}
 	})
 
 	host, err := container.Host(ctx)
 	if err != nil {
-		t.Fatalf("get MongoDB container host: %v", err)
+		tb.Fatalf("get MongoDB container host: %v", err)
 	}
 	port, err := container.MappedPort(ctx, "27017/tcp")
 	if err != nil {
-		t.Fatalf("get MongoDB container port: %v", err)
+		tb.Fatalf("get MongoDB container port: %v", err)
 	}
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://"+net.JoinHostPort(host, port.Port())))
+	client, err := mongo.Connect(
+		ctx,
+		options.Client().ApplyURI("mongodb://"+net.JoinHostPort(host, port.Port())),
+	)
 	if err != nil {
-		t.Fatalf("connect MongoDB client: %v", err)
+		tb.Fatalf("connect MongoDB client: %v", err)
 	}
 	if err := client.Ping(ctx, nil); err != nil {
 		_ = client.Disconnect(ctx)
-		t.Fatalf("ping MongoDB: %v", err)
+		tb.Fatalf("ping MongoDB: %v", err)
 	}
-	t.Cleanup(func() {
+	tb.Cleanup(func() {
 		if err := client.Disconnect(ctx); err != nil {
-			t.Errorf("disconnect MongoDB client: %v", err)
+			tb.Errorf("disconnect MongoDB client: %v", err)
 		}
 	})
 
@@ -76,31 +79,35 @@ func newWorkspaceConsumptionMongo(t testing.TB) (*MongoDB, context.Context) {
 	}, ctx
 }
 
-func skipIfWorkspaceConsumptionDockerIsNotHealthy(t testing.TB) {
-	t.Helper()
+func skipIfWorkspaceConsumptionDockerIsNotHealthy(tb testing.TB) {
+	tb.Helper()
 	defer func() {
 		if r := recover(); r != nil {
-			skipOrFailWorkspaceConsumptionDocker(t, "recovered from panic: %v; Docker is not running", r)
+			skipOrFailWorkspaceConsumptionDockerf(
+				tb,
+				"recovered from panic: %v; Docker is not running",
+				r,
+			)
 		}
 	}()
 
 	ctx := context.Background()
 	provider, err := testcontainers.ProviderDocker.GetProvider()
 	if err != nil {
-		skipOrFailWorkspaceConsumptionDocker(t, "Docker is not running: %v", err)
+		skipOrFailWorkspaceConsumptionDockerf(tb, "Docker is not running: %v", err)
 	}
 	defer provider.Close()
 	if err := provider.Health(ctx); err != nil {
-		skipOrFailWorkspaceConsumptionDocker(t, "Docker is not running: %v", err)
+		skipOrFailWorkspaceConsumptionDockerf(tb, "Docker is not running: %v", err)
 	}
 }
 
-func skipOrFailWorkspaceConsumptionDocker(t testing.TB, format string, args ...any) {
-	t.Helper()
+func skipOrFailWorkspaceConsumptionDockerf(tb testing.TB, format string, args ...any) {
+	tb.Helper()
 	if os.Getenv(workspaceConsumptionRequiredEnv) == "true" {
-		t.Fatalf(format, args...)
+		tb.Fatalf(format, args...)
 	}
-	t.Skipf(format, args...)
+	tb.Skipf(format, args...)
 }
 
 func TestGetWorkspaceConsumptionAmountWithMongoRuntime(t *testing.T) {
@@ -170,22 +177,42 @@ func TestGetWorkspaceConsumptionAmountWithMongoRuntime(t *testing.T) {
 		},
 		{
 			name: "namespace filter",
-			req:  withWorkspaceConsumptionRequest(baseRequest, func(req *helper.ConsumptionRecordReq) { req.Namespace = "ns-a" }),
+			req: withWorkspaceConsumptionRequest(
+				baseRequest,
+				func(req *helper.ConsumptionRecordReq) {
+					req.Namespace = "ns-a"
+				},
+			),
 			want: map[string]int64{"ns-a": 150},
 		},
 		{
 			name: "app type filter",
-			req:  withWorkspaceConsumptionRequest(baseRequest, func(req *helper.ConsumptionRecordReq) { req.AppType = " llm-token " }),
+			req: withWorkspaceConsumptionRequest(
+				baseRequest,
+				func(req *helper.ConsumptionRecordReq) {
+					req.AppType = " llm-token "
+				},
+			),
 			want: map[string]int64{"ns-b": 20},
 		},
 		{
 			name: "nested app name filter",
-			req:  withWorkspaceConsumptionRequest(baseRequest, func(req *helper.ConsumptionRecordReq) { req.AppName = "app-a" }),
+			req: withWorkspaceConsumptionRequest(
+				baseRequest,
+				func(req *helper.ConsumptionRecordReq) {
+					req.AppName = "app-a"
+				},
+			),
 			want: map[string]int64{"ns-a": 30},
 		},
 		{
 			name: "direct app name filter",
-			req:  withWorkspaceConsumptionRequest(baseRequest, func(req *helper.ConsumptionRecordReq) { req.AppName = "store-a" }),
+			req: withWorkspaceConsumptionRequest(
+				baseRequest,
+				func(req *helper.ConsumptionRecordReq) {
+					req.AppName = "store-a"
+				},
+			),
 			want: map[string]int64{"ns-c": 40},
 		},
 	}
@@ -208,7 +235,7 @@ func BenchmarkGetWorkspaceConsumptionAmountWithMongoRuntime(b *testing.B) {
 	startTime := time.Date(2026, time.January, 1, 0, 0, 0, 0, time.UTC)
 	endTime := startTime.Add(24 * time.Hour)
 	documents := make([]any, 0, workspaceConsumptionBenchmarkRecords)
-	for i := 0; i < workspaceConsumptionBenchmarkRecords; i++ {
+	for i := range workspaceConsumptionBenchmarkRecords {
 		documents = append(documents, resources.Billing{
 			Time:      startTime.Add(time.Duration(i%24) * time.Hour),
 			OrderID:   fmt.Sprintf("benchmark-%d", i),
@@ -239,15 +266,30 @@ func BenchmarkGetWorkspaceConsumptionAmountWithMongoRuntime(b *testing.B) {
 		{name: "all", req: baseRequest},
 		{
 			name: "namespace",
-			req:  withWorkspaceConsumptionRequest(baseRequest, func(req *helper.ConsumptionRecordReq) { req.Namespace = "ns-07" }),
+			req: withWorkspaceConsumptionRequest(
+				baseRequest,
+				func(req *helper.ConsumptionRecordReq) {
+					req.Namespace = "ns-07"
+				},
+			),
 		},
 		{
 			name: "app_type",
-			req:  withWorkspaceConsumptionRequest(baseRequest, func(req *helper.ConsumptionRecordReq) { req.AppType = "app" }),
+			req: withWorkspaceConsumptionRequest(
+				baseRequest,
+				func(req *helper.ConsumptionRecordReq) {
+					req.AppType = "app"
+				},
+			),
 		},
 		{
 			name: "app_name",
-			req:  withWorkspaceConsumptionRequest(baseRequest, func(req *helper.ConsumptionRecordReq) { req.AppName = "app-a" }),
+			req: withWorkspaceConsumptionRequest(
+				baseRequest,
+				func(req *helper.ConsumptionRecordReq) {
+					req.AppName = "app-a"
+				},
+			),
 		},
 	}
 
@@ -255,7 +297,7 @@ func BenchmarkGetWorkspaceConsumptionAmountWithMongoRuntime(b *testing.B) {
 		b.Run(benchmark.name, func(b *testing.B) {
 			b.ReportAllocs()
 			b.ResetTimer()
-			for i := 0; i < b.N; i++ {
+			for range b.N {
 				if _, err := mongoDB.GetWorkspaceConsumptionAmount(benchmark.req); err != nil {
 					b.Fatalf("get workspace consumption amount: %v", err)
 				}
