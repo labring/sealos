@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"os"
 	"testing"
 	"time"
 
@@ -20,6 +21,7 @@ const (
 	workspaceConsumptionTestDB           = "workspace-consumption-test"
 	workspaceConsumptionTestColl         = "billing"
 	workspaceConsumptionBenchmarkRecords = 10000
+	workspaceConsumptionRequiredEnv      = "TESTCONTAINERS_REQUIRED"
 )
 
 func newWorkspaceConsumptionMongo(t testing.TB) (*MongoDB, context.Context) {
@@ -78,19 +80,27 @@ func skipIfWorkspaceConsumptionDockerIsNotHealthy(t testing.TB) {
 	t.Helper()
 	defer func() {
 		if r := recover(); r != nil {
-			t.Skipf("recovered from panic: %v; Docker is not running", r)
+			skipOrFailWorkspaceConsumptionDocker(t, "recovered from panic: %v; Docker is not running", r)
 		}
 	}()
 
 	ctx := context.Background()
 	provider, err := testcontainers.ProviderDocker.GetProvider()
 	if err != nil {
-		t.Skipf("Docker is not running: %v", err)
+		skipOrFailWorkspaceConsumptionDocker(t, "Docker is not running: %v", err)
 	}
 	defer provider.Close()
 	if err := provider.Health(ctx); err != nil {
-		t.Skipf("Docker is not running: %v", err)
+		skipOrFailWorkspaceConsumptionDocker(t, "Docker is not running: %v", err)
 	}
+}
+
+func skipOrFailWorkspaceConsumptionDocker(t testing.TB, format string, args ...any) {
+	t.Helper()
+	if os.Getenv(workspaceConsumptionRequiredEnv) == "true" {
+		t.Fatalf(format, args...)
+	}
+	t.Skipf(format, args...)
 }
 
 func TestGetWorkspaceConsumptionAmountWithMongoRuntime(t *testing.T) {

@@ -69,6 +69,26 @@ jobs:
           working-directory: service/${{ inputs.module }}
           args: --color=always --config=${{ github.workspace }}/.golangci.yml
 
+  account-dao-runtime:
+    name: Account DAO MongoDB runtime test
+    if: ${{ inputs.module == 'account' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Golang with cache
+        uses: magnetikonline/action-golang-cache@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Run MongoDB runtime test
+        working-directory: service/account
+        env:
+          TESTCONTAINERS_REQUIRED: "true"
+        run: go test ./dao -run '^TestGetWorkspaceConsumptionAmountWithMongoRuntime$' -count=1 -v
+
   image-build:
     strategy:
       matrix:
