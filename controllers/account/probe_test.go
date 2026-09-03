@@ -52,7 +52,6 @@ func assertProbeStatuses(t *testing.T, handler http.Handler, tests []struct {
 	t.Helper()
 
 	for _, test := range tests {
-		test := test
 		t.Run(test.name, func(t *testing.T) {
 			request := httptest.NewRequest(http.MethodGet, test.path, nil)
 			response := httptest.NewRecorder()
