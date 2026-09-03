@@ -87,7 +87,7 @@ jobs:
         working-directory: service/account
         env:
           TESTCONTAINERS_REQUIRED: "true"
-        run: go test ./dao -run '^TestGetWorkspaceConsumptionAmountWithMongoRuntime$' -count=1 -v
+        run: go test ./dao -run '^TestGet(Workspace)?ConsumptionAmountWithMongoRuntime$' -count=1 -v
 
   image-build:
     strategy:
