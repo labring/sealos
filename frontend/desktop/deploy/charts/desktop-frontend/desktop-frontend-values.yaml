@@ -35,9 +35,9 @@ desktopConfig:
 
   # Currency and language configuration
   # Options: "cn" (Chinese) or "en" (English)
-  # forcedLanguage and currencySymbol will be auto-configured based on version:
-  # - version: "cn" → forcedLanguage: "zh", currencySymbol: "shellCoin"
-  # - version: "en" → forcedLanguage: "en", currencySymbol: "usd"
+  # currencySymbol is auto-configured based on version:
+  # - version: "cn" → currencySymbol: "shellCoin"
+  # - version: "en" → currencySymbol: "usd"
   version: "cn"
 
   allowedAllOrigins: true

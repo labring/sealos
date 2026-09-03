@@ -50,7 +50,6 @@ data:
         logo: "{{ .Values.desktopConfig.layoutLogo }}"
         backgroundImage: "{{ .Values.desktopConfig.layoutBackgroundImage }}"
         workspaceResourceHeaderEnabled: {{ .Values.desktopConfig.workspaceResourceHeaderEnabled }}
-        forcedLanguage: {{ if eq .Values.desktopConfig.version "cn" }}"zh"{{ else }}"en"{{ end }}
         customerServiceURL: "{{ .Values.desktopConfig.customerServiceURL }}"
         discordInviteLink: {{ if eq .Values.desktopConfig.version "en" }}"{{ .Values.desktopConfig.discordInviteLink }}"{{ else }}""{{ end }}
         gtmId: {{ if .Values.desktopConfig.gtmId }}"{{ .Values.desktopConfig.gtmId }}"{{ else }}null{{ end }}

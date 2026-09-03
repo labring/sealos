@@ -75,9 +75,9 @@ desktopConfig:
 ```yaml
 desktopConfig:
   version: "en"                               # UI 版本: "cn" 或 "en"
-  # forcedLanguage 和 currencySymbol 会根据 version 自动配置:
-  # - version: "cn" → forcedLanguage: "zh", currencySymbol: "shellCoin"
-  # - version: "en" → forcedLanguage: "en", currencySymbol: "usd"
+  # currencySymbol 会根据 version 自动配置:
+  # - version: "cn" → currencySymbol: "shellCoin"
+  # - version: "en" → currencySymbol: "usd"
 ```
 
 ### 6. Google Tag Manager
