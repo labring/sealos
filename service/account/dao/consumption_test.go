@@ -48,30 +48,30 @@ func TestBuildConsumptionAmountPipeline(t *testing.T) {
 			if len(pipeline) != 3 {
 				t.Fatalf("pipeline stage count = %d, want 3", len(pipeline))
 			}
-			if _, ok := consumptionStageValue(pipeline[0], "$match"); !ok {
+			if !hasConsumptionStage(pipeline[0], "$match") {
 				t.Fatal("pipeline does not start with $match")
 			}
-			if _, ok := consumptionStageValue(pipeline[1], "$project"); !ok {
+			if !hasConsumptionStage(pipeline[1], "$project") {
 				t.Fatal("pipeline does not project one amount per billing record")
 			}
-			if _, ok := consumptionStageValue(pipeline[1], "$facet"); ok {
+			if hasConsumptionStage(pipeline[1], "$facet") {
 				t.Fatal("pipeline should not use $facet")
 			}
-			if _, ok := consumptionStageValue(pipeline[1], "$unwind"); ok {
+			if hasConsumptionStage(pipeline[1], "$unwind") {
 				t.Fatal("pipeline should not use $unwind")
 			}
-			if _, ok := consumptionStageValue(pipeline[2], "$group"); !ok {
+			if !hasConsumptionStage(pipeline[2], "$group") {
 				t.Fatal("pipeline does not end with $group")
 			}
 		})
 	}
 }
 
-func consumptionStageValue(stage bson.D, key string) (any, bool) {
+func hasConsumptionStage(stage bson.D, key string) bool {
 	for _, element := range stage {
 		if element.Key == key {
-			return element.Value, true
+			return true
 		}
 	}
-	return nil, false
+	return false
 }

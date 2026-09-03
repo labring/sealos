@@ -279,7 +279,8 @@ func TestGetConsumptionAmountWithMongoRuntime(t *testing.T) {
 			Owner: "other-owner", Status: resources.Settled,
 		},
 		resources.Billing{
-			Time: endTime.Add(time.Hour), OrderID: "outside-consumption", Type: resources.Consumption,
+			Time:    endTime.Add(time.Hour),
+			OrderID: "outside-consumption", Type: resources.Consumption,
 			Namespace: "ns-ignored", AppCosts: []resources.AppCost{{Name: "app-a", Amount: 3000}},
 			AppType: resources.AppType[resources.APP], Amount: 3000,
 			Owner: workspaceConsumptionTestOwner, Status: resources.Settled,
@@ -301,39 +302,54 @@ func TestGetConsumptionAmountWithMongoRuntime(t *testing.T) {
 		{name: "all settled consumption", req: baseRequest, want: 95},
 		{
 			name: "namespace filter",
-			req: withWorkspaceConsumptionRequest(baseRequest, func(req *helper.ConsumptionRecordReq) {
-				req.Namespace = "ns-a"
-			}),
+			req: withWorkspaceConsumptionRequest(
+				baseRequest,
+				func(req *helper.ConsumptionRecordReq) {
+					req.Namespace = "ns-a"
+				},
+			),
 			want: 35,
 		},
 		{
 			name: "nested app type filter",
-			req: withWorkspaceConsumptionRequest(baseRequest, func(req *helper.ConsumptionRecordReq) {
-				req.AppType = " app "
-			}),
+			req: withWorkspaceConsumptionRequest(
+				baseRequest,
+				func(req *helper.ConsumptionRecordReq) {
+					req.AppType = " app "
+				},
+			),
 			want: 35,
 		},
 		{
 			name: "nested app name filter",
-			req: withWorkspaceConsumptionRequest(baseRequest, func(req *helper.ConsumptionRecordReq) {
-				req.AppType = resources.APP
-				req.AppName = "app-a"
-			}),
+			req: withWorkspaceConsumptionRequest(
+				baseRequest,
+				func(req *helper.ConsumptionRecordReq) {
+					req.AppType = resources.APP
+					req.AppName = "app-a"
+				},
+			),
 			want: 30,
 		},
 		{
 			name: "direct app name filter",
-			req: withWorkspaceConsumptionRequest(baseRequest, func(req *helper.ConsumptionRecordReq) {
-				req.AppName = "store-a"
-			}),
+			req: withWorkspaceConsumptionRequest(
+				baseRequest,
+				func(req *helper.ConsumptionRecordReq) {
+					req.AppName = "store-a"
+				},
+			),
 			want: 75,
 		},
 		{
 			name: "direct app type and name filter",
-			req: withWorkspaceConsumptionRequest(baseRequest, func(req *helper.ConsumptionRecordReq) {
-				req.AppType = resources.AppStore
-				req.AppName = "store-a"
-			}),
+			req: withWorkspaceConsumptionRequest(
+				baseRequest,
+				func(req *helper.ConsumptionRecordReq) {
+					req.AppType = resources.AppStore
+					req.AppName = "store-a"
+				},
+			),
 			want: 40,
 		},
 	}
@@ -476,22 +492,31 @@ func BenchmarkGetConsumptionAmountWithMongoRuntime(b *testing.B) {
 		{name: "all", req: baseRequest},
 		{
 			name: "namespace",
-			req: withWorkspaceConsumptionRequest(baseRequest, func(req *helper.ConsumptionRecordReq) {
-				req.Namespace = "ns-07"
-			}),
+			req: withWorkspaceConsumptionRequest(
+				baseRequest,
+				func(req *helper.ConsumptionRecordReq) {
+					req.Namespace = "ns-07"
+				},
+			),
 		},
 		{
 			name: "app_type",
-			req: withWorkspaceConsumptionRequest(baseRequest, func(req *helper.ConsumptionRecordReq) {
-				req.AppType = resources.APP
-			}),
+			req: withWorkspaceConsumptionRequest(
+				baseRequest,
+				func(req *helper.ConsumptionRecordReq) {
+					req.AppType = resources.APP
+				},
+			),
 		},
 		{
 			name: "app_name",
-			req: withWorkspaceConsumptionRequest(baseRequest, func(req *helper.ConsumptionRecordReq) {
-				req.AppType = resources.APP
-				req.AppName = "app-a"
-			}),
+			req: withWorkspaceConsumptionRequest(
+				baseRequest,
+				func(req *helper.ConsumptionRecordReq) {
+					req.AppType = resources.APP
+					req.AppName = "app-a"
+				},
+			),
 		},
 	}
 

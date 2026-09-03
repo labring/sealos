@@ -2213,6 +2213,7 @@ func (m *Account) Disconnect(ctx context.Context) error {
 }
 
 func buildConsumptionAmountPipeline(req helper.ConsumptionRecordReq) mongo.Pipeline {
+	appType := strings.ToUpper(strings.TrimSpace(req.AppType))
 	timeMatchValue := bson.D{
 		primitive.E{Key: "$gte", Value: req.StartTime},
 		primitive.E{Key: "$lte", Value: req.EndTime},
@@ -2225,10 +2226,10 @@ func buildConsumptionAmountPipeline(req helper.ConsumptionRecordReq) mongo.Pipel
 	if req.Namespace != "" {
 		matchValue = append(matchValue, primitive.E{Key: "namespace", Value: req.Namespace})
 	}
-	if req.AppType != "" {
+	if appType != "" {
 		matchValue = append(
 			matchValue,
-			primitive.E{Key: "app_type", Value: resources.AppType[strings.ToUpper(req.AppType)]},
+			primitive.E{Key: "app_type", Value: resources.AppType[appType]},
 		)
 	}
 
@@ -2246,8 +2247,8 @@ func buildConsumptionAmountPipeline(req helper.ConsumptionRecordReq) mongo.Pipel
 
 	// Preserve the legacy app_costs matching semantics while avoiding $unwind.
 	nestedAmount := any(appCostsAmount)
-	if req.AppType != "" && req.AppName != "" {
-		if req.AppType != resources.AppStore {
+	if appType != "" && req.AppName != "" {
+		if appType != resources.AppStore {
 			filteredAppCosts := bson.M{
 				"$filter": bson.M{
 					"input": appCostsInput,
@@ -2282,16 +2283,14 @@ func buildConsumptionAmountPipeline(req helper.ConsumptionRecordReq) mongo.Pipel
 			resources.AppType[resources.LLMToken],
 		}},
 	})
-	if req.AppType != "" {
-		directCondition = true
+	if appType != "" {
+		directCondition = appType == resources.AppStore || appType == resources.LLMToken
 	}
 	if req.AppName != "" {
-		appNameCondition := bson.M{"$eq": bson.A{"$app_name", req.AppName}}
-		if req.AppType == "" {
-			directCondition = bson.M{"$and": bson.A{directCondition, appNameCondition}}
-		} else {
-			directCondition = appNameCondition
-		}
+		directCondition = bson.M{"$and": bson.A{
+			directCondition,
+			bson.M{"$eq": bson.A{"$app_name", req.AppName}},
+		}}
 	}
 	directAmount := bson.M{
 		"$cond": bson.A{
