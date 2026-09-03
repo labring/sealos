@@ -424,6 +424,9 @@ func main() {
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.Add(manager.RunnableFunc(func(ctx context.Context) error {
+		if !mgr.GetCache().WaitForCacheSync(ctx) {
+			return nil
+		}
 		probeState.markReady()
 		<-ctx.Done()
 		return nil
