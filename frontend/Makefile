@@ -15,7 +15,6 @@ endif
 # build image
 buildTargets := \
 	desktop \
-	providers/terminal \
 	providers/costcenter \
 	providers/dbprovider \
 	providers/applaunchpad \

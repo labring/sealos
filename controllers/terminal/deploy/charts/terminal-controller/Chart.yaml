@@ -1,6 +1,0 @@
-apiVersion: v2
-name: terminal
-description: Helm chart for the sealos terminal controller
-type: application
-version: 0.1.0
-appVersion: "0.1.0"
