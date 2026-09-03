@@ -57,6 +57,16 @@ var (
 	setupLog = ctrl.Log.WithName("setup")
 )
 
+type readinessRunnable struct {
+	manager.RunnableFunc
+}
+
+func (readinessRunnable) NeedLeaderElection() bool {
+	return false
+}
+
+var _ manager.LeaderElectionRunnable = readinessRunnable{}
+
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
@@ -423,14 +433,16 @@ func main() {
 
 	//+kubebuilder:scaffold:builder
 
-	if err := mgr.Add(manager.RunnableFunc(func(ctx context.Context) error {
-		if !mgr.GetCache().WaitForCacheSync(ctx) {
+	if err := mgr.Add(readinessRunnable{
+		RunnableFunc: manager.RunnableFunc(func(ctx context.Context) error {
+			if !mgr.GetCache().WaitForCacheSync(ctx) {
+				return nil
+			}
+			probeState.markReady()
+			<-ctx.Done()
 			return nil
-		}
-		probeState.markReady()
-		<-ctx.Done()
-		return nil
-	})); err != nil {
+		}),
+	}); err != nil {
 		setupLog.Error(err, "unable to set up readiness marker")
 		os.Exit(1)
 	}
