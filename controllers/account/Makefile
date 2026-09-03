@@ -63,7 +63,7 @@ test: manifests generate fmt vet envtest ## Run tests.
 
 .PHONY: build
 build:  ## Build manager binary.
-	LD_FLAGS="-s -w" && CGO_ENABLED=0 GOOS=linux go build -ldflags "$${LD_FLAGS}" -trimpath -o bin/manager main.go
+	LD_FLAGS="-s -w" && CGO_ENABLED=0 GOOS=linux go build -ldflags "$${LD_FLAGS}" -trimpath -o bin/manager .
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.

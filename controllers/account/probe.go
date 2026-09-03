@@ -57,7 +57,7 @@ func startProbeServer(ctx context.Context, addr string, state *probeState) error
 		return nil
 	}
 
-	listener, err := net.Listen("tcp", addr)
+	listener, err := (&net.ListenConfig{}).Listen(ctx, "tcp", addr)
 	if err != nil {
 		return err
 	}
@@ -69,7 +69,7 @@ func startProbeServer(ctx context.Context, addr string, state *probeState) error
 
 	go func() {
 		<-ctx.Done()
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		shutdownCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
 		defer cancel()
 		if err := server.Shutdown(shutdownCtx); err != nil {
 			setupLog.Error(err, "unable to shut down probe server")
