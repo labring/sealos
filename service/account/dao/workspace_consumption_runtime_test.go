@@ -267,6 +267,12 @@ func TestGetConsumptionAmountWithMongoRuntime(t *testing.T) {
 			Amount: 40, Owner: workspaceConsumptionTestOwner, Status: resources.Settled,
 		},
 		resources.Billing{
+			Time: endTime, OrderID: "app-store-with-app-costs", Type: resources.Consumption,
+			Namespace: "ns-d", AppName: "store-b", AppType: resources.AppType[resources.AppStore],
+			AppCosts: []resources.AppCost{{Name: "store-b", Amount: 25}},
+			Amount:   25, Owner: workspaceConsumptionTestOwner, Status: resources.Settled,
+		},
+		resources.Billing{
 			Time: endTime, OrderID: "unsettled-consumption", Type: resources.Consumption,
 			Namespace: "ns-ignored", AppCosts: []resources.AppCost{{Name: "app-a", Amount: 1000}},
 			AppType: resources.AppType[resources.APP], Amount: 1000,
@@ -299,7 +305,7 @@ func TestGetConsumptionAmountWithMongoRuntime(t *testing.T) {
 		req  helper.ConsumptionRecordReq
 		want int64
 	}{
-		{name: "all settled consumption", req: baseRequest, want: 95},
+		{name: "all settled consumption", req: baseRequest, want: 185},
 		{
 			name: "namespace filter",
 			req: withWorkspaceConsumptionRequest(
@@ -308,7 +314,7 @@ func TestGetConsumptionAmountWithMongoRuntime(t *testing.T) {
 					req.Namespace = "ns-a"
 				},
 			),
-			want: 35,
+			want: 100,
 		},
 		{
 			name: "nested app type filter",
@@ -318,7 +324,7 @@ func TestGetConsumptionAmountWithMongoRuntime(t *testing.T) {
 					req.AppType = " app "
 				},
 			),
-			want: 35,
+			want: 100,
 		},
 		{
 			name: "nested app name filter",
@@ -339,7 +345,7 @@ func TestGetConsumptionAmountWithMongoRuntime(t *testing.T) {
 					req.AppName = "store-a"
 				},
 			),
-			want: 75,
+			want: 40,
 		},
 		{
 			name: "direct app type and name filter",
@@ -351,6 +357,16 @@ func TestGetConsumptionAmountWithMongoRuntime(t *testing.T) {
 				},
 			),
 			want: 40,
+		},
+		{
+			name: "direct app name with nested costs",
+			req: withWorkspaceConsumptionRequest(
+				baseRequest,
+				func(req *helper.ConsumptionRecordReq) {
+					req.AppName = "store-b"
+				},
+			),
+			want: 25,
 		},
 	}
 

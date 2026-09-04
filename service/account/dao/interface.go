@@ -2233,83 +2233,60 @@ func buildConsumptionAmountPipeline(req helper.ConsumptionRecordReq) mongo.Pipel
 		)
 	}
 
-	appCostsInput := bson.M{"$ifNull": bson.A{"$app_costs", bson.A{}}}
-	appCostsAmount := bson.M{
-		"$reduce": bson.M{
-			"input":        appCostsInput,
-			"initialValue": int64(0),
-			"in": bson.M{"$add": bson.A{
-				"$$value",
-				bson.M{"$ifNull": bson.A{"$$this.amount", int64(0)}},
-			}},
-		},
-	}
-
-	// Preserve the legacy app_costs matching semantics while avoiding $unwind.
-	nestedAmount := any(appCostsAmount)
-	if appType != "" && req.AppName != "" {
-		if appType != resources.AppStore {
-			filteredAppCosts := bson.M{
-				"$filter": bson.M{
-					"input": appCostsInput,
-					"as":    "appCost",
-					"cond":  bson.M{"$eq": bson.A{"$$appCost.name", req.AppName}},
-				},
-			}
-			nestedAmount = bson.M{
-				"$reduce": bson.M{
-					"input":        filteredAppCosts,
-					"initialValue": int64(0),
-					"in": bson.M{"$add": bson.A{
-						"$$value",
-						bson.M{"$ifNull": bson.A{"$$this.amount", int64(0)}},
-					}},
-				},
-			}
-		} else {
-			nestedAmount = bson.M{
-				"$cond": bson.A{
-					bson.M{"$eq": bson.A{"$app_name", req.AppName}},
-					appCostsAmount,
-					int64(0),
-				},
-			}
-		}
-	}
-
-	directCondition := any(bson.M{
-		"$in": bson.A{"$app_type", bson.A{
-			resources.AppType[resources.AppStore],
-			resources.AppType[resources.LLMToken],
-		}},
-	})
-	if appType != "" {
-		directCondition = appType == resources.AppStore || appType == resources.LLMToken
-	}
-	if req.AppName != "" {
-		directCondition = bson.M{"$and": bson.A{
-			directCondition,
-			bson.M{"$eq": bson.A{"$app_name", req.AppName}},
-		}}
-	}
-	directAmount := bson.M{
-		"$cond": bson.A{
-			directCondition,
-			bson.M{"$ifNull": bson.A{"$amount", int64(0)}},
-			int64(0),
-		},
-	}
-
-	return mongo.Pipeline{
+	pipeline := mongo.Pipeline{
 		{{Key: "$match", Value: matchValue}},
-		{{Key: "$project", Value: bson.D{
-			{Key: "amount", Value: bson.M{"$add": bson.A{nestedAmount, directAmount}}},
-		}}},
-		{{Key: "$group", Value: bson.D{
-			{Key: "_id", Value: nil},
-			{Key: "total", Value: bson.D{{Key: "$sum", Value: "$amount"}}},
-		}}},
 	}
+
+	groupStage := bson.D{{Key: "$group", Value: bson.D{
+		{Key: "_id", Value: nil},
+		{Key: "total", Value: bson.D{{Key: "$sum", Value: "$amount"}}},
+	}}}
+	// Billing.Amount is the authoritative total for a billing record. Avoid
+	// inspecting app_costs unless the caller needs an app-level filter.
+	if req.AppName == "" {
+		return append(pipeline, groupStage)
+	}
+
+	directAppTypes := bson.A{
+		resources.AppType[resources.AppStore],
+		resources.AppType[resources.LLMToken],
+	}
+	matchedNestedAmount := bson.M{
+		"$sum": bson.M{
+			"$map": bson.M{
+				"input": bson.M{
+					"$filter": bson.M{
+						"input": bson.M{"$ifNull": bson.A{"$app_costs", bson.A{}}},
+						"as":    "appCost",
+						"cond": bson.M{
+							"$eq": bson.A{"$$appCost.name", req.AppName},
+						},
+					},
+				},
+				"as": "appCost",
+				"in": "$$appCost.amount",
+			},
+		},
+	}
+	pipeline = append(
+		pipeline,
+		bson.D{{Key: "$project", Value: bson.D{
+			{Key: "amount", Value: bson.D{{Key: "$cond", Value: bson.A{
+				bson.D{{Key: "$in", Value: bson.A{"$app_type", directAppTypes}}},
+				bson.D{{Key: "$cond", Value: bson.A{
+					bson.D{{Key: "$eq", Value: bson.A{"$app_name", req.AppName}}},
+					"$amount",
+					int64(0),
+				}}},
+				matchedNestedAmount,
+			}}}},
+		}}},
+		bson.D{{Key: "$match", Value: bson.D{
+			{Key: "amount", Value: bson.D{{Key: "$gt", Value: int64(0)}}},
+		}}},
+		groupStage,
+	)
+	return pipeline
 }
 
 func (m *MongoDB) GetConsumptionAmount(req helper.ConsumptionRecordReq) (int64, error) {
