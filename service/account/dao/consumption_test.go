@@ -23,12 +23,17 @@ func consumptionRequest() helper.ConsumptionRecordReq {
 
 func TestBuildConsumptionAmountPipeline(t *testing.T) {
 	tests := []struct {
-		name    string
-		request helper.ConsumptionRecordReq
+		name       string
+		request    helper.ConsumptionRecordReq
+		stageCount int
+		projectAt  int
+		groupAt    int
 	}{
 		{
-			name:    "all consumption",
-			request: consumptionRequest(),
+			name:       "all consumption",
+			request:    consumptionRequest(),
+			stageCount: 2,
+			groupAt:    1,
 		},
 		{
 			name: "namespace and app filters",
@@ -39,28 +44,31 @@ func TestBuildConsumptionAmountPipeline(t *testing.T) {
 				req.AppName = "app-test"
 				return req
 			}(),
+			stageCount: 4,
+			projectAt:  1,
+			groupAt:    3,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			pipeline := buildConsumptionAmountPipeline(test.request)
-			if len(pipeline) != 3 {
-				t.Fatalf("pipeline stage count = %d, want 3", len(pipeline))
+			if len(pipeline) != test.stageCount {
+				t.Fatalf("pipeline stage count = %d, want %d", len(pipeline), test.stageCount)
 			}
 			if !hasConsumptionStage(pipeline[0], "$match") {
 				t.Fatal("pipeline does not start with $match")
 			}
-			if !hasConsumptionStage(pipeline[1], "$project") {
-				t.Fatal("pipeline does not project one amount per billing record")
+			if test.projectAt > 0 {
+				if !hasConsumptionStage(pipeline[test.projectAt], "$project") {
+					t.Fatal("pipeline does not project one amount per billing record")
+				}
+				if hasConsumptionStage(pipeline[test.projectAt], "$facet") ||
+					hasConsumptionStage(pipeline[test.projectAt], "$unwind") {
+					t.Fatal("pipeline should not use $facet or $unwind")
+				}
 			}
-			if hasConsumptionStage(pipeline[1], "$facet") {
-				t.Fatal("pipeline should not use $facet")
-			}
-			if hasConsumptionStage(pipeline[1], "$unwind") {
-				t.Fatal("pipeline should not use $unwind")
-			}
-			if !hasConsumptionStage(pipeline[2], "$group") {
+			if !hasConsumptionStage(pipeline[test.groupAt], "$group") {
 				t.Fatal("pipeline does not end with $group")
 			}
 		})
