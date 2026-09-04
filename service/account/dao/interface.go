@@ -2234,6 +2234,7 @@ func buildConsumptionAmountPipeline(req helper.ConsumptionRecordReq) mongo.Pipel
 	}
 
 	pipeline := mongo.Pipeline{
+		// Owner is part of the match so the total never includes another workspace.
 		{{Key: "$match", Value: matchValue}},
 	}
 
@@ -2242,15 +2243,21 @@ func buildConsumptionAmountPipeline(req helper.ConsumptionRecordReq) mongo.Pipel
 		{Key: "total", Value: bson.D{{Key: "$sum", Value: "$amount"}}},
 	}}}
 	// Billing.Amount is the authoritative total for a billing record. Avoid
-	// inspecting app_costs unless the caller needs an app-level filter.
+	// inspecting app_costs unless the caller needs an app-level filter; this
+	// keeps the common all-app query to just match and group stages.
 	if req.AppName == "" {
 		return append(pipeline, groupStage)
 	}
 
+	// Direct types store their billable amount on the parent record. The
+	// app_costs array is only a breakdown for these records and must not be
+	// added to amount again.
 	directAppTypes := bson.A{
 		resources.AppType[resources.AppStore],
 		resources.AppType[resources.LLMToken],
 	}
+	// Ordinary resource types are billed through app_costs when an app name is
+	// requested, so only entries with the requested name contribute to the sum.
 	matchedNestedAmount := bson.M{
 		"$sum": bson.M{
 			"$map": bson.M{
@@ -2270,6 +2277,7 @@ func buildConsumptionAmountPipeline(req helper.ConsumptionRecordReq) mongo.Pipel
 	}
 	pipeline = append(
 		pipeline,
+		// Select exactly one amount source per billing record to avoid double counting.
 		bson.D{{Key: "$project", Value: bson.D{
 			{Key: "amount", Value: bson.D{{Key: "$cond", Value: bson.A{
 				bson.D{{Key: "$in", Value: bson.A{"$app_type", directAppTypes}}},
@@ -2281,6 +2289,8 @@ func buildConsumptionAmountPipeline(req helper.ConsumptionRecordReq) mongo.Pipel
 				matchedNestedAmount,
 			}}}},
 		}}},
+		// The projection emits zero for non-matching app records; discard them
+		// before the final total is calculated.
 		bson.D{{Key: "$match", Value: bson.D{
 			{Key: "amount", Value: bson.D{{Key: "$gt", Value: int64(0)}}},
 		}}},
