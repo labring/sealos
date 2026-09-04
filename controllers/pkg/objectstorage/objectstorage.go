@@ -306,6 +306,11 @@ func QueryUserUsage(client *MetricsClient) (Metrics, error) {
 			intValue := int64(floatValue)
 			if bucket := promMetrics.Labels["bucket"]; bucket != "" {
 				user := GetUserWithBucket(bucket)
+				if user == "" {
+					// Non-metered bucket (no <user>- prefix): skip so its
+					// usage is not merged under an empty-string user key.
+					continue
+				}
 				metricData, exists := obMetrics[user]
 				if !exists {
 					metricData = MetricData{

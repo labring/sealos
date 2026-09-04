@@ -25,7 +25,9 @@ import (
 
 	"github.com/labring/sealos/controllers/pkg/resources"
 	"github.com/labring/sealos/controllers/pkg/types"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 var testTime = time.Date(2023, time.May, 9, 5, 0, 0, 0, time.UTC)
@@ -639,7 +641,12 @@ func TestGetTimeObjBucketExternalTraffic(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer func() {
-		_, _ = coll.DeleteMany(ctx, bson.M{"bucket": bson.M{"$in": bson.A{"abc12345-app", "zz999999-app"}}})
+		// Scope the cleanup to the seeded minutes (not bare bucket names) so a
+		// concurrent test run using the same buckets never loses its own rows.
+		_, _ = coll.DeleteMany(ctx, bson.M{
+			"bucket": bson.M{"$in": bson.A{"abc12345-app", "zz999999-app"}},
+			"minute": bson.M{"$gte": start, "$lte": end},
+		})
 	}()
 
 	got, err := m.GetTimeObjBucketExternalTraffic(start, end)

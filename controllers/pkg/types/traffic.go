@@ -32,7 +32,7 @@ type ObjectStorageTraffic struct {
 }
 
 // BucketExternalTraffic is one bucket's external-egress byte total for a time
-// window, aggregated from the objectstorage audit database (usage_hourly,
+// window, aggregated from the objectstorage audit database (usage_minutes,
 // direction=external). It is the billing source for object storage traffic.
 type BucketExternalTraffic struct {
 	Bucket string `json:"bucket" bson:"bucket"`

@@ -23,6 +23,15 @@ import (
 )
 
 func TestGetUserObjectStorageFlow(t *testing.T) {
+	requireObjectStorageTest(t,
+		"MINIO_ENDPOINT",
+		"MINIO_ACCESS_KEY",
+		"MINIO_SECRET_KEY",
+		"PROM_URL",
+		"MINIO_USERNAME",
+		"MINIO_INSTANCE",
+	)
+
 	cli, err := NewOSClient(
 		os.Getenv("MINIO_ENDPOINT"),
 		os.Getenv("MINIO_ACCESS_KEY"),
@@ -60,6 +69,12 @@ func ConvertBytes(bytes int64) string {
 }
 
 func TestQueryUserUsage(t *testing.T) {
+	requireObjectStorageTest(t,
+		"MINIO_ENDPOINT",
+		"MINIO_ACCESS_KEY",
+		"MINIO_SECRET_KEY",
+	)
+
 	obClient, err := NewMetricsClient(
 		"objectstorageapi.192.168.0.55.nip.io",
 		"username",
@@ -79,6 +94,13 @@ func TestQueryUserUsage(t *testing.T) {
 }
 
 func TestQueryUserTraffic(t *testing.T) {
+	requireObjectStorageTest(t,
+		"MINIO_ENDPOINT",
+		"MINIO_ACCESS_KEY",
+		"MINIO_SECRET_KEY",
+		"PROM_URL",
+	)
+
 	obClient, err := NewMetricsClient(
 		"objectstorageapi.192.168.0.55.nip.io",
 		"username",
@@ -98,6 +120,18 @@ func TestQueryUserTraffic(t *testing.T) {
 		fmt.Println("usage:", metric.Usage)
 		fmt.Println("sent:", metric.Sent)
 		fmt.Println("received:", metric.Received)
+	}
+}
+
+func requireObjectStorageTest(t *testing.T, envNames ...string) {
+	t.Helper()
+	if os.Getenv("RUN_OBJECTSTORAGE_TESTS") != "true" {
+		t.Skip("set RUN_OBJECTSTORAGE_TESTS=true to run object storage tests")
+	}
+	for _, name := range envNames {
+		if os.Getenv(name) == "" {
+			t.Skipf("requires %s", name)
+		}
 	}
 }
 
