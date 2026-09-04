@@ -2213,6 +2213,47 @@ func (m *Account) Disconnect(ctx context.Context) error {
 }
 
 func buildConsumptionAmountPipeline(req helper.ConsumptionRecordReq) mongo.Pipeline {
+	// Example for a request with Owner="owner-123" and no AppName:
+	//
+	// db.billing.aggregate([
+	//   { $match: {
+	//     owner: "owner-123",
+	//     status: 1,
+	//     time: {
+	//       $gte: ISODate("2026-01-01T00:00:00Z"),
+	//       $lte: ISODate("2026-01-02T00:00:00Z")
+	//     }
+	//   } },
+	//   { $group: { _id: null, total: { $sum: "$amount" } } }
+	// ])
+	//
+	// Example for Owner="owner-123", AppType="APP" (app_type: 2),
+	// and AppName="app-a":
+	//
+	// db.billing.aggregate([
+	//   { $match: {
+	//     owner: "owner-123",
+	//     status: 1,
+	//     app_type: 2,
+	//     time: {
+	//       $gte: ISODate("2026-01-01T00:00:00Z"),
+	//       $lte: ISODate("2026-01-02T00:00:00Z")
+	//     }
+	//   } },
+	//   { $project: {
+	//     amount: { $sum: { $map: {
+	//       input: { $filter: {
+	//         input: { $ifNull: ["$app_costs", []] },
+	//         as: "appCost",
+	//         cond: { $eq: ["$$appCost.name", "app-a"] }
+	//       } },
+	//       as: "appCost",
+	//       in: "$$appCost.amount"
+	//     } } }
+	//   } },
+	//   { $match: { amount: { $gt: 0 } } },
+	//   { $group: { _id: null, total: { $sum: "$amount" } } }
+	// ])
 	appType := strings.ToUpper(strings.TrimSpace(req.AppType))
 	timeMatchValue := bson.D{
 		primitive.E{Key: "$gte", Value: req.StartTime},
