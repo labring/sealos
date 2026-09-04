@@ -18,6 +18,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"net/http"
 	"os"
@@ -75,6 +76,38 @@ func init() {
 	utilruntime.Must(notificationv1.AddToScheme(scheme))
 	// utilruntime.Must(kbv1alpha1.SchemeBuilder.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
+}
+
+func beginStartupStage(name string) func(error) {
+	startedAt := time.Now()
+	setupLog.Info("startup stage started", "stage", name)
+	return func(err error) {
+		duration := time.Since(startedAt)
+		if err != nil {
+			setupLog.Error(err,
+				"startup stage failed",
+				"stage",
+				name,
+				"duration_ms",
+				duration.Milliseconds(),
+			)
+			return
+		}
+		setupLog.Info(
+			"startup stage completed",
+			"stage",
+			name,
+			"duration_ms",
+			duration.Milliseconds(),
+		)
+	}
+}
+
+func measureStartupStage(name string, fn func() error) error {
+	finish := beginStartupStage(name)
+	err := fn()
+	finish(err)
+	return err
 }
 
 func main() {
@@ -158,32 +191,44 @@ func main() {
 	//	setupLog.Error(err, "unable to load .env file")
 	//}
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme: scheme,
-		Cache:  cache.Options(),
-		Client: client.Options{Cache: &client.CacheOptions{DisableFor: cache.UncachedObjects()}},
-		Metrics: metricsserver.Options{
-			BindAddress: metricsAddr,
-		},
-		// Probes are served by the standalone server started before the expensive
-		// dependency and controller initialization below.
-		HealthProbeBindAddress: "0",
-		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "a63686c3.sealos.io",
-		LeaseDuration:          &leaseDuration,
-		RenewDeadline:          &renewDeadline,
-		RetryPeriod:            &retryPeriod,
-		Controller: ctrlconfig.Controller{
-			UsePriorityQueue: ptr.To(true),
-		},
+	var mgr ctrl.Manager
+	err := measureStartupStage("create manager", func() error {
+		var stageErr error
+		mgr, stageErr = ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+			Scheme: scheme,
+			Cache:  cache.Options(),
+			Client: client.Options{
+				Cache: &client.CacheOptions{DisableFor: cache.UncachedObjects()},
+			},
+			Metrics: metricsserver.Options{
+				BindAddress: metricsAddr,
+			},
+			// Probes are served by the standalone server started before the expensive
+			// dependency and controller initialization below.
+			HealthProbeBindAddress: "0",
+			LeaderElection:         enableLeaderElection,
+			LeaderElectionID:       "a63686c3.sealos.io",
+			LeaseDuration:          &leaseDuration,
+			RenewDeadline:          &renewDeadline,
+			RetryPeriod:            &retryPeriod,
+			Controller: ctrlconfig.Controller{
+				UsePriorityQueue: ptr.To(true),
+			},
+		})
+		return stageErr
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
-	watchClient, err := client.NewWithWatch(mgr.GetConfig(), client.Options{
-		Scheme: mgr.GetScheme(),
-		Mapper: mgr.GetRESTMapper(),
+	var watchClient client.WithWatch
+	err = measureStartupStage("create Kubernetes watch client", func() error {
+		var stageErr error
+		watchClient, stageErr = client.NewWithWatch(mgr.GetConfig(), client.Options{
+			Scheme: mgr.GetScheme(),
+			Mapper: mgr.GetRESTMapper(),
+		})
+		return stageErr
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to get watch client")
@@ -194,7 +239,12 @@ func main() {
 		RateLimiter:             utils.GetRateLimiter(rateLimiterOptions),
 	}
 	dbCtx := context.Background()
-	dbClient, err := mongo.NewMongoInterface(dbCtx, os.Getenv(database.MongoURI))
+	var dbClient database.Interface
+	err = measureStartupStage("connect account MongoDB", func() error {
+		var stageErr error
+		dbClient, stageErr = mongo.NewMongoInterface(dbCtx, os.Getenv(database.MongoURI))
+		return stageErr
+	})
 	if err != nil {
 		setupLog.Error(err, "unable to connect to mongo")
 		os.Exit(1)
@@ -208,7 +258,11 @@ func main() {
 	var cvmDBClient database.Interface
 	cvmURI := os.Getenv(database.CVMMongoURI)
 	if cvmURI != "" {
-		cvmDBClient, err = mongo.NewMongoInterface(dbCtx, cvmURI)
+		err = measureStartupStage("connect CVM MongoDB", func() error {
+			var stageErr error
+			cvmDBClient, stageErr = mongo.NewMongoInterface(dbCtx, cvmURI)
+			return stageErr
+		})
 		if err != nil {
 			setupLog.Error(err, "unable to connect to mongo")
 			os.Exit(1)
@@ -222,10 +276,15 @@ func main() {
 			}
 		}
 	}()
-	v2Account, err := cockroach.NewCockRoach(
-		os.Getenv(database.GlobalCockroachURI),
-		os.Getenv(database.LocalCockroachURI),
-	)
+	var v2Account *cockroach.Cockroach
+	err = measureStartupStage("connect CockroachDB", func() error {
+		var stageErr error
+		v2Account, stageErr = cockroach.NewCockRoach(
+			os.Getenv(database.GlobalCockroachURI),
+			os.Getenv(database.LocalCockroachURI),
+		)
+		return stageErr
+	})
 	if err != nil {
 		setupLog.Error(err, "unable to connect to cockroach")
 		os.Exit(1)
@@ -236,10 +295,13 @@ func main() {
 			setupLog.Error(err, "unable to disconnect from cockroach")
 		}
 	}()
-	if err = database.InitRegionEnv(
-		v2Account.GetGlobalDB(),
-		v2Account.GetLocalRegion().Domain,
-	); err != nil {
+	err = measureStartupStage("initialize region environment", func() error {
+		return database.InitRegionEnv(
+			v2Account.GetGlobalDB(),
+			v2Account.GetLocalRegion().Domain,
+		)
+	})
+	if err != nil {
 		setupLog.Error(err, "unable to init region env")
 		os.Exit(1)
 	}
@@ -266,7 +328,9 @@ func main() {
 		CVMDBClient:                 cvmDBClient,
 		SkipExpiredUserTimeDuration: skipExpiredUserTimeDuration,
 	}
+	finishRechargeConfig := beginStartupStage("parse recharge config")
 	activities, discountSteps, discountRatios, err := controllers.RawParseRechargeConfig()
+	finishRechargeConfig(err)
 	if err != nil {
 		setupLog.Error(err, "parse recharge config failed")
 	} else {
@@ -289,7 +353,9 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", controller)
 		os.Exit(1)
 	}
-	if err = accountReconciler.SetupWithManager(mgr, rateOpts); err != nil {
+	if err = measureStartupStage("setup account controller", func() error {
+		return accountReconciler.SetupWithManager(mgr, rateOpts)
+	}); err != nil {
 		setupManagerError(err, "Account")
 	}
 	debtUserMap := maps.NewConcurrentMap()
@@ -302,14 +368,18 @@ func main() {
 		InitUserAccountFunc:         accountReconciler.InitUserAccountFunc,
 		SkipExpiredUserTimeDuration: skipExpiredUserTimeDuration,
 	}
+	finishDebtInit := beginStartupStage("initialize debt controller")
 	debtController.Init()
+	finishDebtInit(nil)
 
 	// Setup OperationRequest monitor controller to trigger debt status refresh on owner transfers
 	operationRequestMonitor := &controllers.OperationRequestMonitorReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}
-	if err = operationRequestMonitor.SetupWithManager(mgr); err != nil {
+	if err = measureStartupStage("setup operation request monitor", func() error {
+		return operationRequestMonitor.SetupWithManager(mgr)
+	}); err != nil {
 		setupManagerError(err, "OperationRequestMonitor")
 	}
 
@@ -325,7 +395,9 @@ func main() {
 	//	setupManagerError(err, "Debt")
 	//}
 
-	if err = cache.SetupCache(mgr); err != nil {
+	if err = measureStartupStage("setup cache indexes", func() error {
+		return cache.SetupCache(mgr)
+	}); err != nil {
 		setupLog.Error(err, "unable to cache controller")
 		os.Exit(1)
 	}
@@ -357,7 +429,10 @@ func main() {
 		}()
 	}
 
-	err = dbClient.InitDefaultPropertyTypeLS()
+	err = measureStartupStage(
+		"load property types from MongoDB",
+		dbClient.InitDefaultPropertyTypeLS,
+	)
 	if err != nil {
 		setupLog.Error(err, "unable to get property type")
 		os.Exit(1)
@@ -370,47 +445,68 @@ func main() {
 		AccountV2:   v2Account,
 		DebtUserMap: debtUserMap,
 	}
-	if err = billingReconciler.Init(); err != nil {
+	if err = measureStartupStage(
+		"initialize billing reconciler and indexes",
+		billingReconciler.Init,
+	); err != nil {
 		setupLog.Error(err, "unable to init billing reconciler")
 		os.Exit(1)
 	}
 	billingTaskRunner := &controllers.BillingTaskRunner{
 		BillingReconciler: &billingReconciler,
 	}
-	if err := mgr.Add(billingTaskRunner); err != nil {
+	if err := measureStartupStage("add billing task runner", func() error {
+		return mgr.Add(billingTaskRunner)
+	}); err != nil {
 		setupLog.Error(err, "unable to add billing task runner")
 		os.Exit(1)
 	}
 	if env.GetEnvWithDefault("SUPPORT_DEBT", _true) == _true {
-		if err := mgr.Add(debtController); err != nil {
+		if err := measureStartupStage("add debt controller", func() error {
+			return mgr.Add(debtController)
+		}); err != nil {
 			setupLog.Error(err, "unable to add debt controller")
 			os.Exit(1)
 		}
 	}
 
-	if err = (&controllers.PodReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
+	if err = measureStartupStage("setup pod controller", func() error {
+		return (&controllers.PodReconciler{
+			Client: mgr.GetClient(),
+			Scheme: mgr.GetScheme(),
+		}).SetupWithManager(mgr)
+	}); err != nil {
 		setupManagerError(err, "Pod")
 	}
-	if err = (&controllers.NamespaceReconciler{
-		Client: watchClient,
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr, rateOpts, deleteResourceConcurrent, deleteBackupConcurrent); err != nil {
+	if err = measureStartupStage("setup namespace controller", func() error {
+		return (&controllers.NamespaceReconciler{
+			Client: watchClient,
+			Scheme: mgr.GetScheme(),
+		}).SetupWithManager(mgr, rateOpts, deleteResourceConcurrent, deleteBackupConcurrent)
+	}); err != nil {
 		setupManagerError(err, "Namespace")
 	}
 
-	if err = (&controllers.PaymentReconciler{
-		Account:        accountReconciler,
-		DebtReconciler: debtController,
-		WatchClient:    watchClient,
-		Client:         mgr.GetClient(),
-		Scheme:         mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
+	if err = measureStartupStage("setup payment controller", func() error {
+		return (&controllers.PaymentReconciler{
+			Account:        accountReconciler,
+			DebtReconciler: debtController,
+			WatchClient:    watchClient,
+			Client:         mgr.GetClient(),
+			Scheme:         mgr.GetScheme(),
+		}).SetupWithManager(mgr)
+	}); err != nil {
 		setupManagerError(err, "Payment")
 	}
-	trafficDBClient, err := mongo.NewMongoInterface(dbCtx, os.Getenv(database.TrafficMongoURI))
+	var trafficDBClient database.Interface
+	err = measureStartupStage("connect traffic MongoDB", func() error {
+		var stageErr error
+		trafficDBClient, stageErr = mongo.NewMongoInterface(
+			dbCtx,
+			os.Getenv(database.TrafficMongoURI),
+		)
+		return stageErr
+	})
 	if err != nil {
 		setupLog.Error(err, "unable to connect to traffic mongo")
 		os.Exit(1)
@@ -433,15 +529,24 @@ func main() {
 
 	//+kubebuilder:scaffold:builder
 
-	if err := mgr.Add(readinessRunnable{
-		RunnableFunc: manager.RunnableFunc(func(ctx context.Context) error {
-			if !mgr.GetCache().WaitForCacheSync(ctx) {
+	if err := measureStartupStage("register readiness marker", func() error {
+		return mgr.Add(readinessRunnable{
+			RunnableFunc: manager.RunnableFunc(func(ctx context.Context) error {
+				finishCacheSync := beginStartupStage("manager cache sync")
+				if !mgr.GetCache().WaitForCacheSync(ctx) {
+					cacheSyncErr := ctx.Err()
+					if cacheSyncErr == nil {
+						cacheSyncErr = errors.New("cache synchronization failed")
+					}
+					finishCacheSync(cacheSyncErr)
+					return nil
+				}
+				finishCacheSync(nil)
+				probeState.markReady()
+				<-ctx.Done()
 				return nil
-			}
-			probeState.markReady()
-			<-ctx.Done()
-			return nil
-		}),
+			}),
+		})
 	}); err != nil {
 		setupLog.Error(err, "unable to set up readiness marker")
 		os.Exit(1)
@@ -453,7 +558,9 @@ func main() {
 			Logger:            ctrl.Log.WithName("CVMTaskRunner"),
 			AccountReconciler: accountReconciler,
 		}
-		if err := mgr.Add(cvmTaskRunner); err != nil {
+		if err := measureStartupStage("add CVM task runner", func() error {
+			return mgr.Add(cvmTaskRunner)
+		}); err != nil {
 			setupLog.Error(err, "unable to add cvm task runner")
 			os.Exit(1)
 		}
