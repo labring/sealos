@@ -44,6 +44,10 @@ fmt: ## Run go fmt against code.
 vet: ## Run go vet against code.
 	go vet ./...
 
+.PHONY: test
+test: ## Run tests.
+	go test -race ./... -count=1
+
 ##@ Build
 
 .PHONY: build

@@ -22,17 +22,9 @@ import (
 	"github.com/labring/sealos/controllers/pkg/types"
 )
 
-type TestConfig struct {
-	RegionID      string
-	V2GlobalDBURI string
-	V2LocalDBURI  string
-}
-
-var testConfig = TestConfig{}
-
 func TestCockroach_GetUserOauthProvider(t *testing.T) {
-	t.Setenv("LOCAL_REGION", testConfig.RegionID)
-	ck, err := NewCockRoach(testConfig.V2GlobalDBURI, testConfig.V2LocalDBURI)
+	globalURI, localURI := requireCockroachTest(t)
+	ck, err := NewCockRoach(globalURI, localURI)
 	if err != nil {
 		t.Errorf("NewCockRoach() error = %v", err)
 		return
@@ -50,7 +42,8 @@ func TestCockroach_GetUserOauthProvider(t *testing.T) {
 }
 
 func TestCockroach_GetAccountWithWorkspace(t *testing.T) {
-	ck, err := NewCockRoach(os.Getenv("GLOBAL_COCKROACH_URI"), os.Getenv("LOCAL_COCKROACH_URI"))
+	globalURI, localURI := requireCockroachTest(t)
+	ck, err := NewCockRoach(globalURI, localURI)
 	if err != nil {
 		t.Errorf("NewCockRoach() error = %v", err)
 		return
@@ -66,8 +59,8 @@ func TestCockroach_GetAccountWithWorkspace(t *testing.T) {
 }
 
 func TestCockroach_InitTables(t *testing.T) {
-	t.Setenv("LOCAL_REGION", "")
-	ck, err := NewCockRoach("", "")
+	globalURI, localURI := requireCockroachTest(t)
+	ck, err := NewCockRoach(globalURI, localURI)
 	if err != nil {
 		t.Errorf("NewCockRoach() error = %v", err)
 		return
@@ -117,8 +110,8 @@ func TestCockroach_InitTables(t *testing.T) {
 }
 
 func TestCockroach_CreateCorporate(t *testing.T) {
-	t.Setenv("LOCAL_REGION", "")
-	ck, err := NewCockRoach("/", "")
+	globalURI, localURI := requireCockroachTest(t)
+	ck, err := NewCockRoach(globalURI, localURI)
 	if err != nil {
 		t.Errorf("NewCockRoach() error = %v", err)
 		return
@@ -137,4 +130,17 @@ func TestCockroach_CreateCorporate(t *testing.T) {
 		t.Errorf("CreateCorporate() error = %v", err)
 	}
 	t.Logf("cor: %+v", cor)
+}
+
+func requireCockroachTest(t *testing.T) (string, string) {
+	t.Helper()
+	if os.Getenv("RUN_COCKROACH_TESTS") != "true" {
+		t.Skip("set RUN_COCKROACH_TESTS=true to run CockroachDB tests")
+	}
+	for _, name := range []string{"GLOBAL_COCKROACH_URI", "LOCAL_COCKROACH_URI", "LOCAL_REGION"} {
+		if os.Getenv(name) == "" {
+			t.Skipf("requires %s", name)
+		}
+	}
+	return os.Getenv("GLOBAL_COCKROACH_URI"), os.Getenv("LOCAL_COCKROACH_URI")
 }
