@@ -436,11 +436,17 @@ func anonymizedConsumptionBillingFixtures(startTime, endTime time.Time) []any {
 			Amount:    10000, Owner: "other-owner", Status: resources.Settled,
 		},
 		resources.Billing{
-			Time: endTime.Add(time.Hour), OrderID: "billing-outside-range", Type: resources.Consumption,
+			Time: endTime.Add(
+				time.Hour,
+			),
+			OrderID:   "billing-outside-range",
+			Type:      resources.Consumption,
 			Namespace: "workspace-consumption-test-namespace",
 			AppType:   resources.AppType[resources.APP],
 			AppCosts:  []resources.AppCost{{Name: "ignored-outside-range", Amount: 11000}},
-			Amount:    11000, Owner: workspaceConsumptionTestOwner, Status: resources.Settled,
+			Amount:    11000,
+			Owner:     workspaceConsumptionTestOwner,
+			Status:    resources.Settled,
 		},
 	}
 }
