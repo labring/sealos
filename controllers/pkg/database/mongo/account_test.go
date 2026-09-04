@@ -25,7 +25,9 @@ import (
 
 	"github.com/labring/sealos/controllers/pkg/resources"
 	"github.com/labring/sealos/controllers/pkg/types"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 var testTime = time.Date(2023, time.May, 9, 5, 0, 0, 0, time.UTC)
@@ -576,4 +578,91 @@ func Test_mongoDB_GetOwnersWithoutRecentUpdates(t *testing.T) {
 		t.Fatalf("failed to get owners without recent updates: %v", err)
 	}
 	t.Logf("get owners without recent updates success: %v", owners)
+}
+
+func TestGetTimeObjBucketExternalTraffic(t *testing.T) {
+	// An init() in this file unconditionally clears MONGODB_URI, so this test
+	// uses its own variable to receive the connection string.
+	uri := os.Getenv("TEST_MONGODB_URI")
+	if uri == "" {
+		t.Skip("TEST_MONGODB_URI not set, skip mongo integration test")
+	}
+	// The test seeds and deletes rows in the shared cluster's audit database;
+	// require an explicit second opt-in before writing anything.
+	if os.Getenv("TEST_MONGODB_ALLOW_WRITE") != "true" {
+		t.Skip("TEST_MONGODB_ALLOW_WRITE not set, refusing to write to a shared cluster")
+	}
+	ctx := context.Background()
+	m, err := NewMongoInterface(ctx, uri)
+	if err != nil {
+		t.Fatal(err)
+	}
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.Disconnect(ctx)
+	start := time.Date(2026, time.August, 29, 10, 0, 0, 0, time.UTC)
+	end := start.Add(2 * time.Hour)
+	coll := client.Database("objectstorage-audit").Collection("usage_minutes")
+	minuteDoc := func(minute time.Time, bucket, user, direction string, tx int64) interface{} {
+		return bson.M{"bucket": bucket, "direction": direction, "minute": minute,
+			"tx": tx, "rx": int64(0), "requests": 1, "user": user}
+	}
+	docs := []interface{}{
+		minuteDoc(start, "abc12345-app", "abc12345", "external", 3<<20),
+		minuteDoc(start.Add(30*time.Minute), "abc12345-app", "abc12345", "external", 1<<20),
+		minuteDoc(start.Add(time.Hour), "abc12345-app", "abc12345", "external", 1<<20),
+		minuteDoc(end, "abc12345-app", "abc12345", "external", 7<<20),
+		minuteDoc(start, "abc12345-app", "abc12345", "internal", 9<<20),
+		minuteDoc(start.Add(15*time.Minute), "zz999999-app", "zz999999", "external", 2<<20),
+	}
+	_, err = coll.InsertMany(ctx, docs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		// Scope the cleanup to the seeded minutes (not bare bucket names) so a
+		// concurrent test run using the same buckets never loses its own rows.
+		_, _ = coll.DeleteMany(ctx, bson.M{
+			"bucket": bson.M{"$in": bson.A{"abc12345-app", "zz999999-app"}},
+			"minute": bson.M{"$gte": start, "$lte": end},
+		})
+	}()
+
+	got, err := m.GetTimeObjBucketExternalTraffic(start, end)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// usage_minutes buckets are [minute, minute+1); the query window maps to
+	// [start, end) = [10:00, 12:00): the 10:00 and 10:30 external rows
+	// (3Mi + 1Mi) and the 11:00 external row (1Mi) are included; the 12:00
+	// row is excluded (end-exclusive); the 10:00 internal row is excluded by
+	// direction. Totals: abc=5Mi, zz=2Mi.
+	want := map[string]int64{"abc12345-app": 5 << 20, "zz999999-app": 2 << 20}
+	sum := map[string]int64{}
+	for _, r := range got {
+		sum[r.Bucket] += r.Tx
+	}
+	for b, w := range want {
+		if sum[b] != w {
+			t.Errorf("bucket %q tx = %d, want %d", b, sum[b], w)
+		}
+	}
+
+	// A mid-hour window start (restart scenario) is clamped down to the hour,
+	// so it must yield the same totals as the hour-aligned window.
+	got2, err := m.GetTimeObjBucketExternalTraffic(start.Add(30*time.Minute), end)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sum2 := map[string]int64{}
+	for _, r := range got2 {
+		sum2[r.Bucket] += r.Tx
+	}
+	for b, w := range want {
+		if sum2[b] != w {
+			t.Errorf("clamped bucket %q tx = %d, want %d", b, sum2[b], w)
+		}
+	}
 }

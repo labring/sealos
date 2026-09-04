@@ -305,7 +305,12 @@ func QueryUserUsage(client *MetricsClient) (Metrics, error) {
 			}
 			intValue := int64(floatValue)
 			if bucket := promMetrics.Labels["bucket"]; bucket != "" {
-				user := getUserWithBucket(bucket)
+				user := GetUserWithBucket(bucket)
+				if user == "" {
+					// Non-metered bucket (no <user>- prefix): skip so its
+					// usage is not merged under an empty-string user key.
+					continue
+				}
 				metricData, exists := obMetrics[user]
 				if !exists {
 					metricData = MetricData{
@@ -349,7 +354,7 @@ func QueryUserUsageAndTraffic(client *MetricsClient) (Metrics, error) {
 			intValue := int64(floatValue)
 			if bucket := promMetrics.Labels["bucket"]; bucket != "" {
 				// fmt.Println("debug info", "type:", bucketMetric.Name, "promMetrics:", promMetrics)
-				user := getUserWithBucket(bucket)
+				user := GetUserWithBucket(bucket)
 				if user == "" {
 					// fmt.Println("debug info", "false bucket:", bucket)
 					continue
@@ -429,9 +434,16 @@ func isUsageAndTrafficBytesTargetMetric(name string) bool {
 	return false
 }
 
-func getUserWithBucket(bucket string) string {
-	re := regexp.MustCompile(`^([a-zA-Z0-9]{8})-(.*)$`)
-	matches := re.FindStringSubmatch(bucket)
+// meteredUserRe matches buckets named "<username>-<suffix>" where the
+// username is exactly 8 alphanumeric characters.
+var meteredUserRe = regexp.MustCompile(`^([a-zA-Z0-9]{8})-(.*)$`)
+
+// GetUserWithBucket extracts the metered username from a bucket name
+// "<username>-<suffix>". Only 8-character alphanumeric usernames match,
+// mirroring the platform metered-user convention (e.g. "admin" is not
+// metered). Returns "" for non-metered buckets.
+func GetUserWithBucket(bucket string) string {
+	matches := meteredUserRe.FindStringSubmatch(bucket)
 	if len(matches) == 3 {
 		return matches[1]
 	}

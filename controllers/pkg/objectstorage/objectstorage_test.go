@@ -100,3 +100,21 @@ func TestQueryUserTraffic(t *testing.T) {
 		fmt.Println("received:", metric.Received)
 	}
 }
+
+func TestGetUserWithBucket(t *testing.T) {
+	cases := []struct {
+		bucket string
+		want   string
+	}{
+		{"f5twmjcs-evomix", "f5twmjcs"},
+		{"admin-111", ""},
+		{"nodash", ""},
+		{"abc12345-x-y", "abc12345"},
+		{"toolongusername-x", ""},
+	}
+	for _, c := range cases {
+		if got := GetUserWithBucket(c.bucket); got != c.want {
+			t.Errorf("GetUserWithBucket(%q) = %q, want %q", c.bucket, got, c.want)
+		}
+	}
+}
