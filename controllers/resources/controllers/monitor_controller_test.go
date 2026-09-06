@@ -51,11 +51,17 @@ func TestMonitorPodResourceUsageHandlesOptionalStartTime(t *testing.T) {
 			}
 			pod := &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{Name: "pod-a", Namespace: "ns-a"},
-				Spec: corev1.PodSpec{NodeName: tt.node, Containers: []corev1.Container{{
-					Name: "app", Resources: corev1.ResourceRequirements{Requests: corev1.ResourceList{
-						corev1.ResourceCPU: resource.MustParse("1"),
+				Spec: corev1.PodSpec{
+					NodeName: tt.node,
+					Containers: []corev1.Container{{
+						Name: "app",
+						Resources: corev1.ResourceRequirements{
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU: resource.MustParse("1"),
+							},
+						},
 					}},
-				}}},
+				},
 				Status: corev1.PodStatus{Phase: tt.phase, StartTime: tt.start},
 			}
 			r := &MonitorReconciler{
