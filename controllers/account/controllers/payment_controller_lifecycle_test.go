@@ -33,11 +33,19 @@ type paymentLifecycleClient struct {
 	listFunc  func(context.Context) error
 }
 
-func (c *paymentLifecycleClient) Watch(ctx context.Context, _ client.ObjectList, _ ...client.ListOption) (watch.Interface, error) {
+func (c *paymentLifecycleClient) Watch(
+	ctx context.Context,
+	_ client.ObjectList,
+	_ ...client.ListOption,
+) (watch.Interface, error) {
 	return c.watchFunc(ctx)
 }
 
-func (c *paymentLifecycleClient) List(ctx context.Context, _ client.ObjectList, _ ...client.ListOption) error {
+func (c *paymentLifecycleClient) List(
+	ctx context.Context,
+	_ client.ObjectList,
+	_ ...client.ListOption,
+) error {
 	return c.listFunc(ctx)
 }
 
@@ -74,12 +82,14 @@ func TestPaymentWatchClosesOnEveryReturn(t *testing.T) {
 			if tt.cancel {
 				cancel()
 			}
-			cl := &paymentLifecycleClient{watchFunc: func(got context.Context) (watch.Interface, error) {
-				if got != ctx {
-					t.Error("watch did not receive the caller context")
-				}
-				return stream, nil
-			}}
+			cl := &paymentLifecycleClient{
+				watchFunc: func(got context.Context) (watch.Interface, error) {
+					if got != ctx {
+						t.Error("watch did not receive the caller context")
+					}
+					return stream, nil
+				},
+			}
 			r := &PaymentReconciler{WatchClient: cl}
 			errs := r.reconcileCreatePayments(ctx)
 			if (len(errs) != 0) != tt.wantErr {
