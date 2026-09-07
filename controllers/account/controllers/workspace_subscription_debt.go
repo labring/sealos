@@ -3,7 +3,6 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
@@ -98,7 +97,7 @@ func (wdp *WorkspaceSubscriptionDebtProcessor) Start(ctx context.Context) error 
 			}
 			count, err := wdp.processExpiredWorkspaces(ctx)
 			if err != nil {
-				log.Printf("Failed to process expired workspace subscriptions: %v", err)
+				wdp.Logger.Error(err, "failed to process expired workspace subscriptions")
 			}
 
 			// 动态调整检查间隔
