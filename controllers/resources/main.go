@@ -18,6 +18,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -164,7 +165,7 @@ func runMonitor(ctx context.Context, mgr ctrl.Manager) error {
 		if ctx.Err() != nil {
 			return nil
 		}
-		return fmt.Errorf("resource cache sync did not complete")
+		return errors.New("resource cache sync did not complete")
 	}
 	if ctx.Err() != nil {
 		return nil
