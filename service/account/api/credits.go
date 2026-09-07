@@ -66,26 +66,22 @@ func getCreditsInfo(userUID uuid.UUID) (any, error) {
 		wg           sync.WaitGroup
 		errChan      = make(chan error, 2)
 	)
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		// start := time.Now()
 		subscription, err = dao.DBClient.GetSubscription(&types.UserQueryOpts{UID: userUID})
 		// logrus.Printf("[DB] GetSubscription took %v", time.Since(start))
 		if err != nil {
 			errChan <- fmt.Errorf("failed to get subscription info: %w", err)
 		}
-	}()
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	})
+	wg.Go(func() {
 		// start := time.Now()
 		account, err = dao.DBClient.GetAccount(types.UserQueryOpts{UID: userUID})
 		if err != nil {
 			errChan <- fmt.Errorf("failed to get account: %w", err)
 		}
 		// logrus.Printf("[DB] GetAccount took %v", time.Since(start))
-	}()
+	})
 
 	wg.Wait()
 	close(errChan)
