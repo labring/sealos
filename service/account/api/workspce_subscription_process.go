@@ -38,7 +38,9 @@ func NewWorkspaceSubscriptionProcessor() *WorkspaceSubscriptionProcessor {
 
 // Start 开始监听和处理工作空间订阅事务
 func (wsp *WorkspaceSubscriptionProcessor) Start(ctx context.Context) {
-	wsp.wg.Go(func() {
+	wsp.wg.Add(1)
+	go func() {
+		defer wsp.wg.Done()
 		ticker := time.NewTicker(wsp.pollInterval)
 		defer ticker.Stop()
 		idleCount := 0
@@ -65,7 +67,7 @@ func (wsp *WorkspaceSubscriptionProcessor) Start(ctx context.Context) {
 				}
 			}
 		}
-	})
+	}()
 }
 
 // Stop 停止处理器
