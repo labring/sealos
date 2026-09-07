@@ -85,31 +85,22 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           committer: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
           author: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
-      - id: create_tag
-        name: Auto tag and push changes
+      - name: Auto tag and push changes
         if: ${{ (github.event_name == 'push') && (steps.tagpr.outputs.version != '') }}
-        env:
-          VERSION: ${{ steps.tagpr.outputs.version }}
         run: |
-          echo "Running new version: $VERSION"
+          echo "Running new version: ${{ steps.tagpr.outputs.version }}"
           branch=$(git rev-parse --abbrev-ref HEAD)
           echo "Current branch: $branch"
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           git pull 
           git fetch --tags
-          if git ls-remote --exit-code --tags origin "refs/tags/$VERSION"; then
-            echo "Tag $VERSION already exists; skipping tag creation."
-            echo "created=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          git tag "$VERSION"
+          git tag ${{ steps.tagpr.outputs.version }}
           git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
-          git push origin "refs/tags/$VERSION"
-          echo "created=true" >> "$GITHUB_OUTPUT"
+          git push -f origin ${{ steps.tagpr.outputs.version }}
       - name: Trigger Release Workflow(only when tagged)
         uses: actions/github-script@v6
-        if: ${{ (github.event_name == 'push') && (steps.create_tag.outputs.created == 'true') }}
+        if: ${{ (github.event_name == 'push') && (steps.tagpr.outputs.version != '') }}
         with:
           script: |
             github.rest.actions.createWorkflowDispatch({
