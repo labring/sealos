@@ -621,22 +621,62 @@ func handleSubscriptionCreateOrRenew(
 
 		if ws != nil {
 			payment.WorkspaceSubscriptionID = &ws.ID
-			if isInitial && ws.Status == types.SubscriptionStatusDeleted {
-				if _, err := services.StripeServiceInstance.CancelSubscription(
-					subscription.ID,
-				); err != nil {
-					return fmt.Errorf(
-						"failed to cancel subscription for deleted workspace: %w",
-						err,
+			if ws.Status == types.SubscriptionStatusDeleted {
+				if !isDeletedWorkspaceSubscriptionResubscriptionPayment(
+					isInitial,
+					wsTransaction.Operator,
+				) {
+					return rejectDeletedWorkspaceSubscriptionPayment(
+						tx,
+						wsTransaction,
+						subscription.ID,
+						"deleted workspace only accepts an initial created subscription payment",
 					)
 				}
-				dao.Logger.Infof(
-					"subscription paid for deleted workspace %s/%s, subscription %s canceled",
-					meta.Workspace,
-					meta.RegionDomain,
+				validResubscription := isValidDeletedWorkspaceSubscriptionResubscription(
+					ws,
+					wsTransaction,
 					subscription.ID,
 				)
-				return nil
+				if !validResubscription {
+					return rejectDeletedWorkspaceSubscriptionPayment(
+						tx,
+						wsTransaction,
+						subscription.ID,
+						"stale or invalid deleted workspace subscription transaction",
+					)
+				}
+
+				if dao.K8sManager == nil {
+					return rejectDeletedWorkspaceSubscriptionPayment(
+						tx,
+						wsTransaction,
+						subscription.ID,
+						"kubernetes manager is not initialized",
+					)
+				}
+
+				recoverable, recoverErr := isWorkspaceSubscriptionNamespaceRecoverable(
+					context.Background(),
+					dao.K8sManager.GetClient(),
+					meta.Workspace,
+				)
+				if recoverErr != nil {
+					return rejectDeletedWorkspaceSubscriptionPayment(
+						tx,
+						wsTransaction,
+						subscription.ID,
+						fmt.Sprintf("failed to validate workspace namespace: %v", recoverErr),
+					)
+				}
+				if !recoverable {
+					return rejectDeletedWorkspaceSubscriptionPayment(
+						tx,
+						wsTransaction,
+						subscription.ID,
+						"workspace namespace is no longer recoverable",
+					)
+				}
 			}
 
 			ws.CurrentPeriodStartAt = time.Unix(subscription.Items.Data[len(subscription.Items.Data)-1].CurrentPeriodStart, 0).
@@ -705,6 +745,43 @@ func handleSubscriptionCreateOrRenew(
 		)
 		return nil
 	})
+}
+
+func rejectDeletedWorkspaceSubscriptionPayment(
+	tx *gorm.DB,
+	transaction *types.WorkspaceSubscriptionTransaction,
+	stripeSubscriptionID, reason string,
+) error {
+	isPending := transaction.Status == types.SubscriptionTransactionStatusProcessing ||
+		transaction.Status == types.SubscriptionTransactionStatusPending
+	if isPending {
+		transaction.Status = types.SubscriptionTransactionStatusFailed
+		transaction.StatusDesc = reason
+		transaction.PayStatus = types.SubscriptionPayStatusCanceled
+		if err := tx.Save(transaction).Error; err != nil {
+			return fmt.Errorf("failed to mark rejected subscription transaction: %w", err)
+		}
+		if err := tx.Model(&types.PaymentOrder{}).
+			Where("id = ?", transaction.PayID).
+			Update("status", types.PaymentOrderStatusFailed).
+			Error; err != nil {
+			return fmt.Errorf("failed to mark rejected payment order: %w", err)
+		}
+	}
+
+	if _, err := services.StripeServiceInstance.CancelSubscription(
+		stripeSubscriptionID,
+	); err != nil {
+		return fmt.Errorf("failed to cancel invalid subscription %s: %w", stripeSubscriptionID, err)
+	}
+	dao.Logger.Infof(
+		"Canceled invalid Stripe subscription %s for deleted workspace %s/%s: %s",
+		stripeSubscriptionID,
+		transaction.Workspace,
+		transaction.RegionDomain,
+		reason,
+	)
+	return nil
 }
 
 // prepareCreateOrRenewTransactionAndPayment
