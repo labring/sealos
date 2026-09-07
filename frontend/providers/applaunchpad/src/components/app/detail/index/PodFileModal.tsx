@@ -150,7 +150,7 @@ const PodFile = ({
   const handleDelete = async () => {
     try {
       if (!currentFile) return;
-      const res = await kubeFile_delete({
+      await kubeFile_delete({
         podName: podDetail.podName,
         containerName: appName,
         path: currentFile.path
@@ -158,7 +158,12 @@ const PodFile = ({
       message({
         title: 'success'
       });
-    } catch (error) {}
+    } catch (error: any) {
+      message({
+        title: t(getErrText(error, 'Insufficient permissions')),
+        status: 'error'
+      });
+    }
   };
 
   const handleRename = async () => {
@@ -175,7 +180,12 @@ const PodFile = ({
       message({
         title: 'success'
       });
-    } catch (error) {}
+    } catch (error: any) {
+      message({
+        title: t(getErrText(error, 'Insufficient permissions')),
+        status: 'error'
+      });
+    }
   };
 
   const handleDownload = async (e: MouseEvent<HTMLButtonElement>, file: TFile) => {
@@ -294,7 +304,11 @@ const PodFile = ({
       });
       await Promise.all(uploadPromises);
       refetch();
-    } catch (error) {
+    } catch (error: any) {
+      message({
+        title: t(getErrText(error, 'Insufficient permissions')),
+        status: 'error'
+      });
       refetch();
     }
     setIsUploadLoading(false);
@@ -311,7 +325,12 @@ const PodFile = ({
       message({
         title: 'success'
       });
-    } catch (error) {}
+    } catch (error: any) {
+      message({
+        title: t(getErrText(error, 'Insufficient permissions')),
+        status: 'error'
+      });
+    }
   };
 
   return (

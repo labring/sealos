@@ -68,37 +68,8 @@ describe('/api/kubeFileSystem/ls', () => {
     });
   });
 
-  it('returns forbidden and does not exec in the pod when pods/exec create is denied', async () => {
+  it('lists files without a preflight pods/exec access review', async () => {
     mockK8sContext(false);
-    const res = createResponse();
-
-    await handler(createRequest(), res);
-
-    expect(createSelfSubjectAccessReviewMock).toHaveBeenCalledWith({
-      apiVersion: 'authorization.k8s.io/v1',
-      kind: 'SelfSubjectAccessReview',
-      spec: {
-        resourceAttributes: {
-          namespace: 'ns-demo',
-          verb: 'create',
-          resource: 'pods',
-          subresource: 'exec',
-          name: 'demo-pod'
-        }
-      }
-    });
-    expect(KubeFileSystemMock).not.toHaveBeenCalled();
-    expect(kubeFileLsMock).not.toHaveBeenCalled();
-    expect(res.json).toHaveBeenCalledWith({
-      code: ResponseCode.FORBIDDEN,
-      message: ResponseMessages[ResponseCode.FORBIDDEN],
-      data: undefined,
-      error: undefined
-    });
-  });
-
-  it('lists files after pods/exec create is allowed', async () => {
-    mockK8sContext(true);
     kubeFileLsMock.mockResolvedValue({
       directories: [],
       files: []
@@ -107,6 +78,7 @@ describe('/api/kubeFileSystem/ls', () => {
 
     await handler(createRequest(), res);
 
+    expect(createSelfSubjectAccessReviewMock).not.toHaveBeenCalled();
     expect(KubeFileSystemMock).toHaveBeenCalledWith({});
     expect(kubeFileLsMock).toHaveBeenCalledWith({
       namespace: 'ns-demo',
