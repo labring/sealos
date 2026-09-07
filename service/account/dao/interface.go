@@ -2219,6 +2219,47 @@ func (m *Account) Disconnect(ctx context.Context) error {
 }
 
 func buildConsumptionAmountPipeline(req helper.ConsumptionRecordReq) mongo.Pipeline {
+	// Example for a request with Owner="owner-123" and no AppName:
+	//
+	// db.billing.aggregate([
+	//   { $match: {
+	//     owner: "owner-123",
+	//     status: 1,
+	//     time: {
+	//       $gte: ISODate("2026-01-01T00:00:00Z"),
+	//       $lte: ISODate("2026-01-02T00:00:00Z")
+	//     }
+	//   } },
+	//   { $group: { _id: null, total: { $sum: "$amount" } } }
+	// ])
+	//
+	// Example for Owner="owner-123", AppType="APP" (app_type: 2),
+	// and AppName="app-a":
+	//
+	// db.billing.aggregate([
+	//   { $match: {
+	//     owner: "owner-123",
+	//     status: 1,
+	//     app_type: 2,
+	//     time: {
+	//       $gte: ISODate("2026-01-01T00:00:00Z"),
+	//       $lte: ISODate("2026-01-02T00:00:00Z")
+	//     }
+	//   } },
+	//   { $project: {
+	//     amount: { $sum: { $map: {
+	//       input: { $filter: {
+	//         input: { $ifNull: ["$app_costs", []] },
+	//         as: "appCost",
+	//         cond: { $eq: ["$$appCost.name", "app-a"] }
+	//       } },
+	//       as: "appCost",
+	//       in: "$$appCost.amount"
+	//     } } }
+	//   } },
+	//   { $match: { amount: { $gt: 0 } } },
+	//   { $group: { _id: null, total: { $sum: "$amount" } } }
+	// ])
 	appType := strings.ToUpper(strings.TrimSpace(req.AppType))
 	timeMatchValue := bson.D{
 		primitive.E{Key: "$gte", Value: req.StartTime},
@@ -2239,83 +2280,70 @@ func buildConsumptionAmountPipeline(req helper.ConsumptionRecordReq) mongo.Pipel
 		)
 	}
 
-	appCostsInput := bson.M{"$ifNull": bson.A{"$app_costs", bson.A{}}}
-	appCostsAmount := bson.M{
-		"$reduce": bson.M{
-			"input":        appCostsInput,
-			"initialValue": int64(0),
-			"in": bson.M{"$add": bson.A{
-				"$$value",
-				bson.M{"$ifNull": bson.A{"$$this.amount", int64(0)}},
-			}},
-		},
-	}
-
-	// Preserve the legacy app_costs matching semantics while avoiding $unwind.
-	nestedAmount := any(appCostsAmount)
-	if appType != "" && req.AppName != "" {
-		if appType != resources.AppStore {
-			filteredAppCosts := bson.M{
-				"$filter": bson.M{
-					"input": appCostsInput,
-					"as":    "appCost",
-					"cond":  bson.M{"$eq": bson.A{"$$appCost.name", req.AppName}},
-				},
-			}
-			nestedAmount = bson.M{
-				"$reduce": bson.M{
-					"input":        filteredAppCosts,
-					"initialValue": int64(0),
-					"in": bson.M{"$add": bson.A{
-						"$$value",
-						bson.M{"$ifNull": bson.A{"$$this.amount", int64(0)}},
-					}},
-				},
-			}
-		} else {
-			nestedAmount = bson.M{
-				"$cond": bson.A{
-					bson.M{"$eq": bson.A{"$app_name", req.AppName}},
-					appCostsAmount,
-					int64(0),
-				},
-			}
-		}
-	}
-
-	directCondition := any(bson.M{
-		"$in": bson.A{"$app_type", bson.A{
-			resources.AppType[resources.AppStore],
-			resources.AppType[resources.LLMToken],
-		}},
-	})
-	if appType != "" {
-		directCondition = appType == resources.AppStore || appType == resources.LLMToken
-	}
-	if req.AppName != "" {
-		directCondition = bson.M{"$and": bson.A{
-			directCondition,
-			bson.M{"$eq": bson.A{"$app_name", req.AppName}},
-		}}
-	}
-	directAmount := bson.M{
-		"$cond": bson.A{
-			directCondition,
-			bson.M{"$ifNull": bson.A{"$amount", int64(0)}},
-			int64(0),
-		},
-	}
-
-	return mongo.Pipeline{
+	pipeline := mongo.Pipeline{
+		// Owner is part of the match so the total never includes another workspace.
 		{{Key: "$match", Value: matchValue}},
-		{{Key: "$project", Value: bson.D{
-			{Key: "amount", Value: bson.M{"$add": bson.A{nestedAmount, directAmount}}},
-		}}},
-		{{Key: "$group", Value: bson.D{
-			{Key: "_id", Value: nil},
-			{Key: "total", Value: bson.D{{Key: "$sum", Value: "$amount"}}},
-		}}},
 	}
+
+	groupStage := bson.D{{Key: "$group", Value: bson.D{
+		{Key: "_id", Value: nil},
+		{Key: "total", Value: bson.D{{Key: "$sum", Value: "$amount"}}},
+	}}}
+	// Billing.Amount is the authoritative total for a billing record. Avoid
+	// inspecting app_costs unless the caller needs an app-level filter; this
+	// keeps the common all-app query to just match and group stages.
+	if req.AppName == "" {
+		return append(pipeline, groupStage)
+	}
+
+	// Direct types store their billable amount on the parent record. The
+	// app_costs array is only a breakdown for these records and must not be
+	// added to amount again.
+	directAppTypes := bson.A{
+		resources.AppType[resources.AppStore],
+		resources.AppType[resources.LLMToken],
+	}
+	// Ordinary resource types are billed through app_costs when an app name is
+	// requested, so only entries with the requested name contribute to the sum.
+	matchedNestedAmount := bson.M{
+		"$sum": bson.M{
+			"$map": bson.M{
+				"input": bson.M{
+					"$filter": bson.M{
+						"input": bson.M{"$ifNull": bson.A{"$app_costs", bson.A{}}},
+						"as":    "appCost",
+						"cond": bson.M{
+							"$eq": bson.A{"$$appCost.name", req.AppName},
+						},
+					},
+				},
+				"as": "appCost",
+				"in": "$$appCost.amount",
+			},
+		},
+	}
+	pipeline = append(
+		pipeline,
+		// Select exactly one amount source per billing record to avoid double counting.
+		bson.D{{Key: "$project", Value: bson.D{
+			{Key: "amount", Value: bson.D{{Key: "$cond", Value: bson.A{
+				bson.D{{Key: "$in", Value: bson.A{"$app_type", directAppTypes}}},
+				bson.D{{Key: "$cond", Value: bson.A{
+					bson.D{{Key: "$eq", Value: bson.A{"$app_name", req.AppName}}},
+					"$amount",
+					int64(0),
+				}}},
+				matchedNestedAmount,
+			}}}},
+		}}},
+		// The projection emits zero for non-matching app records; discard them
+		// before the final total is calculated.
+		bson.D{{Key: "$match", Value: bson.D{
+			{Key: "amount", Value: bson.D{{Key: "$gt", Value: int64(0)}}},
+		}}},
+		groupStage,
+	)
+	return pipeline
 }
 
 func (m *MongoDB) GetConsumptionAmount(req helper.ConsumptionRecordReq) (int64, error) {
