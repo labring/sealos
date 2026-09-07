@@ -84,8 +84,6 @@ jobs:
               - '.github/workflows/frontends.yml'
             license:
               - 'frontend/providers/license/**'
-            template:
-              - 'frontend/providers/template/**'
             applaunchpad:
               - 'frontend/providers/applaunchpad/**'
             terminal:
@@ -104,7 +102,6 @@ jobs:
           FORCE_ALL: ${{ inputs.force_all }}
           EVENT_NAME: ${{ github.event_name }}
           LICENSE_CHANGED: ${{ steps.filter.outputs.license }}
-          TEMPLATE_CHANGED: ${{ steps.filter.outputs.template }}
           APPLAUNCHPAD_CHANGED: ${{ steps.filter.outputs.applaunchpad }}
           TERMINAL_CHANGED: ${{ steps.filter.outputs.terminal }}
           DBPROVIDER_CHANGED: ${{ steps.filter.outputs.dbprovider }}
@@ -120,7 +117,6 @@ jobs:
                 "$EVENT_NAME" == "workflow_dispatch" ]]; then
             modules=(
               "providers/license"
-              "providers/template"
               "providers/applaunchpad"
               "providers/terminal"
               "providers/dbprovider"
@@ -130,7 +126,6 @@ jobs:
           else
             # Only build changed modules
             [[ "$LICENSE_CHANGED" == "true" ]] && modules+=("providers/license")
-            [[ "$TEMPLATE_CHANGED" == "true" ]] && modules+=("providers/template")
             [[ "$APPLAUNCHPAD_CHANGED" == "true" ]] && modules+=("providers/applaunchpad")
             [[ "$TERMINAL_CHANGED" == "true" ]] && modules+=("providers/terminal")
             [[ "$DBPROVIDER_CHANGED" == "true" ]] && modules+=("providers/dbprovider")
