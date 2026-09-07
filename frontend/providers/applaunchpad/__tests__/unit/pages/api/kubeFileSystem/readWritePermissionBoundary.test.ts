@@ -4,11 +4,21 @@ import { describe, expect, it } from 'vitest';
 
 const routeDir = resolve(__dirname, '../../../../../src/pages/api/kubeFileSystem');
 
-const readRouteFiles = ['ls.ts', 'download.ts'];
-const writeRouteFiles = ['mkdir.ts', 'mv.ts', 'rm.ts', 'touch.ts', 'upload.ts'];
+const routeFiles = {
+  'ls.ts': resolve(routeDir, 'ls.ts'),
+  'download.ts': resolve(routeDir, 'download.ts'),
+  'mkdir.ts': resolve(routeDir, 'mkdir.ts'),
+  'mv.ts': resolve(routeDir, 'mv.ts'),
+  'rm.ts': resolve(routeDir, 'rm.ts'),
+  'touch.ts': resolve(routeDir, 'touch.ts'),
+  'upload.ts': resolve(routeDir, 'upload.ts')
+} as const;
 
-function readRoute(filename: string) {
-  return readFileSync(resolve(routeDir, filename), 'utf8');
+const readRouteFiles = ['ls.ts', 'download.ts'] as const;
+const writeRouteFiles = ['mkdir.ts', 'mv.ts', 'rm.ts', 'touch.ts', 'upload.ts'] as const;
+
+function readRoute(filename: keyof typeof routeFiles) {
+  return readFileSync(routeFiles[filename], 'utf8');
 }
 
 describe('kube file system permission boundary', () => {
