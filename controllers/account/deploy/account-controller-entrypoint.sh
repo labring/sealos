@@ -34,6 +34,13 @@ get_cm_value() {
   kubectl get configmap "${name}" -n "${namespace}" -o "jsonpath={.data.${key}}" 2>/dev/null || true
 }
 
+get_secret_value() {
+  local namespace="$1"
+  local name="$2"
+  local key="$3"
+  kubectl get secret "${name}" -n "${namespace}" -o "jsonpath={.data.${key}}" 2>/dev/null | base64 --decode 2>/dev/null || true
+}
+
 backup_ns_resource() {
   local kind="$1"
   local name="$2"
@@ -77,6 +84,7 @@ backup_account_resources() {
   fi
   backup_ns_resource configmap account-manager-config
   backup_ns_resource configmap account-manager-env
+  backup_ns_resource secret account-admin-jwt
   backup_ns_resource service account-controller-manager-metrics-service
   backup_ns_resource service account-webhook-service
   backup_ns_resource deployment account-controller-manager
@@ -97,6 +105,10 @@ AUTO_CONFIG_HELM_OPTS=""
 CLOUD_DOMAIN=$(get_cm_value sealos-system sealos-config cloudDomain)
 CLOUD_PORT=$(get_cm_value sealos-system sealos-config cloudPort)
 JWT_INTERNAL=$(get_cm_value sealos-system sealos-config jwtInternal)
+ACCOUNT_ADMIN_JWT_SECRET=$(get_secret_value "${RELEASE_NAMESPACE}" account-admin-jwt ACCOUNT_ADMIN_JWT_SECRET)
+if [ -z "${ACCOUNT_ADMIN_JWT_SECRET}" ]; then
+  ACCOUNT_ADMIN_JWT_SECRET=$(openssl rand -hex 32)
+fi
 REGION_UID=$(get_cm_value sealos-system sealos-config regionUID)
 GLOBAL_COCKROACH_URI=$(get_cm_value sealos-system sealos-config databaseGlobalCockroachdbURI)
 LOCAL_COCKROACH_URI=$(get_cm_value sealos-system sealos-config databaseLocalCockroachdbURI)
@@ -110,6 +122,7 @@ fi
 [ -n "${CLOUD_DOMAIN}" ] && AUTO_CONFIG_HELM_OPTS="${AUTO_CONFIG_HELM_OPTS} --set-string accountEnv.cloudDomain=${CLOUD_DOMAIN}"
 [ -n "${CLOUD_PORT}" ] && AUTO_CONFIG_HELM_OPTS="${AUTO_CONFIG_HELM_OPTS} --set-string accountEnv.cloudPort=${CLOUD_PORT}"
 [ -n "${JWT_INTERNAL}" ] && AUTO_CONFIG_HELM_OPTS="${AUTO_CONFIG_HELM_OPTS} --set-string accountEnv.accountApiJwtSecret=${JWT_INTERNAL}"
+[ -n "${ACCOUNT_ADMIN_JWT_SECRET}" ] && AUTO_CONFIG_HELM_OPTS="${AUTO_CONFIG_HELM_OPTS} --set-string accountEnv.accountAdminJwtSecret=${ACCOUNT_ADMIN_JWT_SECRET}"
 [ -n "${REGION_UID}" ] && AUTO_CONFIG_HELM_OPTS="${AUTO_CONFIG_HELM_OPTS} --set-string accountEnv.localRegion=${REGION_UID}"
 [ -n "${GLOBAL_COCKROACH_URI}" ] && AUTO_CONFIG_HELM_OPTS="${AUTO_CONFIG_HELM_OPTS} --set-string accountEnv.globalCockroachURI=${GLOBAL_COCKROACH_URI}"
 [ -n "${LOCAL_COCKROACH_URI}" ] && AUTO_CONFIG_HELM_OPTS="${AUTO_CONFIG_HELM_OPTS} --set-string accountEnv.localCockroachURI=${LOCAL_COCKROACH_URI}"
@@ -129,6 +142,7 @@ if ! helm status "${RELEASE_NAME}" -n "${RELEASE_NAMESPACE}" >/dev/null 2>&1; th
 
   adopt_namespaced_resource configmap account-manager-config
   adopt_namespaced_resource configmap account-manager-env
+  adopt_namespaced_resource secret account-admin-jwt
   adopt_namespaced_resource service account-controller-manager-metrics-service
   adopt_namespaced_resource service account-webhook-service
   adopt_namespaced_resource deployment account-controller-manager

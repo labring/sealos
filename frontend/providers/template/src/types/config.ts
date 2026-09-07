@@ -138,7 +138,7 @@ export type FeaturesConfig = z.infer<typeof FeaturesSchema>;
  * Template category schema.
  * Defines the app-owned sidebar categories and their labels.
  */
-const TemplateCategorySchema = z
+export const TemplateCategorySchema = z
   .object({
     slug: z.string().describe('Slug for identifying the category'),
     i18n: z.record(z.string(), z.string()).describe('Category label translations')

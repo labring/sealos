@@ -50,6 +50,8 @@ type Cockroach struct {
 	ownerUsrIDMap  *sync.Map
 }
 
+var ErrGiftCodeAlreadyUsed = errors.New("gift code has already been used")
+
 const (
 	EnvLocalRegion = "LOCAL_REGION"
 	EnvBaseBalance = "BASE_BALANCE"
@@ -2769,7 +2771,7 @@ func (c *Cockroach) UseGiftCode(giftCode *types.GiftCode, userID string) error {
 		}
 
 		if lockedGiftCode.Used {
-			return errors.New("gift code has already been used")
+			return ErrGiftCodeAlreadyUsed
 		}
 
 		ops := &types.UserQueryOpts{ID: userID}

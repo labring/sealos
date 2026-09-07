@@ -39,7 +39,6 @@ pnpm dev-desktop
 pnpm dev-app        # applaunchpad
 pnpm dev-db         # dbprovider
 pnpm dev-cost       # costcenter
-pnpm dev-terminal   # terminal
 pnpm dev-template   # template
 
 # or run dev script in app's package directory
@@ -99,7 +98,6 @@ make push-images DOCKER_USERNAME=<your_account> IMAGE_TAG=<tag>
 ## Add a provider frontend
 
 Use an existing provider as the reference and keep these deployment surfaces in sync:
-
 1. `.github/workflows/frontends.yml` change detection and Helm validation
 2. `frontend/Makefile` image build target
 3. `frontend/providers/<app>/deploy/Kubefile`

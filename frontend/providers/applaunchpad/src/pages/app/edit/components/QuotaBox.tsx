@@ -13,11 +13,11 @@ const sourceMap = {
   },
   memory: {
     color: '#36ADEF',
-    unit: 'Gi'
+    unit: 'GiB'
   },
   storage: {
     color: '#8172D8',
-    unit: 'Gi'
+    unit: 'GiB'
   },
   gpu: {
     color: '#89CD11',
@@ -29,7 +29,7 @@ const sourceMap = {
   },
   'ephemeral-storage': {
     color: '#FFA500',
-    unit: 'Gi'
+    unit: 'GiB'
   }
 };
 

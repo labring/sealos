@@ -10,5 +10,28 @@ resources:
     cpu: 5m
     memory: 64Mi
 
+startupProbe:
+  httpGet:
+    path: /health
+    port: 9090
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 30
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 9090
+  initialDelaySeconds: 3
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: 9090
+  initialDelaySeconds: 3
+  periodSeconds: 5
+  failureThreshold: 6
+
 databaseMonitorConfig:
   prometheusServiceHost: "http://vmselect-vm-stack-victoria-metrics-k8s-stack.vm.svc:8481/select/0/prometheus/"

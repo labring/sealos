@@ -8,15 +8,23 @@ import {
   json2Account,
   json2ResourceOps,
   json2CreateCluster,
-  json2ParameterConfig
+  json2ParameterConfig,
+  json2Reconfigure
 } from '@/utils/json2Yaml';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { updateBackupPolicyApi } from './backup/updatePolicy';
 import { BackupSupportedDBTypeList } from '@/constants/db';
 import { adaptDBDetail, convertBackupFormToSpec } from '@/utils/adapt';
-import { CustomObjectsApi, PatchUtils } from '@kubernetes/client-node';
+import { CustomObjectsApi, KubernetesObject, PatchUtils } from '@kubernetes/client-node';
 import { getScore } from '@/utils/tools';
 import { validatePolarDBXResources } from '@/utils/database';
+import {
+  ensurePostgreSQLConfigSpec,
+  getCurrentParameterValues,
+  getParameterDifferences
+} from '@/utils/parameterConfig';
+import { createParameterHistory } from '@/utils/parameterHistory';
+import type { ParameterDifference } from '@/utils/parameterChanges';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
@@ -28,7 +36,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     console.log('api createDB dbForm', dbForm);
     validatePolarDBXResources(dbForm);
 
-    const { k8sCustomObjects, namespace, applyYamlList } = await getK8s({
+    const { k8sCore, k8sCustomObjects, namespace, applyYamlList } = await getK8s({
       kubeconfig: await authSession(req)
     });
 
@@ -61,28 +69,82 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         opsRequests.push(volumeExpansionYaml);
       }
 
-      // Handle parameter configuration updates
+      // Record parameter changes through OpsRequest so they appear in history.
+      let parameterDifferencesForHistory: ParameterDifference[] | undefined;
+      let parameterPreparationError: any;
       if (['postgresql', 'apecloud-mysql', 'mongodb', 'redis'].includes(dbForm.dbType)) {
         if (!(dbForm.dbType === 'apecloud-mysql' && dbForm.dbVersion === 'mysql-5.7.42')) {
           try {
             const dynamicMaxConnections = getScore(dbForm.dbType, dbForm.cpu, dbForm.memory);
-            const configYaml = json2ParameterConfig(
-              dbForm.dbName,
-              dbForm.dbType,
-              dbForm.dbVersion,
-              dbForm.parameterConfig,
+            const currentParameterValues = await getCurrentParameterValues({
+              dbName: dbForm.dbName,
+              dbType: dbForm.dbType,
+              namespace,
+              k8sCore,
+              k8sCustomObjects
+            });
+            const parameterDifferences = getParameterDifferences({
+              dbType: dbForm.dbType,
+              current: currentParameterValues,
+              requested: dbForm.parameterConfig,
               dynamicMaxConnections
-            );
-            console.log('api createDB configYaml', configYaml);
-            await applyYamlList([configYaml], 'replace');
-          } catch (err) {
-            console.log('Failed to update parameter configuration:', err);
+            });
+
+            if (parameterDifferences.length > 0) {
+              if (dbForm.dbType === 'postgresql') {
+                await ensurePostgreSQLConfigSpec({
+                  dbName: dbForm.dbName,
+                  dbVersion: dbForm.dbVersion,
+                  namespace,
+                  k8sCustomObjects
+                });
+              }
+              opsRequests.push(
+                json2Reconfigure(
+                  dbForm.dbName,
+                  dbForm.dbType,
+                  body.metadata.uid,
+                  parameterDifferences
+                )
+              );
+              parameterDifferencesForHistory = parameterDifferences;
+            }
+          } catch (error) {
+            parameterPreparationError = error;
+            console.warn('Failed to prepare parameter configuration update:', error);
           }
         }
       }
 
       if (opsRequests.length > 0) {
-        await applyYamlList(opsRequests, 'create');
+        const createdOpsRequests = await applyYamlList(opsRequests, 'create');
+        if (parameterDifferencesForHistory) {
+          const parameterOpsRequest = createdOpsRequests.find(
+            (request) =>
+              request?.kind === 'OpsRequest' &&
+              Boolean(
+                (request as KubernetesObject & { spec?: { reconfigure?: unknown } }).spec
+                  ?.reconfigure
+              )
+          );
+          try {
+            await createParameterHistory({
+              k8sCore,
+              namespace,
+              dbName: dbForm.dbName,
+              dbType: dbForm.dbType,
+              dbUid: body.metadata.uid,
+              opsRequestName: parameterOpsRequest?.metadata?.name,
+              differences: parameterDifferencesForHistory
+            });
+          } catch (error) {
+            console.error('Failed to record parameter update history:', error);
+          }
+        }
+      }
+
+      if (parameterPreparationError && opsRequests.length === 0) {
+        throw parameterPreparationError;
       }
 
       if (
@@ -111,6 +173,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
             namespace
           });
         }
+      }
+
+      if (parameterPreparationError) {
+        throw parameterPreparationError;
       }
 
       return jsonRes(res, {

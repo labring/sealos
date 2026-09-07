@@ -29,9 +29,9 @@ type QuotaMeta = {
 
 const quotaMeta: Record<UserQuotaItemType['type'], QuotaMeta> = {
   cpu: { unit: 'Core', bg: '#33BABB', icon: CpuIcon },
-  memory: { unit: 'GB', bg: '#36ADEF', icon: MemoryIcon },
-  storage: { unit: 'GB', bg: '#9A8EE0', icon: StorageIcon },
-  'ephemeral-storage': { unit: 'GB', bg: '#7A8BEA', icon: StorageIcon },
+  memory: { unit: 'GiB', bg: '#36ADEF', icon: MemoryIcon },
+  storage: { unit: 'GiB', bg: '#9A8EE0', icon: StorageIcon },
+  'ephemeral-storage': { unit: 'GiB', bg: '#7A8BEA', icon: StorageIcon },
   gpu: { unit: 'GPU Unit', bg: '#6FCA88', icon: GpuIcon },
   pods: { unit: 'pod_unit', bg: '#2EB67D', icon: NodeIcon },
   'services.nodeports': { unit: 'port_unit', bg: '#8774EE', icon: PortIcon },

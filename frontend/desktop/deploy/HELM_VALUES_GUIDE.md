@@ -75,9 +75,9 @@ desktopConfig:
 ```yaml
 desktopConfig:
   version: 'en' # UI 版本: "cn" 或 "en"
-  # forcedLanguage 和 currencySymbol 会根据 version 自动配置:
-  # - version: "cn" → forcedLanguage: "zh", currencySymbol: "shellCoin"
-  # - version: "en" → forcedLanguage: "en", currencySymbol: "usd"
+  # currencySymbol 会根据 version 自动配置:
+  # - version: "cn" → currencySymbol: "shellCoin"
+  # - version: "en" → currencySymbol: "usd"
 ```
 
 ### 6. Google Tag Manager
@@ -104,6 +104,7 @@ desktopConfig:
   enterpriseRealNameAuthEnabled: false # 启用企业实名认证
   trackingEnabled: false # 启用追踪/统计
   realNameAuthEnabled: false # 启用实名认证
+  workspaceResourceHeaderEnabled: false # 默认显示余额；设为 true 时使用资源头部
   licenseCheckEnabled: false # 启用 License 检查
   passwordEnabled: true # 启用密码登录
 ```

@@ -3,20 +3,51 @@
 import { useQuery } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
 
+const CLIENT_APP_CONFIG_STALE_TIME = 60 * 1000;
+const CLIENT_APP_CONFIG_CACHE_TIME = 10 * 60 * 1000;
+const CLIENT_APP_CONFIG_REFETCH_INTERVAL = 60 * 1000;
+
+type ClientAppConfigResponse<T> = {
+  code?: number;
+  data?: T;
+  message?: string;
+};
+
+async function fetchClientAppConfig<T>() {
+  const response = await fetch('/api/platform/getClientAppConfig', {
+    credentials: 'include'
+  });
+
+  if (!response.ok) {
+    throw new Error(`[Client App Config] Request failed with status ${response.status}.`);
+  }
+
+  const payload = (await response.json()) as ClientAppConfigResponse<T>;
+
+  if (payload.code !== 200 || payload.data === undefined) {
+    throw new Error(payload.message || '[Client App Config] Failed to load client app config.');
+  }
+
+  return payload.data;
+}
+
 /**
- * Create prefetch-only hook for client app config.
- * Must be pre-fetched on server side (getInitialProps/getServerSideProps).
+ * Create a hook for client app config.
+ * Uses server-side prefetch as initial data, then refreshes from the platform API.
  */
-export function createClientAppConfigHook<T = unknown>(queryKey: readonly unknown[]) {
+export function createClientAppConfigHook<T = unknown>(
+  queryKey: readonly unknown[],
+  queryFn: () => Promise<T> | T = () => fetchClientAppConfig<T>()
+) {
   return function useClientAppConfig(): T {
     const query = useQuery({
-      queryFn: () => {
-        throw new Error('[Client App Config] Not pre-fetched on server side');
-      },
+      queryFn,
       queryKey,
       suspense: true,
-      staleTime: Infinity,
-      cacheTime: Infinity
+      staleTime: CLIENT_APP_CONFIG_STALE_TIME,
+      cacheTime: CLIENT_APP_CONFIG_CACHE_TIME,
+      refetchInterval: CLIENT_APP_CONFIG_REFETCH_INTERVAL,
+      refetchIntervalInBackground: false
     });
 
     if (!query.data) {
@@ -29,7 +60,7 @@ export function createClientAppConfigHook<T = unknown>(queryKey: readonly unknow
 }
 
 /**
- * Prefetch client app config on server side.
+ * Prefetch client app config on server side as initial data.
  * Use in getInitialProps or getServerSideProps.
  */
 export async function prefetchClientAppConfig<T>(
@@ -38,8 +69,8 @@ export async function prefetchClientAppConfig<T>(
   getData: () => T | Promise<T>
 ): Promise<void> {
   queryClient.setQueryDefaults(queryKey, {
-    cacheTime: Infinity,
-    staleTime: Infinity
+    cacheTime: CLIENT_APP_CONFIG_CACHE_TIME,
+    staleTime: CLIENT_APP_CONFIG_STALE_TIME
   });
 
   await queryClient.prefetchQuery({
@@ -57,7 +88,7 @@ export function setupClientAppConfigDefaults(
   queryKey: readonly unknown[]
 ): void {
   queryClient.setQueryDefaults(queryKey, {
-    cacheTime: Infinity,
-    staleTime: Infinity
+    cacheTime: CLIENT_APP_CONFIG_CACHE_TIME,
+    staleTime: CLIENT_APP_CONFIG_STALE_TIME
   });
 }

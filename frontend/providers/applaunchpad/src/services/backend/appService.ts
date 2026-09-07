@@ -3,7 +3,11 @@ import { formData2Yamls } from '@/pages/app/edit';
 import { serverLoadInitData } from '@/store/static';
 import { AppEditType } from '@/types/app';
 import { UserQuotaItemType } from '@/types/user';
-import { json2HPA } from '@/utils/deployYaml2Json';
+import {
+  getImageRegistryAddress,
+  json2HPA,
+  resolveImageRegistryBinding
+} from '@/utils/deployYaml2Json';
 import { str2Num } from '@/utils/tools';
 import { adaptAppDetail } from '@/utils/adapt';
 import { DeployKindsType, AppDetailType } from '@/types/app';
@@ -480,6 +484,36 @@ export async function updateAppResources(
     throw new Error('app data error');
   }
 
+  const imageNameToUpdate =
+    updateData.image !== undefined ? updateData.image : updateData.imageName;
+  const currentImageName = app.spec.template.spec?.containers?.[0]?.image || '';
+  const hasExistingCredentials = !!app.spec.template.spec?.imagePullSecrets?.length;
+  const registryUpdate = updateData.imageRegistry;
+  const credentialRegistry =
+    registryUpdate && registryUpdate !== null
+      ? registryUpdate.serverAddress
+      : registryUpdate === undefined && hasExistingCredentials
+        ? getImageRegistryAddress(currentImageName)
+        : undefined;
+  const imageBinding =
+    imageNameToUpdate !== undefined
+      ? resolveImageRegistryBinding({
+          imageName: imageNameToUpdate || '',
+          credentialRegistry,
+          useCredentials: !!credentialRegistry,
+          requireCredentialMatch: !!registryUpdate
+        })
+      : undefined;
+  let registryBinding: ReturnType<typeof resolveImageRegistryBinding> | undefined;
+  if (registryUpdate && registryUpdate !== null) {
+    registryBinding = resolveImageRegistryBinding({
+      imageName: imageNameToUpdate ?? currentImageName,
+      credentialRegistry: registryUpdate.serverAddress,
+      useCredentials: true,
+      requireCredentialMatch: true
+    });
+  }
+
   if (updateData.resource?.replicas !== undefined) {
     if (updateData.resource.replicas === 0) {
       const restartAnnotations: Record<string, string> = {
@@ -659,34 +693,33 @@ export async function updateAppResources(
     }
 
     // Handle image name update (either from image or imageName field)
-    const imageNameToUpdate =
-      updateData.image !== undefined ? updateData.image : updateData.imageName;
-    if (imageNameToUpdate !== undefined) {
-      // Allow empty string for image name
-      const finalImageName = imageNameToUpdate || '';
+    if (imageBinding) {
       jsonPatch.push({
         op: 'replace',
         path: '/spec/template/spec/containers/0/image',
-        value: finalImageName
+        value: imageBinding.imageName
       });
 
       jsonPatch.push({
         op: 'replace',
         path: '/metadata/annotations/originImageName',
-        value: finalImageName
+        value: imageBinding.imageName
       });
     }
 
     if (updateData.imageRegistry !== undefined) {
       if (updateData.imageRegistry !== null) {
         const { k8sCore } = k8s;
+        if (!registryBinding) {
+          throw new Error('Image registry binding is required');
+        }
         const auth = Buffer.from(
           `${updateData.imageRegistry.username}:${updateData.imageRegistry.password}`
         ).toString('base64');
         const dockerconfigjson = Buffer.from(
           JSON.stringify({
             auths: {
-              [updateData.imageRegistry.serverAddress]: {
+              [registryBinding.registry]: {
                 username: updateData.imageRegistry.username,
                 password: updateData.imageRegistry.password,
                 auth

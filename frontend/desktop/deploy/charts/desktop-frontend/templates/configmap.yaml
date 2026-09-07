@@ -49,7 +49,7 @@ data:
         title: "{{ .Values.desktopConfig.layoutTitle }}"
         logo: "{{ .Values.desktopConfig.layoutLogo }}"
         backgroundImage: "{{ .Values.desktopConfig.layoutBackgroundImage }}"
-        forcedLanguage: {{ if eq .Values.desktopConfig.version "cn" }}"zh"{{ else }}"en"{{ end }}
+        workspaceResourceHeaderEnabled: {{ .Values.desktopConfig.workspaceResourceHeaderEnabled }}
         customerServiceURL: "{{ .Values.desktopConfig.customerServiceURL }}"
         discordInviteLink: {{ if eq .Values.desktopConfig.version "en" }}"{{ .Values.desktopConfig.discordInviteLink }}"{{ else }}""{{ end }}
         gtmId: {{ if .Values.desktopConfig.gtmId }}"{{ .Values.desktopConfig.gtmId }}"{{ else }}null{{ end }}

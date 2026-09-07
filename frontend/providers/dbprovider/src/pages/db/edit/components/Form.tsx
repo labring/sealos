@@ -18,6 +18,7 @@ import type { QueryType } from '@/types';
 import { AutoBackupType } from '@/types/backup';
 import type { DBEditType, DBType } from '@/types/db';
 import { I18nCommonKey } from '@/types/i18next';
+import { getDefaultMaxConnections } from '@/utils/parameterChanges';
 import {
   distributeResources,
   POLARDBX_MIN_COMPONENT_CPU,
@@ -171,7 +172,7 @@ function ResourcesDistributeTable({ data }: { data: Parameters<typeof distribute
                         <Td w="190px">{keyName}</Td>
                         <Td>{value.cpuMemory.limits.cpu}</Td>
                         <Td>{value.cpuMemory.limits.memory}</Td>
-                        <Td>{value.storage} G</Td>
+                        <Td>{value.storage} Gi</Td>
                         <Td>{value.other?.replicas ?? data.replicas}</Td>
                       </Tr>
                     );
@@ -452,20 +453,7 @@ const Form = ({
   }, [backupSettingsRef, parameterConfigRef, supportBackup, supportParameterConfig]);
 
   const getScore = (dbType: DBType) => {
-    const cpuCores = (getValues('cpu') || 0) / 1000; // cpu in cores
-    const memoryGB = (getValues('memory') || 0) / 1024; // memory in GB
-
-    let score = 0;
-    if (
-      dbType === DBTypeEnum.postgresql ||
-      dbType === DBTypeEnum.mongodb ||
-      dbType === DBTypeEnum.mysql
-    ) {
-      score = Math.min(cpuCores * 400 + memoryGB * 300, 100000);
-    } else if (dbType === DBTypeEnum.redis) {
-      score = Math.min(cpuCores * 500 + memoryGB * 400, 100000);
-    }
-    return Math.floor(score);
+    return getDefaultMaxConnections(dbType, getValues('cpu') || 0, getValues('memory') || 0);
   };
 
   const getParaName = (dbType: DBType) => {
@@ -487,8 +475,15 @@ const Form = ({
   };
 
   const availableDBTypes = useMemo(() => {
+    const configFilteredTypes = DBTypeList.filter(
+      (item) =>
+        item.id !== DBTypeEnum.kafka ||
+        SystemEnv.KAFKA_ENABLED ||
+        (isEdit && dbType === DBTypeEnum.kafka)
+    );
+
     if (addonLoading) {
-      return DBTypeList;
+      return configFilteredTypes;
     }
 
     const addonStatusMap = new Map<string, string>();
@@ -496,20 +491,24 @@ const Form = ({
       addonStatusMap.set(addon.name, addon.status);
     });
 
-    const filtered = DBTypeList.filter((dbType) => {
+    const filtered = configFilteredTypes.filter((item) => {
       // Exclude weaviate from create form
-      if (dbType.id === DBTypeEnum.weaviate) {
+      if (item.id === DBTypeEnum.weaviate) {
         return false;
       }
 
-      const addonName = dbType.id;
+      if (isEdit && item.id === DBTypeEnum.kafka && dbType === DBTypeEnum.kafka) {
+        return true;
+      }
+
+      const addonName = item.id;
       const addonStatus = addonStatusMap.get(addonName);
       const shouldInclude = addonStatus !== 'Disabled';
       return shouldInclude;
     });
 
     return filtered;
-  }, [addonList, addonLoading]);
+  }, [SystemEnv.KAFKA_ENABLED, addonList, addonLoading, dbType, isEdit]);
 
   return (
     <>

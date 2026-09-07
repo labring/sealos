@@ -69,6 +69,22 @@ jobs:
           working-directory: service/${{ inputs.module }}
           args: --color=always --config=${{ github.workspace }}/.golangci.yml
 
+  unit-test:
+    name: Test ${{ inputs.module }} with race detector
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Golang with cache
+        uses: magnetikonline/action-golang-cache@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Run Tests with race detector
+        working-directory: service/${{ inputs.module }}
+        run: go test -race ./... -count=1 -v
+
   image-build:
     strategy:
       matrix:
@@ -301,6 +317,9 @@ jobs:
             fi
             if [[ -f charts/${MODULE_NAME}-service/values.yaml ]]; then
               sed -i -E "s;(${OLD_DOCKER_REPO}|${GHCR_DOCKER_REPO}):[^[:space:]\"']*;${NEW_DOCKER_IMAGE};" charts/${MODULE_NAME}-service/values.yaml
+            fi
+            if [[ -f charts/${MODULE_NAME}-monitor/values.yaml ]]; then
+              sed -i -E "s;(${OLD_DOCKER_REPO}|${GHCR_DOCKER_REPO}):[^[:space:]\"']*;${NEW_DOCKER_IMAGE};" charts/${MODULE_NAME}-monitor/values.yaml
             fi
             sudo rm -rf registry
             echo "Building ${TAG}-amd64"

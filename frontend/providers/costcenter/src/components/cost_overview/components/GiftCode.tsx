@@ -150,10 +150,11 @@ function GiftCodeModal({ isOpen, onClose }: GiftCodeModalProps) {
         onClose();
       },
       onError(err: any) {
+        const errorMessage = err?.message ? t(err.message) : t('Failed to redeem Gift Code');
         message({
           status: 'warning',
           title: t('Failed to redeem Gift Code'),
-          description: err?.message || t('Failed to redeem Gift Code'),
+          description: errorMessage,
           isClosable: true,
           position: 'top'
         });

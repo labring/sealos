@@ -15,13 +15,22 @@ import path from 'path';
 import { replaceRawWithCDN } from './listTemplate';
 import { getTemplateEnvs } from '@/utils/tools';
 import { getResourceUsage, ResourceUsage } from '@/utils/usage';
-import { generateYamlData, getTemplateDefaultValues } from '@/utils/template';
+import {
+  filterConfiguredCategorySlugs,
+  generateYamlData,
+  getTemplateDefaultValues,
+  parseTemplateCategories
+} from '@/utils/template';
 import { readmeCache } from '@/utils/readmeCache';
 import { proxyTemplateIconUrls, resolveTemplateAssetUrls } from '@/utils/templateAsset';
+import { appendTemplateManifestSources } from '@/services/backend/template-manifests';
+import { getTemplateCategories } from '@/services/backend/template-categories';
+import { ensureTemplateRepoFresh } from '@/services/backend/template-repo';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const envEnableReadme = process.env.ENABLE_README_FETCH;
+    const envEnableReadme =
+      process.env.TEMPLATE_REPO_ENABLE_README_FETCH || process.env.ENABLE_README_FETCH;
     const queryIncludeReadme = req.query.includeReadme !== 'false';
     const includeRequirements = req.query.includeRequirements !== 'false';
 
@@ -121,6 +130,10 @@ export async function GetTemplateByName({
   locale?: string;
   includeReadme?: string;
 }) {
+  await ensureTemplateRepoFresh();
+  const categories = getTemplateCategories(
+    parseTemplateCategories(process.env.TEMPLATE_CATEGORIES)
+  );
   const TemplateEnvs = getTemplateEnvs(namespace);
   let { appYaml, templateYaml } = getTemplateYamlByName(templateName, TemplateEnvs);
 
@@ -130,8 +143,21 @@ export async function GetTemplateByName({
       message: 'Lack of kind template'
     };
   }
+  templateYaml.spec.categories = filterConfiguredCategorySlugs(
+    templateYaml.spec.categories,
+    categories
+  );
 
-  templateYaml = parseTemplateVariable(templateYaml, TemplateEnvs);
+  const templateRepo = {
+    url: TemplateEnvs.TEMPLATE_REPO_URL,
+    branch: TemplateEnvs.TEMPLATE_REPO_BRANCH,
+    provider: TemplateEnvs.TEMPLATE_REPO_PROVIDER
+  };
+
+  templateYaml = proxyTemplateIconUrls(
+    parseTemplateVariable(templateYaml, TemplateEnvs),
+    templateRepo
+  );
   const dataSource = getTemplateDataSource(templateYaml);
 
   const instanceName = dataSource?.defaults?.['app_name']?.value;
@@ -143,11 +169,6 @@ export async function GetTemplateByName({
   }
   const instanceYaml = handleTemplateToInstanceYaml(templateYaml, instanceName);
   appYaml = `${JsYaml.dump(instanceYaml)}\n---\n${appYaml}`;
-  const templateRepo = {
-    url: TemplateEnvs.TEMPLATE_REPO_URL,
-    branch: TemplateEnvs.TEMPLATE_REPO_BRANCH,
-    provider: TemplateEnvs.TEMPLATE_REPO_PROVIDER
-  };
   const responseTemplateYaml = proxyTemplateIconUrls(templateYaml, templateRepo);
 
   let readmeContent = '';
@@ -185,7 +206,9 @@ export async function GetTemplateReadmeByName({
   templateName: string;
   locale?: string;
 }) {
-  if (process.env.ENABLE_README_FETCH === 'false') {
+  const envEnableReadme =
+    process.env.TEMPLATE_REPO_ENABLE_README_FETCH || process.env.ENABLE_README_FETCH;
+  if (envEnableReadme === 'false') {
     return {
       code: 20000,
       message: 'success',
@@ -233,7 +256,8 @@ function getTemplateYamlByName(
   const templateFilePath = template?.spec?.filePath || `${targetPath}/${templateFileName}`;
   const yamlString = fs.readFileSync(templateFilePath, 'utf-8');
 
-  const { appYaml, templateYaml: rawTemplateYaml } = getYamlTemplate(yamlString);
+  let { appYaml, templateYaml: rawTemplateYaml } = getYamlTemplate(yamlString);
+  appYaml = appendTemplateManifestSources(appYaml, templateFilePath, repoRootPath);
   let templateYaml = rawTemplateYaml;
   templateYaml.spec.deployCount = template?.spec?.deployCount;
   const templateRepo = {

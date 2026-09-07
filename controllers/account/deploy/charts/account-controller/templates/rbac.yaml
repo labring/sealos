@@ -380,6 +380,7 @@ rules:
       - update
       - get
       - list
+      - patch
       - watch
   - apiGroups: [""]
     resources: ["persistentvolumeclaims", "services", "pods"]

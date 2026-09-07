@@ -38,9 +38,12 @@ livenessProbe:
 dbproviderConfig:
   monitorUrl: "http://database-monitor.sealos.svc.cluster.local:9090"
   migrateFileImage: ""
-  backupEnabled: "false"
+  backupEnabled: "true"
+  logEnabled: "false"
   showDocument: "true"
+  dataImportEnabled: "false"
   guideEnabled: "true"
+  kafkaEnabled: "true"
   billingUrl: "http://account-service.account-system.svc:2333"
   managedDbEnabled: "false"
   vlogsBaseUrl: "http://vlogs.sealos.svc.cluster.local:8428"

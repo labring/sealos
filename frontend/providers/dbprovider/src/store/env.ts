@@ -20,7 +20,10 @@ const useEnvStore = create<EnvState>()(
       migrate_file_image: '',
       minio_url: '',
       BACKUP_ENABLED: false,
+      LOG_ENABLED: false,
       SHOW_DOCUMENT: true,
+      DATA_IMPORT_ENABLED: true,
+      KAFKA_ENABLED: true,
       CurrencySymbol: 'shellCoin',
       STORAGE_MAX_SIZE: 300,
       DATAFLOW_ENABLED: false

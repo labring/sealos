@@ -65,7 +65,7 @@ export default function RunTimeLog({
   const theme = useTheme();
   const router = useRouter();
   const { intervalLoadPods, dbPods } = useDBStore();
-  const { startDateTime, endDateTime, timeZone } = useDateTimeStore();
+  const { startDateTime, endDateTime } = useDateTimeStore();
 
   const routeDbName = router.query.name as string;
 
@@ -125,8 +125,7 @@ export default function RunTimeLog({
         dbType: db.dbType as SupportReconfigureDBType,
         startTime: startDateTime.getTime(),
         endTime: endDateTime.getTime(),
-        timeRange: '30d',
-        timeZone
+        timeRange: '30d'
       };
 
       return await getVlogsDatabasePods(params);
@@ -153,8 +152,8 @@ export default function RunTimeLog({
         podName === ''
           ? dbPods[0]?.podName
           : Array.isArray(podName) && podName.length > 0
-          ? podName[0]
-          : undefined;
+            ? podName[0]
+            : undefined;
       if (!targetPodName) return [];
 
       return await getLogFiles({
@@ -243,8 +242,7 @@ export default function RunTimeLog({
         startTime: startDateTime.getTime(),
         endTime: endDateTime.getTime(),
         pageSize: logCount,
-        keyword: globalFilter || '',
-        timeZone
+        keyword: globalFilter || ''
       };
 
       console.log('RunTimeLog - getVlogsDatabaseLogs params:', {
@@ -375,8 +373,7 @@ export default function RunTimeLog({
         type: [logTypeStr],
         startTime: startDateTime.getTime(),
         endTime: endDateTime.getTime(),
-        keyword: globalFilter || '',
-        timeZone
+        keyword: globalFilter || ''
       };
 
       return await getVlogsDatabaseLogCounts(params);

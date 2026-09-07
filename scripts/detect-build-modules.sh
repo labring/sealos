@@ -19,7 +19,6 @@ source "${REPO_ROOT}/scripts/generate-dependencies.sh"
 # Module definitions
 declare -A CONTROLLER_MODULES=(
     ["user"]="user"
-    ["terminal"]="terminal"
     ["account"]="account"
     ["app"]="app"
     ["license"]="license"
@@ -27,13 +26,11 @@ declare -A CONTROLLER_MODULES=(
     ["job-heartbeat"]="job/heartbeat"
     ["resources"]="resources"
     ["node"]="node"
-    ["objectstorage"]="objectstorage"
 )
 
 declare -A SERVICE_MODULES=(
     ["database"]="database"
     ["account"]="account"
-    ["minio"]="minio"
     ["launchpad"]="launchpad"
     ["vlogs"]="vlogs"
 )

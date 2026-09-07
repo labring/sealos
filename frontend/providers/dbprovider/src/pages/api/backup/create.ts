@@ -5,6 +5,8 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { json2ManualBackup } from '@/utils/json2Yaml';
 import { DBBackupMethodNameMap, DBBackupPolicyNameMap, DBTypeEnum } from '@/constants/db';
+import { ResponseCode } from '@/types/response';
+import { isValidBackupRemark } from '@/utils/backupRemark';
 
 export type Props = {
   backupName: string;
@@ -20,6 +22,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     jsonRes(res, {
       code: 500,
       error: 'params error'
+    });
+    return;
+  }
+
+  if (!isValidBackupRemark(remark)) {
+    jsonRes(res, {
+      code: ResponseCode.BAD_REQUEST,
+      message: 'remark_tip'
     });
     return;
   }

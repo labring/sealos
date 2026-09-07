@@ -3,6 +3,33 @@ import type { AppNetworkRouteType } from '@/types/app';
 const targetsMainService = (route: AppNetworkRouteType, networkServiceName?: string) =>
   !route.serviceName || (!!networkServiceName && route.serviceName === networkServiceName);
 
+export const rebindMainServiceRoutes = ({
+  routes,
+  previousServiceName
+}: {
+  routes?: AppNetworkRouteType[];
+  previousServiceName?: string;
+}) => {
+  if (!routes?.length || !previousServiceName) {
+    return routes;
+  }
+
+  let changed = false;
+  const nextRoutes = routes.map((route) => {
+    if (route.serviceName !== previousServiceName) {
+      return route;
+    }
+
+    changed = true;
+    return {
+      ...route,
+      serviceName: ''
+    };
+  });
+
+  return changed ? nextRoutes : routes;
+};
+
 export const syncDefaultRouteServicePort = ({
   routes,
   previousPort,

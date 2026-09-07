@@ -2,12 +2,15 @@ import { SystemEnvResponse } from '@/pages/api/getEnv';
 import type { Response as DBVersionMapType } from '@/pages/api/platform/getVersion';
 import type { Response as resourcePriceResponse } from '@/pages/api/platform/resourcePrice';
 import type { AddonItem } from '@/pages/api/getAddonList';
+import type { PaymentConfigResponse } from '@/pages/api/platform/paymentConfig';
 import { GET, POST } from '@/services/request';
 import type { UserQuotaItemType, UserTask } from '@/types/user';
 import { getUserSession } from '@/utils/user';
 import { AxiosProgressEvent } from 'axios';
 
 export const getResourcePrice = () => GET<resourcePriceResponse>('/api/platform/resourcePrice');
+
+export const getPaymentConfig = () => GET<PaymentConfigResponse>('/api/platform/paymentConfig');
 
 export const getAppEnv = () => GET<SystemEnvResponse>('/api/getEnv');
 

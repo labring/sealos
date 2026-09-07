@@ -30,6 +30,9 @@ jest.mock('@/stores/session', () => ({
 
 jest.mock('@/api/platform', () => ({ getResource: jest.fn() }));
 jest.mock('@/api/auth', () => ({ getAmount: jest.fn() }));
+jest.mock('@sealos/ui', () => ({
+  CurrencySymbol: () => null
+}));
 
 jest.mock('next-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key })

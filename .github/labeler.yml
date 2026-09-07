@@ -79,7 +79,6 @@ area/ci:
 - 'scripts/**/*'
 - 'lifecycle/scripts/**/*'
 - 'lifecycle/docker/**/*'
-- 'deploy/**/*'
 - '.golangci.yml'
 - 'lifecycle/.goreleaser.yml'
 - 'lifecycle/Makefile'

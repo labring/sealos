@@ -81,6 +81,27 @@ jobs:
           working-directory: controllers/${{ inputs.module_path }}
           args: --color=always --config=${{ github.workspace }}/.golangci.yml
 
+  unit-test:
+    name: Test ${{ inputs.module_name }} with race detector
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Golang with cache
+        uses: magnetikonline/action-golang-cache@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Install Dependencies
+        run: sudo apt update && sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
+
+      - name: Run Tests with race detector
+        working-directory: controllers/${{ inputs.module_path }}
+        env:
+          USE_EXISTING_CLUSTER: "false"
+        run: make test
+
   image-build:
     runs-on: ubuntu-24.04
     permissions:

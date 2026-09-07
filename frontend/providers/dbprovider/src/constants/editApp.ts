@@ -8,7 +8,7 @@ export const editModeMap: (isEdit: boolean) => {
       title: 'update_database',
       applyBtnText: 'update',
       applyMessage: 'confirm_update_database',
-      applySuccess: 'update_successful',
+      applySuccess: 'update_submitted',
       applyError: 'update_failed'
     };
   }

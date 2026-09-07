@@ -30,6 +30,7 @@ import { useQuery } from '@tanstack/react-query';
 import { checkReady } from '@/api/platform';
 import { useGuideStore } from '@/store/guide';
 import { startDriver, detailDriverObj } from '@/hooks/driver';
+import { isPublicAddressAccessible, type PublicAddressStatus } from '@/utils/publicAccess';
 
 const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
   const { t } = useTranslation();
@@ -163,7 +164,7 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
               }
               return acc;
             },
-            {} as Record<string, { ready: boolean; url: string }>
+            {} as Record<string, PublicAddressStatus>
           )
         : {},
     [networkStatus]
@@ -229,6 +230,10 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
               </thead>
               <tbody>
                 {networks.map((network, index) => {
+                  const publicAddressAccessible = isPublicAddressAccessible({
+                    app,
+                    status: statusMap[network.public]
+                  });
                   return (
                     <tr key={network.inline + index}>
                       <th>
@@ -249,7 +254,7 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                         <Flex alignItems={'center'} gap={'2px'}>
                           {network.public && network.showReadyStatus && (
                             <>
-                              {statusMap[network.public]?.ready ? (
+                              {publicAddressAccessible ? (
                                 <Center
                                   fontSize={'12px'}
                                   fontWeight={400}

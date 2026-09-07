@@ -92,6 +92,7 @@ const (
 
 	EnvNonFreeTrialEnabled = "NON_FREE_TRIAL_ENABLED"
 	EnvJwtSecret           = "ACCOUNT_API_JWT_SECRET"
+	EnvAdminJwtSecret      = "ACCOUNT_ADMIN_JWT_SECRET"
 	EnvDesktopJwtSecret    = "DESKTOP_API_JWT_SECRET"
 
 	InitAccountTimeAnnotation   = "user.sealos.io/init-account-time"
@@ -122,6 +123,7 @@ type AccountReconciler struct {
 	localDomain                    string
 	allRegionDomain                []string
 	jwtManager                     *utils.JWTManager
+	adminJwtManager                *utils.JWTManager
 	desktopJwtManager              *utils.JWTManager
 	workspaceSubPlans              []pkgtypes.WorkspaceSubscriptionPlan
 	workspaceSubPlansResourceLimit map[string]corev1.ResourceList
@@ -136,13 +138,14 @@ type AccountReconciler struct {
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accounts/finalizers,verbs=update
 //+kubebuilder:rbac:groups=core,resources=resourcequotas,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=core,resources=limitranges,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=user.sealos.io,resources=users,verbs=create;get;list;watch
+//+kubebuilder:rbac:groups=user.sealos.io,resources=users,verbs=create;get;list;patch;watch
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
 
 func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	user := &userv1.User{}
+	user := &metav1.PartialObjectMetadata{}
+	user.SetGroupVersionKind(userv1.GroupVersion.WithKind("User"))
 	if err := r.Get(
 		ctx,
 		client.ObjectKey{Namespace: req.Namespace, Name: req.Name},
@@ -163,8 +166,12 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			return ctrl.Result{}, nil
 		}
 		if err == nil {
+			original := user.DeepCopy()
+			if user.Annotations == nil {
+				user.Annotations = make(map[string]string)
+			}
 			user.Annotations[InitAccountTimeAnnotation] = time.Now().Format(time.RFC3339)
-			return ctrl.Result{}, r.Update(ctx, user)
+			return ctrl.Result{}, r.Patch(ctx, user, client.MergeFrom(original))
 		}
 		return ctrl.Result{}, err
 	} else if client.IgnoreNotFound(
@@ -178,7 +185,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 func (r *AccountReconciler) syncAccount(
 	ctx context.Context,
-	userCr *userv1.User,
+	userCr *metav1.PartialObjectMetadata,
 ) (account *pkgtypes.Account, err error) {
 	owner := userCr.Annotations[userv1.UserAnnotationOwnerKey]
 	userNamespace := "ns-" + userCr.Name
@@ -424,7 +431,19 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controll
 		r.allRegionDomain[i] = region.Domain
 	}
 	r.localDomain = r.AccountV2.GetLocalRegion().Domain
-	r.jwtManager = utils.NewJWTManager(os.Getenv(EnvJwtSecret), 10*time.Minute)
+	jwtSecret := os.Getenv(EnvJwtSecret)
+	if jwtSecret == "" {
+		return fmt.Errorf("empty jwt secret env: %s", EnvJwtSecret)
+	}
+	adminJwtSecret := os.Getenv(EnvAdminJwtSecret)
+	if adminJwtSecret == "" {
+		return fmt.Errorf("empty admin jwt secret env: %s", EnvAdminJwtSecret)
+	}
+	if adminJwtSecret == jwtSecret {
+		return fmt.Errorf("admin jwt secret must differ from %s", EnvJwtSecret)
+	}
+	r.jwtManager = utils.NewJWTManager(jwtSecret, 10*time.Minute)
+	r.adminJwtManager = utils.NewJWTManager(adminJwtSecret, 10*time.Minute)
 	plans, err := r.AccountV2.GetWorkspaceSubscriptionPlanList()
 	if err != nil {
 		return fmt.Errorf("failed to get workspace subscription plans: %w", err)
@@ -459,7 +478,7 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controll
 	}
 	// r.SyncNSQuotaFunc = r.syncResourceQuotaAndLimitRange
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&userv1.User{}, builder.WithPredicates(OnlyCreatePredicate{})).
+		For(&userv1.User{}, builder.WithPredicates(OnlyCreatePredicate{}), builder.OnlyMetadata).
 		WithOptions(rateOpts).
 		Complete(r)
 }

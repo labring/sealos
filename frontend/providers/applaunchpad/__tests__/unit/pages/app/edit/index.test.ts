@@ -20,6 +20,20 @@ describe('EditApp yaml display state', () => {
     expect(handleDomainVerified).not.toContain('setYamlList(formData2Yamls(data));');
   });
 
+  it('allows deleting draft storage volumes while keeping the last applied one guarded', () => {
+    const source = readFileSync(
+      new URL('../../../../../src/pages/app/edit/components/Form.tsx', import.meta.url),
+      'utf8'
+    );
+    const start = source.indexOf('{localStores.map((item) => {');
+
+    expect(start).toBeGreaterThanOrEqual(0);
+    expect(source.indexOf('removeStoreList(originalIndex)')).toBeGreaterThan(start);
+    expect(source).toContain('existingStores.some((store) => store.path === item.path)');
+    expect(source).toContain("t('Store At Least One')");
+    expect(source).not.toContain('localStores.length === 1');
+  });
+
   it('creates the missing ClusterIP service before applying a custom-domain ingress', () => {
     const source = readFileSync(
       new URL('../../../../../src/pages/app/edit/index.tsx', import.meta.url),

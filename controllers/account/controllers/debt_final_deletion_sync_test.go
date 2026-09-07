@@ -29,4 +29,17 @@ func TestFinalDeletionDebtNamespaceFlushReq(t *testing.T) {
 			req.CurrentDebtStatus,
 		)
 	}
+	if req.ReplayFinalDeletion {
+		t.Fatal("normal final deletion request should not be marked as replay")
+	}
+}
+
+func TestFinalDeletionDebtNamespaceReplayReq(t *testing.T) {
+	userUID := uuid.New()
+	req := finalDeletionDebtNamespaceFlushReq(userUID)
+	req.ReplayFinalDeletion = true
+
+	if !req.ReplayFinalDeletion {
+		t.Fatal("final deletion replay request should be marked as replay")
+	}
 }

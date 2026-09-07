@@ -31,7 +31,7 @@ import type { AppEditType, ApplicationProtocolType } from '@/types/app';
 import RouteRulesModal from './RouteRulesModal';
 import { useCopyData } from '@/utils/tools';
 import { buildExternalUrl, getExternalProtocol } from '@/utils/network-url';
-import { syncDefaultRouteServicePort } from '@/utils/network-routes';
+import { rebindMainServiceRoutes, syncDefaultRouteServicePort } from '@/utils/network-routes';
 import type { CustomAccessModalParams } from './CustomAccessModal';
 import type { CertificateCustomAccessModalParams } from './CertificateCustomAccessModal';
 import dynamic from 'next/dynamic';
@@ -267,6 +267,17 @@ const withDefaultRoutes = (network: AppEditType['networks'][0]): AppEditType['ne
   routes: network.routes?.length ? network.routes : [createDefaultRoute(network.port)]
 });
 
+const withoutMainServiceBinding = (
+  network: AppEditType['networks'][0]
+): AppEditType['networks'][0] => ({
+  ...network,
+  serviceName: '',
+  routes: rebindMainServiceRoutes({
+    routes: network.routes,
+    previousServiceName: network.serviceName
+  })
+});
+
 const getNextAvailablePort = (networks: AppEditType['networks']) => {
   const usedPorts = new Set(networks.map((network) => Number(network.port)).filter(Boolean));
 
@@ -430,8 +441,7 @@ export function NetworkSection({
           updateNetworks(
             index,
             withDefaultRoutes({
-              ...currentNetwork,
-              serviceName: '',
+              ...withoutMainServiceBinding(currentNetwork),
               networkName: currentNetwork.networkName || `network-${nanoid()}`,
               protocol: 'TCP',
               appProtocol: currentNetwork.appProtocol || 'HTTP',
@@ -449,8 +459,7 @@ export function NetworkSection({
           const { index } = action.payload;
           clearPublicDomainErrorByIndex(index);
           updateNetworks(index, {
-            ...currentNetworks[index],
-            serviceName: '',
+            ...withoutMainServiceBinding(currentNetworks[index]),
             openPublicDomain: false,
             openNodePort: false,
             customDomain: '',
@@ -477,8 +486,7 @@ export function NetworkSection({
             updateNetworks(
               index,
               withDefaultRoutes({
-                ...currentNetwork,
-                serviceName: '',
+                ...withoutMainServiceBinding(currentNetwork),
                 networkName: currentNetwork.networkName || `network-${nanoid()}`,
                 protocol: currentNetwork.appProtocol ? 'TCP' : currentNetwork.protocol,
                 appProtocol:
@@ -506,8 +514,7 @@ export function NetworkSection({
           updateNetworks(
             index,
             withDefaultRoutes({
-              ...currentNetwork,
-              serviceName: '',
+              ...withoutMainServiceBinding(currentNetwork),
               networkName: currentNetwork.networkName || `network-${nanoid()}`,
               protocol: 'TCP',
               appProtocol,
@@ -532,8 +539,7 @@ export function NetworkSection({
               updateNetworks(
                 index,
                 withDefaultRoutes({
-                  ...currentNetwork,
-                  serviceName: '',
+                  ...withoutMainServiceBinding(currentNetwork),
                   protocol: 'TCP',
                   appProtocol: protocol as any,
                   openNodePort: true,
@@ -549,8 +555,7 @@ export function NetworkSection({
               updateNetworks(
                 index,
                 withDefaultRoutes({
-                  ...currentNetwork,
-                  serviceName: '',
+                  ...withoutMainServiceBinding(currentNetwork),
                   protocol: 'TCP',
                   appProtocol: protocol as any,
                   openNodePort: false,
@@ -567,8 +572,7 @@ export function NetworkSection({
             updateNetworks(
               index,
               withDefaultRoutes({
-                ...currentNetwork,
-                serviceName: '',
+                ...withoutMainServiceBinding(currentNetwork),
                 protocol: protocol as any,
                 appProtocol: undefined,
                 openNodePort: true,

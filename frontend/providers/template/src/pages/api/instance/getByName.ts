@@ -6,6 +6,8 @@ import { jsonRes } from '@/services/backend/response';
 import { adaptInstanceListItem } from '@/utils/adapt';
 import { TemplateInstanceType } from '@/types/app';
 import { MockInstance } from '@/constants/mock';
+import { getTemplateEnvs } from '@/utils/tools';
+import { proxyTemplateIconUrls } from '@/utils/templateAsset';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -35,7 +37,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       body: TemplateInstanceType;
     };
 
-    jsonRes(res, { data: adaptInstanceListItem(result.body) });
+    const templateEnvs = getTemplateEnvs();
+    const templateRepo = {
+      url: templateEnvs.TEMPLATE_REPO_URL,
+      branch: templateEnvs.TEMPLATE_REPO_BRANCH,
+      provider: templateEnvs.TEMPLATE_REPO_PROVIDER
+    };
+
+    jsonRes(res, { data: adaptInstanceListItem(proxyTemplateIconUrls(result.body, templateRepo)) });
   } catch (err: any) {
     jsonRes(res, {
       code: 500,

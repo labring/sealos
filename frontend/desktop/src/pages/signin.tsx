@@ -1,6 +1,7 @@
 // import SigninComponent from '@/components/signin';
 import { useConfigStore } from '@/stores/config';
-import { compareFirstLanguages } from '@/utils/tools';
+import { getLocaleCookieHeader, getPlatformDefaultLocale, getRequestLocale } from '@/utils/locale';
+import { getLayoutConfig } from './api/platform/getLayoutConfig';
 import { Box, useToast } from '@chakra-ui/react';
 import { QueryClient, dehydrate } from '@tanstack/react-query';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
@@ -81,11 +82,14 @@ export default function SigninPage({ sessionExpired }: { sessionExpired?: boolea
 }
 
 export async function getServerSideProps({ req, res, locales }: any) {
-  const local =
-    req?.cookies?.NEXT_LOCALE || compareFirstLanguages(req?.headers?.['accept-language'] || 'zh');
+  const layoutConfig = await getLayoutConfig();
+  const local = getRequestLocale(
+    req?.cookies?.NEXT_LOCALE,
+    getPlatformDefaultLocale(layoutConfig.version)
+  );
 
   const sessionExpired = req?.cookies?.session_expired === '1';
-  const cookies = [`NEXT_LOCALE=${local}; Max-Age=2592000; Secure; SameSite=None`];
+  const cookies = [getLocaleCookieHeader(local)];
   if (sessionExpired) {
     cookies.push('session_expired=; Path=/; Max-Age=0');
   }

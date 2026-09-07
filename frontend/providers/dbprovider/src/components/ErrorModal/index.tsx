@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Modal,
   ModalOverlay,
@@ -14,6 +14,7 @@ import MyIcon from '@/components/Icon';
 import { useTranslation } from 'next-i18next';
 import { ResponseCode } from '@/types/response';
 import { sealosApp } from 'sealos-desktop-sdk/app';
+import { getPaymentConfig } from '@/api/platform';
 
 const ErrorModal = ({
   title,
@@ -27,6 +28,37 @@ const ErrorModal = ({
   errorCode?: ResponseCode;
 }) => {
   const { t } = useTranslation();
+  const [paymentEnabled, setPaymentEnabled] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let ignore = false;
+
+    if (errorCode !== ResponseCode.BALANCE_NOT_ENOUGH) {
+      setPaymentEnabled(null);
+      return;
+    }
+
+    setPaymentEnabled(null);
+    getPaymentConfig()
+      .then((config) => {
+        if (!ignore) {
+          setPaymentEnabled(config.paymentEnabled);
+        }
+      })
+      .catch(() => {
+        if (!ignore) {
+          setPaymentEnabled(false);
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [errorCode]);
+
+  const shouldRecharge = errorCode === ResponseCode.BALANCE_NOT_ENOUGH && paymentEnabled === true;
+  const isCheckingPayment =
+    errorCode === ResponseCode.BALANCE_NOT_ENOUGH && paymentEnabled === null;
 
   const openCostCenterApp = () => {
     sealosApp.runEvents('openDesktopApp', {
@@ -52,24 +84,27 @@ const ErrorModal = ({
           {content}
         </ModalBody>
         <ModalFooter>
+          {(errorCode !== ResponseCode.BALANCE_NOT_ENOUGH || shouldRecharge) && (
+            <Button
+              onClick={() => {
+                onClose();
+              }}
+              variant={'outline'}
+            >
+              {t('Cancel')}
+            </Button>
+          )}
           <Button
+            ml={errorCode !== ResponseCode.BALANCE_NOT_ENOUGH || shouldRecharge ? '12px' : 0}
+            isDisabled={isCheckingPayment}
             onClick={() => {
-              onClose();
-            }}
-            variant={'outline'}
-          >
-            {t('Cancel')}
-          </Button>
-          <Button
-            ml={'12px'}
-            onClick={() => {
-              if (errorCode === ResponseCode.BALANCE_NOT_ENOUGH) {
+              if (shouldRecharge) {
                 openCostCenterApp();
               }
               onClose();
             }}
           >
-            {errorCode === ResponseCode.BALANCE_NOT_ENOUGH ? t('add_credit') : t('confirm')}
+            {shouldRecharge ? t('add_credit') : t('confirm')}
           </Button>
         </ModalFooter>
       </ModalContent>

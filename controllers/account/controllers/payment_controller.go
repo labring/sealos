@@ -106,8 +106,8 @@ func (r *PaymentReconciler) Start(ctx context.Context) error {
 	var wg sync.WaitGroup
 	defer wg.Wait()
 	fc := func(wg *sync.WaitGroup, t *time.Ticker, reconcileFunc func(ctx context.Context) []error) {
-		wg.Add(1)
 		defer wg.Done()
+		defer t.Stop()
 		for {
 			select {
 			case <-t.C:
@@ -123,16 +123,17 @@ func (r *PaymentReconciler) Start(ctx context.Context) error {
 	}
 	tickerReconcilePayment := time.NewTicker(r.reconcileDuration)
 	tickerNewPayment := time.NewTicker(r.createDuration)
+	wg.Add(2)
 	go fc(&wg, tickerReconcilePayment, r.reconcilePayments)
 	go fc(&wg, tickerNewPayment, r.reconcileCreatePayments)
 	return nil
 }
 
-func (r *PaymentReconciler) reconcilePayments(_ context.Context) (errs []error) {
+func (r *PaymentReconciler) reconcilePayments(ctx context.Context) (errs []error) {
 	paymentList := &accountv1.PaymentList{}
-	err := r.List(context.Background(), paymentList, &client.ListOptions{})
+	err := r.List(ctx, paymentList, &client.ListOptions{})
 	if err != nil {
-		errs = append(errs, fmt.Errorf("watch payment failed: %w", err))
+		errs = append(errs, fmt.Errorf("list payments failed: %w", err))
 		return errs
 	}
 	for _, payment := range paymentList.Items {
@@ -153,7 +154,7 @@ func (r *PaymentReconciler) reconcilePayments(_ context.Context) (errs []error) 
 
 func (r *PaymentReconciler) reconcileCreatePayments(ctx context.Context) (errs []error) {
 	watcher, err := r.WatchClient.Watch(
-		context.Background(),
+		ctx,
 		&accountv1.PaymentList{},
 		&client.ListOptions{},
 	)
@@ -161,6 +162,7 @@ func (r *PaymentReconciler) reconcileCreatePayments(ctx context.Context) (errs [
 		errs = append(errs, fmt.Errorf("watch payment failed: %w", err))
 		return errs
 	}
+	defer watcher.Stop()
 	select {
 	case <-ctx.Done():
 		return errs
@@ -224,6 +226,18 @@ func (r *PaymentReconciler) reconcilePayment(payment *accountv1.Payment) error {
 		}
 		r.userLock[userUID].Lock()
 		defer r.userLock[userUID].Unlock()
+		debtMutex, err := r.DebtReconciler.getUserMutex(userUID)
+		if err != nil {
+			return fmt.Errorf("get debt user lock failed: %w", err)
+		}
+		debtMutex.Lock()
+		shouldRefreshDebt := false
+		defer func() {
+			debtMutex.Unlock()
+			if shouldRefreshDebt {
+				go r.DebtReconciler.processUsersInParallel([]uuid.UUID{userUID})
+			}
+		}()
 		userDiscount, err := r.Account.AccountV2.GetUserRechargeDiscount(
 			&pkgtypes.UserQueryOpts{ID: payment.Spec.UserID},
 		)
@@ -253,11 +267,12 @@ func (r *PaymentReconciler) reconcilePayment(payment *accountv1.Payment) error {
 		}); err != nil {
 			return fmt.Errorf("payment failed: %w", err)
 		}
+		shouldRefreshDebt = true
 		payment.Status.Status = pay.PaymentSuccess
 		if err := r.Status().Update(context.Background(), payment); err != nil {
 			return fmt.Errorf("update payment failed: %w", err)
 		}
-	// case pay.PaymentFailed, pay.PaymentExpired:
+		// case pay.PaymentFailed, pay.PaymentExpired:
 	default:
 		if err := r.expiredOvertimePayment(payment); err != nil {
 			return fmt.Errorf("expired payment failed: %w", err)

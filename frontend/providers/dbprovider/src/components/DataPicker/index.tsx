@@ -21,7 +21,6 @@ import { DateRange, DayPicker, SelectRangeEventHandler } from 'react-day-picker'
 import 'react-day-picker/dist/style.css';
 import useDateTimeStore from '@/store/date';
 import { parseTimeRange, formatTimeRange } from '@/utils/timeRange';
-import { MySelect } from '@sealos/ui';
 import MyIcon from '../Icon';
 import { Calendar } from 'lucide-react';
 
@@ -40,8 +39,7 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
   const currentLang = i18n.language;
   const { isOpen, onClose, onOpen } = useDisclosure();
   const isZh = i18n.language?.toLowerCase().startsWith('zh');
-  const { startDateTime, endDateTime, setStartDateTime, setEndDateTime, timeZone, setTimeZone } =
-    useDateTimeStore();
+  const { startDateTime, endDateTime, setStartDateTime, setEndDateTime } = useDateTimeStore();
 
   // 新的时间格式化函数
   const formatTimeRange = (start: Date, end: Date) => {
@@ -471,20 +469,6 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
           </Flex>
           <Divider />
           <Flex justify={'flex-start'} pl={'12px'} pr={'12px'} alignItems={'center'} py={'8px'}>
-            <MySelect
-              height="32px"
-              width={'fit-content'}
-              border={'none'}
-              boxShadow={'none'}
-              backgroundColor={'transparent'}
-              color={'grayModern.600'}
-              value={timeZone}
-              list={[
-                { value: 'local', label: 'Local (Asia/Shanghai)' },
-                { value: 'utc', label: 'UTC' }
-              ]}
-              onchange={(val: any) => setTimeZone(val)}
-            />
             <ButtonGroup variant="outline" spacing="2" px={0} ml={'auto'}>
               <Button
                 border={'1px solid'}

@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"maps"
 	"sync"
 	"time"
 
@@ -31,6 +32,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/utils/keymutex"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -49,12 +51,25 @@ type OperationReqReconciler struct {
 	Logger   logr.Logger
 	Scheme   *runtime.Scheme
 	Recorder record.EventRecorder
-	userLock map[string]*sync.Mutex
+	locks    keymutex.KeyMutex
+	lockOnce sync.Once
 
 	// expirationTime is the time duration of the request is expired
 	expirationTime time.Duration
 	// retentionTime is the time duration of the request is retained after it is isCompleted
 	retentionTime time.Duration
+}
+
+func (r *OperationReqReconciler) lockWorkspace(namespace string) func() {
+	r.lockOnce.Do(func() {
+		// A fixed lock set bounds memory while preserving concurrency across
+		// independent workspaces.
+		r.locks = keymutex.NewHashed(256)
+	})
+	r.locks.LockKey(namespace)
+	return func() {
+		_ = r.locks.UnlockKey(namespace)
+	}
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -74,10 +89,13 @@ func (r *OperationReqReconciler) SetupWithManager(
 	r.Scheme = mgr.GetScheme()
 	r.expirationTime = expTime
 	r.retentionTime = retTime
-	r.userLock = make(map[string]*sync.Mutex)
 	r.Logger.V(1).Info("init reconcile operationrequest controller")
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&userv1.Operationrequest{}, builder.WithPredicates(namespaceOnlyPredicate(config.GetUserSystemNamespace()))).
+		For(
+			&userv1.Operationrequest{},
+			builder.WithPredicates(namespaceOnlyPredicate(config.GetUserSystemNamespace())),
+			builder.OnlyMetadata,
+		).
 		WithOptions(controller.Options{
 			MaxConcurrentReconciles: ratelimiter.GetConcurrent(opts),
 			RateLimiter:             ratelimiter.GetRateLimiter(opts),
@@ -121,13 +139,8 @@ func (r *OperationReqReconciler) reconcile(
 	ctx context.Context,
 	request *userv1.Operationrequest,
 ) (ctrl.Result, error) {
-	userLock, ok := r.userLock[request.Spec.User]
-	if !ok {
-		userLock = &sync.Mutex{}
-		r.userLock[request.Spec.User] = userLock
-	}
-	userLock.Lock()
-	defer userLock.Unlock()
+	unlock := r.lockWorkspace(request.Spec.Namespace)
+	defer unlock()
 	r.Logger.V(1).Info("start reconcile controller operationRequest", getLog(request)...)
 	// count the time cost of handling the request
 	startTime := time.Now()
@@ -165,12 +178,16 @@ func (r *OperationReqReconciler) reconcile(
 	}
 
 	// convert OperationRequest to RoleBinding
-	rolebinding := conventRequestToRolebinding(request)
+	desiredRoleBinding := convertRequestToRoleBinding(request)
+	rolebinding := &rbacv1.RoleBinding{ObjectMeta: metav1.ObjectMeta{
+		Name:      desiredRoleBinding.Name,
+		Namespace: desiredRoleBinding.Namespace,
+	}}
 	r.Logger.V(1).Info("convert OperationRequest to RoleBinding",
-		"rolebinding.name", rolebinding.Name,
-		"rolebinding.namespace", rolebinding.Namespace,
-		"rolebinding.subjects", rolebinding.Subjects,
-		"rolebinding.roleRef", rolebinding.RoleRef,
+		"rolebinding.name", desiredRoleBinding.Name,
+		"rolebinding.namespace", desiredRoleBinding.Namespace,
+		"rolebinding.subjects", desiredRoleBinding.Subjects,
+		"rolebinding.roleRef", desiredRoleBinding.RoleRef,
 	)
 
 	user := &userv1.User{}
@@ -199,7 +216,11 @@ func (r *OperationReqReconciler) reconcile(
 		)
 		return ctrl.Result{}, err
 	}
-	setUpOwnerReferenceFc := func() error {
+	configureRoleBinding := func() error {
+		rolebinding.Annotations = maps.Clone(desiredRoleBinding.Annotations)
+		rolebinding.Labels = maps.Clone(desiredRoleBinding.Labels)
+		rolebinding.Subjects = append([]rbacv1.Subject(nil), desiredRoleBinding.Subjects...)
+		rolebinding.RoleRef = desiredRoleBinding.RoleRef
 		return ctrl.SetControllerReference(bindUser, rolebinding, r.Scheme)
 	}
 
@@ -218,7 +239,7 @@ func (r *OperationReqReconciler) reconcile(
 			ctx,
 			r.Client,
 			rolebinding,
-			setUpOwnerReferenceFc,
+			configureRoleBinding,
 		); err != nil {
 			r.Recorder.Eventf(
 				request,
@@ -232,8 +253,7 @@ func (r *OperationReqReconciler) reconcile(
 		}
 		if request.Spec.Role == userv1.OwnerRoleType {
 			// update user annotation
-			user.Annotations[userv1.UserAnnotationOwnerKey] = request.Spec.User
-			if err := r.Update(ctx, user); err != nil {
+			if err := r.patchUserOwner(ctx, user, request.Spec.User); err != nil {
 				r.Recorder.Eventf(
 					request,
 					v1.EventTypeWarning,
@@ -284,6 +304,17 @@ func (r *OperationReqReconciler) reconcile(
 			)
 			return ctrl.Result{}, err
 		}
+		if err = configureRoleBinding(); err != nil {
+			r.Recorder.Eventf(
+				request,
+				v1.EventTypeWarning,
+				"Failed to set owner reference",
+				"Failed to set owner reference for rolebinding %s/%s",
+				rolebinding.Namespace,
+				rolebinding.Name,
+			)
+			return ctrl.Result{}, err
+		}
 		if err := r.Create(ctx, rolebinding); err != nil {
 			r.Recorder.Eventf(
 				request,
@@ -295,21 +326,9 @@ func (r *OperationReqReconciler) reconcile(
 			)
 			return ctrl.Result{}, err
 		}
-		if err = setUpOwnerReferenceFc(); err != nil {
-			r.Recorder.Eventf(
-				request,
-				v1.EventTypeWarning,
-				"Failed to set owner reference",
-				"Failed to set owner reference for rolebinding %s/%s",
-				rolebinding.Namespace,
-				rolebinding.Name,
-			)
-			return ctrl.Result{}, err
-		}
 		if request.Spec.Role == userv1.OwnerRoleType {
 			// update user annotation
-			user.Annotations[userv1.UserAnnotationOwnerKey] = request.Spec.User
-			if err := r.Update(ctx, user); err != nil {
+			if err := r.patchUserOwner(ctx, user, request.Spec.User); err != nil {
 				r.Recorder.Eventf(
 					request,
 					v1.EventTypeWarning,
@@ -339,6 +358,19 @@ func (r *OperationReqReconciler) reconcile(
 		request.Name,
 	)
 	return ctrl.Result{RequeueAfter: OperationReqRequeueDuration}, nil
+}
+
+func (r *OperationReqReconciler) patchUserOwner(
+	ctx context.Context,
+	user *userv1.User,
+	owner string,
+) error {
+	original := user.DeepCopy()
+	if user.Annotations == nil {
+		user.Annotations = make(map[string]string)
+	}
+	user.Annotations[userv1.UserAnnotationOwnerKey] = owner
+	return r.Patch(ctx, user, client.MergeFrom(original))
 }
 
 // isRetained returns true if the request is isCompleted and exist for retention time
@@ -412,7 +444,7 @@ func (r *OperationReqReconciler) updateRequestStatus(
 	return nil
 }
 
-func conventRequestToRolebinding(request *userv1.Operationrequest) *rbacv1.RoleBinding {
+func convertRequestToRoleBinding(request *userv1.Operationrequest) *rbacv1.RoleBinding {
 	return &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      config.GetGroupRoleBindingName(request.Spec.User),

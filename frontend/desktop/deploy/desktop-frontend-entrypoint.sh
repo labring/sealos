@@ -221,11 +221,6 @@ VALUES_ARGS=(
   -f "./charts/${SERVICE_NAME}/values.yaml"
   -f "${USER_VALUES_PATH}"
 )
-GLOBALS_FILE="/root/.sealos/cloud/values/global.yaml"
-if [ -f "${GLOBALS_FILE}" ]; then
-  echo "Merging global values from ${GLOBALS_FILE} into user values..."
-  VALUES_ARGS+=(-f "${GLOBALS_FILE}")
-fi
 
 echo "Deploying Helm chart..."
 helm upgrade -i "${RELEASE_NAME}" -n "${RELEASE_NAMESPACE}" --create-namespace "${CHART_PATH}" \

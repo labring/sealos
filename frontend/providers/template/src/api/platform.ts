@@ -1,9 +1,10 @@
 import { EnvResponse } from '@/types/index';
 import { GET } from '@/services/request';
 import { SystemConfigType, TemplateType } from '@/types/app';
-import type { TemplateCategory } from '@/types/config';
+import type { ClientAppConfig, TemplateCategory } from '@/types/config';
 import type { UserQuotaItemType, UserTask, userPriceType } from '@/types/user';
 import { getUserSession } from '@/utils/user';
+import type { PaymentConfigResponse } from '@/pages/api/platform/paymentConfig';
 import useSessionStore from '@/store/session';
 
 export const updateRepo = () => GET('/api/updateRepo');
@@ -15,6 +16,8 @@ export const getTemplates = (language?: string) =>
       language
     }
   );
+
+export const getClientAppConfig = () => GET<ClientAppConfig>('/api/platform/getClientAppConfig');
 
 export const getPlatformEnv = (
   { insideCloud }: { insideCloud: boolean } = { insideCloud: false }
@@ -31,6 +34,8 @@ export const getUserQuota = () =>
   }>('/api/platform/getQuota');
 
 export const getResourcePrice = () => GET<userPriceType>('/api/platform/resourcePrice');
+
+export const getPaymentConfig = () => GET<PaymentConfigResponse>('/api/platform/paymentConfig');
 
 export const getUserTasks = () =>
   GET<{ needGuide: boolean; task: UserTask }>('/api/guide/getTasks', undefined, {

@@ -73,6 +73,9 @@ serviceAccountName: account-controller-manager
 # ConfigMap for environment variables
 envConfigMapName: account-manager-env
 
+# Secret containing the dedicated admin API signing key
+adminJwtSecretName: account-admin-jwt
+
 # Secret for payment configuration
 paymentSecretName: payment-secret
 

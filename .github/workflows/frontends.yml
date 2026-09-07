@@ -71,6 +71,9 @@ jobs:
       modules: ${{ steps.set-matrix.outputs.modules }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          # paths-filter may need the merge-base; avoid its shallow-history deepen race.
+          fetch-depth: 0
       - name: Verify shared frontend runtime settings
         run: grep -qx 'ENV UV_USE_IO_URING=0' frontend/Dockerfile
       - uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590 # v3
@@ -93,59 +96,49 @@ jobs:
               - 'frontend/providers/template/**'
             applaunchpad:
               - 'frontend/providers/applaunchpad/**'
-            terminal:
-              - 'frontend/providers/terminal/**'
             dbprovider:
               - 'frontend/providers/dbprovider/**'
             costcenter:
               - 'frontend/providers/costcenter/**'
-            objectstorage:
-              - 'frontend/providers/objectstorage/**'
             desktop:
               - 'frontend/desktop/**'
       - name: Generate build matrix
         id: set-matrix
         env:
-          EVENT_NAME: ${{ github.event_name }}
-          FILTER_APPLAUNCHPAD: ${{ steps.filter.outputs.applaunchpad }}
-          FILTER_COSTCENTER: ${{ steps.filter.outputs.costcenter }}
-          FILTER_DBPROVIDER: ${{ steps.filter.outputs.dbprovider }}
-          FILTER_DESKTOP: ${{ steps.filter.outputs.desktop }}
-          FILTER_LICENSE: ${{ steps.filter.outputs.license }}
-          FILTER_OBJECTSTORAGE: ${{ steps.filter.outputs.objectstorage }}
-          FILTER_PACKAGES: ${{ steps.filter.outputs.packages }}
-          FILTER_ROOT_CONFIG: ${{ steps.filter.outputs.root-config }}
-          FILTER_TEMPLATE: ${{ steps.filter.outputs.template }}
-          FILTER_TERMINAL: ${{ steps.filter.outputs.terminal }}
+          PACKAGES_CHANGED: ${{ steps.filter.outputs.packages }}
+          ROOT_CONFIG_CHANGED: ${{ steps.filter.outputs.root-config }}
           FORCE_ALL: ${{ inputs.force_all }}
+          EVENT_NAME: ${{ github.event_name }}
+          LICENSE_CHANGED: ${{ steps.filter.outputs.license }}
+          TEMPLATE_CHANGED: ${{ steps.filter.outputs.template }}
+          APPLAUNCHPAD_CHANGED: ${{ steps.filter.outputs.applaunchpad }}
+          DBPROVIDER_CHANGED: ${{ steps.filter.outputs.dbprovider }}
+          COSTCENTER_CHANGED: ${{ steps.filter.outputs.costcenter }}
+          DESKTOP_CHANGED: ${{ steps.filter.outputs.desktop }}
         run: |
           modules=()
 
           # Check if we need to build all modules
-          if [[ "${FILTER_PACKAGES}" == "true" || \
-                "${FILTER_ROOT_CONFIG}" == "true" || \
-                "${FORCE_ALL}" == "true" || \
-                "${EVENT_NAME}" == "workflow_dispatch" ]]; then
+          if [[ "$PACKAGES_CHANGED" == "true" || \
+                "$ROOT_CONFIG_CHANGED" == "true" || \
+                "$FORCE_ALL" == "true" || \
+                "$EVENT_NAME" == "workflow_dispatch" ]]; then
             modules=(
               "providers/license"
               "providers/template"
               "providers/applaunchpad"
-              "providers/terminal"
               "providers/dbprovider"
               "providers/costcenter"
-              "providers/objectstorage"
               "desktop"
             )
           else
             # Only build changed modules
-            [[ "${FILTER_LICENSE}" == "true" ]] && modules+=("providers/license")
-            [[ "${FILTER_TEMPLATE}" == "true" ]] && modules+=("providers/template")
-            [[ "${FILTER_APPLAUNCHPAD}" == "true" ]] && modules+=("providers/applaunchpad")
-            [[ "${FILTER_TERMINAL}" == "true" ]] && modules+=("providers/terminal")
-            [[ "${FILTER_DBPROVIDER}" == "true" ]] && modules+=("providers/dbprovider")
-            [[ "${FILTER_COSTCENTER}" == "true" ]] && modules+=("providers/costcenter")
-            [[ "${FILTER_OBJECTSTORAGE}" == "true" ]] && modules+=("providers/objectstorage")
-            [[ "${FILTER_DESKTOP}" == "true" ]] && modules+=("desktop")
+            [[ "$LICENSE_CHANGED" == "true" ]] && modules+=("providers/license")
+            [[ "$TEMPLATE_CHANGED" == "true" ]] && modules+=("providers/template")
+            [[ "$APPLAUNCHPAD_CHANGED" == "true" ]] && modules+=("providers/applaunchpad")
+            [[ "$DBPROVIDER_CHANGED" == "true" ]] && modules+=("providers/dbprovider")
+            [[ "$COSTCENTER_CHANGED" == "true" ]] && modules+=("providers/costcenter")
+            [[ "$DESKTOP_CHANGED" == "true" ]] && modules+=("desktop")
           fi
 
           # Convert to JSON array (compact format for GitHub Actions)
@@ -154,7 +147,7 @@ jobs:
           else
             json_modules=$(printf '%s\n' "${modules[@]}" | jq -R . | jq -s -c .)
           fi
-          echo "modules=$json_modules" >> $GITHUB_OUTPUT
+          echo "modules=$json_modules" >> "$GITHUB_OUTPUT"
           echo "Building modules: $json_modules"
 
   helm-validate:

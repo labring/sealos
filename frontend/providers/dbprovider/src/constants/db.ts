@@ -19,6 +19,8 @@ export const KBBackupNameLabel = 'dataprotection.kubeblocks.io/backup-name';
 export const SealosMigrationTaskLabel = 'datamigration.sealos.io/file-migration-task';
 export const MigrationRemark = 'migration-remark';
 export const DBPreviousConfigKey = 'cloud.sealos.io/previous-config';
+export const DBParameterHistoryLabel = 'cloud.sealos.io/parameter-history';
+export const DBParameterHistoryDataKey = 'history.json';
 export const templateDeployKey = 'cloud.sealos.io/deploy-on-sealos';
 export const sealafDeployKey = 'sealaf-app';
 export const DBReconfigureKey = 'ops.kubeblocks.io/ops-type=Reconfiguring';
@@ -440,10 +442,10 @@ export const DBReconfigureMap: Partial<
   },
   redis: {
     type: 'ini',
-    configMapName: '',
-    configMapKey: '',
-    reconfigureName: '',
-    reconfigureKey: ''
+    configMapName: '-redis-redis-replication-config',
+    configMapKey: 'redis.conf',
+    reconfigureName: 'redis-replication-config',
+    reconfigureKey: 'redis.conf'
   },
   kafka: {
     type: 'ini',
@@ -637,7 +639,13 @@ export const ParameterFieldMetadataMap: Partial<
   },
   mongodb: {
     default: {
-      // No params are allowed to be modified for MongoDB
+      'net.maxIncomingConnections': { editable: true }
+    }
+  },
+  redis: {
+    default: {
+      maxclients: { editable: true },
+      maxmemory: { editable: true }
     }
   }
 };

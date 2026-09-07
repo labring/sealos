@@ -20,6 +20,9 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	t.Helper()
 	// TODO need to set up a real test database
 	dsn := os.Getenv("TEST_DB_URI")
+	if dsn == "" {
+		t.Skip("requires TEST_DB_URI")
+	}
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	require.NoError(t, err)
 

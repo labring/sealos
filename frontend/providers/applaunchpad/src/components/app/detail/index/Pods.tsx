@@ -1,4 +1,4 @@
-import { checkPodExecPermission, restartPodByName } from '@/api/app';
+import { restartPodByName } from '@/api/app';
 import MyIcon from '@/components/Icon';
 import { MyTooltip } from '@sealos/ui';
 import PodLineChart from '@/components/PodLineChart';
@@ -31,6 +31,7 @@ import { MOCK_APP_DETAIL } from '@/mock/apps';
 import { useAppStore } from '@/store/app';
 import { track } from '@sealos/gtm';
 import { getErrText } from '@/utils/tools';
+import { getUserSession } from '@/utils/user';
 
 const LogsModal = dynamic(() => import('./LogsModal'));
 const DetailModel = dynamic(() => import('./PodDetailModal'));
@@ -62,40 +63,13 @@ const Pods = ({ pods = [], appName }: { pods: PodDetailType[]; appName: string }
         });
       } catch (err) {
         toast({
-          title: `${t('Restart')}  ${podName} 出现异常`,
-          status: 'warning'
-        });
-        console.log(err);
-      }
-    },
-    [t, toast]
-  );
-
-  const handleOpenTerminal = useCallback(
-    async (podName: string) => {
-      try {
-        await checkPodExecPermission(podName);
-        track('deployment_action', {
-          event_type: 'terminal_open',
-          module: 'applaunchpad'
-        });
-        const defaultCommand = `kubectl exec -it ${podName} -c ${appName} -- sh -c "clear; (bash || ash || sh)"`;
-        sealosApp.runEvents('openDesktopApp', {
-          appKey: 'system-terminal',
-          query: {
-            defaultCommand
-          },
-          messageData: { type: 'new terminal', command: defaultCommand }
-        });
-      } catch (err) {
-        toast({
-          title: t(getErrText(err, 'Insufficient permissions')),
+          title: t(getErrText(err), 'Restart Failed'),
           status: 'error'
         });
         console.log(err);
       }
     },
-    [appName, t, toast]
+    [t, toast]
   );
 
   const handleOpenFileManagement = useCallback(
@@ -222,7 +196,40 @@ const Pods = ({ pods = [], appName }: { pods: PodDetailType[]; appName: string }
             </Button>
           </MyTooltip>
           <MyTooltip offset={[0, 10]} label={t('Terminal')}>
-            <Button variant={'square'} onClick={() => handleOpenTerminal(item.podName)}>
+            <Button
+              variant={'square'}
+              onClick={() => {
+                const ns = getUserSession()?.user?.nsid;
+                const container = item.spec?.containers?.[0]?.name || appName;
+                if (!ns || !item.podName || !container) {
+                  toast({
+                    title: 'Missing terminal parameters',
+                    status: 'error'
+                  });
+                  return;
+                }
+
+                track('deployment_action', {
+                  event_type: 'terminal_open',
+                  module: 'applaunchpad'
+                });
+                sealosApp.runEvents('openDesktopApp', {
+                  appKey: 'system-terminal',
+                  pathname: '/exec',
+                  query: {
+                    ns,
+                    pod: item.podName,
+                    container
+                  },
+                  messageData: {
+                    type: 'InternalAppCall',
+                    ns,
+                    pod: item.podName,
+                    container
+                  }
+                });
+              }}
+            >
               <MyIcon
                 className="driver-detail-terminal"
                 name={'terminal'}

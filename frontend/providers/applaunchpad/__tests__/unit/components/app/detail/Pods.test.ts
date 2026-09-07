@@ -26,9 +26,9 @@ describe('Pods file management action', () => {
     expect(body).not.toContain('checkPodExecPermission');
   });
 
-  it('keeps the terminal action guarded by the exec permission check', () => {
-    const body = getFunctionBody('handleOpenTerminal');
-
-    expect(body).toContain('checkPodExecPermission(podName)');
+  it('uses the current terminal execution route', () => {
+    expect(source).toContain("pathname: '/exec'");
+    expect(source).toContain('pod: item.podName');
+    expect(source).toContain('container');
   });
 });

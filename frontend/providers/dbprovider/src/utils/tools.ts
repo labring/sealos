@@ -463,6 +463,22 @@ export const parseConfig = ({
   }
 };
 
+export const parseRedisConfig = (configString: string): Record<string, string> => {
+  const result: Record<string, string> = {};
+
+  configString
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith('#'))
+    .forEach((line) => {
+      const [key, ...rest] = line.split(/\s+/);
+      if (!key) return;
+      result[key] = rest.join(' ');
+    });
+
+  return result;
+};
+
 export const flattenObject = (ob: any, prefix: string = ''): { key: string; value: string }[] => {
   const result: { key: string; value: string }[] = [];
 
@@ -479,11 +495,11 @@ export const flattenObject = (ob: any, prefix: string = ''): { key: string; valu
 };
 
 export const adjustDifferencesForIni = (
-  differences: { path: string; oldValue: any; newValue: any }[],
+  differences: { path: string; oldValue: any; newValue: any; currentPath?: string }[],
   type: 'ini' | 'yaml',
   dbType: DBType
-): { path: string; newValue: string; oldValue: string }[] => {
-  if (type !== 'ini' || dbType === 'postgresql') {
+): { path: string; newValue: string; oldValue: string; currentPath?: string }[] => {
+  if (type !== 'ini' || dbType !== 'apecloud-mysql') {
     return differences;
   }
   return differences.map((diff) => {
@@ -492,7 +508,8 @@ export const adjustDifferencesForIni = (
     return {
       path: adjustedPath,
       newValue: diff.newValue,
-      oldValue: diff.oldValue
+      oldValue: diff.oldValue,
+      currentPath: diff.currentPath || diff.path
     };
   });
 };

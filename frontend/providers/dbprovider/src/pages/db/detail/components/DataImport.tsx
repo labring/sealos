@@ -1,11 +1,12 @@
 import { DBDetailType } from '@/types/db';
-import { Box, Button, Flex } from '@chakra-ui/react';
+import { Box, Button, Flex, Text } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 import { MigrateTable } from './Migrate/Table';
 import DumpImport from './DumpImport';
 import useEnvStore from '@/store/env';
 import { useRouter } from 'next/router';
+import MyIcon from '@/components/Icon';
 
 enum MenuType {
   DumpImport = 'DumpImport',
@@ -19,6 +20,17 @@ export default function DataImport({ db }: { db?: DBDetailType }) {
   const [activeId, setActiveId] = useState(MenuType.InternetMigration);
   const { SystemEnv } = useEnvStore();
   const router = useRouter();
+
+  if (db.dbType === 'redis') {
+    return (
+      <Flex h={'full'} alignItems={'center'} justifyContent={'center'} flexDirection={'column'}>
+        <MyIcon name={'noEvents'} color={'transparent'} width={'36px'} height={'36px'} />
+        <Text pt={'8px'} color={'grayModern.600'} fontSize={'14px'}>
+          {t('data_import_unsupported_for_redis')}
+        </Text>
+      </Flex>
+    );
+  }
 
   return (
     <Flex flexDirection={'column'} h={'full'}>

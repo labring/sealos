@@ -9,7 +9,6 @@ import { PortIcon } from '@/components/icons/PortIcon';
 import { StorageIcon } from '@/components/icons/StorageIcon';
 import BaseMenu from '@/components/menu/BaseMenu';
 import { PricePayload } from '@/components/table/PriceTable';
-import { CYCLE } from '@/constants/valuation';
 import { PRICE_CYCLE_SCALE } from '@/pages/valuation';
 import useEnvStore from '@/stores/env';
 import { formatMoney } from '@/utils/format';
@@ -275,7 +274,7 @@ export default function CalculatorPanel({
               </HStack>
               <HStack gap={'40px'}>
                 <CalculatorSlider
-                  unit={'G'}
+                  unit={'GiB'}
                   rangeList={MEMORY_RANGE}
                   value={config.resources.memory.idx}
                   onChange={(v) => {
@@ -283,7 +282,7 @@ export default function CalculatorPanel({
                   }}
                 />
                 <CalculatorNumberInput
-                  unit={'G'}
+                  unit={'GiB'}
                   value={config.resources.memory.val}
                   onChange={(str, v) => {
                     updateMemoryVal(v);
@@ -302,7 +301,7 @@ export default function CalculatorPanel({
               </HStack>
               <HStack gap={'40px'}>
                 <CalculatorNumberInput
-                  unit="G"
+                  unit="GiB"
                   value={config.resources.storage}
                   width={'280px'}
                   onChange={(str, val) => {
@@ -323,7 +322,7 @@ export default function CalculatorPanel({
               </HStack>
               <HStack gap={'40px'}>
                 <CalculatorNumberInput
-                  unit="M"
+                  unit="GiB"
                   value={config.resources.network}
                   width={'280px'}
                   onChange={(str, val) => {
@@ -478,9 +477,6 @@ export default function CalculatorPanel({
             {totalAmount}
           </Text>
           <CurrencySymbol type={currencyType} boxSize={'20px'}></CurrencySymbol>
-          <Text color={'grayModern.900'} fontSize={'16px'} fontWeight={'500'}>
-            /{t(CYCLE[config.usage.timeUnit])}
-          </Text>
         </HStack>
       </Center>
     </TabPanel>

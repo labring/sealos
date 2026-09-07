@@ -61,6 +61,9 @@ type AppSpec struct {
 	Position float64 `json:"position,omitempty"`
 
 	//+kubebuilder:validation:Optional
+	Version string `json:"version,omitempty"`
+
+	//+kubebuilder:validation:Optional
 	I18N *map[string]AppMeta `json:"i18n,omitempty"`
 }
 
