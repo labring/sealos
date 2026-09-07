@@ -106,8 +106,8 @@ func (r *PaymentReconciler) Start(ctx context.Context) error {
 	var wg sync.WaitGroup
 	defer wg.Wait()
 	fc := func(wg *sync.WaitGroup, t *time.Ticker, reconcileFunc func(ctx context.Context) []error) {
-		wg.Add(1)
 		defer wg.Done()
+		defer t.Stop()
 		for {
 			select {
 			case <-t.C:
@@ -123,16 +123,17 @@ func (r *PaymentReconciler) Start(ctx context.Context) error {
 	}
 	tickerReconcilePayment := time.NewTicker(r.reconcileDuration)
 	tickerNewPayment := time.NewTicker(r.createDuration)
+	wg.Add(2)
 	go fc(&wg, tickerReconcilePayment, r.reconcilePayments)
 	go fc(&wg, tickerNewPayment, r.reconcileCreatePayments)
 	return nil
 }
 
-func (r *PaymentReconciler) reconcilePayments(_ context.Context) (errs []error) {
+func (r *PaymentReconciler) reconcilePayments(ctx context.Context) (errs []error) {
 	paymentList := &accountv1.PaymentList{}
-	err := r.List(context.Background(), paymentList, &client.ListOptions{})
+	err := r.List(ctx, paymentList, &client.ListOptions{})
 	if err != nil {
-		errs = append(errs, fmt.Errorf("watch payment failed: %w", err))
+		errs = append(errs, fmt.Errorf("list payments failed: %w", err))
 		return errs
 	}
 	for _, payment := range paymentList.Items {
@@ -153,7 +154,7 @@ func (r *PaymentReconciler) reconcilePayments(_ context.Context) (errs []error) 
 
 func (r *PaymentReconciler) reconcileCreatePayments(ctx context.Context) (errs []error) {
 	watcher, err := r.WatchClient.Watch(
-		context.Background(),
+		ctx,
 		&accountv1.PaymentList{},
 		&client.ListOptions{},
 	)
@@ -161,6 +162,7 @@ func (r *PaymentReconciler) reconcileCreatePayments(ctx context.Context) (errs [
 		errs = append(errs, fmt.Errorf("watch payment failed: %w", err))
 		return errs
 	}
+	defer watcher.Stop()
 	select {
 	case <-ctx.Done():
 		return errs
