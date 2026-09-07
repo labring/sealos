@@ -18,12 +18,15 @@ function getFunctionBody(functionName: string) {
 }
 
 describe('Pods file management action', () => {
-  it('opens file management without running the terminal exec permission check', () => {
+  it('checks the target pod before opening or switching file management', () => {
     const body = getFunctionBody('handleOpenFileManagement');
 
+    expect(body).toContain('await checkPodExecPermission(podName)');
     expect(body).toContain('setDetailFilePodIndex(index)');
     expect(body).toContain('onOpenPodFile()');
-    expect(body).not.toContain('checkPodExecPermission');
+    expect(source).toContain('handleOpenFileManagement(item.podName, i)');
+    expect(source).toContain('setPodDetail={(podName: string) =>');
+    expect(source).toContain('handleOpenFileManagement(\n              podName,');
   });
 
   it('uses the current terminal execution route', () => {
