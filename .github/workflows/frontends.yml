@@ -86,8 +86,6 @@ jobs:
               - 'frontend/providers/license/**'
             applaunchpad:
               - 'frontend/providers/applaunchpad/**'
-            terminal:
-              - 'frontend/providers/terminal/**'
             dbprovider:
               - 'frontend/providers/dbprovider/**'
             costcenter:
@@ -103,7 +101,6 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           LICENSE_CHANGED: ${{ steps.filter.outputs.license }}
           APPLAUNCHPAD_CHANGED: ${{ steps.filter.outputs.applaunchpad }}
-          TERMINAL_CHANGED: ${{ steps.filter.outputs.terminal }}
           DBPROVIDER_CHANGED: ${{ steps.filter.outputs.dbprovider }}
           COSTCENTER_CHANGED: ${{ steps.filter.outputs.costcenter }}
           DESKTOP_CHANGED: ${{ steps.filter.outputs.desktop }}
@@ -118,7 +115,6 @@ jobs:
             modules=(
               "providers/license"
               "providers/applaunchpad"
-              "providers/terminal"
               "providers/dbprovider"
               "providers/costcenter"
               "desktop"
@@ -127,7 +123,6 @@ jobs:
             # Only build changed modules
             [[ "$LICENSE_CHANGED" == "true" ]] && modules+=("providers/license")
             [[ "$APPLAUNCHPAD_CHANGED" == "true" ]] && modules+=("providers/applaunchpad")
-            [[ "$TERMINAL_CHANGED" == "true" ]] && modules+=("providers/terminal")
             [[ "$DBPROVIDER_CHANGED" == "true" ]] && modules+=("providers/dbprovider")
             [[ "$COSTCENTER_CHANGED" == "true" ]] && modules+=("providers/costcenter")
             [[ "$DESKTOP_CHANGED" == "true" ]] && modules+=("desktop")

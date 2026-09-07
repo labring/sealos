@@ -166,11 +166,12 @@ func updateNamespaceStatus(
 				return nil
 			}
 
+			original := ns.DeepCopy()
 			// Update the annotation
 			ns.Annotations[types.NetworkStatusAnnoKey] = status
 
 			// Attempt to update the namespace
-			return clt.Update(ctx, ns)
+			return clt.Patch(ctx, ns, client.MergeFrom(original))
 		})
 		if err != nil {
 			return err

@@ -502,8 +502,12 @@ func updateNamespaceStatus(
 		if ns.Annotations[types.NetworkStatusAnnoKey] == status {
 			continue
 		}
+		original := ns.DeepCopy()
+		if ns.Annotations == nil {
+			ns.Annotations = make(map[string]string)
+		}
 		ns.Annotations[types.NetworkStatusAnnoKey] = status
-		if err := clt.Update(ctx, ns); err != nil {
+		if err := clt.Patch(ctx, ns, client.MergeFrom(original)); err != nil {
 			return err
 		}
 	}

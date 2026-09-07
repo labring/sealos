@@ -29,6 +29,13 @@ import (
 )
 
 func TestAccountReconciler_BillingCVM(t *testing.T) {
+	requireAccountExternalTest(t,
+		database.CVMMongoURI,
+		database.MongoURI,
+		database.GlobalCockroachURI,
+		database.LocalCockroachURI,
+		"LOCAL_REGION",
+	)
 	dbCtx := context.Background()
 	cvmDBClient, err := mongo.NewMongoInterface(dbCtx, os.Getenv(database.CVMMongoURI))
 	if err != nil {
@@ -78,8 +85,15 @@ func TestAccountReconciler_BillingCVM(t *testing.T) {
 }
 
 func TestAccountV2_GetAccountConfig(t *testing.T) {
-	t.Setenv("LOCAL_REGION", "")
-	v2Account, err := cockroach.NewCockRoach("", "")
+	requireAccountExternalTest(t,
+		database.GlobalCockroachURI,
+		database.LocalCockroachURI,
+		"LOCAL_REGION",
+	)
+	v2Account, err := cockroach.NewCockRoach(
+		os.Getenv(database.GlobalCockroachURI),
+		os.Getenv(database.LocalCockroachURI),
+	)
 	if err != nil {
 		t.Fatalf("unable to connect to cockroach: %v", err)
 	}
@@ -117,4 +131,16 @@ func TestAccountV2_GetAccountConfig(t *testing.T) {
 		t.Fatalf("failed to marshal account config: %v", err)
 	}
 	t.Logf("success get account config:\n%s", string(data))
+}
+
+func requireAccountExternalTest(t *testing.T, envNames ...string) {
+	t.Helper()
+	if os.Getenv("RUN_ACCOUNT_EXTERNAL_TESTS") != "true" {
+		t.Skip("set RUN_ACCOUNT_EXTERNAL_TESTS=true to run account external tests")
+	}
+	for _, name := range envNames {
+		if os.Getenv(name) == "" {
+			t.Skipf("requires %s", name)
+		}
+	}
 }

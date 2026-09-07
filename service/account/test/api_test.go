@@ -8,16 +8,25 @@ import (
 	"net/http"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/labring/sealos/service/account/helper"
 )
 
 func Test_Auth(t *testing.T) {
-	host := "http://localhost:2333"
+	if os.Getenv("RUN_ACCOUNT_EXTERNAL_TESTS") != "true" {
+		t.Skip("set RUN_ACCOUNT_EXTERNAL_TESTS=true to run account external tests")
+	}
+	host := os.Getenv("ACCOUNT_TEST_API_URL")
+	kubeConfigPath := os.Getenv("ACCOUNT_TEST_KUBECONFIG")
+	if host == "" || kubeConfigPath == "" {
+		t.Skip("requires ACCOUNT_TEST_API_URL and ACCOUNT_TEST_KUBECONFIG")
+	}
 	url := host + helper.GROUP + helper.GetProperties
-	kubeConfig, err := os.ReadFile("./kubeconfig")
+	// #nosec G703 -- the operator explicitly supplies the test kubeconfig path.
+	kubeConfig, err := os.ReadFile(kubeConfigPath)
 	if err != nil {
-		t.Errorf("failed to read kubeconfig: %v", err)
+		t.Fatalf("failed to read kubeconfig: %v", err)
 	}
 
 	requestBody := map[string]any{
@@ -29,10 +38,10 @@ func Test_Auth(t *testing.T) {
 
 	jsonValue, err := json.Marshal(requestBody)
 	if err != nil {
-		t.Errorf("failed to marshal request body: %v", err)
+		t.Fatalf("failed to marshal request body: %v", err)
 	}
 
-	// #nosec G107
+	// #nosec G704 -- the operator explicitly enables and configures this external test.
 	request, err := http.NewRequestWithContext(
 		context.Background(),
 		http.MethodPost,
@@ -40,19 +49,21 @@ func Test_Auth(t *testing.T) {
 		bytes.NewBuffer(jsonValue),
 	)
 	if err != nil {
-		t.Errorf("failed to create request: %v", err)
+		t.Fatalf("failed to create request: %v", err)
 	}
 	request.Header.Set("Content-Type", "application/json")
-	response, err := http.DefaultClient.Do(request)
+	client := &http.Client{Timeout: 30 * time.Second}
+	// #nosec G704 -- the operator explicitly enables and configures this external test.
+	response, err := client.Do(request)
 	if err != nil {
-		t.Errorf("failed to post request: %v", err)
+		t.Fatalf("failed to post request: %v", err)
 	}
 	defer response.Body.Close()
 
 	responseBody := new(bytes.Buffer)
 	_, err = responseBody.ReadFrom(response.Body)
 	if err != nil {
-		t.Errorf("failed to read response body: %v", err)
+		t.Fatalf("failed to read response body: %v", err)
 	}
 	fmt.Println("Response:", response.Status)
 	fmt.Println("Body:", responseBody.String())

@@ -91,6 +91,15 @@ readinessProbe:
   initialDelaySeconds: 5
   periodSeconds: 10
 
+startupProbe:
+  httpGet:
+    path: /startupz
+    port: 8081
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  timeoutSeconds: 2
+  failureThreshold: 60
+
 metrics:
   ## To enable this parameter, it needs to be enabled in the subsequent code; otherwise, it cannot be started
   enabled: false

@@ -74,6 +74,25 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  shared-unit-test:
+    name: Test shared controller packages with race detector
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Golang with cache
+        uses: magnetikonline/action-golang-cache@v5
+        with:
+          go-version-file: controllers/pkg/go.mod
+
+      - name: Install Dependencies
+        run: sudo apt update && sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
+
+      - name: Run Tests with race detector
+        working-directory: controllers/pkg
+        run: go test -race ./... -count=1 -v
+
   detect-changes:
     uses: ./.github/workflows/detect-changes.yml
     with:

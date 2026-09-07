@@ -9,7 +9,6 @@ use (
 	./node
 	./pkg
 	./resources
-	./terminal
 	./user
 )
 

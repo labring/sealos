@@ -1,4 +1,5 @@
 import { MoreAppsContext } from '@/pages/index';
+import { BRAIN_APP_KEY } from '@/constants/app';
 import useAppStore, { AppInfo } from '@/stores/app';
 import { useConfigStore } from '@/stores/config';
 import { useDesktopConfigStore } from '@/stores/desktopConfig';
@@ -323,6 +324,14 @@ export default function AppDock() {
       mouseX.set(e.clientX);
     }
   };
+
+  // Desktop Dock Suppression: while Brain is the topmost non-minimized window,
+  // the dock (toggle pill included) must not overlay it. It comes back as soon
+  // as Brain loses the top layer, is minimized, or is closed.
+  const topApp = runningInfo.find((item) => item.pid === currentAppPid);
+  if (topApp?.key === BRAIN_APP_KEY && topApp.size !== 'minimize') {
+    return null;
+  }
 
   return (
     <Flex

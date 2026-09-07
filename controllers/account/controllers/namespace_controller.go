@@ -132,13 +132,14 @@ func (r *NamespaceReconciler) Reconcile(
 
 	// auxiliary function update annotations
 	updateAnnotations := func(debtStatus, networkStatus string) (ctrl.Result, error) {
+		original := ns.DeepCopy()
 		if debtStatus != "" {
 			ns.Annotations[types.DebtNamespaceAnnoStatusKey] = debtStatus
 		}
 		if networkStatus != "" {
 			ns.Annotations[types.NetworkStatusAnnoKey] = networkStatus
 		}
-		if err := r.Client.Update(ctx, &ns); err != nil {
+		if err := r.Client.Patch(ctx, &ns, client.MergeFrom(original)); err != nil {
 			logger.Error(err, "failed to update namespace annotations")
 			return ctrl.Result{}, err
 		}

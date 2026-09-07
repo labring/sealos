@@ -74,7 +74,8 @@ class ClientSDK {
       data
     };
 
-    window.top?.postMessage(sendMessage, this.desktopOrigin);
+    // Apps are direct children of Desktop. If Desktop is embedded, top belongs to the host page.
+    window.parent?.postMessage(sendMessage, this.desktopOrigin);
 
     return cb;
   }

@@ -27,6 +27,7 @@ import (
 
 type Finalizer struct {
 	client        client.Client
+	reader        client.Reader
 	finalizerName string
 }
 
@@ -37,6 +38,9 @@ func (f *Finalizer) AddFinalizer(ctx context.Context, obj client.Object) (bool, 
 		// then lets add the finalizer and update the object. This is equivalent
 		// registering our finalizer.
 		notDelete = true
+		if controllerutil.ContainsFinalizer(obj, f.finalizerName) {
+			return notDelete, nil
+		}
 		controllerutil.AddFinalizer(obj, f.finalizerName)
 		if err := f.updateFinalizers(
 			ctx,
@@ -57,8 +61,14 @@ func DefaultFunc(ctx context.Context, obj client.Object) error {
 func NewFinalizer(client client.Client, finalizerName string) *Finalizer {
 	return &Finalizer{
 		client:        client,
+		reader:        client,
 		finalizerName: finalizerName,
 	}
+}
+
+func (f *Finalizer) WithReader(reader client.Reader) *Finalizer {
+	f.reader = reader
+	return f
 }
 
 func (f *Finalizer) RemoveFinalizer(
@@ -95,12 +105,15 @@ func (f *Finalizer) updateFinalizers(
 	obj client.Object,
 	finalizers []string,
 ) error {
+	gvk, err := f.client.GroupVersionKindFor(obj)
+	if err != nil {
+		return err
+	}
 	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		gvk := obj.GetObjectKind().GroupVersionKind()
 		fetchObject := &unstructured.Unstructured{}
 		fetchObject.SetAPIVersion(gvk.GroupVersion().String())
 		fetchObject.SetKind(gvk.Kind)
-		err := f.client.Get(ctx, objectKey, fetchObject)
+		err := f.reader.Get(ctx, objectKey, fetchObject)
 		if err != nil {
 			// We log this error, but we continue and try to set the ownerRefs on the other resources.
 			return err

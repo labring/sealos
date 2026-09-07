@@ -2984,10 +2984,6 @@ func updateWorkspaceSubscriptionNamespaceStatus(workspace string) error {
 			Patch(ctx, ns, client.MergeFrom(original)); err != nil {
 			return fmt.Errorf("patch namespace annotation failed: %w", err)
 		}
-		// Attempt to update the namespace
-		if err := dao.K8sManager.GetClient().Update(ctx, ns); err != nil {
-			return fmt.Errorf("failed to update namespace annotation: %w", err)
-		}
 
 		logrus.Infof(
 			"Successfully updated workspace subscription status annotation for namespace %s",

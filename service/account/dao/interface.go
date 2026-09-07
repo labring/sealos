@@ -146,6 +146,9 @@ type Interface interface {
 
 	// Admin read-only account management methods.
 	ListAdminUsers(req helper.AdminUserListReq) (helper.AdminUserListResp, error)
+	ListAdminNotificationRecipients(
+		req helper.AdminNotificationRecipientsReq,
+	) (helper.AdminNotificationRecipientsResp, error)
 	GetAdminUser(id string) (*helper.AdminUserDetail, error)
 	ListAdminUserRechargeRecords(
 		id string, pageIndex, pageSize int,
@@ -2209,257 +2212,279 @@ func (m *Account) Disconnect(ctx context.Context) error {
 	return nil
 }
 
-func (m *MongoDB) GetConsumptionAmount(req helper.ConsumptionRecordReq) (int64, error) {
-	owner, namespace, appType, appName, startTime, endTime := req.Owner, req.Namespace, req.AppType, req.AppName, req.StartTime, req.EndTime
+func buildConsumptionAmountPipeline(req helper.ConsumptionRecordReq) mongo.Pipeline {
+	// Example for a request with Owner="owner-123" and no AppName:
+	//
+	// db.billing.aggregate([
+	//   { $match: {
+	//     owner: "owner-123",
+	//     status: 1,
+	//     time: {
+	//       $gte: ISODate("2026-01-01T00:00:00Z"),
+	//       $lte: ISODate("2026-01-02T00:00:00Z")
+	//     }
+	//   } },
+	//   { $group: { _id: null, total: { $sum: "$amount" } } }
+	// ])
+	//
+	// Example for Owner="owner-123", AppType="APP" (app_type: 2),
+	// and AppName="app-a":
+	//
+	// db.billing.aggregate([
+	//   { $match: {
+	//     owner: "owner-123",
+	//     status: 1,
+	//     app_type: 2,
+	//     time: {
+	//       $gte: ISODate("2026-01-01T00:00:00Z"),
+	//       $lte: ISODate("2026-01-02T00:00:00Z")
+	//     }
+	//   } },
+	//   { $project: {
+	//     amount: { $sum: { $map: {
+	//       input: { $filter: {
+	//         input: { $ifNull: ["$app_costs", []] },
+	//         as: "appCost",
+	//         cond: { $eq: ["$$appCost.name", "app-a"] }
+	//       } },
+	//       as: "appCost",
+	//       in: "$$appCost.amount"
+	//     } } }
+	//   } },
+	//   { $match: { amount: { $gt: 0 } } },
+	//   { $group: { _id: null, total: { $sum: "$amount" } } }
+	// ])
+	appType := strings.ToUpper(strings.TrimSpace(req.AppType))
 	timeMatchValue := bson.D{
-		primitive.E{Key: "$gte", Value: startTime},
-		primitive.E{Key: "$lte", Value: endTime},
+		primitive.E{Key: "$gte", Value: req.StartTime},
+		primitive.E{Key: "$lte", Value: req.EndTime},
 	}
-
-	// Build base match conditions for app_costs (sub-consumption type)
 	matchValue := bson.D{
-		primitive.E{Key: "time", Value: timeMatchValue},
+		primitive.E{Key: "owner", Value: req.Owner},
 		primitive.E{Key: "status", Value: resources.Settled},
-		primitive.E{Key: "owner", Value: owner},
+		primitive.E{Key: "time", Value: timeMatchValue},
+	}
+	if req.Namespace != "" {
+		matchValue = append(matchValue, primitive.E{Key: "namespace", Value: req.Namespace})
 	}
 	if appType != "" {
 		matchValue = append(
 			matchValue,
-			primitive.E{Key: "app_type", Value: resources.AppType[strings.ToUpper(appType)]},
+			primitive.E{Key: "app_type", Value: resources.AppType[appType]},
 		)
-	}
-	if namespace != "" {
-		matchValue = append(matchValue, primitive.E{Key: "namespace", Value: namespace})
-	}
-	unwindMatchValue := bson.D{
-		primitive.E{Key: "time", Value: timeMatchValue},
-	}
-	if appType != "" && appName != "" {
-		if appType != resources.AppStore {
-			unwindMatchValue = append(
-				unwindMatchValue,
-				primitive.E{Key: "app_costs.name", Value: appName},
-			)
-		} else {
-			unwindMatchValue = append(
-				unwindMatchValue,
-				primitive.E{Key: "app_name", Value: appName},
-			)
-		}
 	}
 
-	// Build match conditions for direct consumption (AppStore and LLMToken)
-	directMatchValue := bson.D{
-		primitive.E{Key: "time", Value: timeMatchValue},
-		primitive.E{Key: "status", Value: resources.Settled},
-		primitive.E{Key: "owner", Value: owner},
+	pipeline := mongo.Pipeline{
+		// Owner is part of the match so the total never includes another workspace.
+		{{Key: "$match", Value: matchValue}},
 	}
-	if namespace != "" {
-		directMatchValue = append(directMatchValue, primitive.E{Key: "namespace", Value: namespace})
+
+	groupStage := bson.D{{Key: "$group", Value: bson.D{
+		{Key: "_id", Value: nil},
+		{Key: "total", Value: bson.D{{Key: "$sum", Value: "$amount"}}},
+	}}}
+	// Billing.Amount is the authoritative total for a billing record. Avoid
+	// inspecting app_costs unless the caller needs an app-level filter; this
+	// keeps the common all-app query to just match and group stages.
+	if req.AppName == "" {
+		return append(pipeline, groupStage)
 	}
-	// For direct consumption, match app_type to AppStore or LLMToken if not specified
-	if appType != "" {
-		directMatchValue = append(
-			directMatchValue,
-			primitive.E{Key: "app_type", Value: resources.AppType[strings.ToUpper(appType)]},
-		)
-	} else {
-		// If no appType specified, match both AppStore and LLMToken
-		directMatchValue = append(
-			directMatchValue,
-			primitive.E{Key: "app_type", Value: bson.D{{Key: "$in", Value: bson.A{
-				resources.AppType[resources.AppStore],
-				resources.AppType[resources.LLMToken],
+
+	// Direct types store their billable amount on the parent record. The
+	// app_costs array is only a breakdown for these records and must not be
+	// added to amount again.
+	directAppTypes := bson.A{
+		resources.AppType[resources.AppStore],
+		resources.AppType[resources.LLMToken],
+	}
+	// Ordinary resource types are billed through app_costs when an app name is
+	// requested, so only entries with the requested name contribute to the sum.
+	matchedNestedAmount := bson.M{
+		"$sum": bson.M{
+			"$map": bson.M{
+				"input": bson.M{
+					"$filter": bson.M{
+						"input": bson.M{"$ifNull": bson.A{"$app_costs", bson.A{}}},
+						"as":    "appCost",
+						"cond": bson.M{
+							"$eq": bson.A{"$$appCost.name", req.AppName},
+						},
+					},
+				},
+				"as": "appCost",
+				"in": "$$appCost.amount",
+			},
+		},
+	}
+	pipeline = append(
+		pipeline,
+		// Select exactly one amount source per billing record to avoid double counting.
+		bson.D{{Key: "$project", Value: bson.D{
+			{Key: "amount", Value: bson.D{{Key: "$cond", Value: bson.A{
+				bson.D{{Key: "$in", Value: bson.A{"$app_type", directAppTypes}}},
+				bson.D{{Key: "$cond", Value: bson.A{
+					bson.D{{Key: "$eq", Value: bson.A{"$app_name", req.AppName}}},
+					"$amount",
+					int64(0),
+				}}},
+				matchedNestedAmount,
 			}}}},
-		)
-	}
-	if appName != "" {
-		directMatchValue = append(directMatchValue, primitive.E{Key: "app_name", Value: appName})
-	}
-
-	// Use $facet to query both types in parallel
-	pipeline := bson.A{
-		bson.D{{Key: "$facet", Value: bson.M{
-			"appCosts": bson.A{
-				bson.D{{Key: "$match", Value: matchValue}},
-				bson.D{{Key: "$unwind", Value: "$app_costs"}},
-				bson.D{{Key: "$match", Value: unwindMatchValue}},
-				bson.D{{Key: "$group", Value: bson.M{
-					"_id":   nil,
-					"total": bson.M{"$sum": "$app_costs.amount"},
-				}}},
-			},
-			"directAmount": bson.A{
-				bson.D{{Key: "$match", Value: directMatchValue}},
-				bson.D{{Key: "$group", Value: bson.M{
-					"_id":   nil,
-					"total": bson.M{"$sum": "$amount"},
-				}}},
-			},
 		}}},
-	}
+		// The projection emits zero for non-matching app records; discard them
+		// before the final total is calculated.
+		bson.D{{Key: "$match", Value: bson.D{
+			{Key: "amount", Value: bson.D{{Key: "$gt", Value: int64(0)}}},
+		}}},
+		groupStage,
+	)
+	return pipeline
+}
 
-	cursor, err := m.getBillingCollection().Aggregate(context.Background(), pipeline)
+func (m *MongoDB) GetConsumptionAmount(req helper.ConsumptionRecordReq) (int64, error) {
+	pipeline := buildConsumptionAmountPipeline(req)
+
+	ctx := context.Background()
+	cursor, err := m.getBillingCollection().Aggregate(ctx, pipeline)
 	if err != nil {
 		return 0, fmt.Errorf("failed to aggregate billing collection: %w", err)
 	}
-	defer cursor.Close(context.Background())
+	defer cursor.Close(ctx)
 
 	var result struct {
-		AppCosts []struct {
-			Total int64 `bson:"total"`
-		} `bson:"appCosts"`
-		DirectAmount []struct {
-			Total int64 `bson:"total"`
-		} `bson:"directAmount"`
+		Total int64 `bson:"total"`
 	}
 
-	if cursor.Next(context.Background()) {
+	if cursor.Next(ctx) {
 		if err := cursor.Decode(&result); err != nil {
 			return 0, fmt.Errorf("failed to decode result: %w", err)
 		}
+	} else if err := cursor.Err(); err != nil {
+		return 0, fmt.Errorf("failed to iterate aggregate result: %w", err)
 	}
 
-	totalAmount := int64(0)
-	if len(result.AppCosts) > 0 {
-		totalAmount += result.AppCosts[0].Total
-	}
-	if len(result.DirectAmount) > 0 {
-		totalAmount += result.DirectAmount[0].Total
+	return result.Total, nil
+}
+
+func normalizeWorkspaceConsumptionAppType(appType string) (string, uint8, error) {
+	normalized := strings.ToUpper(strings.TrimSpace(appType))
+	if normalized == "" {
+		return "", 0, nil
 	}
 
-	return totalAmount, nil
+	value, ok := resources.AppType[normalized]
+	if !ok {
+		return "", 0, fmt.Errorf("unsupported app type %q", appType)
+	}
+	return normalized, value, nil
+}
+
+func buildWorkspaceConsumptionPipeline(req helper.ConsumptionRecordReq) (mongo.Pipeline, error) {
+	normalizedAppType, appTypeValue, err := normalizeWorkspaceConsumptionAppType(req.AppType)
+	if err != nil {
+		return nil, err
+	}
+
+	matchValue := bson.D{
+		{Key: "owner", Value: req.Owner},
+		{Key: "status", Value: resources.Settled},
+		{Key: "time", Value: bson.D{
+			{Key: "$gte", Value: req.StartTime},
+			{Key: "$lte", Value: req.EndTime},
+		}},
+	}
+	if req.Namespace != "" {
+		matchValue = append(matchValue, bson.E{Key: "namespace", Value: req.Namespace})
+	}
+	if normalizedAppType != "" {
+		matchValue = append(matchValue, bson.E{Key: "app_type", Value: appTypeValue})
+	}
+
+	groupStage := bson.D{{Key: "$group", Value: bson.D{
+		{Key: "_id", Value: "$namespace"},
+		{Key: "total", Value: bson.D{{Key: "$sum", Value: "$amount"}}},
+	}}}
+	pipeline := mongo.Pipeline{
+		{{Key: "$match", Value: matchValue}},
+	}
+
+	// Billing.Amount is the authoritative total for a billing record. Avoid
+	// unwinding app_costs unless the caller needs an app-level filter.
+	if req.AppName == "" {
+		return append(pipeline, groupStage), nil
+	}
+
+	directAppTypes := bson.A{
+		resources.AppType[resources.AppStore],
+		resources.AppType[resources.LLMToken],
+	}
+	matchedNestedAmount := bson.M{
+		"$sum": bson.M{
+			"$map": bson.M{
+				"input": bson.M{
+					"$filter": bson.M{
+						"input": bson.M{"$ifNull": bson.A{"$app_costs", bson.A{}}},
+						"as":    "appCost",
+						"cond": bson.M{
+							"$eq": bson.A{"$$appCost.name", req.AppName},
+						},
+					},
+				},
+				"as": "appCost",
+				"in": "$$appCost.amount",
+			},
+		},
+	}
+	pipeline = append(
+		pipeline,
+		bson.D{{Key: "$project", Value: bson.D{
+			{Key: "namespace", Value: 1},
+			{Key: "amount", Value: bson.D{{Key: "$cond", Value: bson.A{
+				bson.D{{Key: "$in", Value: bson.A{"$app_type", directAppTypes}}},
+				bson.D{{Key: "$cond", Value: bson.A{
+					bson.D{{Key: "$eq", Value: bson.A{"$app_name", req.AppName}}},
+					"$amount",
+					int64(0),
+				}}},
+				matchedNestedAmount,
+			}}}},
+		}}},
+		bson.D{{Key: "$match", Value: bson.D{
+			{Key: "amount", Value: bson.D{
+				{Key: "$gt", Value: int64(0)},
+			}},
+		}}},
+		groupStage,
+	)
+	return pipeline, nil
 }
 
 func (m *MongoDB) GetWorkspaceConsumptionAmount(
 	req helper.ConsumptionRecordReq,
 ) (map[string]int64, error) {
-	// 获取各个 namespace的费用
-	owner, appType, appName, startTime, endTime := req.Owner, req.AppType, req.AppName, req.StartTime, req.EndTime
-	timeMatchValue := bson.D{
-		primitive.E{Key: "$gte", Value: startTime},
-		primitive.E{Key: "$lte", Value: endTime},
+	pipeline, err := buildWorkspaceConsumptionPipeline(req)
+	if err != nil {
+		return nil, err
 	}
 
-	// Build base match conditions for app_costs (sub-consumption type)
-	matchValue := bson.D{
-		primitive.E{Key: "time", Value: timeMatchValue},
-		primitive.E{Key: "owner", Value: owner},
-		primitive.E{Key: "status", Value: resources.Settled},
-	}
-
-	// 添加app_type过滤条件
-	if appType != "" {
-		matchValue = append(
-			matchValue,
-			primitive.E{Key: "app_type", Value: resources.AppType[strings.ToUpper(appType)]},
-		)
-	}
-
-	// 构建unwind后的匹配条件
-	unwindMatchValue := bson.D{
-		primitive.E{Key: "time", Value: timeMatchValue},
-	}
-	if appType != "" && appName != "" {
-		if appType != resources.AppStore {
-			unwindMatchValue = append(
-				unwindMatchValue,
-				primitive.E{Key: "app_costs.name", Value: appName},
-			)
-		} else {
-			unwindMatchValue = append(
-				unwindMatchValue,
-				primitive.E{Key: "app_name", Value: appName},
-			)
-		}
-	}
-
-	// Build match conditions for direct consumption (AppStore and LLMToken)
-	directMatchValue := bson.D{
-		primitive.E{Key: "time", Value: timeMatchValue},
-		primitive.E{Key: "owner", Value: owner},
-		primitive.E{Key: "status", Value: resources.Settled},
-	}
-	// For direct consumption, match app_type to AppStore or LLMToken if not specified
-	if appType != "" {
-		directMatchValue = append(
-			directMatchValue,
-			primitive.E{Key: "app_type", Value: resources.AppType[strings.ToUpper(appType)]},
-		)
-	} else {
-		// If no appType specified, match both AppStore and LLMToken
-		directMatchValue = append(
-			directMatchValue,
-			primitive.E{Key: "app_type", Value: bson.D{{Key: "$in", Value: bson.A{
-				resources.AppType[resources.AppStore],
-				resources.AppType[resources.LLMToken],
-			}}}},
-		)
-	}
-	if appName != "" {
-		directMatchValue = append(directMatchValue, primitive.E{Key: "app_name", Value: appName})
-	}
-
-	// Use $facet to query both types in parallel
-	pipeline := bson.A{
-		bson.D{{Key: "$facet", Value: bson.M{
-			"appCosts": bson.A{
-				bson.D{{Key: "$match", Value: matchValue}},
-				bson.D{{Key: "$unwind", Value: "$app_costs"}},
-				bson.D{{Key: "$match", Value: unwindMatchValue}},
-				bson.D{{Key: "$group", Value: bson.M{
-					"_id":   "$namespace", // group by namespace
-					"total": bson.M{"$sum": "$app_costs.amount"},
-				}}},
-				bson.D{{Key: "$sort", Value: bson.M{"_id": 1}}},
-			},
-			"directAmount": bson.A{
-				bson.D{{Key: "$match", Value: directMatchValue}},
-				bson.D{{Key: "$group", Value: bson.M{
-					"_id":   "$namespace",
-					"total": bson.M{"$sum": "$amount"},
-				}}},
-				bson.D{{Key: "$sort", Value: bson.M{"_id": 1}}},
-			},
-		}}},
-	}
-
-	cursor, err := m.getBillingCollection().Aggregate(context.Background(), pipeline)
+	ctx := context.Background()
+	cursor, err := m.getBillingCollection().Aggregate(ctx, pipeline)
 	if err != nil {
 		return nil, fmt.Errorf("failed to aggregate billing collection: %w", err)
 	}
-	defer cursor.Close(context.Background())
+	defer cursor.Close(ctx)
 
-	var result struct {
-		AppCosts []struct {
-			Namespace string `bson:"_id"`
-			Total     int64  `bson:"total"`
-		} `bson:"appCosts"`
-		DirectAmount []struct {
-			Namespace string `bson:"_id"`
-			Total     int64  `bson:"total"`
-		} `bson:"directAmount"`
+	var results []struct {
+		Namespace string `bson:"_id"`
+		Total     int64  `bson:"total"`
+	}
+	if err := cursor.All(ctx, &results); err != nil {
+		return nil, fmt.Errorf("failed to decode workspace consumption result: %w", err)
 	}
 
-	if cursor.Next(context.Background()) {
-		if err := cursor.Decode(&result); err != nil {
-			return nil, fmt.Errorf("failed to decode result: %w", err)
-		}
+	resultMap := make(map[string]int64, len(results))
+	for _, item := range results {
+		resultMap[item.Namespace] = item.Total
 	}
-
-	// Merge results from both queries
-	resultMap := make(map[string]int64)
-
-	// Add app_costs totals
-	for _, item := range result.AppCosts {
-		resultMap[item.Namespace] += item.Total
-	}
-
-	// Add direct amount totals (AppStore and LLMToken)
-	for _, item := range result.DirectAmount {
-		resultMap[item.Namespace] += item.Total
-	}
-
 	return resultMap, nil
 }
 

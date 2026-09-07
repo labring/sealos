@@ -193,6 +193,13 @@ func (d *DebtValidate) checkOption(
 			fmt.Sprintf("this namespace is not user namespace %s, or have not created", ns.Name),
 		)
 	}
+	if suspendedStatus, suspended := getSuspendedNamespaceStatus(ns); suspended {
+		logger.V(1).
+			Info("deny request for suspended namespace", "ns", ns.Name, "status", suspendedStatus)
+		return admission.Denied(
+			fmt.Sprintf("namespace %s is suspended with status %s", ns.Name, suspendedStatus),
+		)
+	}
 	logger.V(1).Info("check user namespace", "ns", ns.Name, "user", user)
 
 	// Check cache first
@@ -270,6 +277,27 @@ func (d *DebtValidate) checkOption(
 		}
 	}
 	return admission.Allowed(fmt.Sprintf("pass user %s, namespace %s", user, ns.Name))
+}
+
+func getSuspendedNamespaceStatus(ns *corev1.Namespace) (string, bool) {
+	debtStatus := ns.Annotations[pkgtype.DebtNamespaceAnnoStatusKey]
+	switch debtStatus {
+	case pkgtype.SuspendDebtNamespaceAnnoStatus,
+		pkgtype.SuspendCompletedDebtNamespaceAnnoStatus,
+		pkgtype.TerminateSuspendDebtNamespaceAnnoStatus,
+		pkgtype.TerminateSuspendCompletedDebtNamespaceAnnoStatus,
+		pkgtype.FinalDeletionDebtNamespaceAnnoStatus,
+		pkgtype.FinalDeletionCompletedDebtNamespaceAnnoStatus:
+		return debtStatus, true
+	}
+
+	networkStatus := ns.Annotations[pkgtype.NetworkStatusAnnoKey]
+	switch networkStatus {
+	case pkgtype.NetworkSuspend, pkgtype.NetworkSuspendCompleted:
+		return networkStatus, true
+	}
+
+	return "", false
 }
 
 func isDefaultQuotaName(name string) bool {

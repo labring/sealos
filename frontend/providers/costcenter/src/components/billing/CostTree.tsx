@@ -34,18 +34,30 @@ export type BillingNode = {
   cost: number;
   type: 'total' | 'region' | 'workspace';
   dependsOn: string | null;
+  status?: 'loading' | 'success' | 'error' | 'partial';
 };
 
 function CostCard({
   id,
   name,
   cost,
+  status = 'success',
   selected,
   onClick
 }: {
   selected: boolean;
   onClick: (nodeId: string) => void;
-} & Pick<BillingNode, 'id' | 'name' | 'cost'>) {
+} & Pick<BillingNode, 'id' | 'name' | 'cost' | 'status'>) {
+  const { t } = useTranslation();
+  const statusLabel =
+    status === 'error'
+      ? t('common:cost_unavailable')
+      : status === 'loading'
+      ? t('common:cost_loading')
+      : status === 'partial'
+      ? t('common:cost_partial')
+      : null;
+
   return (
     <button
       className="bg-white flex flex-col gap-1 justify-start items-start p-3 w-40 rounded-xl border shadow-sm border-dashed hover:border-blue-600 border-gray-400 data-[selected=true]:border-2 data-[selected=true]:border-blue-600 data-[selected=true]:border-solid"
@@ -59,8 +71,17 @@ function CostCard({
         className="text-gray-900 font-bold data-[selected=true]:text-blue-600"
         data-selected={selected}
       >
-        <CurrencySymbol />
-        <span>{formatMoney(cost).toFixed(2)}</span>
+        {status === 'success' || status === 'partial' ? (
+          <>
+            <CurrencySymbol />
+            <span>{formatMoney(cost).toFixed(2)}</span>
+            {status === 'partial' && statusLabel && (
+              <span className="ml-1 text-amber-700 text-xs font-medium">({statusLabel})</span>
+            )}
+          </>
+        ) : statusLabel ? (
+          <span className="text-amber-700 text-xs font-medium">{statusLabel}</span>
+        ) : null}
       </span>
     </button>
   );
@@ -71,12 +92,14 @@ function CostNodesCanvas({
   selectedRegion: externalSelectedRegion,
   selectedWorkspace: externalSelectedWorkspace,
   onRegionSelect,
+  onRegionRetry,
   onWorkspaceSelect
 }: {
   nodes: BillingNode[];
   selectedRegion?: string | null;
   selectedWorkspace?: string | null;
   onRegionSelect?: (regionId: string | null) => void;
+  onRegionRetry?: (regionId: string) => void;
   onWorkspaceSelect?: (workspaceId: string | null) => void;
 }) {
   const transformContext = useTransformContext();
@@ -274,7 +297,7 @@ function CostNodesCanvas({
             cost={node.cost}
             onClick={(id) => {
               handleRegionSelect(id);
-              // handleWorkspaceSelect(null) is called automatically in handleRegionSelect
+              if (node.status === 'error') onRegionRetry?.(id);
             }}
             selected={selectedRegion === node.id}
           />
@@ -306,6 +329,7 @@ type CostTreeProps = {
   selectedRegion?: string | null;
   selectedWorkspace?: string | null;
   onRegionSelect?: (regionId: string | null) => void;
+  onRegionRetry?: (regionId: string) => void;
   onWorkspaceSelect?: (workspaceId: string | null) => void;
 };
 
@@ -315,6 +339,7 @@ export function CostTree({
   selectedRegion: externalSelectedRegion,
   selectedWorkspace: externalSelectedWorkspace,
   onRegionSelect,
+  onRegionRetry,
   onWorkspaceSelect
 }: CostTreeProps) {
   const { t } = useTranslation();
@@ -376,6 +401,7 @@ export function CostTree({
             selectedRegion={externalSelectedRegion}
             selectedWorkspace={externalSelectedWorkspace}
             onRegionSelect={onRegionSelect}
+            onRegionRetry={onRegionRetry}
             onWorkspaceSelect={onWorkspaceSelect}
           />
         </TransformComponent>
