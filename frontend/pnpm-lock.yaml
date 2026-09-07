@@ -1432,7 +1432,6 @@ importers:
         specifier: ^4.9.1
         version: 4.10.1
 
-
   providers/terminal:
     dependencies:
       '@chakra-ui/anatomy':
