@@ -160,7 +160,13 @@ func (monitorRunnable) NeedLeaderElection() bool { return true }
 func runMonitor(ctx context.Context, mgr ctrl.Manager) error {
 	// ReaderFailOnMissingInformer skips the per-read sync wait, so synchronize all
 	// explicitly registered informers before the monitor performs its first read.
-	if !mgr.GetCache().WaitForCacheSync(ctx) || ctx.Err() != nil {
+	if !mgr.GetCache().WaitForCacheSync(ctx) {
+		if ctx.Err() != nil {
+			return nil
+		}
+		return fmt.Errorf("resource cache sync did not complete")
+	}
+	if ctx.Err() != nil {
 		return nil
 	}
 	setupLog.Info("starting leader monitor")
