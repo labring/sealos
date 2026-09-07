@@ -133,7 +133,7 @@ func (r *PaymentReconciler) reconcilePayments(ctx context.Context) (errs []error
 	paymentList := &accountv1.PaymentList{}
 	err := r.List(ctx, paymentList, &client.ListOptions{})
 	if err != nil {
-		errs = append(errs, fmt.Errorf("watch payment failed: %w", err))
+		errs = append(errs, fmt.Errorf("list payments failed: %w", err))
 		return errs
 	}
 	for _, payment := range paymentList.Items {
