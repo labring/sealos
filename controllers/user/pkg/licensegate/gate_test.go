@@ -17,6 +17,7 @@ package licensegate
 import (
 	"context"
 	"encoding/base64"
+	"os"
 	"testing"
 	"time"
 
@@ -35,6 +36,9 @@ func newTestLicense(
 	activationTime time.Time,
 ) *licensev1.License {
 	t.Helper()
+	if os.Getenv("LICENSE_KEY") == "" {
+		t.Skip("requires LICENSE_KEY to sign test licenses")
+	}
 	decodeKey, err := base64.StdEncoding.DecodeString(licensepkg.GetEncryptionKey())
 	if err != nil {
 		t.Fatalf("decode encryption key failed: %v", err)
@@ -130,6 +134,8 @@ func TestRefreshUsesLatestActiveLicense(t *testing.T) {
 	}
 	older := newTestLicense(t, 5, licensev1.LicenseStatusPhaseActive, time.Now().Add(-time.Hour))
 	newer := newTestLicense(t, 20, licensev1.LicenseStatusPhaseActive, time.Now())
+	older.Name = "older-license"
+	newer.Name = "newer-license"
 	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(older, newer).Build()
 	if err := Refresh(context.Background(), client); err != nil {
 		t.Fatalf("refresh failed: %v", err)

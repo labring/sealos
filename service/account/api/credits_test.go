@@ -1,6 +1,7 @@
 package api
 
 import (
+	"os"
 	"testing"
 	"time"
 
@@ -9,12 +10,23 @@ import (
 )
 
 func Test_getCreditsInfo(t *testing.T) {
+	if os.Getenv("RUN_ACCOUNT_EXTERNAL_TESTS") != "true" {
+		t.Skip("set RUN_ACCOUNT_EXTERNAL_TESTS=true to run account external tests")
+	}
+	for _, name := range []string{"GLOBAL_COCKROACH_URI", "LOCAL_COCKROACH_URI", "LOCAL_REGION"} {
+		if os.Getenv(name) == "" {
+			t.Skipf("requires %s", name)
+		}
+	}
 	userUID, err := uuid.Parse("03c7ef29-4556-4f5d-a54b-969f315658a3")
 	if err != nil {
 		t.Fatalf("failed to parse UUID: %v", err)
 	}
-	t.Setenv("LOCAL_REGION", "")
-	dao.DBClient, err = dao.NewAccountForTest("", "", "")
+	dao.DBClient, err = dao.NewAccountForTest(
+		"",
+		os.Getenv("GLOBAL_COCKROACH_URI"),
+		os.Getenv("LOCAL_COCKROACH_URI"),
+	)
 	if err != nil {
 		t.Fatalf("failed to create DB client: %v", err)
 	}

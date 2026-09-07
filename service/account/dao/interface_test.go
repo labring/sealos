@@ -13,6 +13,7 @@ import (
 )
 
 func TestCockroach_GetPayment(t *testing.T) {
+	requireAccountDAOExternalTest(t, "GLOBAL_COCKROACH_URI", "LOCAL_COCKROACH_URI", "LOCAL_REGION")
 	db, err := newAccountForTest(
 		"",
 		os.Getenv("GLOBAL_COCKROACH_URI"),
@@ -35,6 +36,7 @@ func TestCockroach_GetPayment(t *testing.T) {
 }
 
 func TestMongoDB_GetAppCosts(t *testing.T) {
+	requireAccountDAOExternalTest(t, "MONGO_URI")
 	db, err := newAccountForTest(os.Getenv("MONGO_URI"), "", "")
 	if err != nil {
 		t.Fatalf("NewAccountInterface() error = %v", err)
@@ -66,7 +68,7 @@ func TestMongoDB_GetAppCosts(t *testing.T) {
 }
 
 func TestCockroach_GetTransfer(t *testing.T) {
-	t.Setenv("LOCAL_REGION", "97925cb0-c8e2-4d52-8b39-d8bf0cbb414a")
+	requireAccountDAOExternalTest(t, "GLOBAL_COCKROACH_URI", "LOCAL_COCKROACH_URI", "LOCAL_REGION")
 
 	db, err := newAccountForTest(
 		"",
@@ -103,6 +105,7 @@ func TestCockroach_GetTransfer(t *testing.T) {
 }
 
 func TestMongoDB_GetCostAppList(t *testing.T) {
+	requireAccountDAOExternalTest(t, "MONGO_URI")
 	dbCTX := context.Background()
 	m, err := newAccountForTest(os.Getenv("MONGO_URI"), "", "")
 	if err != nil {
@@ -142,6 +145,7 @@ func TestMongoDB_GetCostAppList(t *testing.T) {
 }
 
 func TestMongoDB_GetCostOverview(t *testing.T) {
+	requireAccountDAOExternalTest(t, "MONGO_URI")
 	dbCTX := context.Background()
 	m, err := newAccountForTest(os.Getenv("MONGO_URI"), "", "")
 	if err != nil {
@@ -340,6 +344,7 @@ func TestUnmarshal_Config(t *testing.T) {
 }
 
 func TestMongoDB_GetBasicCostDistribution(t *testing.T) {
+	requireAccountDAOExternalTest(t, "MONGO_URI")
 	dbCTX := context.Background()
 	m, err := newAccountForTest(os.Getenv("MONGO_URI"), "", "")
 	if err != nil {
@@ -373,6 +378,7 @@ func TestMongoDB_GetBasicCostDistribution(t *testing.T) {
 }
 
 func TestMongoDB_GetAppCostTimeRange(t *testing.T) {
+	requireAccountDAOExternalTest(t, "MONGO_URI")
 	dbCTX := context.Background()
 	m, err := newAccountForTest(os.Getenv("MONGO_URI"), "", "")
 	if err != nil {
@@ -407,6 +413,7 @@ func TestMongoDB_GetAppCostTimeRange(t *testing.T) {
 }
 
 func TestMongoDB_GetConsumptionAmount(t *testing.T) {
+	requireAccountDAOExternalTest(t, "MONGO_URI")
 	dbCTX := context.Background()
 	m, err := newAccountForTest(os.Getenv("MONGO_URI"), "", "")
 	if err != nil {
@@ -467,6 +474,7 @@ func TestMongoDB_GetConsumptionAmount(t *testing.T) {
 }
 
 func TestMongoDB_GetAppCost1(t *testing.T) {
+	requireAccountDAOExternalTest(t, "MONGO_URI")
 	dbCTX := context.Background()
 	m, err := newAccountForTest(os.Getenv("MONGO_URI"), "", "")
 	if err != nil {
@@ -542,6 +550,13 @@ func TestMongoDB_GetAppCost1(t *testing.T) {
 }
 
 func TestAccount_ApplyInvoice(t *testing.T) {
+	requireAccountDAOExternalTest(
+		t,
+		"MONGO_URI",
+		"GLOBAL_COCKROACH_URI",
+		"LOCAL_COCKROACH_URI",
+		"LOCAL_REGION",
+	)
 	dbCTX := context.Background()
 	m, err := newAccountForTest(
 		os.Getenv("MONGO_URI"),
@@ -598,6 +613,13 @@ func TestAccount_ApplyInvoice(t *testing.T) {
 }
 
 func TestAccount_SetStatusInvoice(t *testing.T) {
+	requireAccountDAOExternalTest(
+		t,
+		"MONGO_URI",
+		"GLOBAL_COCKROACH_URI",
+		"LOCAL_COCKROACH_URI",
+		"LOCAL_REGION",
+	)
 	dbCTX := context.Background()
 	m, err := newAccountForTest(
 		os.Getenv("MONGO_URI"),
@@ -623,6 +645,7 @@ func TestAccount_SetStatusInvoice(t *testing.T) {
 }
 
 func TestAccount_UseGiftCode(t *testing.T) {
+	requireAccountDAOExternalTest(t, "GLOBAL_COCKROACH_URI", "LOCAL_COCKROACH_URI", "LOCAL_REGION")
 	db, err := newAccountForTest(
 		"",
 		os.Getenv("GLOBAL_COCKROACH_URI"),
@@ -649,6 +672,7 @@ func TestAccount_UseGiftCode(t *testing.T) {
 }
 
 func TestAccount_GetUserRealNameInfo(t *testing.T) {
+	requireAccountDAOExternalTest(t, "GLOBAL_COCKROACH_URI", "LOCAL_COCKROACH_URI", "LOCAL_REGION")
 	db, err := newAccountForTest(
 		"",
 		os.Getenv("GLOBAL_COCKROACH_URI"),
@@ -674,6 +698,7 @@ func TestAccount_GetUserRealNameInfo(t *testing.T) {
 }
 
 func TestAccount_GetEnterpriseRealNameInfo(t *testing.T) {
+	requireAccountDAOExternalTest(t, "GLOBAL_COCKROACH_URI", "LOCAL_COCKROACH_URI", "LOCAL_REGION")
 	db, err := newAccountForTest(
 		"",
 		os.Getenv("GLOBAL_COCKROACH_URI"),
@@ -698,15 +723,8 @@ func TestAccount_GetEnterpriseRealNameInfo(t *testing.T) {
 	t.Logf("enterpriseRealNameInfo = %+v", enterpriseRealNameInfo)
 }
 
-func init() {
-	// set env
-	os.Setenv("MONGO_URI", "")
-	os.Setenv("GLOBAL_COCKROACH_URI", "")
-	os.Setenv("LOCAL_COCKROACH_URI", "")
-	os.Setenv("LOCAL_REGION", "")
-}
-
 func TestMongoDB_GetMonitorUniqueValues(t *testing.T) {
+	requireAccountDAOExternalTest(t, "MONGO_URI")
 	db, err := newAccountForTest(os.Getenv("MONGO_URI"), "", "")
 	if err != nil {
 		t.Fatalf("NewAccountInterface() error = %v", err)
@@ -723,6 +741,18 @@ func TestMongoDB_GetMonitorUniqueValues(t *testing.T) {
 	}
 	for _, monitor := range monitors {
 		t.Logf("monitor = %+v\n", monitor)
+	}
+}
+
+func requireAccountDAOExternalTest(t *testing.T, envNames ...string) {
+	t.Helper()
+	if os.Getenv("RUN_ACCOUNT_EXTERNAL_TESTS") != "true" {
+		t.Skip("set RUN_ACCOUNT_EXTERNAL_TESTS=true to run account external tests")
+	}
+	for _, name := range envNames {
+		if os.Getenv(name) == "" {
+			t.Skipf("requires %s", name)
+		}
 	}
 }
 

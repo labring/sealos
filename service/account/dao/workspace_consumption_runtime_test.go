@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"os"
 	"testing"
 	"time"
 
@@ -22,12 +21,11 @@ const (
 	workspaceConsumptionTestDB           = "workspace-consumption-test"
 	workspaceConsumptionTestColl         = "billing"
 	workspaceConsumptionBenchmarkRecords = 10000
-	workspaceConsumptionRequiredEnv      = "TESTCONTAINERS_REQUIRED"
 )
 
 func newWorkspaceConsumptionMongo(tb testing.TB) (*MongoDB, context.Context) {
 	tb.Helper()
-	skipIfWorkspaceConsumptionDockerIsNotHealthy(tb)
+	requireWorkspaceConsumptionDocker(tb)
 
 	ctx := context.Background()
 	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
@@ -91,35 +89,23 @@ func newWorkspaceConsumptionMongo(tb testing.TB) (*MongoDB, context.Context) {
 	return mongoDB, ctx
 }
 
-func skipIfWorkspaceConsumptionDockerIsNotHealthy(tb testing.TB) {
+func requireWorkspaceConsumptionDocker(tb testing.TB) {
 	tb.Helper()
 	defer func() {
 		if r := recover(); r != nil {
-			skipOrFailWorkspaceConsumptionDockerf(
-				tb,
-				"recovered from panic: %v; Docker is not running",
-				r,
-			)
+			tb.Fatalf("recovered from panic while checking Docker: %v", r)
 		}
 	}()
 
 	ctx := context.Background()
 	provider, err := testcontainers.ProviderDocker.GetProvider()
 	if err != nil {
-		skipOrFailWorkspaceConsumptionDockerf(tb, "Docker is not running: %v", err)
+		tb.Fatalf("get Docker provider: %v", err)
 	}
 	defer provider.Close()
 	if err := provider.Health(ctx); err != nil {
-		skipOrFailWorkspaceConsumptionDockerf(tb, "Docker is not running: %v", err)
+		tb.Fatalf("check Docker health: %v", err)
 	}
-}
-
-func skipOrFailWorkspaceConsumptionDockerf(tb testing.TB, format string, args ...any) {
-	tb.Helper()
-	if os.Getenv(workspaceConsumptionRequiredEnv) == "true" {
-		tb.Fatalf(format, args...)
-	}
-	tb.Skipf(format, args...)
 }
 
 func TestGetWorkspaceConsumptionAmountWithMongoRuntime(t *testing.T) {
