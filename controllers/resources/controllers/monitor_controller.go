@@ -505,7 +505,7 @@ func (r *MonitorReconciler) monitorPodResourceUsage(
 		pod := &podList.Items[i]
 		if pod.Spec.NodeName == "" ||
 			pod.Status.Phase == corev1.PodSucceeded &&
-				time.Since(pod.Status.StartTime.Time) > 1*time.Minute {
+				(pod.Status.StartTime == nil || time.Since(pod.Status.StartTime.Time) > 1*time.Minute) {
 			continue
 		}
 		podResNamed := resources.NewResourceNamed(pod)
