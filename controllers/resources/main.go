@@ -22,6 +22,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/apecloud/kubeblocks/apis/dataprotection/v1alpha1"
@@ -41,6 +42,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
@@ -138,60 +140,68 @@ func main() {
 	//	os.Exit(1)
 	//}
 
-	managerCtx := ctrl.SetupSignalHandler()
-	go func() {
-		if err := mgr.Start(managerCtx); err != nil {
-			setupLog.Error(err, "problem running manager")
-			os.Exit(1)
-		}
-	}()
-	// ReaderFailOnMissingInformer skips the per-read sync wait, so synchronize all
-	// explicitly registered informers before the monitor performs its first read.
-	if !mgr.GetCache().WaitForCacheSync(managerCtx) {
-		setupLog.Error(
-			errors.New("resource cache sync did not complete"),
-			"unable to start monitor",
-		)
+	if err := mgr.Add(monitorRunnable{RunnableFunc: func(ctx context.Context) error {
+		return runMonitor(ctx, mgr)
+	}}); err != nil {
+		setupLog.Error(err, "unable to register monitor")
 		os.Exit(1)
 	}
+	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+		setupLog.Error(err, "problem running manager")
+		os.Exit(1)
+	}
+}
+
+type monitorRunnable struct {
+	manager.RunnableFunc
+}
+
+func (monitorRunnable) NeedLeaderElection() bool { return true }
+
+func runMonitor(ctx context.Context, mgr ctrl.Manager) error {
+	// ReaderFailOnMissingInformer skips the per-read sync wait, so synchronize all
+	// explicitly registered informers before the monitor performs its first read.
+	if !mgr.GetCache().WaitForCacheSync(ctx) {
+		if ctx.Err() != nil {
+			return nil
+		}
+		return errors.New("resource cache sync did not complete")
+	}
+	if ctx.Err() != nil {
+		return nil
+	}
+	setupLog.Info("starting leader monitor")
+	defer setupLog.Info("stopped leader monitor")
 
 	reconciler, err := controllers.NewMonitorReconciler(mgr)
 	if err != nil {
-		setupLog.Error(err, "failed to init monitor reconciler")
-		os.Exit(1)
+		return fmt.Errorf("initialize monitor reconciler: %w", err)
 	}
 	reconciler.DBClient, err = mongo.NewMongoInterface(
-		context.Background(),
+		ctx,
 		os.Getenv(database.MongoURI),
 	)
-	if err != nil {
-		setupLog.Error(err, "failed to init db client")
-		os.Exit(1)
+	if reconciler.DBClient != nil {
+		defer disconnectMonitorDatabase(reconciler.DBClient)
 	}
-	defer func() {
-		if err := reconciler.DBClient.Disconnect(context.Background()); err != nil {
-			setupLog.Error(err, "failed to disconnect db client")
-		}
-	}()
+	if err != nil {
+		return monitorInitializationError(ctx, "initialize monitor database", err)
+	}
 	if trafficURI := os.Getenv(database.TrafficMongoURI); trafficURI != "" {
-		reconciler.TrafficClient, err = mongo.NewMongoInterface(context.Background(), trafficURI)
-		if err != nil {
-			setupLog.Error(err, "failed to init traffic db client")
-			os.Exit(1)
+		reconciler.TrafficClient, err = mongo.NewMongoInterface(ctx, trafficURI)
+		if reconciler.TrafficClient != nil {
+			defer disconnectMonitorDatabase(reconciler.TrafficClient)
 		}
-		defer func() {
-			if err := reconciler.TrafficClient.Disconnect(context.Background()); err != nil {
-				setupLog.Error(err, "failed to disconnect traffic db client")
-			}
-		}()
+		if err != nil {
+			return monitorInitializationError(ctx, "initialize traffic database", err)
+		}
 	} else {
 		setupLog.Info("traffic mongo uri not found, please check env: TRAFFIC_MONGO_URI")
 	}
 
 	err = reconciler.DBClient.InitDefaultPropertyTypeLSWithDefaults()
 	if err != nil {
-		setupLog.Error(err, "failed to init property type with defaults")
-		os.Exit(1)
+		return fmt.Errorf("initialize property types: %w", err)
 	}
 	reconciler.Properties = resources.DefaultPropertyTypeLS
 	const (
@@ -220,13 +230,11 @@ func main() {
 			ak,
 			sk,
 		); err != nil {
-			reconciler.Error(err, "failed to new minio client")
-			os.Exit(1)
+			return fmt.Errorf("initialize object storage client: %w", err)
 		}
-		_, err := reconciler.ObjStorageClient.ListBuckets(context.Background())
+		_, err := reconciler.ObjStorageClient.ListBuckets(ctx)
 		if err != nil {
-			reconciler.Error(err, "failed to list minio buckets")
-			os.Exit(1)
+			return monitorInitializationError(ctx, "list object storage buckets", err)
 		}
 		if reconciler.PromURL = os.Getenv(PromURL); reconciler.PromURL == "" {
 			reconciler.Info("prometheus url not found, please check env: PROM_URL")
@@ -239,8 +247,7 @@ func main() {
 			secure,
 		)
 		if err != nil {
-			reconciler.Error(err, "failed to new minio metrics client")
-			os.Exit(1)
+			return fmt.Errorf("initialize object storage metrics client: %w", err)
 		}
 		reconciler.Info(
 			fmt.Sprintf(
@@ -259,12 +266,12 @@ func main() {
 	if err != nil {
 		reconciler.Error(err, "failed to create ttl traffic time series")
 	}
-	// timer creates tomorrow's timing table in advance to ensure that tomorrow's table exists
-	// Execute immediately and then every 24 hours.
-	time.AfterFunc(time.Until(getNextMidnight()), func() {
-		ticker := time.NewTicker(24 * time.Hour)
-		defer ticker.Stop()
-		for {
+	maintenanceCtx, cancelMaintenance := context.WithCancel(ctx)
+	var maintenance sync.WaitGroup
+	maintenance.Add(1)
+	go func() {
+		defer maintenance.Done()
+		runMonitorMaintenance(maintenanceCtx, func() {
 			err := reconciler.DBClient.CreateMonitorTimeSeriesIfNotExist(
 				time.Now().UTC().Add(24 * time.Hour),
 			)
@@ -274,16 +281,48 @@ func main() {
 			if err := reconciler.DropMonitorCollectionOlder(); err != nil {
 				reconciler.Error(err, "failed to drop monitor collection")
 			}
-			<-ticker.C
-		}
-	})
+		})
+	}()
+	defer func() {
+		cancelMaintenance()
+		maintenance.Wait()
+	}()
+	return reconciler.StartReconciler(ctx)
+}
 
-	ctx, cancel := context.WithCancel(context.Background())
+func monitorInitializationError(ctx context.Context, stage string, err error) error {
+	if ctx.Err() != nil && errors.Is(err, ctx.Err()) {
+		return nil
+	}
+	return fmt.Errorf("%s: %w", stage, err)
+}
+
+func disconnectMonitorDatabase(db interface {
+	Disconnect(ctx context.Context) error
+},
+) {
+	// Cleanup must remain usable after the leader context has been canceled.
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+	if err := db.Disconnect(ctx); err != nil {
+		setupLog.Error(err, "failed to disconnect monitor database")
+	}
+}
 
-	if err := reconciler.StartReconciler(ctx); err != nil {
-		setupLog.Error(err, "failed to start monitor reconciler")
-		os.Exit(1)
+func runMonitorMaintenance(ctx context.Context, maintain func()) {
+	timer := time.NewTimer(time.Until(getNextMidnight()))
+	defer timer.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-timer.C:
+			if ctx.Err() != nil {
+				return
+			}
+			maintain()
+			timer.Reset(24 * time.Hour)
+		}
 	}
 }
 
