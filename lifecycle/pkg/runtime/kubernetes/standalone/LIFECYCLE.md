@@ -52,8 +52,9 @@ before bootstrap, and arrange their RBAC. Sealos does not invent a controller
 identity, embed CNI-specific RBAC, or distribute administrator-owned controller
 credentials from an existing master. Initial bootstrap checks API/component
 health without requiring controller readiness, since workers and their network
-may be installed subsequently. Adding to an existing cluster requires controller
-readiness as well.
+may be installed subsequently. Mode conversion also returns after kubelet
+restart; controller reconciliation is asynchronous. Registered-mode recovery
+still waits for Node readiness.
 
 The supported bootstrap layout uses Linux/systemd, `/usr/bin/kubelet`, a CRI v1
 Unix endpoint, `/etc/kubernetes/manifests`, and `/etc/kubernetes/pki`, with stable

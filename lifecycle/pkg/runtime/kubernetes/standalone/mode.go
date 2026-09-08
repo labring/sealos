@@ -127,7 +127,10 @@ func SwitchMode(ctx context.Context, options ModeOptions) error {
 		return nil
 	}
 	if m.state.Mode == options.Mode && m.state.Target == "" {
-		return m.waitReady(ctx)
+		if options.Mode == ModeRegistered {
+			return m.waitReady(ctx)
+		}
+		return nil
 	}
 	m.state.Target = options.Mode
 	if err := m.save(); err != nil {
@@ -143,8 +146,13 @@ func SwitchMode(ctx context.Context, options ModeOptions) error {
 	if err != nil {
 		return fmt.Errorf("conversion paused; repeat the command to resume or explicitly request the opposite mode; state: %s: %w", modeRoot, err)
 	}
-	if err := m.waitReady(ctx); err != nil {
-		return err
+	// Standalone activation is complete once kubelet has been restarted with
+	// standalone arguments. Route reconciliation is asynchronous because CNI
+	// cleanup and host reboot are administrator-owned operations.
+	if options.Mode == ModeRegistered {
+		if err := m.waitReady(ctx); err != nil {
+			return err
+		}
 	}
 	m.state.Mode = options.Mode
 	m.state.Target = ""
@@ -443,9 +451,6 @@ func (m *modeSwitch) ready(ctx context.Context) error {
 	}
 	if m.Mode == ModeStandalone {
 		if _, err := standaloneArgs(args); err != nil {
-			return err
-		}
-		if err := m.podReady(ctx, m.controller); err != nil {
 			return err
 		}
 	} else {
