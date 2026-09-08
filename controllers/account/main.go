@@ -523,9 +523,13 @@ func main() {
 	workspaceSubDebtProcessor := controllers.NewWorkspaceSubscriptionDebtProcessor(
 		accountReconciler,
 	)
-	go workspaceTrafficProcessor.ProcessTrafficWithTimeRange()
+	if err := mgr.Add(workspaceTrafficProcessor); err != nil {
+		setupManagerError(err, "WorkspaceTraffic")
+	}
 	// workspaceSubscriptionProcessor.Start(ctx)
-	workspaceSubDebtProcessor.Start(ctx)
+	if err := mgr.Add(workspaceSubDebtProcessor); err != nil {
+		setupManagerError(err, "WorkspaceSubscriptionDebt")
+	}
 
 	//+kubebuilder:scaffold:builder
 
