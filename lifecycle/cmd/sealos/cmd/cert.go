@@ -52,6 +52,11 @@ func newCertCmd() *cobra.Command {
     3. kubectl get pod, to check if it works or not
 		`,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			release, err := clusterfile.LockMaintenance(clusterName, false)
+			if err != nil {
+				return err
+			}
+			defer release()
 			if len(renewTargets) != 0 {
 				if len(altNames) != 0 {
 					return errors.New("--alt-names and --renew cannot be used together")
@@ -89,6 +94,9 @@ func newCertCmd() *cobra.Command {
 			}
 			cf := clusterfile.NewClusterFile(clusterPath, opts...)
 			if err := cf.Process(); err != nil {
+				return err
+			}
+			if err := clusterfile.CheckRemoteModeTransition(cmd.Context(), clusterName, cf.GetCluster().Spec.ControlPlaneMode != ""); err != nil {
 				return err
 			}
 

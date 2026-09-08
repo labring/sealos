@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 
 	"github.com/labring/sealos/pkg/runtime/k3s"
@@ -83,9 +84,48 @@ type Applier struct {
 }
 
 func (c *Applier) Apply() error {
+	lock := clusterfile.LockMaintenance
+	if c.ClusterDesired.IsStandaloneControlPlane() {
+		lock = func(name string, _ bool) (func(), error) {
+			return clusterfile.LockLifecycleMaintenance(name)
+		}
+	}
+	release, err := lock(c.ClusterDesired.Name, false)
+	if err != nil {
+		return err
+	}
+	defer release()
+	if c.ClusterDesired.IsStandaloneControlPlane() {
+		return c.withStandaloneOperation("apply", c.applyDesired)
+	}
+	return c.applyDesired()
+}
+
+func (c *Applier) applyDesired() (result error) {
+	mode := c.ClusterDesired.Spec.ControlPlaneMode
+	if mode != "" && mode != v2.ControlPlaneModeRegistered && mode != v2.ControlPlaneModeStandalone {
+		return fmt.Errorf("unknown controlPlaneMode %q", mode)
+	}
+	if c.ClusterCurrent != nil && !c.ClusterCurrent.CreationTimestamp.IsZero() &&
+		c.ClusterCurrent.IsStandaloneControlPlane() != c.ClusterDesired.IsStandaloneControlPlane() {
+		return fmt.Errorf("use sealos switch to convert kubelets before changing controlPlaneMode")
+	}
+	requireModeAPI := c.ClusterCurrent != nil && !c.ClusterCurrent.CreationTimestamp.IsZero() &&
+		(mode != "" || c.ClusterCurrent.Spec.ControlPlaneMode != "")
+	if !c.ClusterDesired.IsStandaloneControlPlane() {
+		if err := clusterfile.CheckRemoteModeTransition(c.Context, c.ClusterDesired.Name, requireModeAPI); err != nil {
+			return err
+		}
+	}
 	// clusterErr and appErr should not appear in the same time
 	var clusterErr, appErr error
 	defer func() {
+		if c.ClusterDesired.IsStandaloneControlPlane() {
+			if result == nil {
+				result = c.commitStandaloneInventory()
+			}
+			return
+		}
 		var checkError *processor.CheckError
 		var preProcessError *processor.PreProcessError
 		switch {
@@ -128,7 +168,7 @@ func (c *Applier) getWriteBackObjects() []interface{} {
 	distribution := c.ClusterFile.GetCluster().GetDistribution()
 	if runtimeConfig := c.ClusterFile.GetRuntimeConfig(); runtimeConfig != nil {
 		if components := runtimeConfig.GetComponents(); len(components) > 0 {
-			if distribution == k3s.Distribution {
+			if distribution == k3s.Distribution || c.ClusterDesired.IsStandaloneControlPlane() {
 				obj = append(obj, components...)
 			}
 		}
@@ -236,7 +276,7 @@ func (c *Applier) scaleCluster(mj, md, nj, nd []string) error {
 
 	localpath := constants.Clusterfile(c.ClusterDesired.Name)
 	cf := clusterfile.NewClusterFile(localpath)
-	scaleProcessor, err := processor.NewScaleProcessor(cf, c.ClusterDesired.Name, c.ClusterDesired.Spec.Image, mj, md, nj, nd)
+	scaleProcessor, err := processor.NewScaleProcessor(cf, c.ClusterDesired.Name, c.ClusterDesired.Spec.Image, mj, md, nj, nd, c.Context)
 	if err != nil {
 		return err
 	}
@@ -250,9 +290,39 @@ func (c *Applier) scaleCluster(mj, md, nj, nd []string) error {
 }
 
 func (c *Applier) Delete() error {
+	if c.ClusterDesired.IsStandaloneControlPlane() {
+		release, err := clusterfile.LockLifecycleMaintenance(c.ClusterDesired.Name)
+		if err != nil {
+			return err
+		}
+		defer release()
+		if err := c.withStandaloneOperation("reset", c.deleteStandalone); err != nil {
+			return err
+		}
+		if err := os.Remove(constants.Clusterfile(c.ClusterDesired.Name)); err != nil && !os.IsNotExist(err) {
+			return err
+		}
+		if err := os.Remove(filepath.Join(constants.ClusterDir(c.ClusterDesired.Name), processor.StandaloneResetProgressFile)); err != nil && !os.IsNotExist(err) {
+			return err
+		}
+		return nil
+	}
+	release, err := clusterfile.LockMaintenance(c.ClusterDesired.Name, false)
+	if err != nil {
+		return err
+	}
+	defer release()
+	if err := clusterfile.CheckRemoteModeTransition(c.Context, c.ClusterDesired.Name, c.ClusterDesired.Spec.ControlPlaneMode != ""); err != nil {
+		return err
+	}
+	completed := false
 	t := metav1.Now()
 	c.ClusterDesired.DeletionTimestamp = &t
 	defer func() {
+		if c.ClusterDesired.IsStandaloneControlPlane() && !completed {
+			c.ClusterDesired.DeletionTimestamp = nil
+			return
+		}
 		cfPath := constants.Clusterfile(c.ClusterDesired.Name)
 		target := fmt.Sprintf("%s.%d", cfPath, t.Unix())
 		logger.Debug("write reset cluster file to local: %s", target)
@@ -261,7 +331,9 @@ func (c *Applier) Delete() error {
 		}
 		_ = os.Rename(cfPath, target)
 	}()
-	return c.deleteCluster()
+	err = c.deleteCluster()
+	completed = err == nil
+	return err
 }
 
 func (c *Applier) deleteCluster() error {

@@ -37,16 +37,17 @@ import (
 )
 
 type ScaleProcessor struct {
-	ClusterFile     clusterfile.Interface
-	Runtime         runtime.Interface
-	Buildah         buildah.Interface
-	pullImages      []string
-	MastersToJoin   []string
-	MastersToDelete []string
-	NodesToJoin     []string
-	NodesToDelete   []string
-	IsScaleUp       bool
-	Guest           guest.Interface
+	maintenanceContext context.Context
+	ClusterFile        clusterfile.Interface
+	Runtime            runtime.Interface
+	Buildah            buildah.Interface
+	pullImages         []string
+	MastersToJoin      []string
+	MastersToDelete    []string
+	NodesToJoin        []string
+	NodesToDelete      []string
+	IsScaleUp          bool
+	Guest              guest.Interface
 }
 
 func (c *ScaleProcessor) Execute(cluster *v2.Cluster) error {
@@ -56,6 +57,9 @@ func (c *ScaleProcessor) Execute(cluster *v2.Cluster) error {
 	}
 
 	for _, f := range pipLine {
+		if err := checkMaintenanceContext(c.maintenanceContext); err != nil {
+			return err
+		}
 		if err = f(cluster); err != nil {
 			return err
 		}
@@ -158,6 +162,14 @@ func (c *ScaleProcessor) JoinCheck(cluster *v2.Cluster) error {
 	ips = append(ips, cluster.GetMaster0IPAndPort())
 	scales = append(c.MastersToJoin, c.NodesToJoin...)
 	ips = append(ips, scales...)
+	if cluster.IsStandaloneControlPlane() {
+		if err := checker.RunCheckList([]checker.Interface{checker.NewIPsHostChecker(ips)}, cluster, checker.PhasePre); err != nil {
+			return NewCheckError(err)
+		}
+		return NewCheckError(clusterfile.WithJoinPreflight(cluster.Name, scales, func(pending []string) error {
+			return checker.RunCheckList([]checker.Interface{checker.NewContainerdChecker(pending)}, cluster, checker.PhasePre)
+		}))
+	}
 	return NewCheckError(checker.RunCheckList([]checker.Interface{checker.NewIPsHostChecker(ips), checker.NewContainerdChecker(scales)}, cluster, checker.PhasePre))
 }
 
@@ -195,8 +207,10 @@ func (c *ScaleProcessor) preProcess(cluster *v2.Cluster) error {
 				obj = append(obj, configs[i])
 			}
 		}
-		if err = yaml.MarshalFile(clusterPath, obj...); err != nil {
-			return err
+		if !cluster.IsStandaloneControlPlane() {
+			if err = yaml.MarshalFile(clusterPath, obj...); err != nil {
+				return err
+			}
 		}
 	}
 	if err = SyncClusterStatus(cluster, c.Buildah, false); err != nil {
@@ -213,6 +227,7 @@ func (c *ScaleProcessor) preProcess(cluster *v2.Cluster) error {
 		return fmt.Errorf("failed to init runtime: %v", err)
 	}
 	c.Runtime = rt
+	setMaintenanceContext(rt, c.maintenanceContext)
 
 	return err
 }
@@ -286,18 +301,18 @@ func sortAndFilterNoneApplicationMounts(cluster *v2.Cluster) ([]v2.MountImage, e
 func (c *ScaleProcessor) Bootstrap(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline Bootstrap in ScaleProcessor")
 	hosts := append(c.MastersToJoin, c.NodesToJoin...)
-	bs := bootstrap.New(cluster)
+	bs := bootstrap.New(cluster, c.maintenanceContext)
 	return bs.Apply(hosts...)
 }
 
 func (c *ScaleProcessor) UndoBootstrap(_ *v2.Cluster) error {
 	logger.Info("Executing pipeline UndoBootstrap in ScaleProcessor")
 	hosts := append(c.MastersToDelete, c.NodesToDelete...)
-	bs := bootstrap.New(c.ClusterFile.GetCluster())
+	bs := bootstrap.New(c.ClusterFile.GetCluster(), c.maintenanceContext)
 	return bs.Delete(hosts...)
 }
 
-func NewScaleProcessor(clusterFile clusterfile.Interface, name string, images v2.ImageList, masterToJoin, masterToDelete, nodeToJoin, nodeToDelete []string) (Interface, error) {
+func NewScaleProcessor(clusterFile clusterfile.Interface, name string, images v2.ImageList, masterToJoin, masterToDelete, nodeToJoin, nodeToDelete []string, contexts ...context.Context) (Interface, error) {
 	bder, err := buildah.New(name)
 	if err != nil {
 		return nil, err
@@ -307,15 +322,20 @@ func NewScaleProcessor(clusterFile clusterfile.Interface, name string, images v2
 		return nil, err
 	}
 
+	ctx := context.Background()
+	if len(contexts) > 0 {
+		ctx = contexts[0]
+	}
 	return &ScaleProcessor{
-		MastersToDelete: masterToDelete,
-		MastersToJoin:   masterToJoin,
-		NodesToDelete:   nodeToDelete,
-		NodesToJoin:     nodeToJoin,
-		ClusterFile:     clusterFile,
-		Buildah:         bder,
-		pullImages:      images,
-		IsScaleUp:       len(masterToJoin) > 0 || len(nodeToJoin) > 0,
-		Guest:           gs,
+		maintenanceContext: ctx,
+		MastersToDelete:    masterToDelete,
+		MastersToJoin:      masterToJoin,
+		NodesToDelete:      nodeToDelete,
+		NodesToJoin:        nodeToJoin,
+		ClusterFile:        clusterFile,
+		Buildah:            bder,
+		pullImages:         images,
+		IsScaleUp:          len(masterToJoin) > 0 || len(nodeToJoin) > 0,
+		Guest:              gs,
 	}, nil
 }

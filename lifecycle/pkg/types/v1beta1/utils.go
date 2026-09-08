@@ -149,13 +149,27 @@ func (c *Cluster) ReplaceRootfsImage() {
 	sv1 := semver.MustParse(v1)
 	sv2 := semver.MustParse(v2)
 	//if version format error, never replace
-	if sv1.LessThan(sv2) {
+	// The later image is the requested replacement, including a rebuild of
+	// the same Kubernetes version with updated lifecycle tools.
+	if sv1.LessThan(sv2) || sv1.Equal(sv2) {
+		c.removeReplacedImage(c.Status.Mounts[i1].ImageName)
 		c.Status.Mounts[i1], c.Status.Mounts[i2] = c.Status.Mounts[i2], c.Status.Mounts[i1]
 		c.Status.Mounts = append(c.Status.Mounts[:i2], c.Status.Mounts[i2+1:]...)
 	} else if sv1.GreaterThan(sv2) {
+		c.removeReplacedImage(c.Status.Mounts[i2].ImageName)
 		c.Status.Mounts[i2], c.Status.Mounts[i1] = c.Status.Mounts[i1], c.Status.Mounts[i2]
 		c.Status.Mounts = append(c.Status.Mounts[:i1], c.Status.Mounts[i1+1:]...)
 	}
+}
+
+func (c *Cluster) removeReplacedImage(name string) {
+	images := c.Spec.Image[:0]
+	for _, image := range c.Spec.Image {
+		if image != name {
+			images = append(images, image)
+		}
+	}
+	c.Spec.Image = images
 }
 
 func (c *Cluster) SetNewImages(images []string) {
@@ -196,6 +210,15 @@ const (
 	defaultVIP          = "10.103.97.2"
 	DefaultLvsCareImage = "sealos.hub:5000/sealos/lvscare:latest"
 )
+
+const (
+	ControlPlaneModeRegistered = "registered"
+	ControlPlaneModeStandalone = "standalone"
+)
+
+func (c *Cluster) IsStandaloneControlPlane() bool {
+	return c.Spec.ControlPlaneMode == ControlPlaneModeStandalone
+}
 
 func (c *Cluster) GetVIP() string {
 	root := c.GetRootfsImage()

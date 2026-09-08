@@ -45,6 +45,9 @@ func (d DeleteProcessor) Execute(cluster *v2.Cluster) (err error) {
 	if err != nil {
 		return err
 	}
+	if cluster.IsStandaloneControlPlane() {
+		return runStandaloneResetPipeline(cluster, pipLine)
+	}
 	// TODO if error is exec net process ???
 	for _, f := range pipLine {
 		if err = f(cluster); err != nil {
@@ -80,7 +83,8 @@ func (d *DeleteProcessor) UndoBootstrap(cluster *v2.Cluster) error {
 	} else {
 		cls = cluster
 	}
-	bs := bootstrap.New(cls)
+	// Whole-cluster reset continues offline after its API lease disappears.
+	bs := bootstrap.New(cls, context.Background())
 	return bs.Delete(hosts...)
 }
 
@@ -124,6 +128,11 @@ func (d *DeleteProcessor) UnMountImage(cluster *v2.Cluster) error {
 }
 
 func (d *DeleteProcessor) CleanFS(cluster *v2.Cluster) error {
+	if cluster.IsStandaloneControlPlane() {
+		// The applier commits the reset archive after all remote cleanup succeeds.
+		// Keep the local inventory, lock, and recovery journal available for retry.
+		return nil
+	}
 	workDir := constants.ClusterDir(cluster.Name)
 	dataDir := constants.NewPathResolver(cluster.Name).Root()
 	return fileutil.CleanFiles(workDir, dataDir)

@@ -549,6 +549,7 @@ func TestMergeWithBuiltinKubeadmConfigLoadsNetworkingFromClusterConfig(t *testin
 
 	clusterConfig := `apiVersion: kubeadm.k8s.io/v1beta3
 kind: ClusterConfiguration
+controlPlaneEndpoint: apiserver.example.local:6443
 networking:
   serviceSubnet: 10.96.0.0/12
   podSubnet: 10.244.0.0/16
@@ -599,6 +600,9 @@ apiServer:
 	}
 	if got := rt.getCertSANs(); len(got) != 2 || got[1] != "apiserver.example.local" {
 		t.Fatalf("certSANs = %v, want [127.0.0.1 apiserver.example.local]", got)
+	}
+	if got := rt.kubeadmConfig.ClusterConfiguration.ControlPlaneEndpoint; got != "apiserver.example.local:6443" {
+		t.Fatalf("lost the published discovery endpoint: %q", got)
 	}
 }
 
