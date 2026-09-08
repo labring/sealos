@@ -243,6 +243,10 @@ type ImageList []string
 
 // ClusterSpec defines the desired state of InfraMetadata
 type ClusterSpec struct {
+	// ControlPlaneMode selects how control-plane kubelets are managed.
+	// Empty preserves the existing kubeadm/node-registered behavior.
+	ControlPlaneMode string                 `json:"controlPlaneMode,omitempty"`
+	RouteController  *RouteControllerConfig `json:"routeController,omitempty"`
 	// desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 	// Foo is an example field of Cluster. Edit Cluster_types.go to remove/update
@@ -263,4 +267,13 @@ type ClusterSpec struct {
 	// More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell
 	// +optional
 	Command []string `json:"command,omitempty"`
+}
+
+// RouteControllerConfig contains only CNI-independent deployment settings.
+type RouteControllerConfig struct {
+	Image      string `json:"image,omitempty"`
+	Kubeconfig string `json:"kubeconfig,omitempty"`
+	Config     string `json:"config,omitempty"`
+	Table      int    `json:"table,omitempty"`
+	Protocol   int    `json:"protocol,omitempty"`
 }

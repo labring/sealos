@@ -32,16 +32,24 @@ import (
 )
 
 func (k *KubeadmRuntime) getKubeVersion() string {
-	return k.kubeadmConfig.ClusterConfiguration.KubernetesVersion
+	if version := k.kubeadmConfig.ClusterConfiguration.KubernetesVersion; version != "" {
+		return version
+	}
+	// Older clusters may have a kubeadm ConfigMap whose
+	// ClusterConfiguration omits kubernetesVersion. The committed rootfs image
+	// is the authoritative version used by Sealos for those clusters.
+	return k.getKubeVersionFromImage()
 }
 
 // old implementation doesn't consider multiple rootfs images; here get the first rootfs image
 func (k *KubeadmRuntime) getKubeVersionFromImage() string {
-	img := k.cluster.GetRootfsImage()
-	if img == nil || img.Labels == nil {
-		return ""
+	if img := k.cluster.GetRootfsImage(); img != nil && img.Labels != nil {
+		if version := img.Labels[v1beta1.ImageKubeVersionKey]; version != "" {
+			return version
+		}
 	}
-	return img.Labels[v1beta1.ImageKubeVersionKey]
+
+	return ""
 }
 
 func (k *KubeadmRuntime) getMaster0IP() string {

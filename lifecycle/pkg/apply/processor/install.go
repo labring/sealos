@@ -41,14 +41,15 @@ import (
 var ForceOverride bool
 
 type InstallProcessor struct {
-	ClusterFile      clusterfile.Interface
-	Buildah          buildah.Interface
-	Runtime          runtime.Interface
-	Guest            guest.Interface
-	NewMounts        []v2.MountImage
-	NewImages        []string
-	ExtraEnvs        map[string]string // parsing from CLI arguments
-	imagesToOverride []string
+	maintenanceContext context.Context
+	ClusterFile        clusterfile.Interface
+	Buildah            buildah.Interface
+	Runtime            runtime.Interface
+	Guest              guest.Interface
+	NewMounts          []v2.MountImage
+	NewImages          []string
+	ExtraEnvs          map[string]string // parsing from CLI arguments
+	imagesToOverride   []string
 }
 
 func (c *InstallProcessor) Execute(cluster *v2.Cluster) error {
@@ -58,6 +59,9 @@ func (c *InstallProcessor) Execute(cluster *v2.Cluster) error {
 	}
 
 	for _, f := range pipLine {
+		if err := checkMaintenanceContext(c.maintenanceContext); err != nil {
+			return err
+		}
 		if err = f(cluster); err != nil {
 			return err
 		}
@@ -154,8 +158,8 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 	}
 	sort.Ints(indexes)
 	mounts := make([]v2.MountImage, 0)
-	for i := range indexes {
-		mounts = append(mounts, cluster.Status.Mounts[i])
+	for _, index := range indexes {
+		mounts = append(mounts, cluster.Status.Mounts[index])
 	}
 	cluster.Status.Mounts = mounts
 
@@ -200,6 +204,7 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 		return fmt.Errorf("failed to init runtime, %v", err)
 	}
 	c.Runtime = rt
+	setMaintenanceContext(rt, c.maintenanceContext)
 	return nil
 }
 
@@ -282,10 +287,11 @@ func NewInstallProcessor(ctx context.Context, clusterFile clusterfile.Interface,
 	}
 
 	return &InstallProcessor{
-		ClusterFile: clusterFile,
-		Buildah:     bder,
-		Guest:       gs,
-		NewImages:   images,
-		ExtraEnvs:   GetEnvs(ctx),
+		maintenanceContext: ctx,
+		ClusterFile:        clusterFile,
+		Buildah:            bder,
+		Guest:              gs,
+		NewImages:          images,
+		ExtraEnvs:          GetEnvs(ctx),
 	}, nil
 }

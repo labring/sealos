@@ -49,6 +49,9 @@ type KubeadmRuntime struct {
 }
 
 func (k *KubeadmRuntime) Init() error {
+	if k.cluster.IsStandaloneControlPlane() {
+		return k.initStandaloneMaster()
+	}
 	return k.runPipelines("init masters",
 		k.InitKubeadmConfigToMaster0,
 		k.InitCertsAndKubeConfigs,
@@ -89,6 +92,14 @@ func (k *KubeadmRuntime) GetRawConfig() ([]byte, error) {
 }
 
 func (k *KubeadmRuntime) Reset() error {
+	if k.cluster.IsStandaloneControlPlane() {
+		for _, node := range k.getNodeIPAndPortList() {
+			if err := k.resetWorker(node); err != nil {
+				return err
+			}
+		}
+		return k.removeStandaloneMasters(k.getMasterIPAndPortList(), true)
+	}
 	logger.Info("start to delete Cluster: master %s, node %s", k.getMasterIPList(), k.getNodeIPList())
 	return k.reset()
 }
@@ -96,7 +107,11 @@ func (k *KubeadmRuntime) Reset() error {
 func (k *KubeadmRuntime) ScaleUp(newMasterIPList []string, newNodeIPList []string) error {
 	if len(newMasterIPList) != 0 {
 		logger.Info("%s will be added as master", newMasterIPList)
-		if err := k.joinMasters(newMasterIPList); err != nil {
+		join := k.joinMasters
+		if k.cluster.IsStandaloneControlPlane() {
+			join = k.joinStandaloneMasters
+		}
+		if err := join(newMasterIPList); err != nil {
 			return err
 		}
 	}
@@ -110,9 +125,19 @@ func (k *KubeadmRuntime) ScaleUp(newMasterIPList []string, newNodeIPList []strin
 }
 
 func (k *KubeadmRuntime) ScaleDown(deleteMastersIPList []string, deleteNodesIPList []string) error {
+	if k.cluster.IsStandaloneControlPlane() {
+		if len(deleteMastersIPList) != 0 && len(deleteMastersIPList) >= len(k.getMasterIPAndPortList()) {
+			return fmt.Errorf("cannot remove every control plane; use sealos reset to destroy the cluster")
+		}
+		if err := k.deleteNodes(deleteNodesIPList); err != nil {
+			return err
+		}
+		return k.removeStandaloneMasters(deleteMastersIPList, false, deleteNodesIPList...)
+	}
 	if len(deleteMastersIPList) != 0 {
 		logger.Info("master %s will be deleted", deleteMastersIPList)
-		if err := k.deleteMasters(deleteMastersIPList); err != nil {
+		remove := k.deleteMasters
+		if err := remove(deleteMastersIPList); err != nil {
 			return err
 		}
 	}
@@ -158,6 +183,11 @@ func New(cluster *v2.Cluster, config any) (*KubeadmRuntime, error) {
 }
 
 func (k *KubeadmRuntime) Validate() error {
+	switch k.cluster.Spec.ControlPlaneMode {
+	case "", v2.ControlPlaneModeRegistered, v2.ControlPlaneModeStandalone:
+	default:
+		return fmt.Errorf("unknown control-plane mode %q", k.cluster.Spec.ControlPlaneMode)
+	}
 	if len(k.cluster.Spec.Hosts) == 0 {
 		return fmt.Errorf("master hosts cannot be empty")
 	}
@@ -171,6 +201,9 @@ func (k *KubeadmRuntime) Validate() error {
 }
 
 func (k *KubeadmRuntime) Upgrade(version string) error {
+	if k.cluster.IsStandaloneControlPlane() {
+		return k.upgradeStandaloneCluster(version)
+	}
 	currVersion := k.getKubeVersionFromImage()
 
 	v0, err := semver.NewVersion(currVersion)

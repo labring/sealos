@@ -235,6 +235,13 @@ func (k *KubeadmRuntime) mergeWithBuiltinKubeadmConfig() error {
 	}
 	logger.Debug("current cluster certSANs: %+v", certs)
 	k.setCertSANs(certs)
+	endpoint, _, err := unstructured.NestedString(obj, "controlPlaneEndpoint")
+	if err != nil {
+		return err
+	}
+	if endpoint != "" {
+		k.setControlPlaneEndpoint(endpoint)
+	}
 	return k.setNetWorking(obj)
 }
 
@@ -518,7 +525,11 @@ func (k *KubeadmRuntime) generateJoinNodeConfigs(node string) ([]byte, error) {
 		return nil, err
 	}
 	k.cleanJoinLocalAPIEndPoint()
-	k.setAPIServerEndpoint(k.getVipAndPort())
+	endpoint := k.kubeadmConfig.ClusterConfiguration.ControlPlaneEndpoint
+	if endpoint == "" {
+		endpoint = fmt.Sprintf("%s:%d", k.getAPIServerDomain(), k.getAPIServerPort())
+	}
+	k.setAPIServerEndpoint(endpoint)
 	k.setJoinInternalIP(iputils.GetHostIP(node))
 
 	conversion, err := k.kubeadmConfig.ToConvertedKubeadmConfig()

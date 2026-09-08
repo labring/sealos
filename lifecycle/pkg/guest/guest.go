@@ -54,6 +54,11 @@ func (d *Default) Apply(cluster *v2.Cluster, mounts []v2.MountImage, targetHosts
 			eg, ctx := errgroup.WithContext(context.Background())
 			for j := range targetHosts {
 				node := targetHosts[j]
+				// Standalone control-plane binaries and services are managed by
+				// the dedicated lifecycle. Image hooks can replace that service.
+				if cluster.IsStandaloneControlPlane() && isControlPlaneHost(cluster, node) {
+					continue
+				}
 				envs := maps.Merge(m.Env, envGetter.Getenv(node))
 				cmds := formalizeImageCommands(cluster, i, m, envs)
 				eg.Go(func() error {
@@ -77,6 +82,20 @@ func (d *Default) Apply(cluster *v2.Cluster, mounts []v2.MountImage, targetHosts
 		}
 	}
 	return nil
+}
+
+func isControlPlaneHost(cluster *v2.Cluster, host string) bool {
+	for _, master := range cluster.GetMasterIPAndPortList() {
+		if host == master {
+			return true
+		}
+	}
+	for _, master := range cluster.GetMasterIPList() {
+		if host == master {
+			return true
+		}
+	}
+	return false
 }
 
 func formalizeImageCommands(cluster *v2.Cluster, index int, m v2.MountImage, extraEnvs map[string]string) []string {

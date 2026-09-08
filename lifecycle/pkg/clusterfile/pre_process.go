@@ -17,6 +17,7 @@ package clusterfile
 import (
 	"bytes"
 	"errors"
+	"os"
 
 	"helm.sh/helm/v3/pkg/cli/values"
 	"helm.sh/helm/v3/pkg/getter"
@@ -38,13 +39,16 @@ type PreProcessor interface {
 }
 
 func (c *ClusterFile) Process() (err error) {
-	if !fileutil.IsExist(c.path) {
+	if !fileutil.IsExist(c.path) && !c.resetRecovery {
 		return ErrClusterFileNotExists
 	}
 	c.once.Do(func() {
 		err = func() error {
 			clusterFileData, err := c.loadClusterFile()
 			if err != nil {
+				if os.IsNotExist(err) {
+					return ErrClusterFileNotExists
+				}
 				return err
 			}
 			logger.Debug("rendered Clusterfile: %+v", string(clusterFileData))
@@ -55,7 +59,10 @@ func (c *ClusterFile) Process() (err error) {
 }
 
 func (c *ClusterFile) loadClusterFile() ([]byte, error) {
-	body, err := fileutil.ReadAll(c.path)
+	body, err := readLifecycleInventory(c.path)
+	if c.resetRecovery {
+		body, err = readResetInventory(c.path)
+	}
 	if err != nil {
 		return nil, err
 	}

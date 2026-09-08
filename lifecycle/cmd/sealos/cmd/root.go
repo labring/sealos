@@ -62,6 +62,7 @@ func init() {
 			Commands: []*cobra.Command{
 				newApplyCmd(),
 				newCertCmd(),
+				newControlPlaneModeCmd(),
 				newRunCmd(),
 				newResetCmd(),
 				newStatusCmd(),
