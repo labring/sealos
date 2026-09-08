@@ -181,24 +181,20 @@ func runMonitor(ctx context.Context, mgr ctrl.Manager) error {
 		ctx,
 		os.Getenv(database.MongoURI),
 	)
-	if err != nil {
-		return fmt.Errorf("initialize monitor database: %w", err)
+	if reconciler.DBClient != nil {
+		defer disconnectMonitorDatabase(reconciler.DBClient)
 	}
-	defer func() {
-		if err := reconciler.DBClient.Disconnect(context.Background()); err != nil {
-			setupLog.Error(err, "failed to disconnect db client")
-		}
-	}()
+	if err != nil {
+		return monitorInitializationError(ctx, "initialize monitor database", err)
+	}
 	if trafficURI := os.Getenv(database.TrafficMongoURI); trafficURI != "" {
 		reconciler.TrafficClient, err = mongo.NewMongoInterface(ctx, trafficURI)
-		if err != nil {
-			return fmt.Errorf("initialize traffic database: %w", err)
+		if reconciler.TrafficClient != nil {
+			defer disconnectMonitorDatabase(reconciler.TrafficClient)
 		}
-		defer func() {
-			if err := reconciler.TrafficClient.Disconnect(context.Background()); err != nil {
-				setupLog.Error(err, "failed to disconnect traffic db client")
-			}
-		}()
+		if err != nil {
+			return monitorInitializationError(ctx, "initialize traffic database", err)
+		}
 	} else {
 		setupLog.Info("traffic mongo uri not found, please check env: TRAFFIC_MONGO_URI")
 	}
@@ -238,7 +234,7 @@ func runMonitor(ctx context.Context, mgr ctrl.Manager) error {
 		}
 		_, err := reconciler.ObjStorageClient.ListBuckets(ctx)
 		if err != nil {
-			return fmt.Errorf("list object storage buckets: %w", err)
+			return monitorInitializationError(ctx, "list object storage buckets", err)
 		}
 		if reconciler.PromURL = os.Getenv(PromURL); reconciler.PromURL == "" {
 			reconciler.Info("prometheus url not found, please check env: PROM_URL")
@@ -292,6 +288,25 @@ func runMonitor(ctx context.Context, mgr ctrl.Manager) error {
 		maintenance.Wait()
 	}()
 	return reconciler.StartReconciler(ctx)
+}
+
+func monitorInitializationError(ctx context.Context, stage string, err error) error {
+	if ctx.Err() != nil && errors.Is(err, ctx.Err()) {
+		return nil
+	}
+	return fmt.Errorf("%s: %w", stage, err)
+}
+
+func disconnectMonitorDatabase(db interface {
+	Disconnect(ctx context.Context) error
+},
+) {
+	// Cleanup must remain usable after the leader context has been canceled.
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := db.Disconnect(ctx); err != nil {
+		setupLog.Error(err, "failed to disconnect monitor database")
+	}
 }
 
 func runMonitorMaintenance(ctx context.Context, maintain func()) {
