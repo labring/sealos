@@ -135,10 +135,12 @@ orphaned runtime Pods after the API configuration source is removed, so this
 operation does not promise to preserve running ordinary containers. Kubernetes may retain the old Node
 and mirror Pods after kubelet disconnects.
 
-Success requires standalone kubelet arguments, a ready controller, and healthy
-local control-plane containers. It does not require deleting old API objects.
-The command reminds the administrator to clean up and reboot the hosts. A failed
-conversion never automatically reconnects kubelet to the API.
+Success requires standalone kubelet arguments and a successful kubelet restart.
+Route-controller reconciliation and local data-plane health continue
+asynchronously because CNI cleanup is administrator-owned. It does not require
+deleting old API objects. The command reminds the administrator to clean up and
+reboot the hosts. A failed conversion never automatically reconnects kubelet to
+the API.
 
 ## Reverse conversion
 

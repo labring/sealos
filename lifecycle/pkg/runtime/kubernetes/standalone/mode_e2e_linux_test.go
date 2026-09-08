@@ -232,8 +232,8 @@ func TestModeRoundTripE2E(t *testing.T) {
 		options.Mode = ModeStandalone
 		options.RouteController = &controller
 		options.Timeout = 40 * time.Second
-		if err := SwitchMode(ctx, options); err == nil {
-			t.Fatal("accepted an unready route-controller")
+		if err := SwitchMode(ctx, options); err != nil {
+			t.Fatalf("standalone conversion should not wait for controller readiness: %v", err)
 		}
 		retained, err := client.CoreV1().Nodes().Get(ctx, name, metav1.GetOptions{})
 		if err != nil || retained.UID != originalUID {
