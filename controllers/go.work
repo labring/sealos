@@ -12,7 +12,6 @@ use (
 	./node
 	./pkg
 	./resources
-	./terminal
 )
 
 replace (

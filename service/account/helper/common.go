@@ -66,6 +66,7 @@ const (
 
 	// Admin read-only account management routes.
 	AdminUserList                 = "/users"
+	AdminNotificationRecipients   = "/notification-recipients"
 	AdminUserDetailPath           = "/user"
 	AdminUserRechargeRecordsPath  = "/user/recharge-records"
 	AdminUserBalanceAdjustRecords = "/user/balance-adjust-records"

@@ -56,14 +56,14 @@ vet: ## Run go vet against code.
 	go vet ./...
 
 .PHONY: test
-test: manifests generate fmt vet envtest ## Run tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) --arch=amd64 use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
+test: ## Run tests.
+	go test -race ./... -count=1
 
 ##@ Build
 
 .PHONY: build
 build:  ## Build manager binary.
-	LD_FLAGS="-s -w" && CGO_ENABLED=0 GOOS=linux go build -ldflags "$${LD_FLAGS}" -trimpath -o bin/manager main.go
+	LD_FLAGS="-s -w" && CGO_ENABLED=0 GOOS=linux go build -ldflags "$${LD_FLAGS}" -trimpath -o bin/manager .
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.

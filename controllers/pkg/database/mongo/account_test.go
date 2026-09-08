@@ -66,6 +66,7 @@ func TestGenerateBillingDataPreservesTypedGroupKey(t *testing.T) {
 }
 
 func TestMongoDB_SaveBillingsWithAccountBalance(t *testing.T) {
+	requireMongoTest(t)
 	type fields struct {
 		URL          string
 		Client       *mongo.Client
@@ -285,6 +286,7 @@ func TestNewMongoInterface(t *testing.T) {
 }
 
 func TestMongoDB_GetBillingLastUpdateTime(t *testing.T) {
+	requireMongoTest(t)
 	dbCTX := context.Background()
 
 	m, err := NewMongoInterface(dbCTX, os.Getenv("MONGODB_URI"))
@@ -308,6 +310,7 @@ func TestMongoDB_GetBillingLastUpdateTime(t *testing.T) {
 }
 
 func TestMongoDB_DropMonitorCollectionsOlderThan(t *testing.T) {
+	requireMongoTest(t)
 	dbCTX := context.Background()
 	m, err := NewMongoInterface(dbCTX, os.Getenv("MONGODB_URI"))
 	if err != nil {
@@ -333,6 +336,7 @@ info generate billing data used {2 ns-7uyfrr47 pay-xy map[0:325 1:166 2:0]}
 */
 
 func TestMongoDB_SetPropertyTypeLS(t *testing.T) {
+	requireMongoTest(t)
 	dbCTX := context.Background()
 
 	m, err := NewMongoInterface(dbCTX, os.Getenv("MONGODB_URI"))
@@ -360,6 +364,7 @@ func TestMongoDB_SetPropertyTypeLS(t *testing.T) {
 }
 
 func Test_mongoDB_GetDistinctMonitorCombinations(t *testing.T) {
+	requireMongoTest(t)
 	dbCTX := context.Background()
 
 	m, err := NewMongoInterface(dbCTX, os.Getenv("MONGODB_URI"))
@@ -383,6 +388,7 @@ func Test_mongoDB_GetDistinctMonitorCombinations(t *testing.T) {
 }
 
 func Test_mongoDB_CreateTTLTrafficTimeSeries(t *testing.T) {
+	requireMongoTest(t)
 	dbCTX := context.Background()
 
 	m, err := NewMongoInterface(dbCTX, os.Getenv("MONGODB_URI"))
@@ -402,6 +408,7 @@ func Test_mongoDB_CreateTTLTrafficTimeSeries(t *testing.T) {
 }
 
 func Test_mongoDB_SaveObjTraffic(t *testing.T) {
+	requireMongoTest(t)
 	dbCTX := context.Background()
 
 	m, err := NewMongoInterface(dbCTX, os.Getenv("MONGODB_URI"))
@@ -430,6 +437,7 @@ func Test_mongoDB_SaveObjTraffic(t *testing.T) {
 }
 
 func Test_mongoDB_GetAllLatestObjTraffic(t *testing.T) {
+	requireMongoTest(t)
 	dbCTX := context.Background()
 
 	m, err := NewMongoInterface(dbCTX, os.Getenv("MONGODB_URI"))
@@ -453,6 +461,7 @@ func Test_mongoDB_GetAllLatestObjTraffic(t *testing.T) {
 }
 
 func Test_mongoDB_HandlerTimeObjBucketSentTraffic(t *testing.T) {
+	requireMongoTest(t)
 	dbCTX := context.Background()
 
 	m, err := NewMongoInterface(dbCTX, os.Getenv("MONGODB_URI"))
@@ -476,11 +485,8 @@ func Test_mongoDB_HandlerTimeObjBucketSentTraffic(t *testing.T) {
 	t.Logf("handle time object bucket usage success: %v", bytes)
 }
 
-func init() {
-	os.Setenv("MONGODB_URI", "")
-}
-
 func Test_mongoDB_GetTimeObjBucketBucket(t *testing.T) {
+	requireMongoTest(t)
 	dbCTX := context.Background()
 
 	m, err := NewMongoInterface(dbCTX, os.Getenv("MONGODB_URI"))
@@ -504,9 +510,10 @@ func Test_mongoDB_GetTimeObjBucketBucket(t *testing.T) {
 }
 
 func Test_mongoDB_GetTimeUsedOwnerList(t *testing.T) {
+	requireMongoTest(t)
 	dbCTX := context.Background()
 
-	m, err := NewMongoInterface(dbCTX, "")
+	m, err := NewMongoInterface(dbCTX, os.Getenv("MONGODB_URI"))
 	if err != nil {
 		t.Errorf("failed to connect mongo: error = %v", err)
 	}
@@ -524,9 +531,10 @@ func Test_mongoDB_GetTimeUsedOwnerList(t *testing.T) {
 }
 
 func Test_mongoDB_GenerateBillingData(t *testing.T) {
+	requireMongoTest(t)
 	dbCTX := context.Background()
 
-	m, err := NewMongoInterface(dbCTX, os.Getenv("MONGO_URI"))
+	m, err := NewMongoInterface(dbCTX, os.Getenv("MONGODB_URI"))
 	if err != nil {
 		t.Errorf("failed to connect mongo: error = %v", err)
 	}
@@ -557,9 +565,10 @@ func Test_mongoDB_GenerateBillingData(t *testing.T) {
 }
 
 func Test_mongoDB_GetOwnersWithoutRecentUpdates(t *testing.T) {
+	requireMongoTest(t)
 	dbCTX := context.Background()
 
-	m, err := NewMongoInterface(dbCTX, "")
+	m, err := NewMongoInterface(dbCTX, os.Getenv("MONGODB_URI"))
 	if err != nil {
 		t.Errorf("failed to connect mongo: error = %v", err)
 	}
@@ -576,4 +585,14 @@ func Test_mongoDB_GetOwnersWithoutRecentUpdates(t *testing.T) {
 		t.Fatalf("failed to get owners without recent updates: %v", err)
 	}
 	t.Logf("get owners without recent updates success: %v", owners)
+}
+
+func requireMongoTest(t *testing.T) {
+	t.Helper()
+	if os.Getenv("RUN_MONGO_TESTS") != "true" {
+		t.Skip("set RUN_MONGO_TESTS=true to run MongoDB tests")
+	}
+	if os.Getenv("MONGODB_URI") == "" {
+		t.Skip("requires MONGODB_URI")
+	}
 }

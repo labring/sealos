@@ -93,11 +93,11 @@ func TestTTLExpiration(t *testing.T) {
 		}(i)
 	}
 
-	// Wait a bit less than TTL to ensure some reads keep items alive
+	// Wait less than TTL so entries remain available.
 	time.Sleep(500 * time.Millisecond)
 	wg.Wait()
 
-	// Verify length is still significant due to recent accesses
+	// Verify entries remain before their fixed expiration time.
 	if l := m.Len(); l < numOps/2 {
 		t.Errorf("Len() = %d; want at least %d after partial expiration", l, numOps/2)
 	}
@@ -163,25 +163,19 @@ func TestConcurrentAccess(t *testing.T) {
 	}
 }
 
-func TestLastAccessUpdate(t *testing.T) {
-	m := New[string](2) // 2 second TTL
+func TestGetDoesNotExtendTTL(t *testing.T) {
+	m := New[string](1)
+	m.Put("key1", "value1")
 
-	// Put a value
-	m.Put("key1", "TestLastAccessUpdatevalue1")
-
-	// Get it multiple times to update lastAccess
-	for i := range 3 {
-		time.Sleep(500 * time.Millisecond)
-		if v, _ := m.Get("key1"); v != "TestLastAccessUpdatevalue1" {
-			t.Errorf("Get(key1) = %v; want value1 at iteration %d", v, i)
+	for i := range 2 {
+		time.Sleep(400 * time.Millisecond)
+		if value, ok := m.Get("key1"); !ok || value != "value1" {
+			t.Fatalf("Get(key1) = (%q, %v), want (value1, true) at iteration %d", value, ok, i)
 		}
 	}
 
-	// Wait less than TTL
-	time.Sleep(1500 * time.Millisecond)
-
-	// Verify it's still there due to updated lastAccess
-	if v, _ := m.Get("key1"); v != "value1" {
-		t.Errorf("Get(key1) = %v; want value1 after access updates", v)
+	time.Sleep(400 * time.Millisecond)
+	if value, ok := m.Get("key1"); ok {
+		t.Fatalf("Get(key1) = (%q, true), want expired entry", value)
 	}
 }

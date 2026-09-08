@@ -207,7 +207,6 @@ desktop:
     title: 'Sealos Cloud'
     logo: '/logo.svg'
     backgroundImage: '/images/bg-light.svg'
-    forcedLanguage: 'en' # 自动根据 version 配置: "cn"→"zh", "en"→"en"
     customerServiceURL: ''
     discordInviteLink: '' # 自动根据 version 配置: "en"时显示, "cn"时为空
     gtmId: null

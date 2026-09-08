@@ -23,6 +23,13 @@ import (
 )
 
 func TestSendVms(t *testing.T) {
+	requireMessagingTest(t,
+		"VMS_AK",
+		"VMS_SK",
+		"VMS_TEST_PHONE",
+		"VMS_TEST_TEMPLATE",
+		"VMS_TEST_NUMBER_POOL_NO",
+	)
 	vms.DefaultInstance.SetAccessKey(os.Getenv("VMS_AK"))
 	vms.DefaultInstance.SetSecretKey(os.Getenv("VMS_SK"))
 	testData := struct {
@@ -31,9 +38,9 @@ func TestSendVms(t *testing.T) {
 		numberPollNo string
 		sendTime     time.Time
 	}{
-		phone:        "",
-		template:     "",
-		numberPollNo: "",
+		phone:        os.Getenv("VMS_TEST_PHONE"),
+		template:     os.Getenv("VMS_TEST_TEMPLATE"),
+		numberPollNo: os.Getenv("VMS_TEST_NUMBER_POOL_NO"),
 		sendTime:     time.Now(),
 	}
 	err := SendVms(

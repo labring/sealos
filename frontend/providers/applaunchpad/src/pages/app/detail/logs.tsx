@@ -95,8 +95,8 @@ export default function LogsPage({ appName }: { appName: string }) {
     () =>
       getAppLogs({
         // time: timeRange,
-        startTime: startDateTime.toISOString(),
-        endTime: endDateTime.toISOString(),
+        startTime: startDateTime.getTime(),
+        endTime: endDateTime.getTime(),
         app: appName,
         stderrMode: formHook.watch('isOnlyStderr').toString(),
         limit: formHook.watch('limit').toString(),
@@ -146,8 +146,8 @@ export default function LogsPage({ appName }: { appName: string }) {
         numberMode: 'true',
         numberLevel: timeRange.slice(-1),
         jsonMode: formHook.watch('isJsonMode').toString(),
-        startTime: startDateTime.toISOString(),
-        endTime: endDateTime.toISOString(),
+        startTime: startDateTime.getTime(),
+        endTime: endDateTime.getTime(),
         stderrMode: formHook.watch('isOnlyStderr').toString(),
         pod:
           selectedPods.length === formHook.watch('pods').length
@@ -176,8 +176,8 @@ export default function LogsPage({ appName }: { appName: string }) {
       getLogPodList({
         // time: timeRange
         app: appName,
-        startTime: startDateTime.toISOString(),
-        endTime: endDateTime.toISOString()
+        startTime: startDateTime.getTime(),
+        endTime: endDateTime.getTime()
       }),
     {
       staleTime: 3000,
