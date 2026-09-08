@@ -113,11 +113,7 @@ const PodFile = ({
     }
   );
 
-  const {
-    data: podExecPermission,
-    isError: isWritePermissionDenied,
-    error: writePermissionError
-  } = useQuery(
+  const { data: podExecPermission, isError: isWritePermissionDenied } = useQuery(
     ['PodExecPermission', podDetail.podName],
     () => checkPodExecPermission(podDetail.podName),
     {
@@ -128,6 +124,7 @@ const PodFile = ({
   );
   const canWrite = podExecPermission?.allowed === true;
   const isWriteDisabled = isError || !canWrite;
+  const isReadOnly = isWritePermissionDenied || podExecPermission?.allowed === false;
 
   const sortData = useMemo(() => {
     if (!data) return null;
@@ -499,9 +496,9 @@ const PodFile = ({
                   </Button>
                 </Flex>
               </Flex>
-              {isWritePermissionDenied && (
+              {isReadOnly && (
                 <Text mb={'12px'} fontSize={'sm'} color={'red.500'}>
-                  {t(getErrText(writePermissionError, 'Insufficient permissions'))}
+                  {t('Read-only mode: you can browse and download files, but cannot make changes.')}
                 </Text>
               )}
               {isError ? (
