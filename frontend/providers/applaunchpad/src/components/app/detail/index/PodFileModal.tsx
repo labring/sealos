@@ -5,6 +5,7 @@ import {
   kubeFile_rename,
   kubeFile_upload
 } from '@/api/kubeFile';
+import { checkPodExecPermission } from '@/api/app';
 import MyIcon from '@/components/Icon';
 import { useSelectFile } from '@/hooks/useSelectFile';
 import { MOCK_APP_DETAIL, MOCK_PODS } from '@/mock/apps';
@@ -12,7 +13,7 @@ import { useAppStore } from '@/store/app';
 import { UPLOAD_LIMIT } from '@/store/static';
 import type { PodDetailType } from '@/types/app';
 import { TFile } from '@/utils/kubeFileSystem';
-import { formatSize, formatTime } from '@/utils/tools';
+import { formatSize, formatTime, getErrText } from '@/utils/tools';
 import { getUserKubeConfig } from '@/utils/user';
 import { ChevronDownIcon } from '@chakra-ui/icons';
 import {
@@ -98,7 +99,7 @@ const PodFile = ({
     multiple: true
   });
 
-  const { data, refetch } = useQuery(
+  const { data, refetch, isError, error } = useQuery(
     ['KubeFileSystem-ls', basePath, showHidden, podDetail.podName, appName],
     () =>
       kubeFile_ls({
@@ -111,6 +112,19 @@ const PodFile = ({
       enabled: !!basePath
     }
   );
+
+  const { data: podExecPermission, isError: isWritePermissionDenied } = useQuery(
+    ['PodExecPermission', podDetail.podName],
+    () => checkPodExecPermission(podDetail.podName),
+    {
+      enabled: isOpen,
+      retry: false,
+      refetchOnMount: 'always'
+    }
+  );
+  const canWrite = podExecPermission?.allowed === true;
+  const isWriteDisabled = isError || !canWrite;
+  const isReadOnly = isWritePermissionDenied || podExecPermission?.allowed === false;
 
   const sortData = useMemo(() => {
     if (!data) return null;
@@ -150,7 +164,7 @@ const PodFile = ({
   const handleDelete = async () => {
     try {
       if (!currentFile) return;
-      const res = await kubeFile_delete({
+      await kubeFile_delete({
         podName: podDetail.podName,
         containerName: appName,
         path: currentFile.path
@@ -158,7 +172,12 @@ const PodFile = ({
       message({
         title: 'success'
       });
-    } catch (error) {}
+    } catch (error: any) {
+      message({
+        title: t(getErrText(error, 'Insufficient permissions')),
+        status: 'error'
+      });
+    }
   };
 
   const handleRename = async () => {
@@ -175,7 +194,12 @@ const PodFile = ({
       message({
         title: 'success'
       });
-    } catch (error) {}
+    } catch (error: any) {
+      message({
+        title: t(getErrText(error, 'Insufficient permissions')),
+        status: 'error'
+      });
+    }
   };
 
   const handleDownload = async (e: MouseEvent<HTMLButtonElement>, file: TFile) => {
@@ -195,6 +219,14 @@ const PodFile = ({
           path: file.path
         })
       });
+
+      const contentType = res.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        const payload = await res.clone().json();
+        if (payload?.code && payload.code !== 200) {
+          throw payload;
+        }
+      }
 
       if (res.ok) {
         const cloneRes = res.clone();
@@ -224,7 +256,12 @@ const PodFile = ({
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
       }
-    } catch (error: any) {}
+    } catch (error: any) {
+      message({
+        title: t(getErrText(error, 'Download failed')),
+        status: 'error'
+      });
+    }
   };
 
   const openModal = (e: MouseEvent<HTMLButtonElement>, handle: HandleType, file?: TFile) => {
@@ -281,7 +318,11 @@ const PodFile = ({
       });
       await Promise.all(uploadPromises);
       refetch();
-    } catch (error) {
+    } catch (error: any) {
+      message({
+        title: t(getErrText(error, 'Insufficient permissions')),
+        status: 'error'
+      });
       refetch();
     }
     setIsUploadLoading(false);
@@ -298,7 +339,12 @@ const PodFile = ({
       message({
         title: 'success'
       });
-    } catch (error) {}
+    } catch (error: any) {
+      message({
+        title: t(getErrText(error, 'Insufficient permissions')),
+        status: 'error'
+      });
+    }
   };
 
   return (
@@ -427,6 +473,7 @@ const PodFile = ({
                 </Text>
                 <Flex ml={'auto'} gap={'12px'}>
                   <Button
+                    isDisabled={isWriteDisabled}
                     size={'sm'}
                     variant={'outline'}
                     height={'32px'}
@@ -436,6 +483,7 @@ const PodFile = ({
                     {t('Create Folder')}
                   </Button>
                   <Button
+                    isDisabled={isWriteDisabled}
                     isLoading={isUploadLoading}
                     size={'sm'}
                     variant={'outline'}
@@ -448,105 +496,121 @@ const PodFile = ({
                   </Button>
                 </Flex>
               </Flex>
-              <TableContainer className={styles.fileSystemTable}>
-                <Table>
-                  <Thead>
-                    <Tr>
-                      <Th>{t('File Name')}</Th>
-                      <Th>{t('Attribute')}</Th>
-                      <Th>{t('Owner')}</Th>
-                      <Th>{t('Group')}</Th>
-                      <Th>{t('Size')}</Th>
-                      <Th>{t('Update Time')}</Th>
-                      <Th>{t('Operation')}</Th>
-                    </Tr>
-                  </Thead>
-                  <Tbody>
-                    {sortData?.map((item) => {
-                      return (
-                        <Tr
-                          key={item.name}
-                          _hover={{
-                            bg: '#FBFBFC'
-                          }}
-                          onClick={() => {
-                            if (item.kind === 'd') {
-                              setBasePath(item.path);
-                            }
-                          }}
-                          cursor={'pointer'}
-                        >
-                          <Td color={'grayModern.900'} fontSize={'md'}>
-                            <Flex alignItems={'center'} gap={'8px'}>
-                              <MyIcon
-                                name={getFileType(item) as any}
-                                width={'24px'}
-                                height={'24px'}
-                                color={'#219BF4'}
-                              ></MyIcon>
-                              <Text>{item.name}</Text>
-                            </Flex>
-                          </Td>
-                          <Td>{item.attr}</Td>
-                          <Td>{item.owner}</Td>
-                          <Td>{item.group}</Td>
-                          <Td>{formatSize(item.size)}</Td>
-                          <Td>{formatTime(item.updateTime, 'YYYY-MM-DD HH:mm')}</Td>
-                          <Td>
-                            <Flex alignItems={'center'}>
-                              <MyTooltip label={t('rename')} offset={[0, 10]}>
-                                <Button
-                                  variant={'square'}
-                                  onClick={(e) => openModal(e, 'rename', item)}
-                                >
-                                  <MyIcon name="rename" w="18px" h="18px" fill={'#485264'} />
-                                </Button>
-                              </MyTooltip>
-                              {item.kind !== 'd' && (
-                                <>
-                                  {fileProgress !== 0 &&
-                                  fileProgress !== 100 &&
-                                  currentFile?.path === item.path ? (
-                                    <Center w={'30px'} h={'30px'}>
-                                      <CircularProgress
-                                        size={'18px'}
-                                        value={fileProgress}
-                                        color="blue.500"
-                                      />
-                                    </Center>
-                                  ) : (
-                                    <MyTooltip offset={[0, 10]} label={t('download')}>
-                                      <Button
-                                        variant={'square'}
-                                        onClick={(e) => handleDownload(e, item)}
-                                      >
-                                        <MyIcon
-                                          name={'download'}
-                                          w="18px"
-                                          h="18px"
-                                          fill={'#485264'}
+              {isReadOnly && (
+                <Text mb={'12px'} fontSize={'sm'} color={'red.500'}>
+                  {t('Read-only mode: you can browse and download files, but cannot make changes.')}
+                </Text>
+              )}
+              {isError ? (
+                <Center minH={'240px'} flexDirection={'column'} gap={'12px'}>
+                  <Text color={'red.500'}>{t(getErrText(error, 'Failed to load files'))}</Text>
+                  <Button size={'sm'} variant={'outline'} onClick={() => refetch()}>
+                    {t('Retry')}
+                  </Button>
+                </Center>
+              ) : (
+                <TableContainer className={styles.fileSystemTable}>
+                  <Table>
+                    <Thead>
+                      <Tr>
+                        <Th>{t('File Name')}</Th>
+                        <Th>{t('Attribute')}</Th>
+                        <Th>{t('Owner')}</Th>
+                        <Th>{t('Group')}</Th>
+                        <Th>{t('Size')}</Th>
+                        <Th>{t('Update Time')}</Th>
+                        <Th>{t('Operation')}</Th>
+                      </Tr>
+                    </Thead>
+                    <Tbody>
+                      {sortData?.map((item) => {
+                        return (
+                          <Tr
+                            key={item.name}
+                            _hover={{
+                              bg: '#FBFBFC'
+                            }}
+                            onClick={() => {
+                              if (item.kind === 'd') {
+                                setBasePath(item.path);
+                              }
+                            }}
+                            cursor={'pointer'}
+                          >
+                            <Td color={'grayModern.900'} fontSize={'md'}>
+                              <Flex alignItems={'center'} gap={'8px'}>
+                                <MyIcon
+                                  name={getFileType(item) as any}
+                                  width={'24px'}
+                                  height={'24px'}
+                                  color={'#219BF4'}
+                                ></MyIcon>
+                                <Text>{item.name}</Text>
+                              </Flex>
+                            </Td>
+                            <Td>{item.attr}</Td>
+                            <Td>{item.owner}</Td>
+                            <Td>{item.group}</Td>
+                            <Td>{formatSize(item.size)}</Td>
+                            <Td>{formatTime(item.updateTime, 'YYYY-MM-DD HH:mm')}</Td>
+                            <Td>
+                              <Flex alignItems={'center'}>
+                                <MyTooltip label={t('rename')} offset={[0, 10]}>
+                                  <Button
+                                    variant={'square'}
+                                    isDisabled={isWriteDisabled}
+                                    onClick={(e) => openModal(e, 'rename', item)}
+                                  >
+                                    <MyIcon name="rename" w="18px" h="18px" fill={'#485264'} />
+                                  </Button>
+                                </MyTooltip>
+                                {item.kind !== 'd' && (
+                                  <>
+                                    {fileProgress !== 0 &&
+                                    fileProgress !== 100 &&
+                                    currentFile?.path === item.path ? (
+                                      <Center w={'30px'} h={'30px'}>
+                                        <CircularProgress
+                                          size={'18px'}
+                                          value={fileProgress}
+                                          color="blue.500"
                                         />
-                                      </Button>
-                                    </MyTooltip>
-                                  )}
-                                </>
-                              )}
-                              <MyTooltip offset={[0, 10]} label={t('Delete')}>
-                                <Button
-                                  variant={'square'}
-                                  onClick={(e) => openModal(e, 'delete', item)}
-                                >
-                                  <MyIcon name={'delete'} w="18px" h="18px" fill={'#485264'} />
-                                </Button>
-                              </MyTooltip>
-                            </Flex>
-                          </Td>
-                        </Tr>
-                      );
-                    })}
-                  </Tbody>
-                </Table>
-              </TableContainer>
+                                      </Center>
+                                    ) : (
+                                      <MyTooltip offset={[0, 10]} label={t('download')}>
+                                        <Button
+                                          variant={'square'}
+                                          onClick={(e) => handleDownload(e, item)}
+                                        >
+                                          <MyIcon
+                                            name={'download'}
+                                            w="18px"
+                                            h="18px"
+                                            fill={'#485264'}
+                                          />
+                                        </Button>
+                                      </MyTooltip>
+                                    )}
+                                  </>
+                                )}
+                                <MyTooltip offset={[0, 10]} label={t('Delete')}>
+                                  <Button
+                                    variant={'square'}
+                                    isDisabled={isWriteDisabled}
+                                    onClick={(e) => openModal(e, 'delete', item)}
+                                  >
+                                    <MyIcon name={'delete'} w="18px" h="18px" fill={'#485264'} />
+                                  </Button>
+                                </MyTooltip>
+                              </Flex>
+                            </Td>
+                          </Tr>
+                        );
+                      })}
+                    </Tbody>
+                  </Table>
+                </TableContainer>
+              )}
             </Flex>
           </ModalBody>
         </ModalContent>
@@ -593,7 +657,7 @@ const PodFile = ({
             >
               {t('Cancel')}
             </Button>
-            <Button width={'88px'} ml={3} onClick={handleConfirm}>
+            <Button width={'88px'} ml={3} isDisabled={isWriteDisabled} onClick={handleConfirm}>
               {t('Yes')}
             </Button>
           </ModalFooter>

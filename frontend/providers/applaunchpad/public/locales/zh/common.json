@@ -162,6 +162,7 @@
   "Private Address": "内网地址",
   "Problem Analysis": "问题分析",
   "Insufficient permissions": "权限不足",
+  "Read-only mode: you can browse and download files, but cannot make changes.": "只读模式：可以浏览和下载文件，不能修改。",
   "Protocol": "协议",
   "Public": "公开",
   "Public Access": "外网访问",
