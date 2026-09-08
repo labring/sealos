@@ -1,4 +1,4 @@
-import { checkPodExecPermission, restartPodByName } from '@/api/app';
+import { restartPodByName } from '@/api/app';
 import MyIcon from '@/components/Icon';
 import { MyTooltip } from '@sealos/ui';
 import PodLineChart from '@/components/PodLineChart';
@@ -73,19 +73,11 @@ const Pods = ({ pods = [], appName }: { pods: PodDetailType[]; appName: string }
   );
 
   const handleOpenFileManagement = useCallback(
-    async (podName: string, index: number) => {
-      try {
-        await checkPodExecPermission(podName);
-        setDetailFilePodIndex(index);
-        onOpenPodFile();
-      } catch (err) {
-        toast({
-          title: t(getErrText(err, 'Insufficient permissions')),
-          status: 'error'
-        });
-      }
+    (index: number) => {
+      setDetailFilePodIndex(index);
+      onOpenPodFile();
     },
-    [onOpenPodFile, t, toast]
+    [onOpenPodFile]
   );
 
   const columns: {
@@ -262,7 +254,7 @@ const Pods = ({ pods = [], appName }: { pods: PodDetailType[]; appName: string }
           </MyTooltip>
           {appDetail.storeList?.length > 0 && (
             <MyTooltip offset={[0, 10]} label={t('File Management')}>
-              <Button variant={'square'} onClick={() => handleOpenFileManagement(item.podName, i)}>
+              <Button variant={'square'} onClick={() => handleOpenFileManagement(i)}>
                 <MyIcon name={'file'} w="18px" h="18px" fill={'#485264'} />
               </Button>
             </MyTooltip>
@@ -368,10 +360,7 @@ const Pods = ({ pods = [], appName }: { pods: PodDetailType[]; appName: string }
             podName: item.podName
           }))}
           setPodDetail={(podName: string) =>
-            handleOpenFileManagement(
-              podName,
-              pods.findIndex((item) => item.podName === podName)
-            )
+            handleOpenFileManagement(pods.findIndex((item) => item.podName === podName))
           }
         />
       )}

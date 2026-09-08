@@ -8,10 +8,14 @@ const source = readFileSync(
 );
 
 describe('PodFileModal file listing errors', () => {
-  it('renders a visible error state and prevents writes until the listing can be retried', () => {
+  it('rechecks write access for each pod and prevents writes when it is denied', () => {
     expect(source).toContain('isError');
     expect(source).toContain("getErrText(error, 'Failed to load files')");
     expect(source).toContain('onClick={() => refetch()}');
-    expect(source).toContain('isDisabled={isError}');
+    expect(source).toContain("['PodExecPermission', podDetail.podName]");
+    expect(source).toContain('checkPodExecPermission(podDetail.podName)');
+    expect(source).toContain("refetchOnMount: 'always'");
+    expect(source).toContain('isDisabled={isWriteDisabled}');
+    expect(source).toContain('isDisabled={isWriteDisabled} onClick={handleConfirm}');
   });
 });

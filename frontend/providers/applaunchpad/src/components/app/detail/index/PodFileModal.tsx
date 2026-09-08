@@ -5,6 +5,7 @@ import {
   kubeFile_rename,
   kubeFile_upload
 } from '@/api/kubeFile';
+import { checkPodExecPermission } from '@/api/app';
 import MyIcon from '@/components/Icon';
 import { useSelectFile } from '@/hooks/useSelectFile';
 import { MOCK_APP_DETAIL, MOCK_PODS } from '@/mock/apps';
@@ -111,6 +112,22 @@ const PodFile = ({
       enabled: !!basePath
     }
   );
+
+  const {
+    data: podExecPermission,
+    isError: isWritePermissionDenied,
+    error: writePermissionError
+  } = useQuery(
+    ['PodExecPermission', podDetail.podName],
+    () => checkPodExecPermission(podDetail.podName),
+    {
+      enabled: isOpen,
+      retry: false,
+      refetchOnMount: 'always'
+    }
+  );
+  const canWrite = podExecPermission?.allowed === true;
+  const isWriteDisabled = isError || !canWrite;
 
   const sortData = useMemo(() => {
     if (!data) return null;
@@ -459,7 +476,7 @@ const PodFile = ({
                 </Text>
                 <Flex ml={'auto'} gap={'12px'}>
                   <Button
-                    isDisabled={isError}
+                    isDisabled={isWriteDisabled}
                     size={'sm'}
                     variant={'outline'}
                     height={'32px'}
@@ -469,7 +486,7 @@ const PodFile = ({
                     {t('Create Folder')}
                   </Button>
                   <Button
-                    isDisabled={isError}
+                    isDisabled={isWriteDisabled}
                     isLoading={isUploadLoading}
                     size={'sm'}
                     variant={'outline'}
@@ -482,6 +499,11 @@ const PodFile = ({
                   </Button>
                 </Flex>
               </Flex>
+              {isWritePermissionDenied && (
+                <Text mb={'12px'} fontSize={'sm'} color={'red.500'}>
+                  {t(getErrText(writePermissionError, 'Insufficient permissions'))}
+                </Text>
+              )}
               {isError ? (
                 <Center minH={'240px'} flexDirection={'column'} gap={'12px'}>
                   <Text color={'red.500'}>{t(getErrText(error, 'Failed to load files'))}</Text>
@@ -539,6 +561,7 @@ const PodFile = ({
                                 <MyTooltip label={t('rename')} offset={[0, 10]}>
                                   <Button
                                     variant={'square'}
+                                    isDisabled={isWriteDisabled}
                                     onClick={(e) => openModal(e, 'rename', item)}
                                   >
                                     <MyIcon name="rename" w="18px" h="18px" fill={'#485264'} />
@@ -576,6 +599,7 @@ const PodFile = ({
                                 <MyTooltip offset={[0, 10]} label={t('Delete')}>
                                   <Button
                                     variant={'square'}
+                                    isDisabled={isWriteDisabled}
                                     onClick={(e) => openModal(e, 'delete', item)}
                                   >
                                     <MyIcon name={'delete'} w="18px" h="18px" fill={'#485264'} />
@@ -636,7 +660,7 @@ const PodFile = ({
             >
               {t('Cancel')}
             </Button>
-            <Button width={'88px'} ml={3} onClick={handleConfirm}>
+            <Button width={'88px'} ml={3} isDisabled={isWriteDisabled} onClick={handleConfirm}>
               {t('Yes')}
             </Button>
           </ModalFooter>
