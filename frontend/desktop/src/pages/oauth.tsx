@@ -113,7 +113,7 @@ export default function OAuth() {
       return true;
     };
 
-    const openBrainGithubDeploy = async (activeMarketingQuery = marketingQuery) => {
+    const saveBrainGithubDeploy = (activeMarketingQuery = marketingQuery) => {
       if (openapp !== 'system-brain' || typeof githubRepo !== 'string') {
         return false;
       }
@@ -130,6 +130,13 @@ export default function OAuth() {
         pathname: '/deploy',
         raw: rawQuery
       });
+      // A new GitHub intent must not resume an older template deployment after login.
+      cancelAutoDeployTemplate();
+      return true;
+    };
+
+    const openBrainGithubDeploy = async (activeMarketingQuery = marketingQuery) => {
+      if (!saveBrainGithubDeploy(activeMarketingQuery)) return false;
       await router.replace(appendMarketingQuery('/', activeMarketingQuery));
 
       return true;
@@ -320,6 +327,9 @@ export default function OAuth() {
     };
 
     const handleSaveParams = () => {
+      // Persist the full destination before leaving for sign-in or an OAuth provider.
+      if (saveBrainGithubDeploy()) return;
+
       if (templateName && typeof templateName === 'string') {
         let parsedTemplateForm: Record<string, any> = {};
 
