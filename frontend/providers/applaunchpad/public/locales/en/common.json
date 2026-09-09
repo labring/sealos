@@ -466,7 +466,7 @@
   "websocket": "WebSocket",
   "within_1_day": "Within 1 day",
   "within_1_hour": "Within 1 hour",
-  "within_5_minute": "Within 5 minute",
+  "within_5_minutes": "Within 5 minutes",
   "proxy_detected_title": "Proxy Detected",
   "proxy_detected_message": "Using the proxy will degrade the performance of Sealos. To disable the proxy, update your DNS provider."
 }
