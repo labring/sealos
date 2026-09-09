@@ -34,16 +34,12 @@ export const isPublicAddressAccessible = ({
 export const getPublicAddressReadyResult = async (response: Response, url: string) => {
   const text = await response.text();
 
-  if (response.status === 404 && response.headers.get('content-length') === '0') {
-    return { ready: false, url, error: '404' };
-  }
-
-  if (response.status < 200 || response.status >= 400) {
-    const isUnhealthyUpstream = unhealthyUpstreamText.some((message) => text.includes(message));
+  const isUnhealthyUpstream = unhealthyUpstreamText.some((message) => text.includes(message));
+  if (isUnhealthyUpstream) {
     return {
       ready: false,
       url,
-      error: isUnhealthyUpstream ? 'Upstream not healthy' : `HTTP ${response.status}`
+      error: 'Upstream not healthy'
     };
   }
 
