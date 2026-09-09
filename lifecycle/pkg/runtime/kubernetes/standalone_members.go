@@ -89,7 +89,7 @@ func (k *KubeadmRuntime) joinStandaloneMasters(hosts []string) error {
 	}
 	var existing []string
 	for _, host := range k.getMasterIPAndPortList() {
-		if !containsHost(hosts, host) {
+		if !slices.Contains(hosts, host) {
 			existing = append(existing, host)
 		}
 	}
@@ -342,8 +342,4 @@ func (k *KubeadmRuntime) removeStandaloneMasters(
 		}
 	}
 	return nil
-}
-
-func containsHost(hosts []string, host string) bool {
-	return slices.Contains(hosts, host)
 }

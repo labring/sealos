@@ -236,17 +236,7 @@ func isLocalLifecycleHost(host string, addresses []net.Addr) bool {
 }
 
 func quoteLifecyclePath(value string) string {
-	// Paths derive from the validated cluster name but still require shell quoting.
-	var result strings.Builder
-	result.WriteString("'")
-	for _, character := range value {
-		if character == '\'' {
-			result.WriteString("'\"'\"'")
-		} else {
-			result.WriteRune(character)
-		}
-	}
-	return result.String() + "'"
+	return "'" + strings.ReplaceAll(value, "'", "'\"'\"'") + "'"
 }
 
 func (c *Applier) deleteStandalone() (err error) {

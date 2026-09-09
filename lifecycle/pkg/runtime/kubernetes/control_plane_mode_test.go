@@ -50,8 +50,17 @@ func (s *modeSSH) CmdAsync(host string, commands ...string) error {
 }
 
 func TestControlPlaneConversionCommitAndFailure(t *testing.T) {
-	for _, failure := range []string{"preflight", "host", "none"} {
-		t.Run(failure, func(t *testing.T) {
+	for _, scenario := range []struct {
+		failure string
+		recover string
+	}{
+		{failure: "preflight"},
+		{failure: "host", recover: standalone.ModeStandalone},
+		{failure: "host", recover: standalone.ModeRegistered},
+		{failure: "none"},
+	} {
+		t.Run(scenario.failure+"/"+scenario.recover, func(t *testing.T) {
+			failure := scenario.failure
 			previousRoot := constants.DefaultRuntimeRootDir
 			constants.DefaultRuntimeRootDir = t.TempDir()
 			t.Cleanup(func() {
@@ -130,9 +139,19 @@ func TestControlPlaneConversionCommitAndFailure(t *testing.T) {
 					}
 				}
 				ssh.failHost = ""
-				options.Mode = standalone.ModeRegistered
+				options.Mode = scenario.recover
 				if err := rt.SwitchControlPlaneMode(context.Background(), options); err != nil {
-					t.Fatalf("could not reverse an interrupted conversion: %v", err)
+					t.Fatalf(
+						"could not recover an interrupted conversion to %s: %v",
+						options.Mode,
+						err,
+					)
+				}
+				_, err = client.CoreV1().ConfigMaps("kube-system").Get(
+					context.Background(), clusterfile.ModeTransitionResource, metav1.GetOptions{},
+				)
+				if !apierrors.IsNotFound(err) {
+					t.Fatalf("recovered conversion retained its journal: %v", err)
 				}
 				for _, command := range ssh.commands {
 					if strings.Contains(command, "switch 'registered'") &&

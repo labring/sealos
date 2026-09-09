@@ -22,7 +22,6 @@ import (
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"go.etcd.io/etcd/client/v3/snapshot"
 	"go.uber.org/zap"
-	"golang.org/x/sys/unix"
 	v1 "k8s.io/api/core/v1"
 	kubeversion "k8s.io/apimachinery/pkg/version"
 	cri "k8s.io/cri-api/pkg/apis/runtime/v1"
@@ -82,19 +81,11 @@ func Run(ctx context.Context, options Options) error {
 	if options.PatchesDir != "" && !filepath.IsAbs(options.PatchesDir) {
 		return errors.New("patches directory must be an absolute path")
 	}
-	root := "/var/lib/sealos/standalone-upgrades"
-	if err := os.MkdirAll(root, 0o700); err != nil {
-		return err
-	}
-	lock, err := os.OpenFile(filepath.Join(root, "lock"), os.O_CREATE|os.O_RDWR, 0o600)
+	release, err := lockMaintenance()
 	if err != nil {
 		return err
 	}
-	defer lock.Close()
-	if err := unix.Flock(int(lock.Fd()), unix.LOCK_EX|unix.LOCK_NB); err != nil {
-		return fmt.Errorf("another standalone upgrade is in progress: %w", err)
-	}
-	defer unix.Flock(int(lock.Fd()), unix.LOCK_UN) //nolint:errcheck
+	defer release()
 	if err := checkPendingMaintenance("upgrade"); err != nil {
 		return err
 	}
@@ -109,7 +100,7 @@ func Run(ctx context.Context, options Options) error {
 	} else if !os.IsNotExist(err) {
 		return err
 	}
-	dir, err := os.MkdirTemp(root, "upgrade-")
+	dir, err := os.MkdirTemp(filepath.Dir(CompletedConfigPath), "upgrade-")
 	if err != nil {
 		return err
 	}
@@ -158,14 +149,7 @@ func Run(ctx context.Context, options Options) error {
 func (u *upgrade) command(ctx context.Context, name string, args ...string) error {
 	ctx, cancel := context.WithTimeout(ctx, u.Timeout)
 	defer cancel()
-	// Callers select maintenance tools from the administrator's binary directory; no shell is used.
-	// nosemgrep: go.lang.security.audit.dangerous-exec-command.dangerous-exec-command
-	cmd := exec.CommandContext(ctx, name, args...)
-	cmd.Stdout, cmd.Stderr = u.Output, u.Output
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("%s %v: %w", filepath.Base(name), args, err)
-	}
-	return nil
+	return maintenanceCommand(ctx, u.Output, name, args...)
 }
 
 func (u *upgrade) prepare(ctx context.Context) error {

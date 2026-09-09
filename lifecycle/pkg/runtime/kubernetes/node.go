@@ -23,7 +23,6 @@ import (
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
-
 	"golang.org/x/sync/errgroup"
 )
 
@@ -65,7 +64,10 @@ func (k *KubeadmRuntime) joinNodes(newNodesIPList []string) error {
 			logger.Info("start join node: %s", node)
 			joinCmd := k.Command(JoinNode)
 			if joinCmd == "" {
-				return fmt.Errorf("get join node command failed, kubernetes version is %s", k.getKubeVersion())
+				return fmt.Errorf(
+					"get join node command failed, kubernetes version is %s",
+					k.getKubeVersion(),
+				)
 			}
 			if err = k.sshCmdAsync(node, joinCmd); err != nil {
 				return fmt.Errorf("failed to join node %s %v", node, err)
@@ -83,7 +85,11 @@ func (k *KubeadmRuntime) copyKubeadmConfigToNode(node string) error {
 	if err != nil {
 		return fmt.Errorf("failed to generate join kubeadm config: %v", err)
 	}
-	joinConfigPath := path.Join(k.pathResolver.TmpPath(), iputils.GetHostIP(node), defaultJoinNodeKubeadmFileName)
+	joinConfigPath := path.Join(
+		k.pathResolver.TmpPath(),
+		iputils.GetHostIP(node),
+		defaultJoinNodeKubeadmFileName,
+	)
 	outConfigPath := path.Join(k.pathResolver.ConfigsPath(), defaultJoinNodeKubeadmFileName)
 	err = file.WriteFile(joinConfigPath, data)
 	if err != nil {
@@ -109,7 +115,7 @@ func (k *KubeadmRuntime) deleteNodes(nodes []string) error {
 		node := node
 		eg.Go(func() error {
 			logger.Info("start to delete worker %s", node)
-			if err := k.deleteNode(node); err != nil {
+			if err := k.deleteWorker(node); err != nil {
 				return fmt.Errorf("delete node %s failed %v", node, err)
 			}
 			logger.Info("succeeded in deleting worker %s", node)
@@ -117,8 +123,4 @@ func (k *KubeadmRuntime) deleteNodes(nodes []string) error {
 		})
 	}
 	return eg.Wait()
-}
-
-func (k *KubeadmRuntime) deleteNode(node string) error {
-	return k.deleteWorker(node)
 }

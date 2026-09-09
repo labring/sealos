@@ -222,11 +222,7 @@ func resetUninitializedHost(checkOnly bool) error {
 }
 
 func saveResetState(state *resetState) error {
-	data, err := json.MarshalIndent(state, "", "  ")
-	if err != nil {
-		return err
-	}
-	return atomicModeFile(resetStatePath, data, 0o600)
+	return atomicModeJSON(resetStatePath, state)
 }
 
 func validateEtcdRemovalPath(path string) error {

@@ -6,6 +6,7 @@ package kubernetes
 import (
 	"errors"
 	"net"
+	"slices"
 	"strconv"
 
 	"github.com/labring/sealos/pkg/clusterfile"
@@ -16,7 +17,7 @@ import (
 func (k *KubeadmRuntime) prepareStandaloneRemovalEndpoint(removing, removedWorkers []string) error {
 	var survivors []string
 	for _, host := range k.getMasterIPAndPortList() {
-		if !containsHost(removing, host) {
+		if !slices.Contains(removing, host) {
 			survivors = append(survivors, host)
 		}
 	}
@@ -52,7 +53,7 @@ func (k *KubeadmRuntime) prepareStandaloneRemovalEndpoint(removing, removedWorke
 	}
 	var workers []string
 	for _, host := range k.getNodeIPAndPortList() {
-		if !containsHost(removedWorkers, host) {
+		if !slices.Contains(removedWorkers, host) {
 			workers = append(workers, host)
 		}
 	}

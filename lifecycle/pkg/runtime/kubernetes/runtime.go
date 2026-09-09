@@ -86,7 +86,8 @@ func (k *KubeadmRuntime) GetRawConfig() ([]byte, error) {
 	}
 	data, err := marshalConfigsForVersion(
 		k.kubeadmConfig.KubernetesVersion,
-		objects...)
+		objects...,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -145,8 +146,7 @@ func (k *KubeadmRuntime) ScaleDown(deleteMastersIPList, deleteNodesIPList []stri
 	}
 	if len(deleteMastersIPList) != 0 {
 		logger.Info("master %s will be deleted", deleteMastersIPList)
-		remove := k.deleteMasters
-		if err := remove(deleteMastersIPList); err != nil {
+		if err := k.deleteMasters(deleteMastersIPList); err != nil {
 			return err
 		}
 	}

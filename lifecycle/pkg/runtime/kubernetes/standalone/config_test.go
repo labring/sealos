@@ -266,6 +266,35 @@ rotateCertificates: false
 	if !bytes.Contains(config, []byte("rotateCertificates: true")) {
 		t.Fatal("local validation changed the worker configuration")
 	}
+	// kubeadm migration only writes its own kinds. Publishing the completed
+	// file must restore worker/addon settings, not the local validation settings.
+	migrated := filepath.Join(t.TempDir(), "migrated.yaml")
+	if err := os.WriteFile(migrated, []byte("kind: ClusterConfiguration\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := appendComponentConfigs(config, migrated); err != nil {
+		t.Fatal(err)
+	}
+	completed, err := os.ReadFile(migrated)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, kind := range []string{"ClusterConfiguration", "KubeletConfiguration", "KubeProxyConfiguration"} {
+		if bytes.Count(completed, []byte("kind: "+kind)) != 1 {
+			t.Fatalf("completed config must contain exactly one %s: %s", kind, completed)
+		}
+	}
+	if !bytes.Contains(completed, []byte("rotateCertificates: true")) ||
+		!bytes.Contains(completed, []byte("maxPerCore: 0")) {
+		t.Fatalf("completed config lost worker or addon settings: %s", completed)
+	}
+	if err := appendComponentConfigs([]byte("kind: [invalid"), migrated); err == nil {
+		t.Fatal("accepted malformed component configuration")
+	}
+	after, err := os.ReadFile(migrated)
+	if err != nil || !bytes.Equal(after, completed) {
+		t.Fatalf("invalid input changed the migrated file: %s, %v", after, err)
+	}
 }
 
 func TestCopyAtomicPreservesDestinationOnFailure(t *testing.T) {

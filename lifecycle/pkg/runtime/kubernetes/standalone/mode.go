@@ -12,19 +12,16 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 	"time"
 
-	"golang.org/x/sys/unix"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
-	cri "k8s.io/cri-api/pkg/apis/runtime/v1"
 	"sigs.k8s.io/yaml"
 )
 
@@ -68,9 +65,6 @@ type modeSwitch struct {
 // SwitchMode runs on a control-plane host. The persistent baseline survives
 // upgrades and failures; only an explicit registered request reconnects kubelet.
 func SwitchMode(ctx context.Context, options ModeOptions) error {
-	if runtime.GOOS != "linux" {
-		return errors.New("control-plane conversion requires Linux")
-	}
 	if options.Mode != ModeStandalone && options.Mode != ModeRegistered {
 		return errors.New("mode must be registered or standalone")
 	}
@@ -84,21 +78,12 @@ func SwitchMode(ctx context.Context, options ModeOptions) error {
 	if options.Output == nil {
 		options.Output = io.Discard
 	}
-	ctx, cancel := context.WithTimeout(ctx, options.Timeout)
-	defer cancel()
-	lockDir := filepath.Dir(CompletedConfigPath)
-	if err := os.MkdirAll(lockDir, 0o700); err != nil {
-		return err
-	}
-	lock, err := os.OpenFile(filepath.Join(lockDir, "lock"), os.O_CREATE|os.O_RDWR, 0o600)
-	if err != nil {
-		return err
-	}
-	defer lock.Close()
-	if err := unix.Flock(int(lock.Fd()), unix.LOCK_EX|unix.LOCK_NB); err != nil {
-		return fmt.Errorf("another control-plane maintenance operation is running: %w", err)
-	}
-	defer unix.Flock(int(lock.Fd()), unix.LOCK_UN) //nolint:errcheck
+	return maintenance(ctx, options.Timeout, func(ctx context.Context) error {
+		return switchMode(ctx, options)
+	})
+}
+
+func switchMode(ctx context.Context, options ModeOptions) error {
 	if err := checkPendingMaintenance("switch"); err != nil {
 		return err
 	}
@@ -162,11 +147,7 @@ func SwitchMode(ctx context.Context, options ModeOptions) error {
 }
 
 func (m *modeSwitch) save() error {
-	data, err := json.MarshalIndent(m.state, "", "  ")
-	if err != nil {
-		return err
-	}
-	return atomicModeFile(filepath.Join(modeRoot, "state.json"), data, 0o600)
+	return atomicModeJSON(filepath.Join(modeRoot, "state.json"), m.state)
 }
 
 func kubeletArgv(ctx context.Context) ([]string, error) {
@@ -258,21 +239,12 @@ func (m *modeSwitch) prepare(ctx context.Context) error {
 	}
 	if m.Mode == ModeStandalone {
 		container := m.controller.Spec.Containers[0]
-		image := &cri.ImageSpec{
-			Image: container.Image,
-		}
-		status, err := m.runtime.ImageStatus(ctx, &cri.ImageStatusRequest{
-			Image: image,
-		})
-		if err != nil {
-			return err
-		}
-		if status.Image == nil || container.ImagePullPolicy == v1.PullAlways {
-			if _, err := m.runtime.PullImage(ctx, &cri.PullImageRequest{
-				Image: image,
-			}); err != nil {
-				return fmt.Errorf("pull route-controller image: %w", err)
-			}
+		if err := m.runtime.ensureImage(
+			ctx,
+			container.Image,
+			container.ImagePullPolicy == v1.PullAlways,
+		); err != nil {
+			return fmt.Errorf("pull route-controller image: %w", err)
 		}
 	}
 	return nil
@@ -371,23 +343,7 @@ func (m *modeSwitch) capture(ctx context.Context) error {
 			return err
 		}
 	}
-	pod, err := routeControllerPod(controller)
-	if err != nil {
-		return err
-	}
-	for _, volume := range pod.Spec.Volumes {
-		info, err := os.Stat(volume.HostPath.Path)
-		if err != nil {
-			return fmt.Errorf("route-controller hostPath: %w", err)
-		}
-		if !info.Mode().IsRegular() {
-			return fmt.Errorf(
-				"route-controller hostPath must be a regular file: %s",
-				volume.HostPath.Path,
-			)
-		}
-	}
-	manifest, err := yaml.Marshal(pod)
+	manifest, err := prepareRouteController(controller)
 	if err != nil {
 		return err
 	}
@@ -419,10 +375,7 @@ func (m *modeSwitch) capture(ctx context.Context) error {
 }
 
 func (m *modeSwitch) command(ctx context.Context, args ...string) error {
-	command := exec.CommandContext(ctx, "systemctl", args...)
-	command.Stdout = m.Output
-	command.Stderr = m.Output
-	return command.Run()
+	return maintenanceCommand(ctx, m.Output, "systemctl", args...)
 }
 
 // Existing API workloads and Node objects remain under administrator control.
@@ -499,16 +452,18 @@ func (m *modeSwitch) ready(ctx context.Context, waitForController bool) error {
 			return errors.New("registered Node has not become Ready")
 		}
 	}
-	pods, err := m.client.CoreV1().Pods("").List(ctx, metav1.ListOptions{
-		FieldSelector: "spec.nodeName=" + m.state.Node.Name,
-	})
-	if err != nil {
-		return err
-	}
 	mirrors := make(map[string]bool)
-	for _, pod := range pods.Items {
-		if pod.Annotations[v1.MirrorPodAnnotationKey] != "" {
-			mirrors[pod.Name] = true
+	if m.Mode == ModeRegistered {
+		pods, err := m.client.CoreV1().Pods("").List(ctx, metav1.ListOptions{
+			FieldSelector: "spec.nodeName=" + m.state.Node.Name,
+		})
+		if err != nil {
+			return err
+		}
+		for _, pod := range pods.Items {
+			if pod.Annotations[v1.MirrorPodAnnotationKey] != "" {
+				mirrors[pod.Name] = true
+			}
 		}
 	}
 	for _, component := range append(append([]string{}, controlPlaneComponents...), "etcd") {

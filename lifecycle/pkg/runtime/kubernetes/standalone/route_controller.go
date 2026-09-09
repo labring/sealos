@@ -6,6 +6,7 @@ package standalone
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -206,6 +207,27 @@ func routeControllerPod(options RouteControllerOptions) (*v1.Pod, error) {
 		})
 	}
 	return pod, nil
+}
+
+// The administrator provisions these host files before any lifecycle operation.
+func prepareRouteController(options RouteControllerOptions) ([]byte, error) {
+	pod, err := routeControllerPod(options)
+	if err != nil {
+		return nil, err
+	}
+	for _, volume := range pod.Spec.Volumes {
+		info, err := os.Stat(volume.HostPath.Path)
+		if err != nil {
+			return nil, fmt.Errorf("route-controller hostPath: %w", err)
+		}
+		if !info.Mode().IsRegular() {
+			return nil, fmt.Errorf(
+				"route-controller hostPath must be a regular file: %s",
+				volume.HostPath.Path,
+			)
+		}
+	}
+	return yaml.Marshal(pod)
 }
 
 func controllerProbe(path string, period, failures int32) *v1.Probe {

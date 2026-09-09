@@ -10,7 +10,6 @@ import (
 	"os"
 
 	cri "k8s.io/cri-api/pkg/apis/runtime/v1"
-	"sigs.k8s.io/yaml"
 )
 
 var RouteControllerFlags = []string{
@@ -75,27 +74,14 @@ func (m *modeSwitch) prepareControllerUpdate() error {
 	if m.state.Target != "" {
 		return errors.New("finish the current mode conversion before updating route-controller")
 	}
-	pod, err := routeControllerPod(desired)
+	manifest, err := prepareRouteController(desired)
 	if err != nil {
 		return err
-	}
-	for _, volume := range pod.Spec.Volumes {
-		info, err := os.Stat(volume.HostPath.Path)
-		if err != nil || !info.Mode().IsRegular() {
-			return fmt.Errorf(
-				"controller file %s must be provisioned before updating",
-				volume.HostPath.Path,
-			)
-		}
 	}
 	if desired.Table != current.Table || desired.Protocol != current.Protocol {
 		if err := reservedRoutesEmpty(desired.Table, desired.Protocol); err != nil {
 			return err
 		}
-	}
-	manifest, err := yaml.Marshal(pod)
-	if err != nil {
-		return err
 	}
 	m.state.ControllerUpdate = &controllerUpdate{
 		PreviousTable:    current.Table,

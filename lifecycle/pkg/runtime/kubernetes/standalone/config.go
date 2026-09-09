@@ -18,6 +18,7 @@ import (
 	"strings"
 
 	"github.com/Masterminds/semver/v3"
+	yamlutil "github.com/labring/sealos/pkg/utils/yaml"
 	v1 "k8s.io/api/core/v1"
 	utilyaml "k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/yaml"
@@ -162,22 +163,35 @@ func mountedHostPath(pod *v1.Pod, path string) (string, error) {
 	return "", fmt.Errorf("cannot resolve hostPath for %s", path)
 }
 
-// Keep the public configuration as data so newer kubeadm fields are not lost
-// through conversions by the Kubernetes version linked into sealctl.
-func nodeConfig(data []byte, target, name, endpoint string, api *v1.Pod) ([]byte, error) {
+// Decode without converting through the linked kubeadm types so fields from
+// newer public schemas survive. Callers decide which kinds they require.
+func configDocuments(data []byte) ([]map[string]any, error) {
 	decoder := utilyaml.NewYAMLOrJSONDecoder(bytes.NewReader(data), 4096)
-	var cluster map[string]any
-	var init map[string]any
-	var components []map[string]any
+	var documents []map[string]any
 	for {
-		var doc map[string]any
-		err := decoder.Decode(&doc)
+		var document map[string]any
+		err := decoder.Decode(&document)
 		if errors.Is(err, io.EOF) {
-			break
+			return documents, nil
 		}
 		if err != nil {
 			return nil, err
 		}
+		documents = append(documents, document)
+	}
+}
+
+// Keep the public configuration as data so newer kubeadm fields are not lost
+// through conversions by the Kubernetes version linked into sealctl.
+func nodeConfig(data []byte, target, name, endpoint string, api *v1.Pod) ([]byte, error) {
+	documents, err := configDocuments(data)
+	if err != nil {
+		return nil, err
+	}
+	var cluster map[string]any
+	var init map[string]any
+	var components []any
+	for _, doc := range documents {
 		if doc["kind"] == "ClusterConfiguration" {
 			if cluster != nil {
 				return nil, errors.New("multiple ClusterConfiguration documents")
@@ -226,75 +240,53 @@ func nodeConfig(data []byte, target, name, endpoint string, api *v1.Pod) ([]byte
 	registration["name"] = name
 	registration["criSocket"] = endpoint
 	init["nodeRegistration"] = registration
-	c, err := yaml.Marshal(cluster)
-	if err != nil {
-		return nil, err
-	}
-	i, err := yaml.Marshal(init)
-	if err != nil {
-		return nil, err
-	}
-	result := append(append(c, []byte("\n---\n")...), i...)
-	for _, component := range components {
-		doc, err := yaml.Marshal(component)
-		if err != nil {
-			return nil, err
-		}
-		result = append(append(result, []byte("\n---\n")...), doc...)
-	}
-	return result, nil
+	return yamlutil.MarshalConfigs(append([]any{cluster, init}, components...)...)
 }
 
 func appendComponentConfigs(original []byte, migratedPath string) error {
-	decoder := utilyaml.NewYAMLOrJSONDecoder(bytes.NewReader(original), 4096)
-	var components []byte
-	for {
-		var doc map[string]any
-		err := decoder.Decode(&doc)
-		if errors.Is(err, io.EOF) {
-			break
+	documents, err := configDocuments(original)
+	if err != nil {
+		return err
+	}
+	// Leading separators let these documents follow kubeadm's migrated output.
+	components := []any{}
+	for _, doc := range documents {
+		if doc["kind"] == "KubeProxyConfiguration" || doc["kind"] == "KubeletConfiguration" {
+			components = append(components, doc)
 		}
-		if err != nil {
-			return err
-		}
-		if doc["kind"] != "KubeProxyConfiguration" && doc["kind"] != "KubeletConfiguration" {
-			continue
-		}
-		data, err := yaml.Marshal(doc)
-		if err != nil {
-			return err
-		}
-		components = append(append(components, []byte("\n---\n")...), data...)
+	}
+	data, err := yamlutil.MarshalConfigs(components...)
+	if err != nil {
+		return err
+	}
+	if len(data) > 0 {
+		data = append([]byte("\n---\n"), data...)
 	}
 	file, err := os.OpenFile(migratedPath, os.O_WRONLY|os.O_APPEND, 0)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
-	_, err = file.Write(components)
+	_, err = file.Write(data)
 	return err
 }
 
 func withLocalKubeletConfig(config, kubelet []byte) ([]byte, error) {
-	decoder := utilyaml.NewYAMLOrJSONDecoder(bytes.NewReader(config), 4096)
-	var result []byte
-	for {
-		var doc map[string]any
-		err := decoder.Decode(&doc)
-		if errors.Is(err, io.EOF) {
-			break
+	documents, err := configDocuments(config)
+	if err != nil {
+		return nil, err
+	}
+	var preserved []any
+	for _, doc := range documents {
+		if doc != nil && doc["kind"] != "KubeletConfiguration" {
+			preserved = append(preserved, doc)
 		}
-		if err != nil {
-			return nil, err
-		}
-		if doc == nil || doc["kind"] == "KubeletConfiguration" {
-			continue
-		}
-		data, err := yaml.Marshal(doc)
-		if err != nil {
-			return nil, err
-		}
-		result = append(result, data...)
+	}
+	result, err := yamlutil.MarshalConfigs(preserved...)
+	if err != nil {
+		return nil, err
+	}
+	if len(result) > 0 {
 		result = append(result, []byte("\n---\n")...)
 	}
 	return append(result, kubelet...), nil
