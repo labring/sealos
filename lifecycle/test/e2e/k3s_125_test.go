@@ -17,7 +17,6 @@ limitations under the License.
 package e2e
 
 import (
-	"errors"
 	"fmt"
 	"path"
 	"strings"
@@ -73,15 +72,19 @@ var _ = Describe("E2E_sealos_k3s_basic_test", func() {
 			err = fakeClient.Cluster.Run("k3s:buildin")
 			utils.CheckErr(err)
 			fn := func() []byte {
-				data, err := fakeClient.CmdInterface.Exec("kubectl", "get", "pods", "-A", "--kubeconfig", "/etc/rancher/k3s/k3s.yaml", "-o", "yaml")
+				data, err := fakeClient.CmdInterface.Exec(
+					"kubectl", "get", "pods", "-A", "--request-timeout=10s",
+					"--kubeconfig", "/etc/rancher/k3s/k3s.yaml", "-o", "yaml",
+				)
 				utils.CheckErr(err)
 				return data
 			}
-			count := 0
+			const startupTimeout = 5 * time.Minute
+			deadline := time.Now().Add(startupTimeout)
 			for {
 				pods := fn()
 				podList := &v1.PodList{}
-				_ = yaml.Unmarshal(pods, podList)
+				utils.CheckErr(yaml.Unmarshal(pods, podList))
 				running := 0
 				for _, pod := range podList.Items {
 					logger.Info("k3s pods is: %s: %s", pod.Name, pod.Status.Phase)
@@ -92,12 +95,14 @@ var _ = Describe("E2E_sealos_k3s_basic_test", func() {
 				if running == len(podList.Items) && running != 0 {
 					break
 				}
-				time.Sleep(2 * time.Second)
-				logger.Info("k3s pods is empty,retry %d", count+1)
-				count++
-				if count == 20 {
-					utils.CheckErr(errors.New("k3s pods is empty, for timeout"))
+				if time.Now().After(deadline) {
+					utils.CheckErr(fmt.Errorf(
+						"K3s pods did not all reach Running within %s: %d/%d running",
+						startupTimeout, running, len(podList.Items),
+					))
 				}
+				logger.Info("waiting for K3s pods to run: %d/%d", running, len(podList.Items))
+				time.Sleep(2 * time.Second)
 			}
 			err = fakeClient.CmdInterface.AsyncExec("kubectl", "get", "nodes", "--kubeconfig", "/etc/rancher/k3s/k3s.yaml")
 			utils.CheckErr(err)
