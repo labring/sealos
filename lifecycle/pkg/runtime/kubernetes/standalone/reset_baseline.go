@@ -113,8 +113,12 @@ func verifyResetCleanup() error {
 		}
 	}
 	for _, name := range []string{"admin.conf", "super-admin.conf", "kubelet.conf", "bootstrap-kubelet.conf", "controller-manager.conf", "scheduler.conf"} {
-		if _, err := os.Lstat(filepath.Join("/etc/kubernetes", name)); !os.IsNotExist(err) {
-			return fmt.Errorf("kubeadm cleanup did not remove %s: %w", name, err)
+		_, err := os.Lstat(filepath.Join("/etc/kubernetes", name))
+		if err == nil {
+			return fmt.Errorf("kubeadm cleanup did not remove %s", name)
+		}
+		if !os.IsNotExist(err) {
+			return fmt.Errorf("cannot verify kubeadm cleanup of %s: %w", name, err)
 		}
 	}
 	return nil

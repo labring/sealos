@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -17,8 +18,12 @@ import (
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8sruntime "k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes/fake"
+	clienttesting "k8s.io/client-go/testing"
 )
 
 type standaloneSSH struct {
@@ -197,5 +202,156 @@ func TestStandaloneUpgradeStopsAtFailedHost(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+type upgradeRetrySSH struct {
+	workerSSH
+	client *fake.Clientset
+}
+
+func (s *upgradeRetrySSH) CmdToString(host, command, separator string) (string, error) {
+	if !strings.Contains(command, "date +%s") {
+		return "/root", nil
+	}
+	node, err := s.client.CoreV1().Nodes().Get(context.Background(), "worker", metav1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+	node.Status.NodeInfo.KubeletVersion = "v1.30.14"
+	node.Status.Conditions[0].LastHeartbeatTime = metav1.NewTime(time.Now().Add(time.Second))
+	if _, err := s.client.CoreV1().Nodes().UpdateStatus(context.Background(), node, metav1.UpdateOptions{}); err != nil {
+		return "", err
+	}
+	return strconv.FormatInt(time.Now().Unix(), 10), nil
+}
+
+func TestStandaloneWorkerUpgradeRetryPreservesSchedulingState(t *testing.T) {
+	previousRoot := constants.DefaultRuntimeRootDir
+	constants.DefaultRuntimeRootDir = t.TempDir()
+	t.Cleanup(func() {
+		constants.DefaultRuntimeRootDir = previousRoot
+	})
+	for _, preCordoned := range []bool{false, true} {
+		t.Run(fmt.Sprintf("preCordoned=%t", preCordoned), func(t *testing.T) {
+			runtime, client, _ := workerFixture(v2.ControlPlaneModeStandalone)
+			runtime.pathResolver = constants.NewPathResolver("test-cluster")
+			runtime.cluster.Status.Mounts = []v2.MountImage{
+				{
+					Type:   v2.RootfsImage,
+					Labels: map[string]string{v2.ImageKubeVersionKey: "v1.30.13"},
+				},
+			}
+			node, err := client.CoreV1().Nodes().Get(context.Background(), "worker", metav1.GetOptions{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			node.Spec.Unschedulable = preCordoned
+			node.Status.NodeInfo.KubeletVersion = "v1.30.13"
+			if _, err := client.CoreV1().Nodes().Update(context.Background(), node, metav1.UpdateOptions{}); err != nil {
+				t.Fatal(err)
+			}
+			for _, config := range []struct {
+				name  string
+				key   string
+				value string
+			}{
+				{"kubeadm-config", "ClusterConfiguration", "apiVersion: kubeadm.k8s.io/v1beta3\nkind: ClusterConfiguration\n"},
+				{"kubelet-config", "kubelet", "apiVersion: kubelet.config.k8s.io/v1beta1\nkind: KubeletConfiguration\n"},
+			} {
+				_, err := client.CoreV1().ConfigMaps("kube-system").Create(context.Background(), &v1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{Name: config.name, Namespace: "kube-system"},
+					Data:       map[string]string{config.key: config.value},
+				}, metav1.CreateOptions{})
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+			execer := &upgradeRetrySSH{client: client}
+			execer.fail = "kubeadm upgrade node phase kubelet-config"
+			runtime.execer = execer
+			if err := runtime.upgradeStandaloneCluster("v1.30.14"); err == nil || !strings.Contains(err.Error(), "injected") {
+				t.Fatalf("expected worker upgrade failure, got %v", err)
+			}
+			failed, err := client.CoreV1().Nodes().Get(context.Background(), "worker", metav1.GetOptions{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !failed.Spec.Unschedulable {
+				t.Fatal("failed upgrade made the worker schedulable")
+			}
+			if owned := failed.Annotations[workerUpgradeCordonAnnotation] != ""; owned == preCordoned {
+				t.Fatalf("cordon ownership does not preserve the administrator's setting: %v", failed.Annotations)
+			}
+			// Use a fresh executor so recovery depends only on persisted state.
+			runtime.execer = &upgradeRetrySSH{client: client}
+			if err := runtime.upgradeStandaloneCluster("v1.30.14"); err != nil {
+				t.Fatalf("retry failed: %v", err)
+			}
+			upgraded, err := client.CoreV1().Nodes().Get(context.Background(), "worker", metav1.GetOptions{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if upgraded.Spec.Unschedulable != preCordoned {
+				t.Fatalf("retry changed the original scheduling state: %t", upgraded.Spec.Unschedulable)
+			}
+			if _, exists := upgraded.Annotations[workerUpgradeCordonAnnotation]; exists {
+				t.Fatal("successful upgrade retained its cordon annotation")
+			}
+		})
+	}
+}
+
+func TestWorkerUpgradeCordonRejectsReplacedNode(t *testing.T) {
+	_, client, _ := workerFixture(v2.ControlPlaneModeStandalone)
+	node, err := client.CoreV1().Nodes().Get(context.Background(), "worker", metav1.GetOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	replacement := node.DeepCopy()
+	replacement.UID = "replacement-worker"
+	replacement.Spec.Unschedulable = true
+	replacement.Annotations = map[string]string{workerUpgradeCordonAnnotation: "v1.30.14"}
+	if _, err := client.CoreV1().Nodes().Update(context.Background(), replacement, metav1.UpdateOptions{}); err != nil {
+		t.Fatal(err)
+	}
+	if err := setWorkerUpgradeCordon(context.Background(), client, node, "v1.30.14", false); err == nil {
+		t.Fatal("uncordoned a replacement Node")
+	}
+	for _, action := range client.Actions() {
+		if action.GetVerb() == "patch" {
+			t.Fatal("modified the replacement Node")
+		}
+	}
+}
+
+func TestWorkerUpgradeCordonPreservesConcurrentAdministratorCordon(t *testing.T) {
+	_, client, _ := workerFixture(v2.ControlPlaneModeStandalone)
+	ctx := context.Background()
+	node, err := client.CoreV1().Nodes().Get(ctx, "worker", metav1.GetOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	patches := 0
+	client.PrependReactor("patch", "nodes", func(clienttesting.Action) (bool, k8sruntime.Object, error) {
+		patches++
+		current := node.DeepCopy()
+		current.Spec.Unschedulable = true
+		current.ResourceVersion = "2"
+		if err := client.Tracker().Update(v1.SchemeGroupVersion.WithResource("nodes"), current, ""); err != nil {
+			return true, nil, err
+		}
+		return true, nil, apierrors.NewConflict(
+			schema.GroupResource{Resource: "nodes"}, node.Name, errors.New("concurrent administrator cordon"),
+		)
+	})
+	if err := setWorkerUpgradeCordon(ctx, client, node, "v1.30.14", true); err != nil {
+		t.Fatal(err)
+	}
+	if err := setWorkerUpgradeCordon(ctx, client, node, "v1.30.14", false); err != nil {
+		t.Fatal(err)
+	}
+	if patches != 1 {
+		t.Fatalf("modified an administrator cordon after conflict: %d patches", patches)
 	}
 }

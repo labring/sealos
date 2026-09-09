@@ -376,14 +376,9 @@ func (c *Applier) Delete() error {
 	); err != nil {
 		return err
 	}
-	completed := false
 	t := metav1.Now()
 	c.ClusterDesired.DeletionTimestamp = &t
 	defer func() {
-		if c.ClusterDesired.IsStandaloneControlPlane() && !completed {
-			c.ClusterDesired.DeletionTimestamp = nil
-			return
-		}
 		cfPath := constants.Clusterfile(c.ClusterDesired.Name)
 		target := fmt.Sprintf("%s.%d", cfPath, t.Unix())
 		logger.Debug("write reset cluster file to local: %s", target)
@@ -392,9 +387,7 @@ func (c *Applier) Delete() error {
 		}
 		_ = os.Rename(cfPath, target)
 	}()
-	err = c.deleteCluster()
-	completed = err == nil
-	return err
+	return c.deleteCluster()
 }
 
 func (c *Applier) deleteCluster() error {

@@ -5,6 +5,7 @@ package kubernetes
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -21,7 +22,10 @@ import (
 	patchtypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	clientset "k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/util/retry"
 )
+
+const workerUpgradeCordonAnnotation = "sealos.io/standalone-upgrade-cordon"
 
 func shellArgument(value string) string {
 	return "'" + strings.ReplaceAll(value, "'", "'\"'\"'") + "'"
@@ -153,15 +157,10 @@ func (k *KubeadmRuntime) upgradeStandaloneCluster(version string) error {
 		if err != nil {
 			return err
 		}
-		wasCordoned := node.Spec.Unschedulable
-		if !wasCordoned {
-			_, err := client.Kubernetes().CoreV1().Nodes().Patch(
-				context.Background(), name, patchtypes.MergePatchType,
-				[]byte(`{"spec":{"unschedulable":true}}`), metav1.PatchOptions{},
-			)
-			if err != nil {
-				return err
-			}
+		if err := setWorkerUpgradeCordon(
+			context.Background(), client.Kubernetes(), node, version, true,
+		); err != nil {
+			return err
 		}
 		bin := shellArgument(k.pathResolver.RootFSBinPath())
 		if err := k.sshCmdAsyncSeq(host,
@@ -206,14 +205,10 @@ func (k *KubeadmRuntime) upgradeStandaloneCluster(version string) error {
 		); err != nil {
 			return fmt.Errorf("worker %s has not become Ready at %s: %w", name, version, err)
 		}
-		if !wasCordoned {
-			_, err := client.Kubernetes().CoreV1().Nodes().Patch(
-				context.Background(), name, patchtypes.MergePatchType,
-				[]byte(`{"spec":{"unschedulable":false}}`), metav1.PatchOptions{},
-			)
-			if err != nil {
-				return err
-			}
+		if err := setWorkerUpgradeCordon(
+			context.Background(), client.Kubernetes(), node, version, false,
+		); err != nil {
+			return err
 		}
 	}
 	_, dnsErr := client.Kubernetes().
@@ -262,6 +257,57 @@ func (k *KubeadmRuntime) upgradeStandaloneCluster(version string) error {
 		}
 	}
 	return nil
+}
+
+// Record ownership in the same update as the cordon so an interrupted upgrade
+// can resume without treating its own cordon as an administrator's setting.
+// Failed upgrades retain the cordon until a successful readiness check.
+func setWorkerUpgradeCordon(
+	ctx context.Context,
+	client clientset.Interface,
+	node *v1.Node,
+	version string,
+	cordon bool,
+) error {
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		current, err := client.CoreV1().Nodes().Get(ctx, node.Name, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		if current.UID != node.UID {
+			return fmt.Errorf("worker %s was replaced during upgrade", node.Name)
+		}
+		owner := current.Annotations[workerUpgradeCordonAnnotation]
+		if owner != "" && owner != version {
+			return fmt.Errorf("worker %s has a pending upgrade to %s", node.Name, owner)
+		}
+		var annotation any
+		if cordon {
+			if owner == "" && current.Spec.Unschedulable {
+				return nil
+			}
+			annotation = version
+		} else if owner == "" {
+			return nil
+		}
+		patch, err := json.Marshal(map[string]any{
+			"metadata": map[string]any{
+				"uid":             current.UID,
+				"resourceVersion": current.ResourceVersion,
+				"annotations": map[string]any{
+					workerUpgradeCordonAnnotation: annotation,
+				},
+			},
+			"spec": map[string]any{"unschedulable": cordon},
+		})
+		if err != nil {
+			return err
+		}
+		_, err = client.CoreV1().Nodes().Patch(
+			ctx, node.Name, patchtypes.MergePatchType, patch, metav1.PatchOptions{},
+		)
+		return err
+	})
 }
 
 func upgradedWorkerReady(node *v1.Node, target *semver.Version, restartedAt time.Time) bool {

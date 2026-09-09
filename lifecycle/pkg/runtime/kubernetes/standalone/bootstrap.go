@@ -213,13 +213,16 @@ func bootstrapStandalone(ctx context.Context, options BootstrapOptions) error {
 		if err != nil {
 			return err
 		}
-		if _, err := client.CoreV1().
+		_, err = client.CoreV1().
 			Nodes().
-			Get(ctx, name, metav1.GetOptions{}); !apierrors.IsNotFound(
-			err,
-		) {
+			Get(ctx, name, metav1.GetOptions{})
+		if err == nil {
+			return fmt.Errorf("new standalone control-plane name %s already exists", name)
+		}
+		if !apierrors.IsNotFound(err) {
 			return fmt.Errorf(
-				"new standalone control-plane name already exists or cannot be checked: %w",
+				"cannot check new standalone control-plane name %s: %w",
+				name,
 				err,
 			)
 		}

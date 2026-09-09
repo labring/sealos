@@ -34,26 +34,26 @@ rm -rf %s && (ip link delete kube-ipvs0 >/dev/null 2>&1 || true)
 )
 
 func (k *KubeadmRuntime) reset() error {
-	if err := k.resetNodes(k.getNodeIPAndPortList()); err != nil {
-		return err
-	}
+	k.resetNodes(k.getNodeIPAndPortList())
 	k.resetMasters(k.getMasterIPAndPortList())
 	return nil
 }
 
-func (k *KubeadmRuntime) resetNodes(nodes []string) error {
+func (k *KubeadmRuntime) resetNodes(nodes []string) {
 	logger.Info("start to reset nodes: %v", nodes)
 	eg, _ := errgroup.WithContext(context.Background())
 	for _, node := range nodes {
 		node := node
 		eg.Go(func() error {
-			if err := k.resetWorker(node); err != nil {
-				return fmt.Errorf("reset worker %s: %w", node, err)
+			if err := k.resetNode(node, nil); err != nil {
+				logger.Error("delete node %s failed %v", node, err)
 			}
 			return nil
 		})
 	}
-	return eg.Wait()
+	if err := eg.Wait(); err != nil {
+		return
+	}
 }
 
 func (k *KubeadmRuntime) resetMasters(nodes []string) {
