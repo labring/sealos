@@ -5,20 +5,20 @@ package kubernetes
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/Masterminds/semver/v3"
+	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/runtime/kubernetes/types"
+	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
-
-	"github.com/labring/sealos/pkg/constants"
-	"github.com/labring/sealos/pkg/runtime/kubernetes/types"
-	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 )
 
 type standaloneSSH struct {
@@ -85,7 +85,9 @@ func TestStandaloneAddonRejectsIncompleteRollout(t *testing.T) {
 	}
 	daemonSet.Status.ObservedGeneration = 2
 	daemonSet.Status.NumberAvailable = 0
-	if _, err := client.AppsV1().DaemonSets("kube-system").UpdateStatus(context.Background(), daemonSet, metav1.UpdateOptions{}); err != nil {
+	if _, err := client.AppsV1().
+		DaemonSets("kube-system").
+		UpdateStatus(context.Background(), daemonSet, metav1.UpdateOptions{}); err != nil {
 		t.Fatal(err)
 	}
 	ready, err = standaloneAddonReady(context.Background(), client, "kube-proxy")
@@ -93,7 +95,9 @@ func TestStandaloneAddonRejectsIncompleteRollout(t *testing.T) {
 		t.Fatalf("accepted a crashing addon: %t, %v", ready, err)
 	}
 	daemonSet.Status.NumberAvailable = 1
-	if _, err := client.AppsV1().DaemonSets("kube-system").UpdateStatus(context.Background(), daemonSet, metav1.UpdateOptions{}); err != nil {
+	if _, err := client.AppsV1().
+		DaemonSets("kube-system").
+		UpdateStatus(context.Background(), daemonSet, metav1.UpdateOptions{}); err != nil {
 		t.Fatal(err)
 	}
 	ready, err = standaloneAddonReady(context.Background(), client, "kube-proxy")
@@ -105,10 +109,11 @@ func TestStandaloneAddonRejectsIncompleteRollout(t *testing.T) {
 func (s *standaloneSSH) CmdAsync(host string, commands ...string) error {
 	for _, command := range commands {
 		s.commands = append(s.commands, host+"|"+command)
-		isUpgrade := strings.Contains(command, "standalone-upgrade") && strings.Contains(command, "--version")
+		isUpgrade := strings.Contains(command, "standalone-upgrade") &&
+			strings.Contains(command, "--version")
 		isCheck := strings.Contains(command, "--check-only")
 		if isUpgrade && host == s.failHost && isCheck == s.checkOnly {
-			return fmt.Errorf("injected host failure")
+			return errors.New("injected host failure")
 		}
 	}
 	return nil
@@ -171,7 +176,8 @@ func TestStandaloneUpgradeStopsAtFailedHost(t *testing.T) {
 			}
 			var applied []string
 			for _, command := range execer.commands {
-				if strings.Contains(command, "--version") && !strings.Contains(command, "--check-only") {
+				if strings.Contains(command, "--version") &&
+					!strings.Contains(command, "--check-only") {
 					applied = append(applied, strings.SplitN(command, "|", 2)[0])
 				}
 				if strings.Contains(command, "upload-config") {
@@ -185,7 +191,8 @@ func TestStandaloneUpgradeStopsAtFailedHost(t *testing.T) {
 				t.Fatalf("did not stop at the failed master: %v", applied)
 			}
 			for _, action := range client.Actions() {
-				if action.GetResource().Resource == "nodes" || action.GetResource().Resource == "pods" {
+				if action.GetResource().Resource == "nodes" ||
+					action.GetResource().Resource == "pods" {
 					t.Fatalf("standalone upgrade depends on control-plane API objects: %v", action)
 				}
 			}

@@ -22,7 +22,11 @@ func reservedRoutesEmpty(table, protocol int) error {
 		return err
 	}
 	if len(routes) != 0 {
-		return fmt.Errorf("route table %d protocol %d is already in use; reserve an unused route ownership pair for route-controller", table, protocol)
+		return fmt.Errorf(
+			"route table %d protocol %d is already in use; reserve an unused route ownership pair for route-controller",
+			table,
+			protocol,
+		)
 	}
 	return nil
 }

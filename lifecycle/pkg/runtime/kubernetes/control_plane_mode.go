@@ -6,6 +6,7 @@ package kubernetes
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -14,32 +15,35 @@ import (
 	"strings"
 	"time"
 
-	v1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clientset "k8s.io/client-go/kubernetes"
-
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/runtime/kubernetes/standalone"
 	"github.com/labring/sealos/pkg/utils/logger"
+	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	clientset "k8s.io/client-go/kubernetes"
 )
 
 type modeTransition struct {
-	Target   string
-	Hosts    []string
-	Verified []string
+	Target   string   `json:"Target"`
+	Hosts    []string `json:"Hosts"`
+	Verified []string `json:"Verified"`
 }
 
-func (k *KubeadmRuntime) SwitchControlPlaneMode(ctx context.Context, options standalone.ModeOptions) error {
+func (k *KubeadmRuntime) SwitchControlPlaneMode(
+	ctx context.Context,
+	options standalone.ModeOptions,
+) error {
 	if options.Mode != standalone.ModeStandalone && options.Mode != standalone.ModeRegistered {
-		return fmt.Errorf("mode must be standalone or registered")
+		return errors.New("mode must be standalone or registered")
 	}
 	if options.Timeout <= 0 {
-		return fmt.Errorf("timeout must be positive")
+		return errors.New("timeout must be positive")
 	}
-	if options.Mode == standalone.ModeRegistered && (options.RouteController != nil || options.UpdateController) {
-		return fmt.Errorf("route-controller options are only valid for standalone mode")
+	if options.Mode == standalone.ModeRegistered &&
+		(options.RouteController != nil || options.UpdateController) {
+		return errors.New("route-controller options are only valid for standalone mode")
 	}
 	client, err := k.getKubeInterface()
 	if err != nil {
@@ -53,10 +57,14 @@ func (k *KubeadmRuntime) SwitchControlPlaneMode(ctx context.Context, options sta
 	})
 }
 
-func (k *KubeadmRuntime) switchControlPlaneMode(ctx context.Context, client clientset.Interface, options standalone.ModeOptions) error {
+func (k *KubeadmRuntime) switchControlPlaneMode(
+	ctx context.Context,
+	client clientset.Interface,
+	options standalone.ModeOptions,
+) error {
 	hosts := k.getMasterIPAndPortList()
 	if len(hosts) == 0 {
-		return fmt.Errorf("cluster has no control planes")
+		return errors.New("cluster has no control planes")
 	}
 	journal := modeTransition{
 		Target: options.Mode,
@@ -64,24 +72,28 @@ func (k *KubeadmRuntime) switchControlPlaneMode(ctx context.Context, client clie
 	}
 	configMaps := client.CoreV1().ConfigMaps("kube-system")
 	cm, err := configMaps.Get(ctx, clusterfile.ModeTransitionResource, metav1.GetOptions{})
-	if err == nil {
+	switch {
+	case err == nil:
 		if err := json.Unmarshal([]byte(cm.Data["transition"]), &journal); err != nil {
 			return err
 		}
 		if !reflect.DeepEqual(journal.Hosts, hosts) {
-			return fmt.Errorf("master inventory differs from the pending conversion; restore the original inventory before resuming")
+			return errors.New(
+				"master inventory differs from the pending conversion; restore the original inventory before resuming",
+			)
 		}
-	} else if !apierrors.IsNotFound(err) {
+	case !apierrors.IsNotFound(err):
 		return err
-	} else {
+	default:
 		cm = nil
 	}
 	journal.Target = options.Mode
 	journal.Verified = nil
-	command := strings.Join([]string{
+	var command strings.Builder
+	command.WriteString(strings.Join([]string{
 		shellArgument(k.pathResolver.RootFSSealctlPath()), "switch", shellArgument(options.Mode),
 		"--timeout", shellArgument(options.Timeout.String()),
-	}, " ")
+	}, " "))
 	if options.Mode == standalone.ModeStandalone {
 		controller := standalone.DefaultRouteControllerOptions()
 		if options.RouteController != nil {
@@ -95,7 +107,7 @@ func (k *KubeadmRuntime) switchControlPlaneMode(ctx context.Context, client clie
 			fields = options.ControllerFields
 		}
 		if options.UpdateController {
-			command += " --update-controller"
+			command.WriteString(" --update-controller")
 		}
 		values := map[string]string{
 			"route-controller-image":      controller.Image,
@@ -109,7 +121,7 @@ func (k *KubeadmRuntime) switchControlPlaneMode(ctx context.Context, client clie
 			if !ok {
 				return fmt.Errorf("unknown controller flag %q", field)
 			}
-			command += " --" + field + " " + shellArgument(value)
+			command.WriteString(" --" + field + " " + shellArgument(value))
 		}
 	}
 	// sealctl enforces the requested host timeout. Allow it to return its
@@ -123,14 +135,17 @@ func (k *KubeadmRuntime) switchControlPlaneMode(ctx context.Context, client clie
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		if err := runConversion(host, command+" --check-only"); err != nil {
+		if err := runConversion(host, command.String()+" --check-only"); err != nil {
 			return fmt.Errorf("mode preflight on %s: %w", host, err)
 		}
 	}
 	if options.CheckOnly {
 		return nil
 	}
-	localMarker := filepath.Join(constants.ClusterDir(k.cluster.Name), clusterfile.ModeTransitionFilename)
+	localMarker := filepath.Join(
+		constants.ClusterDir(k.cluster.Name),
+		clusterfile.ModeTransitionFilename,
+	)
 	newJournal := cm == nil
 	if cm == nil {
 		cm = &v1.ConfigMap{
@@ -170,7 +185,10 @@ func (k *KubeadmRuntime) switchControlPlaneMode(ctx context.Context, client clie
 	// Propagate the recovery marker before any host changes mode. The API
 	// journal also guards clients whose local inventory predates this operation.
 	for _, host := range hosts {
-		if err := k.sshCmdAsync(host, "install -d -m 700 "+shellArgument(filepath.Dir(localMarker))); err != nil {
+		if err := k.sshCmdAsync(
+			host,
+			"install -d -m 700 "+shellArgument(filepath.Dir(localMarker)),
+		); err != nil {
 			return err
 		}
 		if err := k.copyModeFile(host, localMarker); err != nil {
@@ -182,7 +200,7 @@ func (k *KubeadmRuntime) switchControlPlaneMode(ctx context.Context, client clie
 			return err
 		}
 		logger.Info("convert control plane %s to %s", host, options.Mode)
-		if err := runConversion(host, command); err != nil {
+		if err := runConversion(host, command.String()); err != nil {
 			return fmt.Errorf("mode conversion on %s paused: %w", host, err)
 		}
 		journal.Verified = append(journal.Verified, host)

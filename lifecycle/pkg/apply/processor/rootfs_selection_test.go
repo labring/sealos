@@ -8,10 +8,9 @@ import (
 	"testing"
 
 	containerbuildah "github.com/containers/buildah"
-	ociv1 "github.com/opencontainers/image-spec/specs-go/v1"
-
 	"github.com/labring/sealos/pkg/buildah"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	ociv1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 type rootfsSelectionBuilder struct {
@@ -19,7 +18,10 @@ type rootfsSelectionBuilder struct {
 	created []string
 }
 
-func (b *rootfsSelectionBuilder) InspectImage(name string, _ ...string) (*buildah.InspectOutput, error) {
+func (b *rootfsSelectionBuilder) InspectImage(
+	name string,
+	_ ...string,
+) (*buildah.InspectOutput, error) {
 	imageType := v2.RootfsImage
 	if name == "example/patch:v1" {
 		imageType = v2.PatchImage
@@ -41,14 +43,21 @@ func (b *rootfsSelectionBuilder) Pull(_ []string, _ ...buildah.FlagSetter) error
 	return nil
 }
 
-func (b *rootfsSelectionBuilder) Create(name, image string, _ ...buildah.FlagSetter) (containerbuildah.BuilderInfo, error) {
+func (b *rootfsSelectionBuilder) Create(
+	name, image string,
+	_ ...buildah.FlagSetter,
+) (containerbuildah.BuilderInfo, error) {
 	b.created = append(b.created, image)
 	return containerbuildah.BuilderInfo{Container: name, MountPoint: "/rootfs"}, nil
 }
 
 func TestScaleRetainsCommittedRootfsFromLegacyImageList(t *testing.T) {
 	cluster := &v2.Cluster{}
-	cluster.Spec.Image = []string{"example/kubernetes:old", "example/patch:v1", "example/kubernetes:active"}
+	cluster.Spec.Image = []string{
+		"example/kubernetes:old",
+		"example/patch:v1",
+		"example/kubernetes:active",
+	}
 	cluster.Status.Mounts = []v2.MountImage{
 		{
 			Type:      v2.RootfsImage,

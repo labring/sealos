@@ -18,11 +18,10 @@ import (
 	"context"
 	"fmt"
 
-	"golang.org/x/sync/errgroup"
-
 	"github.com/labring/sealos/pkg/clusterfile"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"golang.org/x/sync/errgroup"
 )
 
 type Phase string
@@ -69,16 +68,21 @@ func (bs *realBootstrap) Apply(hosts ...string) error {
 	logger.Debug("apply %+v on hosts %+v", appliers, hosts)
 	for i := range appliers {
 		applier := appliers[i]
-		if _, rootfsCheck := applier.(*defaultChecker); rootfsCheck && bs.ctx.GetCluster().IsStandaloneControlPlane() {
+		if _, rootfsCheck := applier.(*defaultChecker); rootfsCheck &&
+			bs.ctx.GetCluster().IsStandaloneControlPlane() {
 			// Keep journal writes outside the parallel host loop.
-			if err := clusterfile.WithRootfsPreflight(bs.ctx.GetCluster().Name, hosts, func(pending []string) error {
-				return runParallel(pending, func(host string) error {
-					if !applier.Filter(bs.ctx, host) {
-						return nil
-					}
-					return applier.Apply(bs.ctx, host)
-				})
-			}); err != nil {
+			if err := clusterfile.WithRootfsPreflight(
+				bs.ctx.GetCluster().Name,
+				hosts,
+				func(pending []string) error {
+					return runParallel(pending, func(host string) error {
+						if !applier.Filter(bs.ctx, host) {
+							return nil
+						}
+						return applier.Apply(bs.ctx, host)
+					})
+				},
+			); err != nil {
 				return err
 			}
 			continue
@@ -169,7 +173,15 @@ func (initializer *defaultInitializer) Undo(ctx Context, host string) error {
 
 func init() {
 	defaultPreflights = append(defaultPreflights, &defaultChecker{})
-	defaultInitializers = append(defaultInitializers, &registryHostApplier{}, &registryApplier{}, &defaultCRIInitializer{}, &apiServerHostApplier{}, &lvscareHostApplier{}, &defaultInitializer{})
+	defaultInitializers = append(
+		defaultInitializers,
+		&registryHostApplier{},
+		&registryApplier{},
+		&defaultCRIInitializer{},
+		&apiServerHostApplier{},
+		&lvscareHostApplier{},
+		&defaultInitializer{},
+	)
 }
 
 func RegisterApplier(phase Phase, appliers ...Applier) error {

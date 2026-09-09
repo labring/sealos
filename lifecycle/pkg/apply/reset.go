@@ -20,13 +20,12 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/spf13/cobra"
-
 	"github.com/labring/sealos/pkg/apply/applydrivers"
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/spf13/cobra"
 )
 
 func NewApplierFromResetArgs(cmd *cobra.Command, args *ResetArgs) (applydrivers.Interface, error) {
@@ -61,7 +60,9 @@ func (r *ClusterArgs) resetArgs(cmd *cobra.Command, args *ResetArgs) error {
 	}
 
 	if r.cluster.ObjectMeta.CreationTimestamp.IsZero() {
-		_, pending := os.Stat(filepath.Join(constants.ClusterDir(r.cluster.Name), clusterfile.LifecycleFilename))
+		_, pending := os.Stat(
+			filepath.Join(constants.ClusterDir(r.cluster.Name), clusterfile.LifecycleFilename),
+		)
 		if !r.cluster.IsStandaloneControlPlane() || pending != nil {
 			return errors.New("creation time must be specified in clusterfile")
 		}

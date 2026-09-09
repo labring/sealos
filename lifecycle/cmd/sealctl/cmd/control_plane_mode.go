@@ -34,17 +34,25 @@ func newControlPlaneModeCmd() *cobra.Command {
 				return standalone.SwitchMode(cmd.Context(), options)
 			},
 		}
-		subcommand.Flags().BoolVar(&options.CheckOnly, "check-only", false, "Check prerequisites without switching")
-		subcommand.Flags().DurationVar(&options.Timeout, "timeout", 10*time.Minute, "Timeout for this host's conversion")
+		subcommand.Flags().
+			BoolVar(&options.CheckOnly, "check-only", false, "Check prerequisites without switching")
+		subcommand.Flags().
+			DurationVar(&options.Timeout, "timeout", 10*time.Minute, "Timeout for this host's conversion")
 		if mode == standalone.ModeStandalone {
-			subcommand.Flags().BoolVar(&options.UpdateController, "update-controller", false, "Update explicitly selected controller settings on a standalone host")
+			subcommand.Flags().
+				BoolVar(&options.UpdateController, "update-controller", false, "Update explicitly selected controller settings on a standalone host")
 			controller := standalone.DefaultRouteControllerOptions()
 			options.RouteController = &controller
-			subcommand.Flags().StringVar(&controller.Image, "route-controller-image", controller.Image, "Route-controller image")
-			subcommand.Flags().StringVar(&controller.Kubeconfig, "route-controller-kubeconfig", controller.Kubeconfig, "Dedicated controller kubeconfig path on this host")
-			subcommand.Flags().StringVar(&controller.Config, "route-controller-config", "", "Optional controller configuration file on this host")
-			subcommand.Flags().IntVar(&controller.Table, "route-table", controller.Table, "Routing table owned by route-controller")
-			subcommand.Flags().IntVar(&controller.Protocol, "route-protocol", controller.Protocol, "Routing protocol owned by route-controller")
+			subcommand.Flags().
+				StringVar(&controller.Image, "route-controller-image", controller.Image, "Route-controller image")
+			subcommand.Flags().
+				StringVar(&controller.Kubeconfig, "route-controller-kubeconfig", controller.Kubeconfig, "Dedicated controller kubeconfig path on this host")
+			subcommand.Flags().
+				StringVar(&controller.Config, "route-controller-config", "", "Optional controller configuration file on this host")
+			subcommand.Flags().
+				IntVar(&controller.Table, "route-table", controller.Table, "Routing table owned by route-controller")
+			subcommand.Flags().
+				IntVar(&controller.Protocol, "route-protocol", controller.Protocol, "Routing protocol owned by route-controller")
 		}
 		cmd.AddCommand(subcommand)
 	}

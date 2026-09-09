@@ -5,7 +5,7 @@ package standalone
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -27,7 +27,9 @@ func SavedRouteControllerOptions() (RouteControllerOptions, error) {
 		return RouteControllerOptions{}, err
 	}
 	if state.Mode != ModeStandalone || state.Target != "" {
-		return RouteControllerOptions{}, fmt.Errorf("controller baseline is not a completed standalone deployment")
+		return RouteControllerOptions{}, errors.New(
+			"controller baseline is not a completed standalone deployment",
+		)
 	}
 	return routeOptionsFromState(&state)
 }
@@ -38,7 +40,7 @@ func routeOptionsFromState(state *modeState) (RouteControllerOptions, error) {
 		return RouteControllerOptions{}, err
 	}
 	if len(pod.Spec.Containers) != 1 {
-		return RouteControllerOptions{}, fmt.Errorf("invalid controller baseline")
+		return RouteControllerOptions{}, errors.New("invalid controller baseline")
 	}
 	options := RouteControllerOptions{
 		Image:    pod.Spec.Containers[0].Image,
@@ -67,11 +69,11 @@ const (
 )
 
 type RouteControllerOptions struct {
-	Image      string
-	Kubeconfig string
-	Config     string
-	Table      int
-	Protocol   int
+	Image      string `json:"Image"`
+	Kubeconfig string `json:"Kubeconfig"`
+	Config     string `json:"Config"`
+	Table      int    `json:"Table"`
+	Protocol   int    `json:"Protocol"`
 }
 
 func DefaultRouteControllerOptions() RouteControllerOptions {
@@ -85,13 +87,13 @@ func DefaultRouteControllerOptions() RouteControllerOptions {
 
 func (o RouteControllerOptions) Validate() error {
 	if o.Image == "" || !filepath.IsAbs(o.Kubeconfig) {
-		return fmt.Errorf("route-controller requires an image and an absolute kubeconfig path")
+		return errors.New("route-controller requires an image and an absolute kubeconfig path")
 	}
 	if o.Config != "" && !filepath.IsAbs(o.Config) {
-		return fmt.Errorf("route-controller config path must be absolute")
+		return errors.New("route-controller config path must be absolute")
 	}
 	if o.Table <= 0 || o.Table > 2147483647 || o.Protocol < 1 || o.Protocol > 255 {
-		return fmt.Errorf("route-controller requires route table 1..2147483647 and protocol 1..255")
+		return errors.New("route-controller requires route table 1..2147483647 and protocol 1..255")
 	}
 	return nil
 }
@@ -185,11 +187,14 @@ func routeControllerPod(options RouteControllerOptions) (*v1.Pod, error) {
 		},
 	}
 	if options.Config != "" {
-		pod.Spec.Containers[0].VolumeMounts = append(pod.Spec.Containers[0].VolumeMounts, v1.VolumeMount{
-			Name:      "config",
-			MountPath: controllerConfigMount,
-			ReadOnly:  true,
-		})
+		pod.Spec.Containers[0].VolumeMounts = append(
+			pod.Spec.Containers[0].VolumeMounts,
+			v1.VolumeMount{
+				Name:      "config",
+				MountPath: controllerConfigMount,
+				ReadOnly:  true,
+			},
+		)
 		pod.Spec.Volumes = append(pod.Spec.Volumes, v1.Volume{
 			Name: "config",
 			VolumeSource: v1.VolumeSource{

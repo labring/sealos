@@ -1,7 +1,7 @@
 # Sealos standalone integration validation
 
 This report records validation on an existing three-control-plane, two-worker
-cluster on 2026-09-08. The cluster was not reset. Host addresses, hostnames,
+cluster on 2026-09-08 and 2026-09-09. The cluster was not reset. Host addresses, hostnames,
 and roles were preserved. Original inventories, host configuration, and an etcd
 snapshot were saved privately before maintenance.
 
@@ -124,3 +124,54 @@ before testing CNI on the control planes. Product code remains CNI-agnostic.
 CSR approval now rereads resource versions on conflict and accepts an existing
 approval without duplicating it. The conversion API timeout also accommodates
 admission webhook timeouts before a fail-open decision.
+
+Ordinary worker deletion and addition completed with the same hostname and IP.
+The first cleanup attempt exceeded the default SSH timeout; the existing
+behavior of removing the host from inventory on deletion failure was retained.
+After administrator inventory reconciliation, cleanup completed with an extended
+execution timeout. The rejoined worker became Ready. Twenty PVs and nineteen
+PVCs retained their identities and bindings, and all ten checked local-volume
+directory device/inode pairs were unchanged.
+
+Ordinary control-plane deletion exposed a missing CRI socket annotation on a
+Node restored from the legacy standalone setup. Kubernetes 1.28 kubeadm could
+not discover the runtime and skipped etcd membership cleanup. The test
+administrator removed that specific stale member after verifying the surviving
+quorum, then re-added the host successfully. Reverse conversion now restores
+the effective CRI endpoint annotation. A unit test checks the restored metadata
+and verifies that the saved baseline remains unchanged.
+
+With the corrected binaries, one complete registered/standalone round trip
+preserved all five Node UIDs and schedulability and all 39 storage objects.
+Reverse conversion returned all five Nodes to Ready, removed the controller
+manifests and owned routes from every control plane, and restored the CRI socket
+annotations. A second forward conversion also preserved those identities while
+returning successfully despite controller route conflicts left by the CNI.
+
+Administrator host reboots were then performed sequentially. The first rebooted
+control plane recovered with only its five static containers, a ready API and
+controller, and three managed routes; all three etcd endpoints were healthy.
+The next host did not recover SSH or its API within the ten-minute observation
+window. The remaining two etcd endpoints and cluster API stayed healthy. After
+the host recovered, both rebooted control planes passed the network matrix.
+The seed control plane still had CNI route conflicts and required its own reboot.
+
+The second reverse conversion completed after resuming a Node update conflict.
+All five Nodes returned Ready with their UIDs, addresses, and schedulability
+unchanged. All controller manifests and owned routes were removed, and all
+three etcd endpoints were healthy. Node restoration now retries update conflicts
+within the conversion deadline after client-go's short retry budget is exhausted.
+
+Ordinary deletion of the restored non-seed control plane then completed with
+exit status zero. Native kubeadm automatically removed its etcd member; the
+remaining two endpoints were healthy, and the Node and inventory entry were
+removed. No manual etcd member removal was needed. Runtime sandbox cleanup
+reported warnings, which the existing kubeadm and image cleanup flow tolerated.
+All PV/PVC identities and bindings remained unchanged.
+
+Local tests passed for the standalone engine, Kubernetes runtime, apply drivers,
+processor, CLI packages, bootstrap, types, and new lifecycle journal cases.
+The three legacy Clusterfile rendering tests also fail on the unchanged upstream
+baseline. Incremental lint reported no issues, and the coverage packages passed
+with the race detector. Final publication and CI verification remain pending
+completion of the live regression.

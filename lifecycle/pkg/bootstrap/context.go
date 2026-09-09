@@ -101,5 +101,5 @@ func (e *maintenanceExecer) CmdAsync(host string, commands ...string) error {
 	if err := e.context.Err(); err != nil {
 		return err
 	}
-	return e.Interface.CmdAsyncWithContext(e.context, host, commands...)
+	return e.CmdAsyncWithContext(e.context, host, commands...)
 }

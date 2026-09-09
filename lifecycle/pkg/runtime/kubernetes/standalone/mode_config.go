@@ -6,7 +6,8 @@ package standalone
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
+	"errors"
+	"maps"
 	"os"
 	"path/filepath"
 	"strings"
@@ -22,7 +23,7 @@ const (
 	routeManifestPath = manifestDir + "/sealos-route-controller.yaml"
 )
 
-var standaloneSettings = map[string]interface{}{
+var standaloneSettings = map[string]any{
 	"enableServer":            false,
 	"enableDebuggingHandlers": false,
 	"readOnlyPort":            0,
@@ -34,7 +35,7 @@ var standaloneSettings = map[string]interface{}{
 
 func modeArgs(args []string) ([]string, error) {
 	if !filepath.IsAbs(flagValue(args, "config")) || flagValue(args, "config-dir") != "" {
-		return nil, fmt.Errorf("mode switching requires an absolute --config and no --config-dir")
+		return nil, errors.New("mode switching requires an absolute --config and no --config-dir")
 	}
 	// These flags override the public configuration and must not re-enable
 	// API calls or kubelet serving in standalone mode.
@@ -55,7 +56,8 @@ func modeArgs(args []string) ([]string, error) {
 	for i := 0; i < len(args); i++ {
 		name := strings.TrimPrefix(strings.SplitN(args[i], "=", 2)[0], "--")
 		if remove[name] {
-			if !strings.Contains(args[i], "=") && i+1 < len(args) && !strings.HasPrefix(args[i+1], "--") {
+			if !strings.Contains(args[i], "=") && i+1 < len(args) &&
+				!strings.HasPrefix(args[i+1], "--") {
 				i++
 			}
 			continue
@@ -67,7 +69,10 @@ func modeArgs(args []string) ([]string, error) {
 
 // Save and restore only the fields changed by conversion. A subsequent
 // standalone upgrade may have migrated unrelated configuration fields.
-func convertKubeletConfig(data []byte, original map[string]json.RawMessage) ([]byte, map[string]json.RawMessage, error) {
+func convertKubeletConfig(
+	data []byte,
+	original map[string]json.RawMessage,
+) ([]byte, map[string]json.RawMessage, error) {
 	var config map[string]json.RawMessage
 	if err := yaml.Unmarshal(data, &config); err != nil {
 		return nil, nil, err
@@ -83,27 +88,25 @@ func convertKubeletConfig(data []byte, original map[string]json.RawMessage) ([]b
 		result, err := yaml.Marshal(config)
 		return result, original, err
 	}
-	settings := make(map[string]interface{}, len(standaloneSettings)+2)
-	for key, value := range standaloneSettings {
-		settings[key] = value
-	}
-	var auth map[string]interface{}
+	settings := make(map[string]any, len(standaloneSettings)+2)
+	maps.Copy(settings, standaloneSettings)
+	var auth map[string]any
 	if value := config["authentication"]; value != nil {
 		if err := json.Unmarshal(value, &auth); err != nil {
 			return nil, nil, err
 		}
 	}
 	if auth == nil {
-		auth = make(map[string]interface{})
+		auth = make(map[string]any)
 	}
-	webhook, _ := auth["webhook"].(map[string]interface{})
+	webhook, _ := auth["webhook"].(map[string]any)
 	if webhook == nil {
-		webhook = make(map[string]interface{})
+		webhook = make(map[string]any)
 	}
 	webhook["enabled"] = false
 	auth["webhook"] = webhook
 	settings["authentication"] = auth
-	settings["authorization"] = map[string]interface{}{
+	settings["authorization"] = map[string]any{
 		"mode": "AlwaysAllow",
 	}
 	original = make(map[string]json.RawMessage, len(settings))

@@ -29,7 +29,11 @@ func (s *maintenanceSSH) CmdAsync(host string, commands ...string) error {
 	return s.Interface.CmdAsyncWithContext(s.ctx, host, commands...)
 }
 
-func (s *maintenanceSSH) CmdAsyncWithContext(ctx context.Context, host string, commands ...string) error {
+func (s *maintenanceSSH) CmdAsyncWithContext(
+	ctx context.Context,
+	host string,
+	commands ...string,
+) error {
 	if err := s.ctx.Err(); err != nil {
 		return err
 	}

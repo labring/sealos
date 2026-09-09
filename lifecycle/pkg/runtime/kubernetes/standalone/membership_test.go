@@ -14,10 +14,11 @@ import (
 )
 
 func TestEtcdMemberIdentityAndLearnerBootstrap(t *testing.T) {
-	members := []*etcdserverpb.Member{
+	members := make([]*etcdserverpb.Member, 0, 3)
+	members = append(members, []*etcdserverpb.Member{
 		{ID: 2, IsLearner: true, PeerURLs: []string{"https://192.0.2.2:2380"}},
 		{ID: 1, Name: "first", PeerURLs: []string{"https://192.0.2.1:2380"}},
-	}
+	}...)
 	member, err := memberByPeer(members, "https://192.0.2.2:2380")
 	if err != nil || member == nil || member.ID != 2 {
 		t.Fatalf("could not identify unnamed learner: %v, %v", member, err)
@@ -29,7 +30,10 @@ func TestEtcdMemberIdentityAndLearnerBootstrap(t *testing.T) {
 	if _, err := initialEtcdCluster(members, 2, "first"); err == nil {
 		t.Fatal("accepted duplicate etcd names")
 	}
-	members = append(members, &etcdserverpb.Member{ID: 3, PeerURLs: []string{"https://192.0.2.2:2380"}})
+	members = append(
+		members,
+		&etcdserverpb.Member{ID: 3, PeerURLs: []string{"https://192.0.2.2:2380"}},
+	)
 	if _, err := memberByPeer(members, "https://192.0.2.2:2380"); err == nil {
 		t.Fatal("accepted ambiguous peer identity")
 	}
@@ -111,7 +115,14 @@ authentication:
   webhook:
     enabled: true
 `)
-	config, err := BootstrapConfig(data, "v1.31.9", "new", "192.0.2.2", "unix:///run/containerd/containerd.sock", 6443)
+	config, err := BootstrapConfig(
+		data,
+		"v1.31.9",
+		"new",
+		"192.0.2.2",
+		"unix:///run/containerd/containerd.sock",
+		6443,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -122,7 +133,7 @@ authentication:
 	if init["patches"] == nil {
 		t.Fatal("discarded public patches setting")
 	}
-	registration := init["nodeRegistration"].(map[string]interface{})
+	registration := testMap(t, init["nodeRegistration"])
 	args, err := bootstrapKubeletArgs(registration, "unix:///run/containerd/containerd.sock", "new")
 	if err != nil {
 		t.Fatal(err)
@@ -131,16 +142,17 @@ authentication:
 	if err != nil {
 		t.Fatal(err)
 	}
-	if flagValue(args, "node-ip") != "192.0.2.2" || flagValue(args, "register-node") != "false" || flagValue(args, "kubeconfig") != "" {
+	if flagValue(args, "node-ip") != "192.0.2.2" || flagValue(args, "register-node") != "false" ||
+		flagValue(args, "kubeconfig") != "" {
 		t.Fatalf("lost local flags or enabled registration: %v", args)
 	}
 }
 
 func TestBootstrapBaselinePreservesFutureNodeIdentity(t *testing.T) {
-	registration := map[string]interface{}{
+	registration := map[string]any{
 		"name": "control-plane",
-		"taints": []interface{}{
-			map[string]interface{}{
+		"taints": []any{
+			map[string]any{
 				"key":    "dedicated",
 				"value":  "control-plane",
 				"effect": "NoSchedule",
@@ -154,18 +166,23 @@ func TestBootstrapBaselinePreservesFutureNodeIdentity(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if node.Name != "control-plane" || node.Labels["example.com/zone"] != "zone-a" || node.Spec.ProviderID != "example://control-plane" {
+	if node.Name != "control-plane" || node.Labels["example.com/zone"] != "zone-a" ||
+		node.Spec.ProviderID != "example://control-plane" {
 		t.Fatalf("lost future registered Node identity: %+v", node)
 	}
-	if len(node.Spec.Taints) != 1 || node.Spec.Taints[0].Key != "dedicated" || node.Spec.Taints[0].Effect != v1.TaintEffectNoSchedule {
+	if len(node.Spec.Taints) != 1 || node.Spec.Taints[0].Key != "dedicated" ||
+		node.Spec.Taints[0].Effect != v1.TaintEffectNoSchedule {
 		t.Fatalf("lost explicit bootstrap taints: %+v", node.Spec.Taints)
 	}
-	registration["taints"] = []interface{}{}
+	registration["taints"] = []any{}
 	node, err = bootstrapNode(registration, nil)
 	if err != nil || len(node.Spec.Taints) != 0 {
 		t.Fatalf("empty taints were replaced by defaults: %+v, %v", node, err)
 	}
-	if _, err := bootstrapNode(registration, []string{"--register-with-taints=dedicated=true:NoSchedule"}); err == nil {
+	if _, err := bootstrapNode(
+		registration,
+		[]string{"--register-with-taints=dedicated=true:NoSchedule"},
+	); err == nil {
 		t.Fatal("accepted a taint override that bypasses the saved baseline")
 	}
 }

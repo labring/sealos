@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -38,10 +39,10 @@ import (
 // BootstrapPlan is transported privately to the new host. Kubernetes config
 // remains serialized in its public schema so newer fields survive unchanged.
 type BootstrapPlan struct {
-	Config        []byte
-	Controller    RouteControllerOptions
-	Join          bool
-	EtcdEndpoints []string
+	Config        []byte                 `json:"Config"`
+	Controller    RouteControllerOptions `json:"Controller"`
+	Join          bool                   `json:"Join"`
+	EtcdEndpoints []string               `json:"EtcdEndpoints"`
 }
 
 type BootstrapOptions struct {
@@ -52,17 +53,40 @@ type BootstrapOptions struct {
 }
 
 type bootstrapState struct {
-	Plan      BootstrapPlan
-	MemberID  uint64
-	ClusterID uint64
-	Complete  bool
-	Baseline  *modeState
+	Plan      BootstrapPlan `json:"Plan"`
+	MemberID  uint64        `json:"MemberID"`
+	ClusterID uint64        `json:"ClusterID"`
+	Complete  bool          `json:"Complete"`
+	Baseline  *modeState    `json:"Baseline"`
 }
 
-const bootstrapStatePath = modeRoot + "/bootstrap.json"
-const registeredDropin = "/etc/systemd/system/kubelet.service.d/90-sealos-registered.conf"
+type preparedBootstrap struct {
+	state            *bootstrapState
+	cluster          map[string]any
+	init             map[string]any
+	kubelet          map[string]any
+	version          string
+	name             string
+	endpoint         string
+	address          string
+	args             []string
+	node             *v1.Node
+	kubeletData      []byte
+	standaloneConfig []byte
+	settings         map[string]json.RawMessage
+	manifest         []byte
+}
 
-func BootstrapConfig(data []byte, version, name, address, endpoint string, port int) ([]byte, error) {
+const (
+	bootstrapStatePath = modeRoot + "/bootstrap.json"
+	registeredDropin   = "/etc/systemd/system/kubelet.service.d/90-sealos-registered.conf"
+)
+
+func BootstrapConfig(
+	data []byte,
+	version, name, address, endpoint string,
+	port int,
+) ([]byte, error) {
 	api := &v1.Pod{
 		Spec: v1.PodSpec{
 			Containers: []v1.Container{
@@ -107,13 +131,15 @@ func bootstrapStandalone(ctx context.Context, options BootstrapOptions) error {
 	if err := ValidateVersionChange(version, version); err != nil {
 		return err
 	}
-	registration, _ := init["nodeRegistration"].(map[string]interface{})
+	registration, _ := init["nodeRegistration"].(map[string]any)
 	name, _ := registration["name"].(string)
 	endpoint, _ := registration["criSocket"].(string)
-	localAPI, _ := init["localAPIEndpoint"].(map[string]interface{})
+	localAPI, _ := init["localAPIEndpoint"].(map[string]any)
 	address, _ := localAPI["advertiseAddress"].(string)
 	if name == "" || endpoint == "" || net.ParseIP(address) == nil {
-		return fmt.Errorf("bootstrap config requires a node name, CRI socket, and API advertise address")
+		return errors.New(
+			"bootstrap config requires a node name, CRI socket, and API advertise address",
+		)
 	}
 	args, err := bootstrapKubeletArgs(registration, endpoint, name)
 	if err != nil {
@@ -140,7 +166,10 @@ func bootstrapStandalone(ctx context.Context, options BootstrapOptions) error {
 	for _, volume := range pod.Spec.Volumes {
 		info, err := os.Stat(volume.HostPath.Path)
 		if err != nil || !info.Mode().IsRegular() {
-			return fmt.Errorf("controller file %s must be provisioned before bootstrap", volume.HostPath.Path)
+			return fmt.Errorf(
+				"controller file %s must be provisioned before bootstrap",
+				volume.HostPath.Path,
+			)
 		}
 	}
 	manifest, err := yaml.Marshal(pod)
@@ -148,25 +177,32 @@ func bootstrapStandalone(ctx context.Context, options BootstrapOptions) error {
 		return err
 	}
 	saved, err := os.ReadFile(bootstrapStatePath)
-	if err == nil {
+	switch {
+	case err == nil:
 		var previous bootstrapState
 		if err := json.Unmarshal(saved, &previous); err != nil {
 			return err
 		}
 		if !reflect.DeepEqual(state.Plan, previous.Plan) {
-			return fmt.Errorf("bootstrap plan changed; resume with the original plan")
+			return errors.New("bootstrap plan changed; resume with the original plan")
 		}
 		state = &previous
-	} else if os.IsNotExist(err) {
+	case os.IsNotExist(err):
 		for _, path := range []string{filepath.Join(modeRoot, "state.json"), filepath.Join(manifestDir, "kube-apiserver.yaml"), "/etc/kubernetes/kubelet.conf"} {
 			if _, err := os.Stat(path); !os.IsNotExist(err) {
-				return fmt.Errorf("bootstrap requires a new control-plane host; existing file %s", path)
+				return fmt.Errorf(
+					"bootstrap requires a new control-plane host; existing file %s",
+					path,
+				)
 			}
 		}
-		if err := reservedRoutesEmpty(state.Plan.Controller.Table, state.Plan.Controller.Protocol); err != nil {
+		if err := reservedRoutesEmpty(
+			state.Plan.Controller.Table,
+			state.Plan.Controller.Protocol,
+		); err != nil {
 			return err
 		}
-	} else {
+	default:
 		return err
 	}
 	if err := validateBootstrapLayout(cluster); err != nil {
@@ -177,8 +213,15 @@ func bootstrapStandalone(ctx context.Context, options BootstrapOptions) error {
 		if err != nil {
 			return err
 		}
-		if _, err := client.CoreV1().Nodes().Get(ctx, name, metav1.GetOptions{}); !apierrors.IsNotFound(err) {
-			return fmt.Errorf("new standalone control-plane name already exists or cannot be checked: %v", err)
+		if _, err := client.CoreV1().
+			Nodes().
+			Get(ctx, name, metav1.GetOptions{}); !apierrors.IsNotFound(
+			err,
+		) {
+			return fmt.Errorf(
+				"new standalone control-plane name already exists or cannot be checked: %w",
+				err,
+			)
 		}
 	}
 	if options.CheckOnly {
@@ -193,6 +236,33 @@ func bootstrapStandalone(ctx context.Context, options BootstrapOptions) error {
 	if err := os.Remove(resetStatePath); err != nil && !os.IsNotExist(err) {
 		return err
 	}
+	prepared := &preparedBootstrap{
+		state:            state,
+		cluster:          cluster,
+		init:             init,
+		kubelet:          kubelet,
+		version:          version,
+		name:             name,
+		endpoint:         endpoint,
+		address:          address,
+		args:             args,
+		node:             node,
+		kubeletData:      kubeletData,
+		standaloneConfig: standaloneConfig,
+		settings:         settings,
+		manifest:         manifest,
+	}
+	return prepared.execute(ctx, options)
+}
+
+func (b *preparedBootstrap) execute(ctx context.Context, options BootstrapOptions) error {
+	state := b.state
+	cluster, init, kubelet := b.cluster, b.init, b.kubelet
+	version, name, endpoint, address := b.version, b.name, b.endpoint, b.address
+	args, node := b.args, b.node
+	kubeletData, standaloneConfig := b.kubeletData, b.standaloneConfig
+	settings, manifest := b.settings, b.manifest
+
 	runtime, err := connectKubeletRuntime(ctx, endpoint, args, kubeletData)
 	if err != nil {
 		return err
@@ -213,7 +283,11 @@ func bootstrapStandalone(ctx context.Context, options BootstrapOptions) error {
 	if err != nil {
 		return err
 	}
-	if err := atomicModeFile(modeDropin, []byte(serviceOverride(standaloneArgv)), 0o644); err != nil {
+	if err := atomicModeFile(
+		modeDropin,
+		[]byte(serviceOverride(standaloneArgv)),
+		0o644,
+	); err != nil {
 		return err
 	}
 	if err := maintenanceCommand(ctx, options.Output, "systemctl", "daemon-reload"); err != nil {
@@ -228,7 +302,15 @@ func bootstrapStandalone(ctx context.Context, options BootstrapOptions) error {
 	if err := atomicModeFile(configPath, state.Plan.Config, 0o600); err != nil {
 		return err
 	}
-	if err := maintenanceCommand(ctx, options.Output, "kubeadm", "config", "validate", "--config", configPath); err != nil {
+	if err := maintenanceCommand(
+		ctx,
+		options.Output,
+		"kubeadm",
+		"config",
+		"validate",
+		"--config",
+		configPath,
+	); err != nil {
 		return err
 	}
 	for _, phase := range [][]string{{"certs", "all"}, {"kubeconfig", "all"}} {
@@ -238,7 +320,7 @@ func bootstrapStandalone(ctx context.Context, options BootstrapOptions) error {
 			return err
 		}
 	}
-	etcd, _ := cluster["etcd"].(map[string]interface{})
+	etcd, _ := cluster["etcd"].(map[string]any)
 	_, external := etcd["external"]
 	var etcdClient *clientv3.Client
 	if state.Plan.Join && !external {
@@ -254,7 +336,7 @@ func bootstrapStandalone(ctx context.Context, options BootstrapOptions) error {
 	// Write the modified cluster config through the same public schema. The
 	// initial-cluster flags describe etcd membership, not Kubernetes Nodes.
 	var documents []byte
-	for _, doc := range []map[string]interface{}{cluster, init, kubelet} {
+	for _, doc := range []map[string]any{cluster, init, kubelet} {
 		encoded, err := yaml.Marshal(doc)
 		if err != nil {
 			return err
@@ -326,25 +408,30 @@ func bootstrapStandalone(ctx context.Context, options BootstrapOptions) error {
 		}
 	}
 	if etcdClient != nil {
-		if err := wait.PollUntilContextCancel(ctx, 2*time.Second, true, func(ctx context.Context) (bool, error) {
-			list, err := etcdClient.MemberList(ctx)
-			if err != nil {
-				return false, err
-			}
-			for _, member := range list.Members {
-				if member.ID == state.MemberID {
-					if !member.IsLearner {
-						return true, nil
-					}
-					_, err := etcdClient.MemberPromote(ctx, state.MemberID)
-					if err == rpctypes.ErrMemberLearnerNotReady {
-						return false, nil
-					}
-					return err == nil, err
+		if err := wait.PollUntilContextCancel(
+			ctx,
+			2*time.Second,
+			true,
+			func(ctx context.Context) (bool, error) {
+				list, err := etcdClient.MemberList(ctx)
+				if err != nil {
+					return false, err
 				}
-			}
-			return false, fmt.Errorf("joining etcd member disappeared")
-		}); err != nil {
+				for _, member := range list.Members {
+					if member.ID == state.MemberID {
+						if !member.IsLearner {
+							return true, nil
+						}
+						_, err := etcdClient.MemberPromote(ctx, state.MemberID)
+						if errors.Is(err, rpctypes.ErrMemberLearnerNotReady) {
+							return false, nil
+						}
+						return err == nil, err
+					}
+				}
+				return false, errors.New("joining etcd member disappeared")
+			},
+		); err != nil {
 			return err
 		}
 		if err := etcdHealthy(ctx, etcdClient); err != nil {
@@ -358,7 +445,7 @@ func bootstrapStandalone(ctx context.Context, options BootstrapOptions) error {
 	return saveBootstrapState(state)
 }
 
-func bootstrapNode(registration map[string]interface{}, args []string) (*v1.Node, error) {
+func bootstrapNode(registration map[string]any, args []string) (*v1.Node, error) {
 	name, _ := registration["name"].(string)
 	node := &v1.Node{
 		ObjectMeta: metav1.ObjectMeta{
@@ -368,7 +455,9 @@ func bootstrapNode(registration map[string]interface{}, args []string) (*v1.Node
 		},
 		Spec: v1.NodeSpec{
 			ProviderID: flagValue(args, "provider-id"),
-			Taints:     []v1.Taint{{Key: "node-role.kubernetes.io/control-plane", Effect: v1.TaintEffectNoSchedule}},
+			Taints: []v1.Taint{
+				{Key: "node-role.kubernetes.io/control-plane", Effect: v1.TaintEffectNoSchedule},
+			},
 		},
 	}
 	if taints := registration["taints"]; taints != nil {
@@ -381,7 +470,9 @@ func bootstrapNode(registration map[string]interface{}, args []string) (*v1.Node
 		}
 	}
 	if flagValue(args, "register-with-taints") != "" {
-		return nil, fmt.Errorf("configure bootstrap taints through nodeRegistration.taints instead of kubeletExtraArgs")
+		return nil, errors.New(
+			"configure bootstrap taints through nodeRegistration.taints instead of kubeletExtraArgs",
+		)
 	}
 	if labels := flagValue(args, "node-labels"); labels != "" {
 		for _, item := range strings.Split(labels, ",") {
@@ -397,7 +488,7 @@ func bootstrapNode(registration map[string]interface{}, args []string) (*v1.Node
 
 func verifyBootstrap(ctx context.Context, options BootstrapOptions, state *bootstrapState) error {
 	if state.Baseline == nil {
-		return fmt.Errorf("bootstrap baseline is missing")
+		return errors.New("bootstrap baseline is missing")
 	}
 	pod, err := routeControllerPod(state.Plan.Controller)
 	if err != nil {
@@ -411,7 +502,12 @@ func verifyBootstrap(ctx context.Context, options BootstrapOptions, state *boots
 	if err != nil {
 		return err
 	}
-	runtime, err := connectKubeletRuntime(ctx, state.Baseline.Endpoint, state.Baseline.Args, kubeletConfig)
+	runtime, err := connectKubeletRuntime(
+		ctx,
+		state.Baseline.Endpoint,
+		state.Baseline.Args,
+		kubeletConfig,
+	)
 	if err != nil {
 		return err
 	}
@@ -430,23 +526,32 @@ func verifyBootstrap(ctx context.Context, options BootstrapOptions, state *boots
 	// health and absence of registration are required; controller readiness is
 	// checked on join once the cluster already has its network configured.
 	if state.Plan.Join {
-		err = m.waitReady(ctx)
+		err = m.waitReady(ctx, true)
 	} else {
-		err = wait.PollUntilContextCancel(ctx, 2*time.Second, true, func(ctx context.Context) (bool, error) {
-			if _, err := client.CoreV1().Nodes().Get(ctx, state.Baseline.Node.Name, metav1.GetOptions{}); !apierrors.IsNotFound(err) {
-				return false, nil
-			}
-			for _, component := range controlPlaneComponents {
-				pod, err := readPod(filepath.Join(manifestDir, component+".yaml"))
-				if err != nil {
-					return false, err
-				}
-				if err := m.podReady(ctx, pod); err != nil {
+		err = wait.PollUntilContextCancel(
+			ctx,
+			2*time.Second,
+			true,
+			func(ctx context.Context) (bool, error) {
+				if _, err := client.CoreV1().
+					Nodes().
+					Get(ctx, state.Baseline.Node.Name, metav1.GetOptions{}); !apierrors.IsNotFound(
+					err,
+				) {
 					return false, nil
 				}
-			}
-			return true, nil
-		})
+				for _, component := range controlPlaneComponents {
+					pod, err := readPod(filepath.Join(manifestDir, component+".yaml"))
+					if err != nil {
+						return false, err
+					}
+					if err := m.podReady(ctx, pod); err != nil {
+						return false, nil
+					}
+				}
+				return true, nil
+			},
+		)
 	}
 	return err
 }
@@ -472,28 +577,33 @@ func bootstrapAdminAccess(ctx context.Context, version string) error {
 	if err != nil {
 		return err
 	}
-	return wait.PollUntilContextCancel(ctx, 2*time.Second, true, func(ctx context.Context) (bool, error) {
-		_, err := client.RbacV1().ClusterRoleBindings().Create(ctx, &rbacv1.ClusterRoleBinding{
-			ObjectMeta: metav1.ObjectMeta{Name: "kubeadm:cluster-admins"},
-			RoleRef: rbacv1.RoleRef{
-				APIGroup: rbacv1.GroupName,
-				Kind:     "ClusterRole",
-				Name:     "cluster-admin",
-			},
-			Subjects: []rbacv1.Subject{{
-				Kind:     rbacv1.GroupKind,
-				APIGroup: rbacv1.GroupName,
-				Name:     "kubeadm:cluster-admins",
-			}},
-		}, metav1.CreateOptions{})
-		if err == nil || apierrors.IsAlreadyExists(err) {
-			return true, nil
-		}
-		if apierrors.IsForbidden(err) || apierrors.IsUnauthorized(err) {
-			return false, err
-		}
-		return false, nil
-	})
+	return wait.PollUntilContextCancel(
+		ctx,
+		2*time.Second,
+		true,
+		func(ctx context.Context) (bool, error) {
+			_, err := client.RbacV1().ClusterRoleBindings().Create(ctx, &rbacv1.ClusterRoleBinding{
+				ObjectMeta: metav1.ObjectMeta{Name: "kubeadm:cluster-admins"},
+				RoleRef: rbacv1.RoleRef{
+					APIGroup: rbacv1.GroupName,
+					Kind:     "ClusterRole",
+					Name:     "cluster-admin",
+				},
+				Subjects: []rbacv1.Subject{{
+					Kind:     rbacv1.GroupKind,
+					APIGroup: rbacv1.GroupName,
+					Name:     "kubeadm:cluster-admins",
+				}},
+			}, metav1.CreateOptions{})
+			if err == nil || apierrors.IsAlreadyExists(err) {
+				return true, nil
+			}
+			if apierrors.IsForbidden(err) || apierrors.IsUnauthorized(err) {
+				return false, err
+			}
+			return false, nil
+		},
+	)
 }
 
 func bootstrapAPIClientFrom(path string) (*clientset.Clientset, error) {
@@ -531,7 +641,7 @@ func installSharedPKI() error {
 
 func bootstrapEtcdClient(endpoints []string) (*clientv3.Client, error) {
 	if len(endpoints) == 0 {
-		return nil, fmt.Errorf("stacked etcd join requires an existing etcd endpoint")
+		return nil, errors.New("stacked etcd join requires an existing etcd endpoint")
 	}
 	tlsInfo := transport.TLSInfo{
 		TrustedCAFile: "/etc/kubernetes/pki/etcd/ca.crt",
@@ -549,14 +659,20 @@ func bootstrapEtcdClient(endpoints []string) (*clientv3.Client, error) {
 	})
 }
 
-func joinEtcdLearner(ctx context.Context, client *clientv3.Client, state *bootstrapState, cluster map[string]interface{}, name, address string) error {
+func joinEtcdLearner(
+	ctx context.Context,
+	client *clientv3.Client,
+	state *bootstrapState,
+	cluster map[string]any,
+	name, address string,
+) error {
 	peer := "https://" + net.JoinHostPort(address, "2380")
 	list, err := client.MemberList(ctx)
 	if err != nil {
 		return err
 	}
 	if state.ClusterID != 0 && state.ClusterID != list.Header.ClusterId {
-		return fmt.Errorf("etcd cluster identity changed during bootstrap")
+		return errors.New("etcd cluster identity changed during bootstrap")
 	}
 	member, err := memberByPeer(list.Members, peer)
 	if err != nil {
@@ -564,7 +680,9 @@ func joinEtcdLearner(ctx context.Context, client *clientv3.Client, state *bootst
 	}
 	if member == nil {
 		if state.MemberID != 0 {
-			return fmt.Errorf("joining etcd member was removed; reset this host before joining again")
+			return errors.New(
+				"joining etcd member was removed; reset this host before joining again",
+			)
 		}
 		if err := etcdHealthy(ctx, client); err != nil {
 			return err
@@ -580,7 +698,7 @@ func joinEtcdLearner(ctx context.Context, client *clientv3.Client, state *bootst
 		member = response.Member
 		list.Members = response.Members
 	} else if state.ClusterID == 0 || (state.MemberID != 0 && state.MemberID != member.ID) {
-		return fmt.Errorf("the requested peer URL belongs to another etcd member")
+		return errors.New("the requested peer URL belongs to another etcd member")
 	}
 	state.MemberID = member.ID
 	if err := saveBootstrapState(state); err != nil {
@@ -590,14 +708,14 @@ func joinEtcdLearner(ctx context.Context, client *clientv3.Client, state *bootst
 	if err != nil {
 		return err
 	}
-	etcd, _ := cluster["etcd"].(map[string]interface{})
+	etcd, _ := cluster["etcd"].(map[string]any)
 	if etcd == nil {
-		etcd = make(map[string]interface{})
+		etcd = make(map[string]any)
 		cluster["etcd"] = etcd
 	}
-	local, _ := etcd["local"].(map[string]interface{})
+	local, _ := etcd["local"].(map[string]any)
 	if local == nil {
-		local = make(map[string]interface{})
+		local = make(map[string]any)
 		etcd["local"] = local
 	}
 	return setPublicExtraArgs(cluster, local, map[string]string{
@@ -614,13 +732,13 @@ func saveBootstrapState(state *bootstrapState) error {
 	return atomicModeFile(bootstrapStatePath, data, 0o600)
 }
 
-func bootstrapDocuments(data []byte) (map[string]interface{}, map[string]interface{}, map[string]interface{}, error) {
-	documents := make(map[string]map[string]interface{})
+func bootstrapDocuments(data []byte) (map[string]any, map[string]any, map[string]any, error) {
+	documents := make(map[string]map[string]any)
 	decoder := utilyaml.NewYAMLOrJSONDecoder(bytes.NewReader(data), 4096)
 	for {
-		var document map[string]interface{}
+		var document map[string]any
 		err := decoder.Decode(&document)
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
@@ -643,7 +761,7 @@ func bootstrapDocuments(data []byte) (map[string]interface{}, map[string]interfa
 	return documents["ClusterConfiguration"], documents["InitConfiguration"], documents["KubeletConfiguration"], nil
 }
 
-func bootstrapKubeletArgs(registration map[string]interface{}, endpoint, name string) ([]string, error) {
+func bootstrapKubeletArgs(registration map[string]any, endpoint, name string) ([]string, error) {
 	args := []string{
 		"--config=/var/lib/kubelet/config.yaml",
 		"--kubeconfig=/etc/kubernetes/kubelet.conf",
@@ -652,7 +770,7 @@ func bootstrapKubeletArgs(registration map[string]interface{}, endpoint, name st
 	}
 	switch extra := registration["kubeletExtraArgs"].(type) {
 	case nil:
-	case map[string]interface{}:
+	case map[string]any:
 		keys := make([]string, 0, len(extra))
 		for key := range extra {
 			keys = append(keys, key)
@@ -661,34 +779,37 @@ func bootstrapKubeletArgs(registration map[string]interface{}, endpoint, name st
 		for _, key := range keys {
 			args = append(args, "--"+key+"="+fmt.Sprint(extra[key]))
 		}
-	case []interface{}:
+	case []any:
 		for _, value := range extra {
-			arg, ok := value.(map[string]interface{})
+			arg, ok := value.(map[string]any)
 			if !ok {
-				return nil, fmt.Errorf("invalid kubeletExtraArgs entry")
+				return nil, errors.New("invalid kubeletExtraArgs entry")
 			}
 			key, _ := arg["name"].(string)
 			value, _ := arg["value"].(string)
 			args = append(args, "--"+key+"="+value)
 		}
 	default:
-		return nil, fmt.Errorf("invalid kubeletExtraArgs format")
+		return nil, errors.New("invalid kubeletExtraArgs format")
 	}
-	if flagValue(args, "config") != "/var/lib/kubelet/config.yaml" || flagValue(args, "kubeconfig") != "/etc/kubernetes/kubelet.conf" || flagValue(args, "hostname-override") != name || flagValue(args, "container-runtime-endpoint") != endpoint {
-		return nil, fmt.Errorf("kubeletExtraArgs must not override bootstrap paths or identity")
+	if flagValue(args, "config") != "/var/lib/kubelet/config.yaml" ||
+		flagValue(args, "kubeconfig") != "/etc/kubernetes/kubelet.conf" ||
+		flagValue(args, "hostname-override") != name ||
+		flagValue(args, "container-runtime-endpoint") != endpoint {
+		return nil, errors.New("kubeletExtraArgs must not override bootstrap paths or identity")
 	}
 	return args, nil
 }
 
-func setPublicExtraArgs(cluster, component map[string]interface{}, values map[string]string) error {
+func setPublicExtraArgs(cluster, component map[string]any, values map[string]string) error {
 	version, _ := cluster["apiVersion"].(string)
 	if strings.HasSuffix(version, "/v1beta4") {
-		args, _ := component["extraArgs"].([]interface{})
-		var result []interface{}
+		args, _ := component["extraArgs"].([]any)
+		var result []any
 		for _, item := range args {
-			arg, ok := item.(map[string]interface{})
+			arg, ok := item.(map[string]any)
 			if !ok {
-				return fmt.Errorf("invalid extraArgs entry")
+				return errors.New("invalid extraArgs entry")
 			}
 			name, _ := arg["name"].(string)
 			if _, replace := values[name]; !replace {
@@ -696,7 +817,7 @@ func setPublicExtraArgs(cluster, component map[string]interface{}, values map[st
 			}
 		}
 		for name, value := range values {
-			result = append(result, map[string]interface{}{
+			result = append(result, map[string]any{
 				"name":  name,
 				"value": value,
 			})
@@ -707,9 +828,9 @@ func setPublicExtraArgs(cluster, component map[string]interface{}, values map[st
 	if !strings.HasSuffix(version, "/v1beta3") {
 		return fmt.Errorf("unsupported kubeadm config API %s", strconv.Quote(version))
 	}
-	args, _ := component["extraArgs"].(map[string]interface{})
+	args, _ := component["extraArgs"].(map[string]any)
 	if args == nil {
-		args = make(map[string]interface{})
+		args = make(map[string]any)
 	}
 	for name, value := range values {
 		args[name] = value

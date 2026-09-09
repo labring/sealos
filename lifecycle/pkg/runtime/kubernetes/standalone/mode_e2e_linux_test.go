@@ -115,7 +115,9 @@ func TestModeRoundTripE2E(t *testing.T) {
 			key:  "config.conf",
 		},
 	} {
-		cm, err := client.CoreV1().ConfigMaps("kube-system").Get(ctx, source.name, metav1.GetOptions{})
+		cm, err := client.CoreV1().
+			ConfigMaps("kube-system").
+			Get(ctx, source.name, metav1.GetOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -158,7 +160,7 @@ func TestModeRoundTripE2E(t *testing.T) {
 		if err := reservedRoutesEmpty(controller.Table, controller.Protocol); err != nil {
 			t.Fatal(err)
 		}
-		if err := reservedRoutesEmpty(controller.Table, int(unrelated.Protocol)); err == nil {
+		if err := reservedRoutesEmpty(controller.Table, unrelated.Protocol); err == nil {
 			t.Fatal("reverse conversion removed an unrelated route")
 		}
 		if _, err := os.Stat(routeManifestPath); !os.IsNotExist(err) {
@@ -179,7 +181,7 @@ func TestModeRoundTripE2E(t *testing.T) {
 		t.Fatal("preflight wrote the conversion baseline")
 	}
 	options.CheckOnly = false
-	for round := 0; round < 2; round++ {
+	for round := range 2 {
 		t.Logf("round %d: registered -> standalone", round+1)
 		options.Mode = ModeStandalone
 		options.RouteController = &controller
@@ -190,7 +192,8 @@ func TestModeRoundTripE2E(t *testing.T) {
 			t.Fatalf("standalone retry: %v", err)
 		}
 		retained, err := client.CoreV1().Nodes().Get(ctx, name, metav1.GetOptions{})
-		if err != nil || retained.UID != originalUID || retained.Spec.Unschedulable != originalUnschedulable {
+		if err != nil || retained.UID != originalUID ||
+			retained.Spec.Unschedulable != originalUnschedulable {
 			t.Fatalf("standalone conversion changed the administrator-owned Node: %v", err)
 		}
 		if round == 1 && os.Getenv("SEALOS_MODE_UPGRADE_BINARIES") != "" {
@@ -218,16 +221,22 @@ func TestModeRoundTripE2E(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if node.UID != originalUID || node.Labels["example.com/mode-test"] != "preserved" || node.Annotations["example.com/mode-test"] != "preserved" || node.Spec.Unschedulable != originalUnschedulable {
+		if node.UID != originalUID || node.Labels["example.com/mode-test"] != "preserved" ||
+			node.Annotations["example.com/mode-test"] != "preserved" ||
+			node.Spec.Unschedulable != originalUnschedulable {
 			t.Fatalf("incorrect registered node restoration: %+v", node)
 		}
 		verifyCleanup()
-		if round == 1 && os.Getenv("SEALOS_MODE_UPGRADE_BINARIES") != "" && !strings.HasPrefix(node.Status.NodeInfo.KubeletVersion, "v1.31.9") {
-			t.Fatalf("reverse conversion reverted upgraded kubelet: %s", node.Status.NodeInfo.KubeletVersion)
+		if round == 1 && os.Getenv("SEALOS_MODE_UPGRADE_BINARIES") != "" &&
+			!strings.HasPrefix(node.Status.NodeInfo.KubeletVersion, "v1.31.9") {
+			t.Fatalf(
+				"reverse conversion reverted upgraded kubelet: %s",
+				node.Status.NodeInfo.KubeletVersion,
+			)
 		}
 	}
-	for _, recoverForward := range []bool{true, false} {
-		t.Logf("readiness failure, resume forward=%t", recoverForward)
+	for _, recoverReadiness := range []bool{true, false} {
+		t.Logf("unready controller, recover readiness before reversing=%t", recoverReadiness)
 		setReadiness("not-ready")
 		options.Mode = ModeStandalone
 		options.RouteController = &controller
@@ -237,26 +246,32 @@ func TestModeRoundTripE2E(t *testing.T) {
 		}
 		retained, err := client.CoreV1().Nodes().Get(ctx, name, metav1.GetOptions{})
 		if err != nil || retained.UID != originalUID {
-			t.Fatalf("standalone conversion removed or replaced the administrator-owned Node: %v", err)
+			t.Fatalf(
+				"standalone conversion removed or replaced the administrator-owned Node: %v",
+				err,
+			)
 		}
 		args, err := kubeletArgv(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
 		if _, err := standaloneArgs(args); err != nil {
-			t.Fatalf("failed conversion re-enabled kubelet API access: %v", err)
+			t.Fatalf("conversion left kubelet API access enabled: %v", err)
+		}
+		if _, err := SavedRouteControllerOptions(); err != nil {
+			t.Fatalf("unready controller left the mode transition pending: %v", err)
 		}
 		options.Timeout = 4 * time.Minute
-		if recoverForward {
+		if recoverReadiness {
 			setReadiness("ready")
 			if err := SwitchMode(ctx, options); err != nil {
-				t.Fatalf("resume failed conversion: %v", err)
+				t.Fatalf("repeat conversion after controller recovery: %v", err)
 			}
 		}
 		options.Mode = ModeRegistered
 		options.RouteController = nil
 		if err := SwitchMode(ctx, options); err != nil {
-			t.Fatalf("reverse failed conversion: %v", err)
+			t.Fatalf("reverse conversion with asynchronous controller readiness: %v", err)
 		}
 		verifyCleanup()
 		setReadiness("ready")

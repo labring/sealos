@@ -23,9 +23,13 @@ func newStandaloneUpgradeCmd() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&options.Config, "config", "", "ClusterConfiguration file")
 	cmd.Flags().StringVar(&options.Version, "version", "", "Target Kubernetes version")
-	cmd.Flags().StringVar(&options.BinaryDir, "binary-dir", "", "Directory containing the target kubeadm, kubelet and kubectl")
-	cmd.Flags().StringVar(&options.PatchesDir, "patches", "", "Absolute directory of kubeadm static Pod patches on this host")
-	cmd.Flags().BoolVar(&options.CheckOnly, "check-only", false, "Check prerequisites and prepare manifests without replacing running components")
-	cmd.Flags().DurationVar(&options.Timeout, "timeout", 5*time.Minute, "Timeout for snapshot and component readiness")
+	cmd.Flags().
+		StringVar(&options.BinaryDir, "binary-dir", "", "Directory containing the target kubeadm, kubelet and kubectl")
+	cmd.Flags().
+		StringVar(&options.PatchesDir, "patches", "", "Absolute directory of kubeadm static Pod patches on this host")
+	cmd.Flags().
+		BoolVar(&options.CheckOnly, "check-only", false, "Check prerequisites and prepare manifests without replacing running components")
+	cmd.Flags().
+		DurationVar(&options.Timeout, "timeout", 5*time.Minute, "Timeout for snapshot and component readiness")
 	return cmd
 }

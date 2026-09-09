@@ -7,7 +7,11 @@ import "testing"
 
 func TestReplaceRootfsImageWithSameVersionRebuild(t *testing.T) {
 	cluster := &Cluster{}
-	cluster.Spec.Image = []string{"example/kubernetes:original", "example/patch:v1", "example/kubernetes:rebuilt"}
+	cluster.Spec.Image = []string{
+		"example/kubernetes:original",
+		"example/patch:v1",
+		"example/kubernetes:rebuilt",
+	}
 	cluster.Status.Mounts = []MountImage{
 		{
 			Type:      RootfsImage,
@@ -34,7 +38,8 @@ func TestReplaceRootfsImageWithSameVersionRebuild(t *testing.T) {
 	if cluster.Status.Mounts[1].ImageName != "example/patch:v1" {
 		t.Fatal("unrelated patch image changed")
 	}
-	if len(cluster.Spec.Image) != 2 || cluster.Spec.Image[0] != "example/patch:v1" || cluster.Spec.Image[1] != "example/kubernetes:rebuilt" {
+	if len(cluster.Spec.Image) != 2 || cluster.Spec.Image[0] != "example/patch:v1" ||
+		cluster.Spec.Image[1] != "example/kubernetes:rebuilt" {
 		t.Fatalf("desired images still reference the replaced rootfs: %v", cluster.Spec.Image)
 	}
 }

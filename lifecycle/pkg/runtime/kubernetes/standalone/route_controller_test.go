@@ -16,30 +16,38 @@ func TestGeneratedRouteControllerContract(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if pod.Name != "route-controller" || pod.Namespace != "kube-system" || !pod.Spec.HostNetwork || len(pod.Spec.Containers) != 1 {
+	if pod.Name != "route-controller" || pod.Namespace != "kube-system" || !pod.Spec.HostNetwork ||
+		len(pod.Spec.Containers) != 1 {
 		t.Fatalf("invalid static Pod identity: %+v", pod)
 	}
 	container := pod.Spec.Containers[0]
-	if container.Image != DefaultRouteControllerImage || container.ImagePullPolicy != v1.PullIfNotPresent {
+	if container.Image != DefaultRouteControllerImage ||
+		container.ImagePullPolicy != v1.PullIfNotPresent {
 		t.Fatalf("unexpected image settings: %+v", container)
 	}
 	security := container.SecurityContext
-	if *security.RunAsUser != 0 || *security.AllowPrivilegeEscalation || !*security.ReadOnlyRootFilesystem ||
+	if *security.RunAsUser != 0 || *security.AllowPrivilegeEscalation ||
+		!*security.ReadOnlyRootFilesystem ||
 		!reflect.DeepEqual(security.Capabilities.Add, []v1.Capability{"NET_ADMIN"}) ||
 		!reflect.DeepEqual(security.Capabilities.Drop, []v1.Capability{"ALL"}) {
 		t.Fatalf("unexpected security context: %+v", security)
 	}
-	if len(pod.Spec.Volumes) != 1 || pod.Spec.Volumes[0].HostPath.Path != DefaultRouteControllerKubeconfig || *pod.Spec.Volumes[0].HostPath.Type != v1.HostPathFile {
+	if len(pod.Spec.Volumes) != 1 ||
+		pod.Spec.Volumes[0].HostPath.Path != DefaultRouteControllerKubeconfig ||
+		*pod.Spec.Volumes[0].HostPath.Type != v1.HostPathFile {
 		t.Fatalf("invalid kubeconfig mount: %+v", pod.Spec.Volumes)
 	}
-	if !container.VolumeMounts[0].ReadOnly || flagValue(container.Args, "kubeconfig") != container.VolumeMounts[0].MountPath {
+	if !container.VolumeMounts[0].ReadOnly ||
+		flagValue(container.Args, "kubeconfig") != container.VolumeMounts[0].MountPath {
 		t.Fatal("kubeconfig argument does not match its read-only mount")
 	}
 	for path, probe := range map[string]*v1.Probe{
 		"/readyz":  container.ReadinessProbe,
 		"/healthz": container.LivenessProbe,
 	} {
-		if probe == nil || probe.HTTPGet == nil || probe.HTTPGet.Path != path || probe.HTTPGet.Host != "127.0.0.1" || probe.HTTPGet.Port.IntVal != 9919 {
+		if probe == nil || probe.HTTPGet == nil || probe.HTTPGet.Path != path ||
+			probe.HTTPGet.Host != "127.0.0.1" ||
+			probe.HTTPGet.Port.IntVal != 9919 {
 			t.Fatalf("invalid %s probe: %+v", path, probe)
 		}
 	}
@@ -71,7 +79,9 @@ func TestGeneratedRouteControllerExplicitOwnership(t *testing.T) {
 			t.Fatalf("%s: got %q, want %q", name, got, want)
 		}
 	}
-	if container.Image != options.Image || len(pod.Spec.Volumes) != 2 || pod.Spec.Volumes[0].HostPath.Path != options.Kubeconfig || pod.Spec.Volumes[1].HostPath.Path != options.Config {
+	if container.Image != options.Image || len(pod.Spec.Volumes) != 2 ||
+		pod.Spec.Volumes[0].HostPath.Path != options.Kubeconfig ||
+		pod.Spec.Volumes[1].HostPath.Path != options.Config {
 		t.Fatalf("controller options lost: %+v", pod.Spec)
 	}
 }

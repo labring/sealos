@@ -6,18 +6,19 @@ package kubernetes
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
-
-	"sigs.k8s.io/yaml"
 
 	sealoskube "github.com/labring/sealos/pkg/client-go/kubernetes"
 	"github.com/labring/sealos/pkg/runtime/kubernetes/standalone"
 	"github.com/labring/sealos/pkg/utils/iputils"
+	"sigs.k8s.io/yaml"
 )
 
 func (k *KubeadmRuntime) initStandaloneMaster() error {
@@ -72,7 +73,11 @@ func (k *KubeadmRuntime) initStandaloneMaster() error {
 			return err
 		}
 	}
-	if err := k.sshFetch(host, "/etc/kubernetes/admin.conf", k.pathResolver.AdminFile()); err != nil {
+	if err := k.sshFetch(
+		host,
+		"/etc/kubernetes/admin.conf",
+		k.pathResolver.AdminFile(),
+	); err != nil {
 		return err
 	}
 	return k.copyMasterKubeConfig(host)
@@ -89,15 +94,24 @@ func (k *KubeadmRuntime) joinStandaloneMasters(hosts []string) error {
 		}
 	}
 	if len(existing) == 0 {
-		return fmt.Errorf("standalone join requires an existing control plane")
+		return errors.New("standalone join requires an existing control plane")
 	}
 	seed := existing[0]
-	client, err := sealoskube.NewKubernetesClient(k.pathResolver.AdminFile(), "https://"+net.JoinHostPort(iputils.GetHostIP(seed), strconv.Itoa(int(k.getAPIServerPort()))))
+	client, err := sealoskube.NewKubernetesClient(
+		k.pathResolver.AdminFile(),
+		"https://"+net.JoinHostPort(
+			iputils.GetHostIP(seed),
+			strconv.Itoa(int(k.getAPIServerPort())),
+		),
+	)
 	if err != nil {
 		return err
 	}
 	k.cli = client
-	controllerJSON, err := k.sshCmdToString(seed, shellArgument(k.pathResolver.RootFSSealctlPath())+" standalone controller-config")
+	controllerJSON, err := k.sshCmdToString(
+		seed,
+		shellArgument(k.pathResolver.RootFSSealctlPath())+" standalone controller-config",
+	)
 	if err != nil {
 		return err
 	}
@@ -115,7 +129,7 @@ func (k *KubeadmRuntime) joinStandaloneMasters(hosts []string) error {
 	}
 	var layout struct {
 		Etcd struct {
-			External interface{}
+			External any
 		}
 	}
 	if err := yaml.Unmarshal([]byte(clusterConfig), &layout); err != nil {
@@ -132,7 +146,10 @@ func (k *KubeadmRuntime) joinStandaloneMasters(hosts []string) error {
 	}
 	var endpoints []string
 	if !externalEtcd {
-		output, err := k.sshCmdToString(seed, shellArgument(k.pathResolver.RootFSSealctlPath())+" standalone etcd-endpoints")
+		output, err := k.sshCmdToString(
+			seed,
+			shellArgument(k.pathResolver.RootFSSealctlPath())+" standalone etcd-endpoints",
+		)
 		if err != nil {
 			return err
 		}
@@ -176,7 +193,10 @@ func (k *KubeadmRuntime) joinStandaloneMasters(hosts []string) error {
 	return nil
 }
 
-func (k *KubeadmRuntime) prepareStandaloneBootstrap(host string, plan standalone.BootstrapPlan) (string, error) {
+func (k *KubeadmRuntime) prepareStandaloneBootstrap(
+	host string,
+	plan standalone.BootstrapPlan,
+) (string, error) {
 	name, err := k.execHostname(host)
 	if err != nil {
 		return "", err
@@ -190,9 +210,18 @@ func (k *KubeadmRuntime) prepareStandaloneBootstrap(host string, plan standalone
 	}
 	version := k.getKubeVersion()
 	if version == "" {
-		return "", fmt.Errorf("cannot determine Kubernetes version from kubeadm configuration or committed rootfs image labels")
+		return "", errors.New(
+			"cannot determine Kubernetes version from kubeadm configuration or committed rootfs image labels",
+		)
 	}
-	plan.Config, err = standalone.BootstrapConfig(plan.Config, version, name, iputils.GetHostIP(host), endpoint, int(k.getAPIServerPort()))
+	plan.Config, err = standalone.BootstrapConfig(
+		plan.Config,
+		version,
+		name,
+		iputils.GetHostIP(host),
+		endpoint,
+		int(k.getAPIServerPort()),
+	)
 	if err != nil {
 		return "", err
 	}
@@ -210,7 +239,10 @@ func (k *KubeadmRuntime) prepareStandaloneBootstrap(host string, plan standalone
 		return "", err
 	}
 	remote := "/var/lib/sealos/control-plane-mode/input.json"
-	if err := k.sshCmdAsync(host, "install -d -m 700 "+shellArgument(filepath.Dir(remote))); err != nil {
+	if err := k.sshCmdAsync(
+		host,
+		"install -d -m 700 "+shellArgument(filepath.Dir(remote)),
+	); err != nil {
 		return "", err
 	}
 	if err := k.sshCopy(host, local, remote+".incoming"); err != nil {
@@ -223,16 +255,30 @@ func (k *KubeadmRuntime) prepareStandaloneBootstrap(host string, plan standalone
 		"; else mv -- "+shellArgument(remote+".incoming")+" "+shellArgument(remote)+"; fi"); err != nil {
 		return "", err
 	}
-	return shellArgument(k.pathResolver.RootFSSealctlPath()) + " standalone bootstrap --plan " + shellArgument(remote), nil
+	return shellArgument(
+		k.pathResolver.RootFSSealctlPath(),
+	) + " standalone bootstrap --plan " + shellArgument(
+		remote,
+	), nil
 }
 
-func (k *KubeadmRuntime) copyStandaloneSharedCredentials(seed, host string, externalEtcd bool) error {
+func (k *KubeadmRuntime) copyStandaloneSharedCredentials(
+	seed, host string,
+	externalEtcd bool,
+) error {
 	dir, err := os.MkdirTemp("", "sealos-shared-pki-")
 	if err != nil {
 		return err
 	}
 	defer os.RemoveAll(dir)
-	files := []string{"ca.crt", "ca.key", "front-proxy-ca.crt", "front-proxy-ca.key", "sa.pub", "sa.key"}
+	files := []string{
+		"ca.crt",
+		"ca.key",
+		"front-proxy-ca.crt",
+		"front-proxy-ca.key",
+		"sa.pub",
+		"sa.key",
+	}
 	if !externalEtcd {
 		files = append(files, "etcd/ca.crt", "etcd/ca.key")
 	}
@@ -246,7 +292,10 @@ func (k *KubeadmRuntime) copyStandaloneSharedCredentials(seed, host string, exte
 		if err := k.sshFetch(seed, remote, local); err != nil {
 			return err
 		}
-		if err := k.sshCmdAsync(host, "install -d -m 700 "+shellArgument(filepath.Dir(target))); err != nil {
+		if err := k.sshCmdAsync(
+			host,
+			"install -d -m 700 "+shellArgument(filepath.Dir(target)),
+		); err != nil {
 			return err
 		}
 		if err := k.sshCopy(host, local, target); err != nil {
@@ -260,12 +309,18 @@ func (k *KubeadmRuntime) copyStandaloneSharedCredentials(seed, host string, exte
 	return k.sshCopy(host, local, "/var/lib/sealos/control-plane-mode/shared/admin.conf")
 }
 
-func (k *KubeadmRuntime) removeStandaloneMasters(hosts []string, destroy bool, removedWorkers ...string) error {
+func (k *KubeadmRuntime) removeStandaloneMasters(
+	hosts []string,
+	destroy bool,
+	removedWorkers ...string,
+) error {
 	if len(hosts) == 0 {
 		return nil
 	}
 	if !destroy && len(hosts) >= len(k.getMasterIPAndPortList()) {
-		return fmt.Errorf("cannot remove every control plane; use sealos reset to destroy the cluster")
+		return errors.New(
+			"cannot remove every control plane; use sealos reset to destroy the cluster",
+		)
 	}
 	command := shellArgument(k.pathResolver.RootFSSealctlPath()) + " standalone reset"
 	if destroy {
@@ -290,10 +345,5 @@ func (k *KubeadmRuntime) removeStandaloneMasters(hosts []string, destroy bool, r
 }
 
 func containsHost(hosts []string, host string) bool {
-	for _, candidate := range hosts {
-		if candidate == host {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(hosts, host)
 }

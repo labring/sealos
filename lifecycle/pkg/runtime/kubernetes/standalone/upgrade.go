@@ -68,16 +68,19 @@ type upgrade struct {
 
 func Run(ctx context.Context, options Options) error {
 	if runtime.GOOS != "linux" {
-		return fmt.Errorf("standalone upgrades must execute on the Linux control-plane host")
+		return errors.New("standalone upgrades must execute on the Linux control-plane host")
 	}
-	if options.Timeout <= 0 || !filepath.IsAbs(options.Config) || !filepath.IsAbs(options.BinaryDir) {
-		return fmt.Errorf("absolute configuration and binary paths and a positive timeout are required")
+	if options.Timeout <= 0 || !filepath.IsAbs(options.Config) ||
+		!filepath.IsAbs(options.BinaryDir) {
+		return errors.New(
+			"absolute configuration and binary paths and a positive timeout are required",
+		)
 	}
 	if options.Output == nil {
 		options.Output = io.Discard
 	}
 	if options.PatchesDir != "" && !filepath.IsAbs(options.PatchesDir) {
-		return fmt.Errorf("patches directory must be an absolute path")
+		return errors.New("patches directory must be an absolute path")
 	}
 	root := "/var/lib/sealos/standalone-upgrades"
 	if err := os.MkdirAll(root, 0o700); err != nil {
@@ -101,7 +104,7 @@ func Run(ctx context.Context, options Options) error {
 			return err
 		}
 		if state.Target != "" {
-			return fmt.Errorf("finish the pending control-plane conversion before upgrading")
+			return errors.New("finish the pending control-plane conversion before upgrading")
 		}
 	} else if !os.IsNotExist(err) {
 		return err
@@ -134,12 +137,21 @@ func Run(ctx context.Context, options Options) error {
 		return os.RemoveAll(dir)
 	}
 	if err := u.apply(ctx); err != nil {
-		return fmt.Errorf("standalone upgrade stopped; backups are in %s; etcd data was not restored: %w", dir, err)
+		return fmt.Errorf(
+			"standalone upgrade stopped; backups are in %s; etcd data was not restored: %w",
+			dir,
+			err,
+		)
 	}
 	if err := copyAtomic(u.config, CompletedConfigPath, 0o600); err != nil {
 		return err
 	}
-	fmt.Fprintf(options.Output, "Standalone control plane upgraded to %s; backups: %s\n", options.Version, dir)
+	fmt.Fprintf(
+		options.Output,
+		"Standalone control plane upgraded to %s; backups: %s\n",
+		options.Version,
+		dir,
+	)
 	return nil
 }
 
@@ -155,13 +167,14 @@ func (u *upgrade) command(ctx context.Context, name string, args ...string) erro
 }
 
 func (u *upgrade) prepare(ctx context.Context) error {
-	pidBytes, err := exec.CommandContext(ctx, "systemctl", "show", "--property=MainPID", "--value", "kubelet").Output()
+	pidBytes, err := exec.CommandContext(ctx, "systemctl", "show", "--property=MainPID", "--value", "kubelet").
+		Output()
 	if err != nil {
 		return err
 	}
 	pid, err := strconv.Atoi(strings.TrimSpace(string(pidBytes)))
 	if err != nil || pid <= 0 {
-		return fmt.Errorf("kubelet must be running")
+		return errors.New("kubelet must be running")
 	}
 	cmdline, err := os.ReadFile(fmt.Sprintf("/proc/%d/cmdline", pid))
 	if err != nil {
@@ -169,7 +182,7 @@ func (u *upgrade) prepare(ctx context.Context) error {
 	}
 	argv := strings.Split(strings.TrimRight(string(cmdline), "\x00"), "\x00")
 	if len(argv) < 2 {
-		return fmt.Errorf("cannot read kubelet arguments")
+		return errors.New("cannot read kubelet arguments")
 	}
 	u.args, err = standaloneArgs(argv[1:])
 	if err != nil {
@@ -198,18 +211,26 @@ func (u *upgrade) prepare(ctx context.Context) error {
 	if err := yaml.Unmarshal(data, &kc); err != nil {
 		return err
 	}
-	if kc.StaticPodPath != manifestDir || kc.StaticPodURL != "" || flagValue(u.args, "pod-manifest-path") != "" || flagValue(u.args, "manifest-url") != "" {
-		return fmt.Errorf("standalone upgrade requires staticPodPath=%s and no additional manifest source", manifestDir)
+	if kc.StaticPodPath != manifestDir || kc.StaticPodURL != "" ||
+		flagValue(u.args, "pod-manifest-path") != "" ||
+		flagValue(u.args, "manifest-url") != "" {
+		return fmt.Errorf(
+			"standalone upgrade requires staticPodPath=%s and no additional manifest source",
+			manifestDir,
+		)
 	}
-	if kc.RotateCertificates || kc.ServerTLSBootstrap || kc.Authentication.Webhook.Enabled || kc.Authorization.Mode == "Webhook" {
-		return fmt.Errorf("standalone kubelet configuration must disable certificate bootstrap/rotation and API webhook authentication/authorization")
+	if kc.RotateCertificates || kc.ServerTLSBootstrap || kc.Authentication.Webhook.Enabled ||
+		kc.Authorization.Mode == "Webhook" {
+		return errors.New(
+			"standalone kubelet configuration must disable certificate bootstrap/rotation and API webhook authentication/authorization",
+		)
 	}
 	u.endpoint = flagValue(u.args, "container-runtime-endpoint")
 	if u.endpoint == "" {
 		u.endpoint = kc.ContainerRuntimeEndpoint
 	}
 	if u.endpoint == "" {
-		return fmt.Errorf("kubelet must declare containerRuntimeEndpoint")
+		return errors.New("kubelet must declare containerRuntimeEndpoint")
 	}
 	u.name = flagValue(u.args, "hostname-override")
 	if u.name == "" {
@@ -219,11 +240,15 @@ func (u *upgrade) prepare(ctx context.Context) error {
 		}
 	}
 	u.name = strings.ToLower(strings.TrimSpace(u.name))
+	// #nosec G204 -- The validated PID identifies the running kubelet executable.
 	current, err := exec.CommandContext(ctx, fmt.Sprintf("/proc/%d/exe", pid), "--version").Output()
 	if err != nil {
 		return err
 	}
-	if err := ValidateVersionChange(strings.TrimPrefix(strings.TrimSpace(string(current)), "Kubernetes "), u.Version); err != nil {
+	if err := ValidateVersionChange(
+		strings.TrimPrefix(strings.TrimSpace(string(current)), "Kubernetes "),
+		u.Version,
+	); err != nil {
 		return err
 	}
 	for _, binary := range []string{"kubeadm", "kubelet", "kubectl"} {
@@ -234,6 +259,7 @@ func (u *upgrade) prepare(ctx context.Context) error {
 		if binary == "kubectl" {
 			args = []string{"version", "--client=true", "-o", "json"}
 		}
+		// #nosec G204 -- The administrator selects the binary directory; names and arguments are fixed.
 		out, err := exec.CommandContext(ctx, filepath.Join(u.BinaryDir, binary), args...).Output()
 		if err != nil {
 			return err
@@ -261,9 +287,15 @@ func (u *upgrade) prepare(ctx context.Context) error {
 		}
 	}
 	// pflag validates that all preserved command-line options exist in the target kubelet.
-	if out, err := exec.CommandContext(ctx, filepath.Join(u.BinaryDir, "kubelet"), append(append([]string{}, u.args...), "--help")...).CombinedOutput(); err != nil {
+	// #nosec G204 -- Arguments are read from the running kubelet and executed without a shell.
+	if out, err := exec.CommandContext(ctx, filepath.Join(u.BinaryDir, "kubelet"), append(append([]string{}, u.args...), "--help")...).
+		CombinedOutput(); err != nil {
 		return fmt.Errorf("target kubelet rejects preserved flags: %w: %s", err, out)
 	}
+	return u.prepareManifests(ctx)
+}
+
+func (u *upgrade) prepareManifests(ctx context.Context) error {
 	u.components = append([]string{}, controlPlaneComponents...)
 	if _, err := os.Stat(filepath.Join(manifestDir, "etcd.yaml")); err == nil {
 		u.localEtcd = true
@@ -288,7 +320,7 @@ func (u *upgrade) prepare(ctx context.Context) error {
 	if err := ValidateVersionChange(currentAPI, u.Version); err != nil {
 		return err
 	}
-	data, err = os.ReadFile(u.Config)
+	data, err := os.ReadFile(u.Config)
 	if err != nil {
 		return err
 	}
@@ -297,12 +329,22 @@ func (u *upgrade) prepare(ctx context.Context) error {
 		return err
 	}
 	draft := filepath.Join(u.dir, "input.yaml")
+	// #nosec G703 -- u.dir is a private directory created by os.MkdirTemp.
 	if err := os.WriteFile(draft, data, 0o600); err != nil {
 		return err
 	}
 	u.config = filepath.Join(u.dir, "kubeadm.yaml")
 	kubeadm := filepath.Join(u.BinaryDir, "kubeadm")
-	if err := u.command(ctx, kubeadm, "config", "migrate", "--old-config", draft, "--new-config", u.config); err != nil {
+	if err := u.command(
+		ctx,
+		kubeadm,
+		"config",
+		"migrate",
+		"--old-config",
+		draft,
+		"--new-config",
+		u.config,
+	); err != nil {
 		return err
 	}
 	// kubeadm migrates only its own kinds. Preserve the existing worker and
@@ -323,10 +365,18 @@ func (u *upgrade) prepare(ctx context.Context) error {
 		return err
 	}
 	validationPath := filepath.Join(u.dir, "kubelet-validation.yaml")
+	// #nosec G703 -- u.dir is a private directory created by os.MkdirTemp.
 	if err := os.WriteFile(validationPath, validation, 0o600); err != nil {
 		return err
 	}
-	if err := u.command(ctx, kubeadm, "config", "validate", "--config", validationPath); err != nil {
+	if err := u.command(
+		ctx,
+		kubeadm,
+		"config",
+		"validate",
+		"--config",
+		validationPath,
+	); err != nil {
 		return fmt.Errorf("target kubeadm rejected the local kubelet configuration: %w", err)
 	}
 	newDir := filepath.Join(u.dir, "manifests")
@@ -393,7 +443,7 @@ func (u *upgrade) prepare(ctx context.Context) error {
 			return err
 		}
 		if image.ImageRef == "" {
-			return fmt.Errorf("CRI returned an empty image reference")
+			return errors.New("CRI returned an empty image reference")
 		}
 		u.images[component] = image.ImageRef
 	}
@@ -420,7 +470,11 @@ func (u *upgrade) prepare(ctx context.Context) error {
 		files = append(files, filepath.Join(u.BinaryDir, "etcdutl"))
 	}
 	for _, component := range u.components {
-		files = append(files, filepath.Join(manifestDir, component+".yaml"), filepath.Join(newDir, component+".yaml"))
+		files = append(
+			files,
+			filepath.Join(manifestDir, component+".yaml"),
+			filepath.Join(newDir, component+".yaml"),
+		)
 	}
 	for _, binary := range []string{"kubeadm", "kubelet", "kubectl"} {
 		files = append(files, filepath.Join(u.BinaryDir, binary))
@@ -444,7 +498,7 @@ func (u *upgrade) checkEtcd(ctx context.Context) error {
 	}
 	for _, arg := range nextArgs {
 		if arg == "--force-new-cluster" || strings.HasPrefix(arg, "--force-new-cluster=") {
-			return fmt.Errorf("remove etcd force-new-cluster before upgrading")
+			return errors.New("remove etcd force-new-cluster before upgrading")
 		}
 	}
 	for _, flag := range []string{"data-dir", "wal-dir"} {
@@ -490,12 +544,17 @@ func (u *upgrade) checkEtcd(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	if current.Major() != next.Major() || next.LessThan(current) || next.Minor() > current.Minor()+1 {
+	if current.Major() != next.Major() || next.LessThan(current) ||
+		next.Minor() > current.Minor()+1 {
 		return fmt.Errorf("unsupported etcd version change: %s -> %s", current, next)
 	}
 	if current.Minor() != next.Minor() {
 		if current.Major() != 3 || current.Minor() != 5 || next.Minor() != 6 {
-			return fmt.Errorf("etcd minor transition %s -> %s requires a version-specific upgrade procedure", current, next)
+			return fmt.Errorf(
+				"etcd minor transition %s -> %s requires a version-specific upgrade procedure",
+				current,
+				next,
+			)
 		}
 		if err := u.prepareV2StoreCheck(ctx, current); err != nil {
 			return err
@@ -529,7 +588,13 @@ func (u *upgrade) apply(ctx context.Context) (err error) {
 			return fmt.Errorf("file changed after preflight: %s", file)
 		}
 	}
-	if err := u.command(ctx, "cp", "-a", "/etc/kubernetes", filepath.Join(u.dir, "kubernetes")); err != nil {
+	if err := u.command(
+		ctx,
+		"cp",
+		"-a",
+		"/etc/kubernetes",
+		filepath.Join(u.dir, "kubernetes"),
+	); err != nil {
 		return err
 	}
 	if err := writeJSON(filepath.Join(u.dir, "kubelet-args.json"), u.args); err != nil {
@@ -574,7 +639,15 @@ func (u *upgrade) apply(ctx context.Context) (err error) {
 			return err
 		}
 	}
-	if err := u.command(ctx, filepath.Join(u.BinaryDir, "kubeadm"), "certs", "renew", "all", "--config", u.config); err != nil {
+	if err := u.command(
+		ctx,
+		filepath.Join(u.BinaryDir, "kubeadm"),
+		"certs",
+		"renew",
+		"all",
+		"--config",
+		u.config,
+	); err != nil {
 		return err
 	}
 	stopped := true
@@ -586,10 +659,17 @@ func (u *upgrade) apply(ctx context.Context) (err error) {
 			defer cancel()
 			if !activated {
 				if restoreErr := restoreFiles(files[:attempted]); restoreErr != nil {
-					err = errors.Join(err, fmt.Errorf("file recovery failed; kubelet remains stopped: %w", restoreErr))
+					err = errors.Join(
+						err,
+						fmt.Errorf("file recovery failed; kubelet remains stopped: %w", restoreErr),
+					)
 					return
 				}
-				if reloadErr := u.command(recovery, "systemctl", "daemon-reload"); reloadErr != nil {
+				if reloadErr := u.command(
+					recovery,
+					"systemctl",
+					"daemon-reload",
+				); reloadErr != nil {
 					err = errors.Join(err, reloadErr)
 					return
 				}
@@ -642,7 +722,10 @@ func (u *upgrade) apply(ctx context.Context) (err error) {
 	activated = true
 	for _, component := range u.components {
 		stop, cancel := context.WithTimeout(ctx, u.Timeout)
-		_, stopErr := u.runtime.StopPodSandbox(stop, &cri.StopPodSandboxRequest{PodSandboxId: u.sandboxes[component]})
+		_, stopErr := u.runtime.StopPodSandbox(
+			stop,
+			&cri.StopPodSandboxRequest{PodSandboxId: u.sandboxes[component]},
+		)
 		cancel()
 		if stopErr != nil {
 			return stopErr
@@ -662,7 +745,11 @@ func (u *upgrade) apply(ctx context.Context) (err error) {
 		}
 		select {
 		case <-deadline.Done():
-			return fmt.Errorf("waiting for new control-plane containers: %w: %v", deadline.Err(), last)
+			return fmt.Errorf(
+				"waiting for new control-plane containers: %w: %w",
+				deadline.Err(),
+				last,
+			)
 		case <-time.After(2 * time.Second):
 		}
 	}
@@ -670,40 +757,56 @@ func (u *upgrade) apply(ctx context.Context) (err error) {
 
 func (u *upgrade) prepareV2StoreCheck(ctx context.Context, current *semver.Version) error {
 	if current.Patch() < 32 {
-		return fmt.Errorf("etcd 3.6 upgrade requires all 3.5 members at 3.5.32 or later; found %s", current)
+		return fmt.Errorf(
+			"etcd 3.6 upgrade requires all 3.5 members at 3.5.32 or later; found %s",
+			current,
+		)
 	}
 	for _, pod := range []*v1.Pod{u.old["etcd"], u.next["etcd"]} {
 		args := componentArgs(pod)
 		for _, arg := range args {
 			if arg == "--enable-v2" || strings.HasPrefix(arg, "--enable-v2=") {
-				return fmt.Errorf("remove --enable-v2 from all etcd manifests before upgrading to 3.6")
+				return errors.New(
+					"remove --enable-v2 from all etcd manifests before upgrading to 3.6",
+				)
 			}
 		}
 		for _, env := range pod.Spec.Containers[0].Env {
 			if env.Name == "ETCD_ENABLE_V2" {
-				return fmt.Errorf("remove ETCD_ENABLE_V2 from all etcd manifests before upgrading to 3.6")
+				return errors.New(
+					"remove ETCD_ENABLE_V2 from all etcd manifests before upgrading to 3.6",
+				)
 			}
 		}
 	}
+	// #nosec G204 -- The administrator selects the binary directory; the executable and argument are fixed.
 	out, err := exec.CommandContext(ctx, filepath.Join(u.BinaryDir, "etcdutl"), "version").Output()
 	if err != nil {
-		return fmt.Errorf("etcd 3.6 upgrade requires etcdutl 3.5.32 or later in the target binary directory: %w", err)
+		return fmt.Errorf(
+			"etcd 3.6 upgrade requires etcdutl 3.5.32 or later in the target binary directory: %w",
+			err,
+		)
 	}
 	for _, line := range strings.Split(string(out), "\n") {
 		if !strings.HasPrefix(line, "etcdutl version:") {
 			continue
 		}
-		version, err := semver.NewVersion(strings.TrimSpace(strings.TrimPrefix(line, "etcdutl version:")))
+		version, err := semver.NewVersion(
+			strings.TrimSpace(strings.TrimPrefix(line, "etcdutl version:")),
+		)
 		if err != nil {
 			return err
 		}
-		if version.Major() != 3 || version.Minor() != 5 || version.Patch() < 32 || version.Prerelease() != "" {
-			return fmt.Errorf("v2store checking requires etcdutl from the 3.5 series, version 3.5.32 or later")
+		if version.Major() != 3 || version.Minor() != 5 || version.Patch() < 32 ||
+			version.Prerelease() != "" {
+			return errors.New(
+				"v2store checking requires etcdutl from the 3.5 series, version 3.5.32 or later",
+			)
 		}
 		u.checkV2Store = true
 		return nil
 	}
-	return fmt.Errorf("cannot identify etcdutl version")
+	return errors.New("cannot identify etcdutl version")
 }
 
 func (u *upgrade) ready(ctx context.Context) error {
@@ -717,7 +820,12 @@ func (u *upgrade) ready(ctx context.Context) error {
 		if sandbox.Id == u.sandboxes[component] {
 			return fmt.Errorf("old %s sandbox is still running", component)
 		}
-		if err := u.runtime.runningImage(ctx, sandbox.Id, component, u.images[component]); err != nil {
+		if err := u.runtime.runningImage(
+			ctx,
+			sandbox.Id,
+			component,
+			u.images[component],
+		); err != nil {
 			return err
 		}
 		if err := probe(ctx, u.next[component]); err != nil {
@@ -752,7 +860,7 @@ func (u *upgrade) ready(ctx context.Context) error {
 			return err
 		}
 		if status.Header.MemberId != u.etcdMemberID || status.Header.ClusterId != u.etcdClusterID {
-			return fmt.Errorf("etcd member or cluster identity changed during upgrade")
+			return errors.New("etcd member or cluster identity changed during upgrade")
 		}
 		actual, err := semver.NewVersion(status.Version)
 		if err != nil || !expected.Equal(actual) {

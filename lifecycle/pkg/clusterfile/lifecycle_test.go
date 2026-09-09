@@ -10,11 +10,10 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/labring/sealos/pkg/constants"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
-
-	"github.com/labring/sealos/pkg/constants"
 )
 
 func TestLifecycleAPIResumeAndExclusion(t *testing.T) {
@@ -49,19 +48,30 @@ func TestLifecycleAPIResumeAndExclusion(t *testing.T) {
 
 func TestResetKeepsAPITombstone(t *testing.T) {
 	client := fake.NewSimpleClientset()
-	err := withLifecycleAPI(context.Background(), client, LifecycleOperation{Action: "reset", Request: "request"}, func(_ context.Context, operation LifecycleOperation) error {
-		if !operation.Approved {
-			t.Fatal("reset did not persist offline recovery authorization")
-		}
-		return nil
-	})
+	err := withLifecycleAPI(
+		context.Background(),
+		client,
+		LifecycleOperation{Action: "reset", Request: "request"},
+		func(_ context.Context, operation LifecycleOperation) error {
+			if !operation.Approved {
+				t.Fatal("reset did not persist offline recovery authorization")
+			}
+			return nil
+		},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.CoreV1().ConfigMaps("kube-system").Get(context.Background(), LifecycleResource, metav1.GetOptions{}); err != nil {
+	if _, err := client.CoreV1().
+		ConfigMaps("kube-system").
+		Get(context.Background(), LifecycleResource, metav1.GetOptions{}); err != nil {
 		t.Fatalf("reset lost its API tombstone: %v", err)
 	}
-	if _, err := client.CoordinationV1().Leases("kube-system").Get(context.Background(), ModeTransitionResource, metav1.GetOptions{}); !apierrors.IsNotFound(err) {
+	if _, err := client.CoordinationV1().
+		Leases("kube-system").
+		Get(context.Background(), ModeTransitionResource, metav1.GetOptions{}); !apierrors.IsNotFound(
+		err,
+	) {
 		t.Fatalf("reset retained the lease after persisting its tombstone: %v", err)
 	}
 }
@@ -93,7 +103,13 @@ func TestLifecycleInventorySurvivesPartialCommit(t *testing.T) {
 	if err != nil || string(data) != "original inventory" {
 		t.Fatalf("retry read partly committed inventory: %q, %v", data, err)
 	}
-	if err := WithLifecycle(context.Background(), name, op, false, func(context.Context) error { return nil }); err != nil {
+	if err := WithLifecycle(
+		context.Background(),
+		name,
+		op,
+		false,
+		func(context.Context) error { return nil },
+	); err != nil {
 		t.Fatal(err)
 	}
 	data, err = readLifecycleInventory(path)
@@ -105,7 +121,11 @@ func TestLifecycleInventorySurvivesPartialCommit(t *testing.T) {
 func TestResetSupersedesOnlyTheCompletePendingInventory(t *testing.T) {
 	ctx := context.Background()
 	client := fake.NewSimpleClientset()
-	previous := LifecycleOperation{Action: "apply", Request: "join", Hosts: []string{"192.0.2.1", "192.0.2.2"}}
+	previous := LifecycleOperation{
+		Action:  "apply",
+		Request: "join",
+		Hosts:   []string{"192.0.2.1", "192.0.2.2"},
+	}
 	_ = withLifecycleAPI(ctx, client, previous, func(context.Context, LifecycleOperation) error {
 		return errors.New("new master failed readiness")
 	})
@@ -127,8 +147,13 @@ func TestResetSupersedesOnlyTheCompletePendingInventory(t *testing.T) {
 func TestResetCanReadAnUncommittedInitialInventory(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "Clusterfile")
-	data := []byte("apiVersion: sealos.io/v1beta1\nkind: Cluster\nmetadata:\n  name: test\nspec:\n  controlPlaneMode: standalone\n  hosts:\n  - ips: [192.0.2.1]\n    roles: [master]\n")
-	if err := WriteMaintenanceJSON(filepath.Join(root, LifecycleFilename), lifecycleInventory{RecoveryInventory: data}); err != nil {
+	data := []byte(
+		"apiVersion: sealos.io/v1beta1\nkind: Cluster\nmetadata:\n  name: test\nspec:\n  controlPlaneMode: standalone\n  hosts:\n  - ips: [192.0.2.1]\n    roles: [master]\n",
+	)
+	if err := WriteMaintenanceJSON(
+		filepath.Join(root, LifecycleFilename),
+		lifecycleInventory{RecoveryInventory: data},
+	); err != nil {
 		t.Fatal(err)
 	}
 	cf := NewClusterFile(path, WithLifecycleReset())

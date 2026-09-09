@@ -28,8 +28,10 @@ func newStandaloneCmd() *cobra.Command {
 	}
 	bootstrapCmd.Flags().StringVar(&bootstrap.PlanPath, "plan", "", "Private bootstrap plan file")
 	_ = bootstrapCmd.MarkFlagRequired("plan")
-	bootstrapCmd.Flags().BoolVar(&bootstrap.CheckOnly, "check-only", false, "Check bootstrap prerequisites")
-	bootstrapCmd.Flags().DurationVar(&bootstrap.Timeout, "timeout", 10*time.Minute, "Bootstrap timeout")
+	bootstrapCmd.Flags().
+		BoolVar(&bootstrap.CheckOnly, "check-only", false, "Check bootstrap prerequisites")
+	bootstrapCmd.Flags().
+		DurationVar(&bootstrap.Timeout, "timeout", 10*time.Minute, "Bootstrap timeout")
 	reset := standalone.ResetOptions{}
 	resetCmd := &cobra.Command{
 		Use:   "reset",
@@ -40,8 +42,10 @@ func newStandaloneCmd() *cobra.Command {
 			return standalone.Reset(cmd.Context(), reset)
 		},
 	}
-	resetCmd.Flags().BoolVar(&reset.DestroyCluster, "destroy-cluster", false, "Destroy this host as part of a whole-cluster reset")
-	resetCmd.Flags().BoolVar(&reset.AllowUninitialized, "allow-uninitialized", false, "Allow whole-cluster reset to include hosts without Kubernetes credentials or manifests")
+	resetCmd.Flags().
+		BoolVar(&reset.DestroyCluster, "destroy-cluster", false, "Destroy this host as part of a whole-cluster reset")
+	resetCmd.Flags().
+		BoolVar(&reset.AllowUninitialized, "allow-uninitialized", false, "Allow whole-cluster reset to include hosts without Kubernetes credentials or manifests")
 	resetCmd.Flags().BoolVar(&reset.CheckOnly, "check-only", false, "Check removal prerequisites")
 	resetCmd.Flags().DurationVar(&reset.Timeout, "timeout", 10*time.Minute, "Removal timeout")
 	controllerCmd := &cobra.Command{

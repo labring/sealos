@@ -5,6 +5,7 @@ package standalone
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 
@@ -21,11 +22,14 @@ var RouteControllerFlags = []string{
 }
 
 type controllerUpdate struct {
-	PreviousTable    int
-	PreviousProtocol int
+	PreviousTable    int `json:"PreviousTable"`
+	PreviousProtocol int `json:"PreviousProtocol"`
 }
 
-func mergeControllerOptions(current, requested RouteControllerOptions, fields []string) (RouteControllerOptions, error) {
+func mergeControllerOptions(
+	current, requested RouteControllerOptions,
+	fields []string,
+) (RouteControllerOptions, error) {
 	if fields == nil {
 		return requested, requested.Validate()
 	}
@@ -50,7 +54,7 @@ func mergeControllerOptions(current, requested RouteControllerOptions, fields []
 
 func (m *modeSwitch) prepareControllerUpdate() error {
 	if m.RouteController == nil {
-		return fmt.Errorf("controller update requires deployment options")
+		return errors.New("controller update requires deployment options")
 	}
 	current, err := routeOptionsFromState(m.state)
 	if err != nil {
@@ -62,12 +66,14 @@ func (m *modeSwitch) prepareControllerUpdate() error {
 	}
 	if m.state.ControllerUpdate != nil {
 		if desired != current {
-			return fmt.Errorf("a controller update is pending; repeat its original flags or switch to registered")
+			return errors.New(
+				"a controller update is pending; repeat its original flags or switch to registered",
+			)
 		}
 		return nil
 	}
 	if m.state.Target != "" {
-		return fmt.Errorf("finish the current mode conversion before updating route-controller")
+		return errors.New("finish the current mode conversion before updating route-controller")
 	}
 	pod, err := routeControllerPod(desired)
 	if err != nil {
@@ -76,7 +82,10 @@ func (m *modeSwitch) prepareControllerUpdate() error {
 	for _, volume := range pod.Spec.Volumes {
 		info, err := os.Stat(volume.HostPath.Path)
 		if err != nil || !info.Mode().IsRegular() {
-			return fmt.Errorf("controller file %s must be provisioned before updating", volume.HostPath.Path)
+			return fmt.Errorf(
+				"controller file %s must be provisioned before updating",
+				volume.HostPath.Path,
+			)
 		}
 	}
 	if desired.Table != current.Table || desired.Protocol != current.Protocol {
@@ -108,10 +117,14 @@ func (m *modeSwitch) stopController(ctx context.Context) error {
 		return err
 	}
 	for _, sandbox := range sandboxes.Items {
-		if sandbox.Metadata.GetNamespace() != "kube-system" || sandbox.Metadata.GetName() != "route-controller-"+m.state.Node.Name {
+		if sandbox.Metadata.GetNamespace() != "kube-system" ||
+			sandbox.Metadata.GetName() != "route-controller-"+m.state.Node.Name {
 			continue
 		}
-		if _, err := m.runtime.StopPodSandbox(ctx, &cri.StopPodSandboxRequest{PodSandboxId: sandbox.Id}); err != nil {
+		if _, err := m.runtime.StopPodSandbox(
+			ctx,
+			&cri.StopPodSandboxRequest{PodSandboxId: sandbox.Id},
+		); err != nil {
 			return err
 		}
 	}

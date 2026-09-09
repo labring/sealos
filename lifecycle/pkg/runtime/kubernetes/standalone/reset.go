@@ -26,25 +26,25 @@ type ResetOptions struct {
 }
 
 type resetState struct {
-	Endpoint       string
-	Peer           string
-	ClusterID      uint64
-	MemberID       uint64
-	EtcdEndpoints  []string
-	DataPaths      []string
-	RouteTable     int
-	RouteProtocol  int
-	Detached       bool
-	DestroyCluster bool
-	Complete       bool
-	AllowAbsent    bool
+	Endpoint       string   `json:"Endpoint"`
+	Peer           string   `json:"Peer"`
+	ClusterID      uint64   `json:"ClusterID"`
+	MemberID       uint64   `json:"MemberID"`
+	EtcdEndpoints  []string `json:"EtcdEndpoints"`
+	DataPaths      []string `json:"DataPaths"`
+	RouteTable     int      `json:"RouteTable"`
+	RouteProtocol  int      `json:"RouteProtocol"`
+	Detached       bool     `json:"Detached"`
+	DestroyCluster bool     `json:"DestroyCluster"`
+	Complete       bool     `json:"Complete"`
+	AllowAbsent    bool     `json:"AllowAbsent"`
 }
 
 const resetStatePath = modeRoot + "/reset.json"
 
 func Reset(ctx context.Context, options ResetOptions) error {
 	if options.AllowUninitialized && !options.DestroyCluster {
-		return fmt.Errorf("allow-uninitialized is only valid for whole-cluster destruction")
+		return errors.New("allow-uninitialized is only valid for whole-cluster destruction")
 	}
 	return maintenance(ctx, options.Timeout, func(ctx context.Context) error {
 		return resetStandalone(ctx, options)
@@ -54,17 +54,18 @@ func Reset(ctx context.Context, options ResetOptions) error {
 func resetStandalone(ctx context.Context, options ResetOptions) error {
 	state := &resetState{}
 	data, err := os.ReadFile(resetStatePath)
-	if err == nil {
+	switch {
+	case err == nil:
 		if err := json.Unmarshal(data, state); err != nil {
 			return err
 		}
 		if state.DestroyCluster != options.DestroyCluster {
-			return fmt.Errorf("resume reset with the original destroy-cluster setting")
+			return errors.New("resume reset with the original destroy-cluster setting")
 		}
 		if state.Complete {
 			return nil
 		}
-	} else if os.IsNotExist(err) {
+	case os.IsNotExist(err):
 		data, err := os.ReadFile(filepath.Join(modeRoot, "state.json"))
 		if err != nil {
 			if !os.IsNotExist(err) {
@@ -72,7 +73,8 @@ func resetStandalone(ctx context.Context, options ResetOptions) error {
 			}
 			state, err = resetBootstrapState(options.DestroyCluster)
 			if err != nil {
-				if options.DestroyCluster && options.AllowUninitialized && errors.Is(err, os.ErrNotExist) {
+				if options.DestroyCluster && options.AllowUninitialized &&
+					errors.Is(err, os.ErrNotExist) {
 					return resetUninitializedHost(options.CheckOnly)
 				}
 				return err
@@ -87,7 +89,7 @@ func resetStandalone(ctx context.Context, options ResetOptions) error {
 		if err == nil {
 			state.Peer = flagValue(componentArgs(pod), "initial-advertise-peer-urls")
 			if state.Peer == "" || strings.Contains(state.Peer, ",") {
-				return fmt.Errorf("cannot identify a unique local etcd peer URL")
+				return errors.New("cannot identify a unique local etcd peer URL")
 			}
 			for _, flag := range []string{"data-dir", "wal-dir"} {
 				value := flagValue(componentArgs(pod), flag)
@@ -103,11 +105,12 @@ func resetStandalone(ctx context.Context, options ResetOptions) error {
 		} else if !os.IsNotExist(err) {
 			return err
 		}
-	} else {
+	default:
 		return err
 	}
-	if state.Endpoint == "" || state.RouteTable <= 0 || state.RouteProtocol < 1 || state.RouteProtocol > 255 {
-		return fmt.Errorf("invalid standalone reset baseline")
+	if state.Endpoint == "" || state.RouteTable <= 0 || state.RouteProtocol < 1 ||
+		state.RouteProtocol > 255 {
+		return errors.New("invalid standalone reset baseline")
 	}
 	for _, path := range state.DataPaths {
 		if err := validateEtcdRemovalPath(path); err != nil {
@@ -160,7 +163,16 @@ func resetStandalone(ctx context.Context, options ResetOptions) error {
 	}
 	// Membership was handled above. This public phase only stops workloads and
 	// unmounts/cleans kubelet files; it does not discover etcd through mirror Pods.
-	if err := maintenanceCommand(ctx, options.Output, "kubeadm", "reset", "phase", "cleanup-node", "--cri-socket", state.Endpoint); err != nil {
+	if err := maintenanceCommand(
+		ctx,
+		options.Output,
+		"kubeadm",
+		"reset",
+		"phase",
+		"cleanup-node",
+		"--cri-socket",
+		state.Endpoint,
+	); err != nil {
 		return err
 	}
 	if err := verifyResetCleanup(); err != nil {
@@ -190,7 +202,10 @@ func resetUninitializedHost(checkOnly bool) error {
 	for _, name := range []string{"kubelet.conf", "bootstrap-kubelet.conf", "admin.conf"} {
 		path := filepath.Join("/etc/kubernetes", name)
 		if _, err := os.Lstat(path); !os.IsNotExist(err) {
-			return fmt.Errorf("host has Kubernetes credentials without a managed baseline: %s", path)
+			return fmt.Errorf(
+				"host has Kubernetes credentials without a managed baseline: %s",
+				path,
+			)
 		}
 	}
 	entries, err := os.ReadDir(manifestDir)
@@ -198,7 +213,7 @@ func resetUninitializedHost(checkOnly bool) error {
 		return err
 	}
 	if len(entries) != 0 {
-		return fmt.Errorf("host has static manifests without a managed baseline")
+		return errors.New("host has static manifests without a managed baseline")
 	}
 	if checkOnly {
 		return nil
@@ -222,7 +237,9 @@ func validateEtcdRemovalPath(path string) error {
 	// Only remove a dedicated data directory. Ancestors of managed configuration
 	// or system roots cannot be accepted as data/WAL mounts.
 	for _, protected := range []string{"/etc", "/usr", "/bin", "/sbin", "/lib", "/lib64", "/proc", "/sys", "/dev", "/var/lib/sealos", "/var/lib/kubelet", "/run", "/opt", "/home", "/root"} {
-		if clean == protected || strings.HasPrefix(protected, clean+"/") || strings.HasPrefix(clean, protected+"/") || clean == "/" {
+		if clean == protected || strings.HasPrefix(protected, clean+"/") ||
+			strings.HasPrefix(clean, protected+"/") ||
+			clean == "/" {
 			return fmt.Errorf("refusing to remove unsafe etcd data path %s", path)
 		}
 	}
@@ -254,7 +271,7 @@ func detachEtcdMember(ctx context.Context, state *resetState, checkOnly bool) er
 		return err
 	}
 	if state.ClusterID != 0 && state.ClusterID != list.Header.ClusterId {
-		return fmt.Errorf("etcd cluster identity changed during removal")
+		return errors.New("etcd cluster identity changed during removal")
 	}
 	member, err := memberByPeer(list.Members, state.Peer)
 	if err != nil {
@@ -263,18 +280,24 @@ func detachEtcdMember(ctx context.Context, state *resetState, checkOnly bool) er
 	if member == nil {
 		for _, candidate := range list.Members {
 			if candidate.ID == state.MemberID {
-				return fmt.Errorf("saved etcd member now advertises a different peer URL")
+				return errors.New("saved etcd member now advertises a different peer URL")
 			}
 		}
 		if state.MemberID == 0 && !state.AllowAbsent {
-			return fmt.Errorf("local etcd peer is not a member of the selected cluster")
+			return errors.New("local etcd peer is not a member of the selected cluster")
 		}
 		return nil
 	}
 	if state.MemberID != 0 && member.ID != state.MemberID {
-		return fmt.Errorf("etcd member identity changed during removal")
+		return errors.New("etcd member identity changed during removal")
 	}
-	if err := checkRemovalQuorum(ctx, client, list.Members, member.ID, list.Header.ClusterId); err != nil {
+	if err := checkRemovalQuorum(
+		ctx,
+		client,
+		list.Members,
+		member.ID,
+		list.Header.ClusterId,
+	); err != nil {
 		return err
 	}
 	if checkOnly {

@@ -16,11 +16,25 @@ func TestMaintenanceCancellationPreventsSSHDispatch(t *testing.T) {
 	if err := client.CmdAsync("unused", "unused"); !errors.Is(err, context.Canceled) {
 		t.Fatalf("dispatch after maintenance cancellation: %v", err)
 	}
-	if err := client.CmdAsyncWithContext(context.Background(), "unused", "unused"); !errors.Is(err, context.Canceled) {
+	if err := client.CmdAsyncWithContext(
+		context.Background(),
+		"unused",
+		"unused",
+	); !errors.Is(
+		err,
+		context.Canceled,
+	) {
 		t.Fatalf("explicit context bypassed maintenance cancellation: %v", err)
 	}
 	client.ctx = context.Background()
-	if err := client.CmdAsyncWithContext(canceled, "unused", "unused"); !errors.Is(err, context.Canceled) {
+	if err := client.CmdAsyncWithContext(
+		canceled,
+		"unused",
+		"unused",
+	); !errors.Is(
+		err,
+		context.Canceled,
+	) {
 		t.Fatalf("dispatch after caller cancellation: %v", err)
 	}
 }

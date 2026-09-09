@@ -12,7 +12,9 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"errors"
 	"fmt"
+	"maps"
 	"os"
 	"strings"
 	"time"
@@ -29,8 +31,11 @@ import (
 	"k8s.io/client-go/util/retry"
 )
 
-const modeOriginAnnotation = "sealos.io/control-plane-mode-origin"
-const modeRegistrationTaint = "sealos.io/control-plane-mode"
+const (
+	modeOriginAnnotation       = "sealos.io/control-plane-mode-origin"
+	modeRegistrationTaint      = "sealos.io/control-plane-mode"
+	kubeadmCRISocketAnnotation = "kubeadm.alpha.kubernetes.io/cri-socket"
+)
 
 func (m *modeSwitch) toRegistered(ctx context.Context) error {
 	if err := m.checkRegisteredIdentity(ctx); err != nil {
@@ -52,7 +57,10 @@ func (m *modeSwitch) toRegistered(ctx context.Context) error {
 		return err
 	}
 	if previous := m.state.ControllerUpdate; previous != nil {
-		if err := removeReservedRoutes(previous.PreviousTable, previous.PreviousProtocol); err != nil {
+		if err := removeReservedRoutes(
+			previous.PreviousTable,
+			previous.PreviousProtocol,
+		); err != nil {
 			return err
 		}
 	}
@@ -101,20 +109,29 @@ func (m *modeSwitch) toRegistered(ctx context.Context) error {
 	if err := m.command(ctx, "start", "kubelet"); err != nil {
 		return err
 	}
-	if err := wait.PollUntilContextCancel(ctx, time.Second, true, func(ctx context.Context) (bool, error) {
-		err := m.restoreNode(ctx)
-		if apierrors.IsNotFound(err) {
-			return false, nil
-		}
-		return err == nil, err
-	}); err != nil {
+	if err := wait.PollUntilContextCancel(
+		ctx,
+		time.Second,
+		true,
+		func(ctx context.Context) (bool, error) {
+			err := m.restoreNode(ctx)
+			if apierrors.IsNotFound(err) || apierrors.IsConflict(err) {
+				return false, nil
+			}
+			return err == nil, err
+		},
+	); err != nil {
 		return err
 	}
-	if err := m.waitReady(ctx); err != nil {
+	if err := m.waitReady(ctx, false); err != nil {
 		return err
 	}
 	if m.state.ManagedService {
-		if err := atomicModeFile(registeredDropin, []byte(serviceOverride(m.state.Args)), 0o644); err != nil {
+		if err := atomicModeFile(
+			registeredDropin,
+			[]byte(serviceOverride(m.state.Args)),
+			0o644,
+		); err != nil {
 			return err
 		}
 	}
@@ -127,7 +144,7 @@ func (m *modeSwitch) toRegistered(ctx context.Context) error {
 	if err := m.command(ctx, "restart", "kubelet"); err != nil {
 		return err
 	}
-	return m.waitReady(ctx)
+	return m.waitReady(ctx, false)
 }
 
 func registeredModeArgs(args []string, node *v1.Node) []string {
@@ -135,21 +152,29 @@ func registeredModeArgs(args []string, node *v1.Node) []string {
 	for i := 0; i < len(args); i++ {
 		name := strings.SplitN(args[i], "=", 2)[0]
 		if name == "--register-node" || name == "--register-with-taints" {
-			if !strings.Contains(args[i], "=") && i+1 < len(args) && !strings.HasPrefix(args[i+1], "--") {
+			if !strings.Contains(args[i], "=") && i+1 < len(args) &&
+				!strings.HasPrefix(args[i+1], "--") {
 				i++
 			}
 			continue
 		}
 		result = append(result, args[i])
 	}
-	taints := []string{modeRegistrationTaint + "=" + string(node.UID) + ":NoSchedule"}
-	for _, taint := range restoredNode(node).Spec.Taints {
+	taints := make([]string, 0, 1+len(node.Spec.Taints))
+	taints = append(taints, modeRegistrationTaint+"="+string(node.UID)+":NoSchedule")
+	for _, taint := range restoredNode(node, "").Spec.Taints {
 		taints = append(taints, taint.ToString())
 	}
-	return append(result, "--register-node=true", "--register-with-taints="+strings.Join(taints, ","))
+	return append(
+		result,
+		"--register-node=true",
+		"--register-with-taints="+strings.Join(taints, ","),
+	)
 }
 
-func (m *modeSwitch) registeredCredentials(ctx context.Context) (*clientcmdapi.Config, []byte, []byte, error) {
+func (m *modeSwitch) registeredCredentials(
+	ctx context.Context,
+) (*clientcmdapi.Config, []byte, []byte, error) {
 	config, err := clientcmd.Load(m.state.Kubeconfig)
 	if err != nil {
 		return nil, nil, nil, err
@@ -181,30 +206,34 @@ func (m *modeSwitch) registeredCredentials(ctx context.Context) (*clientcmdapi.C
 		Type:  "CERTIFICATE REQUEST",
 		Bytes: request,
 	})
-	object, err := m.client.CertificatesV1().CertificateSigningRequests().Create(ctx, &certificatesv1.CertificateSigningRequest{
-		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: "sealos-kubelet-",
-		},
-		Spec: certificatesv1.CertificateSigningRequestSpec{
-			Request:    requestPEM,
-			SignerName: certificatesv1.KubeAPIServerClientKubeletSignerName,
-			Usages: []certificatesv1.KeyUsage{
-				certificatesv1.UsageDigitalSignature,
-				certificatesv1.UsageClientAuth,
+	object, err := m.client.CertificatesV1().
+		CertificateSigningRequests().
+		Create(ctx, &certificatesv1.CertificateSigningRequest{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "sealos-kubelet-",
 			},
-		},
-	}, metav1.CreateOptions{})
+			Spec: certificatesv1.CertificateSigningRequestSpec{
+				Request:    requestPEM,
+				SignerName: certificatesv1.KubeAPIServerClientKubeletSignerName,
+				Usages: []certificatesv1.KeyUsage{
+					certificatesv1.UsageDigitalSignature,
+					certificatesv1.UsageClientAuth,
+				},
+			},
+		}, metav1.CreateOptions{})
 	if err != nil {
 		return nil, nil, nil, err
 	}
 	defer func() {
 		cleanupCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
-		_ = m.client.CertificatesV1().CertificateSigningRequests().Delete(cleanupCtx, object.Name, metav1.DeleteOptions{
-			Preconditions: &metav1.Preconditions{
-				UID: &object.UID,
-			},
-		})
+		_ = m.client.CertificatesV1().
+			CertificateSigningRequests().
+			Delete(cleanupCtx, object.Name, metav1.DeleteOptions{
+				Preconditions: &metav1.Preconditions{
+					UID: &object.UID,
+				},
+			})
 	}()
 	if err := m.approveKubeletCSR(ctx, object); err != nil {
 		return nil, nil, nil, err
@@ -229,13 +258,21 @@ func (m *modeSwitch) registeredCredentials(ctx context.Context) (*clientcmdapi.C
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	if leaf.Subject.CommonName != "system:node:"+m.state.Node.Name || len(leaf.Subject.Organization) != 1 || leaf.Subject.Organization[0] != "system:nodes" || time.Until(leaf.NotAfter) < time.Hour {
-		return nil, nil, nil, fmt.Errorf("signer returned an invalid kubelet identity or certificate lifetime")
+	if leaf.Subject.CommonName != "system:node:"+m.state.Node.Name ||
+		len(leaf.Subject.Organization) != 1 ||
+		leaf.Subject.Organization[0] != "system:nodes" ||
+		time.Until(leaf.NotAfter) < time.Hour {
+		return nil, nil, nil, errors.New(
+			"signer returned an invalid kubelet identity or certificate lifetime",
+		)
 	}
 	return config, certData, keyData, nil
 }
 
-func (m *modeSwitch) approveKubeletCSR(ctx context.Context, request *certificatesv1.CertificateSigningRequest) error {
+func (m *modeSwitch) approveKubeletCSR(
+	ctx context.Context,
+	request *certificatesv1.CertificateSigningRequest,
+) error {
 	requests := m.client.CertificatesV1().CertificateSigningRequests()
 	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		latest, err := requests.Get(ctx, request.Name, metav1.GetOptions{})
@@ -243,7 +280,7 @@ func (m *modeSwitch) approveKubeletCSR(ctx context.Context, request *certificate
 			return err
 		}
 		if latest.UID != request.UID {
-			return fmt.Errorf("kubelet CSR identity changed before approval")
+			return errors.New("kubelet CSR identity changed before approval")
 		}
 		approved := false
 		for _, condition := range latest.Status.Conditions {
@@ -260,19 +297,22 @@ func (m *modeSwitch) approveKubeletCSR(ctx context.Context, request *certificate
 		if approved {
 			return nil
 		}
-		latest.Status.Conditions = append(latest.Status.Conditions, certificatesv1.CertificateSigningRequestCondition{
-			Type:           certificatesv1.CertificateApproved,
-			Status:         v1.ConditionTrue,
-			Reason:         "SealosControlPlaneMode",
-			Message:        "Administrator requested registered control-plane mode",
-			LastUpdateTime: metav1.Now(),
-		})
+		latest.Status.Conditions = append(
+			latest.Status.Conditions,
+			certificatesv1.CertificateSigningRequestCondition{
+				Type:           certificatesv1.CertificateApproved,
+				Status:         v1.ConditionTrue,
+				Reason:         "SealosControlPlaneMode",
+				Message:        "Administrator requested registered control-plane mode",
+				LastUpdateTime: metav1.Now(),
+			},
+		)
 		_, err = requests.UpdateApproval(ctx, latest.Name, latest, metav1.UpdateOptions{})
 		return err
 	})
 }
 
-func restoredNode(original *v1.Node) *v1.Node {
+func restoredNode(original *v1.Node, endpoint string) *v1.Node {
 	node := &v1.Node{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        original.Name,
@@ -283,11 +323,12 @@ func restoredNode(original *v1.Node) *v1.Node {
 			ProviderID: original.Spec.ProviderID,
 		},
 	}
-	for key, value := range original.Labels {
-		node.Labels[key] = value
-	}
-	for key, value := range original.Annotations {
-		node.Annotations[key] = value
+	maps.Copy(node.Labels, original.Labels)
+	maps.Copy(node.Annotations, original.Annotations)
+	// kubeadm versions before NodeLocalCRISocket discover the runtime through
+	// this annotation during reset and upgrade, including after standalone init.
+	if endpoint != "" {
+		node.Annotations[kubeadmCRISocketAnnotation] = endpoint
 	}
 	node.Annotations[modeOriginAnnotation] = string(original.UID)
 	for _, taint := range original.Spec.Taints {
@@ -300,7 +341,7 @@ func restoredNode(original *v1.Node) *v1.Node {
 }
 
 func (m *modeSwitch) restoreNode(ctx context.Context) error {
-	wanted := restoredNode(m.state.Node)
+	wanted := restoredNode(m.state.Node, m.state.Endpoint)
 	var node *v1.Node
 	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		current, err := m.client.CoreV1().Nodes().Get(ctx, wanted.Name, metav1.GetOptions{})
@@ -308,10 +349,10 @@ func (m *modeSwitch) restoreNode(ctx context.Context) error {
 			return err
 		}
 		if !m.ownsRegisteredNode(current) {
-			return fmt.Errorf("refusing to adopt a different Node with the same name")
+			return errors.New("refusing to adopt a different Node with the same name")
 		}
 		if current.DeletionTimestamp != nil {
-			return fmt.Errorf("old Node is still terminating")
+			return errors.New("old Node is still terminating")
 		}
 		if current.Spec.ProviderID == "" {
 			current.Spec.ProviderID = wanted.Spec.ProviderID
@@ -322,12 +363,8 @@ func (m *modeSwitch) restoreNode(ctx context.Context) error {
 		if current.Annotations == nil {
 			current.Annotations = make(map[string]string)
 		}
-		for key, value := range wanted.Labels {
-			current.Labels[key] = value
-		}
-		for key, value := range wanted.Annotations {
-			current.Annotations[key] = value
-		}
+		maps.Copy(current.Labels, wanted.Labels)
+		maps.Copy(current.Annotations, wanted.Annotations)
 		var taints []v1.Taint
 		for _, taint := range current.Spec.Taints {
 			if taint.Key != modeRegistrationTaint {
@@ -357,11 +394,13 @@ func (m *modeSwitch) restoreNode(ctx context.Context) error {
 }
 
 func (m *modeSwitch) ownsRegisteredNode(node *v1.Node) bool {
-	if node.UID == m.state.RegisteredUID || node.Annotations[modeOriginAnnotation] == string(m.state.Node.UID) {
+	if node.UID == m.state.RegisteredUID ||
+		node.Annotations[modeOriginAnnotation] == string(m.state.Node.UID) {
 		return true
 	}
 	for _, taint := range node.Spec.Taints {
-		if taint.Key == modeRegistrationTaint && taint.Value == string(m.state.Node.UID) && taint.Effect == v1.TaintEffectNoSchedule {
+		if taint.Key == modeRegistrationTaint && taint.Value == string(m.state.Node.UID) &&
+			taint.Effect == v1.TaintEffectNoSchedule {
 			return true
 		}
 	}
@@ -377,7 +416,7 @@ func (m *modeSwitch) checkRegisteredIdentity(ctx context.Context) error {
 		return err
 	}
 	if !m.ownsRegisteredNode(node) {
-		return fmt.Errorf("a different Node already uses the control-plane name")
+		return errors.New("a different Node already uses the control-plane name")
 	}
 	return nil
 }

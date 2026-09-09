@@ -16,9 +16,8 @@ package guest
 
 import (
 	"context"
+	"slices"
 	"strings"
-
-	"golang.org/x/sync/errgroup"
 
 	"github.com/labring/sealos/fork/golang/expansion"
 	"github.com/labring/sealos/pkg/env"
@@ -27,6 +26,7 @@ import (
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/maps"
 	stringsutil "github.com/labring/sealos/pkg/utils/strings"
+	"golang.org/x/sync/errgroup"
 )
 
 type Interface interface {
@@ -85,35 +85,57 @@ func (d *Default) Apply(cluster *v2.Cluster, mounts []v2.MountImage, targetHosts
 }
 
 func isControlPlaneHost(cluster *v2.Cluster, host string) bool {
-	for _, master := range cluster.GetMasterIPAndPortList() {
-		if host == master {
-			return true
-		}
+	if slices.Contains(cluster.GetMasterIPAndPortList(), host) {
+		return true
 	}
-	for _, master := range cluster.GetMasterIPList() {
-		if host == master {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(cluster.GetMasterIPList(), host)
 }
 
-func formalizeImageCommands(cluster *v2.Cluster, index int, m v2.MountImage, extraEnvs map[string]string) []string {
+func formalizeImageCommands(
+	cluster *v2.Cluster,
+	index int,
+	m v2.MountImage,
+	extraEnvs map[string]string,
+) []string {
 	envs := maps.Merge(m.Env, extraEnvs)
 	envs = v2.MergeEnvWithBuiltinKeys(envs, m)
 	mapping := expansion.MappingFuncFor(envs)
 
 	cmds := make([]string, 0)
 	for i := range m.Entrypoint {
-		cmds = append(cmds, FormalizeWorkingCommand(cluster.Name, m.Name, m.Type, expansion.Expand(m.Entrypoint[i], mapping)))
+		cmds = append(
+			cmds,
+			FormalizeWorkingCommand(
+				cluster.Name,
+				m.Name,
+				m.Type,
+				expansion.Expand(m.Entrypoint[i], mapping),
+			),
+		)
 	}
 	if index == 0 && len(cluster.Spec.Command) > 0 {
 		for i := range cluster.Spec.Command {
-			cmds = append(cmds, FormalizeWorkingCommand(cluster.Name, m.Name, m.Type, expansion.Expand(cluster.Spec.Command[i], mapping)))
+			cmds = append(
+				cmds,
+				FormalizeWorkingCommand(
+					cluster.Name,
+					m.Name,
+					m.Type,
+					expansion.Expand(cluster.Spec.Command[i], mapping),
+				),
+			)
 		}
 	} else {
 		for i := range m.Cmd {
-			cmds = append(cmds, FormalizeWorkingCommand(cluster.Name, m.Name, m.Type, expansion.Expand(m.Cmd[i], mapping)))
+			cmds = append(
+				cmds,
+				FormalizeWorkingCommand(
+					cluster.Name,
+					m.Name,
+					m.Type,
+					expansion.Expand(m.Cmd[i], mapping),
+				),
+			)
 		}
 	}
 

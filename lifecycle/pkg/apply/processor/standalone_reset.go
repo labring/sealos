@@ -5,7 +5,7 @@ package processor
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 	"os"
 	"path/filepath"
 
@@ -19,8 +19,8 @@ const StandaloneResetProgressFile = "standalone-reset-progress.json"
 func runStandaloneResetPipeline(cluster *v2.Cluster, pipeline []func(*v2.Cluster) error) error {
 	path := filepath.Join(constants.ClusterDir(cluster.Name), StandaloneResetProgressFile)
 	var progress struct {
-		Version   int
-		Completed int
+		Version   int `json:"Version"`
+		Completed int `json:"Completed"`
 	}
 	data, err := os.ReadFile(path)
 	if err == nil {
@@ -28,7 +28,7 @@ func runStandaloneResetPipeline(cluster *v2.Cluster, pipeline []func(*v2.Cluster
 			return err
 		}
 		if progress.Version != 1 || progress.Completed < 0 || progress.Completed > len(pipeline) {
-			return fmt.Errorf("invalid standalone reset pipeline journal")
+			return errors.New("invalid standalone reset pipeline journal")
 		}
 	} else if !os.IsNotExist(err) {
 		return err

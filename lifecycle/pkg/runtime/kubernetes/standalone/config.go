@@ -8,6 +8,7 @@ package standalone
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -42,7 +43,11 @@ func ValidateVersionChange(current, target string) error {
 	if a.Major() != 1 || b.Major() != 1 || a.Minor() < 28 ||
 		b.LessThan(a) || b.Minor() > a.Minor()+1 ||
 		a.Prerelease() != "" || b.Prerelease() != "" {
-		return fmt.Errorf("standalone upgrade requires stable Kubernetes >= 1.28 without downgrade or skipped minor versions: %s -> %s", current, target)
+		return fmt.Errorf(
+			"standalone upgrade requires stable Kubernetes >= 1.28 without downgrade or skipped minor versions: %s -> %s",
+			current,
+			target,
+		)
 	}
 	return nil
 }
@@ -50,8 +55,8 @@ func ValidateVersionChange(current, target string) error {
 func flagValue(args []string, name string) string {
 	var value string
 	for i, arg := range args {
-		if strings.HasPrefix(arg, "--"+name+"=") {
-			value = strings.TrimPrefix(arg, "--"+name+"=")
+		if after, ok := strings.CutPrefix(arg, "--"+name+"="); ok {
+			value = after
 		} else if arg == "--"+name && i+1 < len(args) {
 			value = args[i+1]
 		}
@@ -66,10 +71,12 @@ func standaloneArgs(args []string) ([]string, error) {
 		}
 	}
 	if !filepath.IsAbs(flagValue(args, "config")) {
-		return nil, fmt.Errorf("standalone kubelet requires an absolute --config path")
+		return nil, errors.New("standalone kubelet requires an absolute --config path")
 	}
 	if flagValue(args, "config-dir") != "" {
-		return nil, fmt.Errorf("standalone upgrade does not yet validate kubelet --config-dir overrides")
+		return nil, errors.New(
+			"standalone upgrade does not yet validate kubelet --config-dir overrides",
+		)
 	}
 	var preserved []string
 	for i := 0; i < len(args); i++ {
@@ -85,7 +92,12 @@ func standaloneArgs(args []string) ([]string, error) {
 			preserved = append(preserved, arg)
 		}
 	}
-	return append(preserved, "--kubeconfig=", "--bootstrap-kubeconfig=", "--register-node=false"), nil
+	return append(
+		preserved,
+		"--kubeconfig=",
+		"--bootstrap-kubeconfig=",
+		"--register-node=false",
+	), nil
 }
 
 func readPod(path string) (*v1.Pod, error) {
@@ -97,8 +109,12 @@ func readPod(path string) (*v1.Pod, error) {
 	if err := yaml.Unmarshal(data, &pod); err != nil {
 		return nil, err
 	}
-	if pod.Kind != "Pod" || pod.Namespace != "kube-system" || !pod.Spec.HostNetwork || len(pod.Spec.Containers) != 1 {
-		return nil, fmt.Errorf("expected a single-container host-network control-plane Pod in %s", path)
+	if pod.Kind != "Pod" || pod.Namespace != "kube-system" || !pod.Spec.HostNetwork ||
+		len(pod.Spec.Containers) != 1 {
+		return nil, fmt.Errorf(
+			"expected a single-container host-network control-plane Pod in %s",
+			path,
+		)
 	}
 	return &pod, nil
 }
@@ -118,14 +134,16 @@ func mountedHostPath(pod *v1.Pod, path string) (string, error) {
 		mount := &pod.Spec.Containers[0].VolumeMounts[i]
 		base := filepath.Clean(mount.MountPath)
 		relative, err := filepath.Rel(base, path)
-		if err != nil || relative == ".." || strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
+		if err != nil || relative == ".." ||
+			strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
 			continue
 		}
 		if selected == nil || len(base) > len(filepath.Clean(selected.MountPath)) {
 			selected = mount
 		}
 	}
-	if selected == nil || selected.SubPath != "" || selected.SubPathExpr != "" || selected.ReadOnly {
+	if selected == nil || selected.SubPath != "" || selected.SubPathExpr != "" ||
+		selected.ReadOnly {
 		return "", fmt.Errorf("%s requires a writable hostPath mount without subPath", path)
 	}
 	for _, volume := range pod.Spec.Volumes {
@@ -148,13 +166,13 @@ func mountedHostPath(pod *v1.Pod, path string) (string, error) {
 // through conversions by the Kubernetes version linked into sealctl.
 func nodeConfig(data []byte, target, name, endpoint string, api *v1.Pod) ([]byte, error) {
 	decoder := utilyaml.NewYAMLOrJSONDecoder(bytes.NewReader(data), 4096)
-	var cluster map[string]interface{}
-	var init map[string]interface{}
-	var components []map[string]interface{}
+	var cluster map[string]any
+	var init map[string]any
+	var components []map[string]any
 	for {
-		var doc map[string]interface{}
+		var doc map[string]any
 		err := decoder.Decode(&doc)
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
@@ -162,13 +180,13 @@ func nodeConfig(data []byte, target, name, endpoint string, api *v1.Pod) ([]byte
 		}
 		if doc["kind"] == "ClusterConfiguration" {
 			if cluster != nil {
-				return nil, fmt.Errorf("multiple ClusterConfiguration documents")
+				return nil, errors.New("multiple ClusterConfiguration documents")
 			}
 			cluster = doc
 		}
 		if doc["kind"] == "InitConfiguration" {
 			if init != nil {
-				return nil, fmt.Errorf("multiple InitConfiguration documents")
+				return nil, errors.New("multiple InitConfiguration documents")
 			}
 			init = doc
 		}
@@ -177,30 +195,33 @@ func nodeConfig(data []byte, target, name, endpoint string, api *v1.Pod) ([]byte
 		}
 	}
 	if cluster == nil {
-		return nil, fmt.Errorf("ClusterConfiguration is required")
+		return nil, errors.New("ClusterConfiguration is required")
 	}
-	if dir, ok := cluster["certificatesDir"].(string); ok && dir != "" && dir != "/etc/kubernetes/pki" {
-		return nil, fmt.Errorf("standalone upgrade currently requires certificatesDir=/etc/kubernetes/pki")
+	if dir, ok := cluster["certificatesDir"].(string); ok && dir != "" &&
+		dir != "/etc/kubernetes/pki" {
+		return nil, errors.New(
+			"standalone upgrade currently requires certificatesDir=/etc/kubernetes/pki",
+		)
 	}
 	cluster["kubernetesVersion"] = target
 	args := componentArgs(api)
 	address := flagValue(args, "advertise-address")
 	port, err := strconv.Atoi(flagValue(args, "secure-port"))
 	if err != nil || net.ParseIP(address) == nil || port < 1 || port > 65535 {
-		return nil, fmt.Errorf("cannot identify the local API endpoint from its manifest")
+		return nil, errors.New("cannot identify the local API endpoint from its manifest")
 	}
 	if init == nil {
-		init = make(map[string]interface{})
+		init = make(map[string]any)
 	}
 	init["apiVersion"] = cluster["apiVersion"]
 	init["kind"] = "InitConfiguration"
-	init["localAPIEndpoint"] = map[string]interface{}{
+	init["localAPIEndpoint"] = map[string]any{
 		"advertiseAddress": address,
 		"bindPort":         port,
 	}
-	registration, _ := init["nodeRegistration"].(map[string]interface{})
+	registration, _ := init["nodeRegistration"].(map[string]any)
 	if registration == nil {
-		registration = make(map[string]interface{})
+		registration = make(map[string]any)
 	}
 	registration["name"] = name
 	registration["criSocket"] = endpoint
@@ -228,9 +249,9 @@ func appendComponentConfigs(original []byte, migratedPath string) error {
 	decoder := utilyaml.NewYAMLOrJSONDecoder(bytes.NewReader(original), 4096)
 	var components []byte
 	for {
-		var doc map[string]interface{}
+		var doc map[string]any
 		err := decoder.Decode(&doc)
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
@@ -258,9 +279,9 @@ func withLocalKubeletConfig(config, kubelet []byte) ([]byte, error) {
 	decoder := utilyaml.NewYAMLOrJSONDecoder(bytes.NewReader(config), 4096)
 	var result []byte
 	for {
-		var doc map[string]interface{}
+		var doc map[string]any
 		err := decoder.Decode(&doc)
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
@@ -279,7 +300,7 @@ func withLocalKubeletConfig(config, kubelet []byte) ([]byte, error) {
 	return append(result, kubelet...), nil
 }
 
-func writeJSON(path string, value interface{}) error {
+func writeJSON(path string, value any) error {
 	data, err := json.MarshalIndent(value, "", "  ")
 	if err != nil {
 		return err
@@ -288,7 +309,7 @@ func writeJSON(path string, value interface{}) error {
 }
 
 func serviceOverride(args []string) string {
-	var quoted []string
+	quoted := make([]string, 0, 1+len(args))
 	for _, arg := range append([]string{"/usr/bin/kubelet"}, args...) {
 		arg = strings.NewReplacer(
 			"\\", "\\\\",

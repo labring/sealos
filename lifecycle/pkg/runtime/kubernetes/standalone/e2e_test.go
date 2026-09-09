@@ -4,6 +4,7 @@
 package standalone
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -21,7 +22,7 @@ func TestActivateStandaloneE2E(t *testing.T) {
 	if os.Getenv("SEALOS_STANDALONE_ACTIVATE_E2E") != "1" {
 		t.Skip("requires explicit activation of a disposable control plane")
 	}
-	config, err := exec.Command(
+	config, err := exec.CommandContext(context.Background(),
 		"kubectl", "--kubeconfig=/etc/kubernetes/admin.conf",
 		"-n", "kube-system", "get", "configmap", "kubeadm-config",
 		"-o", "jsonpath={.data.ClusterConfiguration}",
@@ -43,7 +44,8 @@ func TestActivateStandaloneE2E(t *testing.T) {
 		},
 	}
 	for _, component := range components {
-		data, err := exec.Command(
+		// #nosec G204 -- Component names and JSONPath keys are fixture constants.
+		data, err := exec.CommandContext(context.Background(),
 			"kubectl", "--kubeconfig=/etc/kubernetes/admin.conf",
 			"-n", "kube-system", "get", "configmap", component.name,
 			"-o", "jsonpath={.data."+component.key+"}",
@@ -54,10 +56,12 @@ func TestActivateStandaloneE2E(t *testing.T) {
 		config = append(config, []byte("\n---\n")...)
 		config = append(config, data...)
 	}
+	// #nosec G703 -- The operator explicitly selects this disposable fixture's output.
 	if err := os.WriteFile(os.Getenv("SEALOS_STANDALONE_CONFIG"), config, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	pidBytes, err := exec.Command("systemctl", "show", "--property=MainPID", "--value", "kubelet").Output()
+	pidBytes, err := exec.CommandContext(context.Background(), "systemctl", "show", "--property=MainPID", "--value", "kubelet").
+		Output()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -77,7 +81,8 @@ func TestActivateStandaloneE2E(t *testing.T) {
 			i++
 			continue
 		}
-		if strings.HasPrefix(arg, "--kubeconfig=") || strings.HasPrefix(arg, "--bootstrap-kubeconfig=") {
+		if strings.HasPrefix(arg, "--kubeconfig=") ||
+			strings.HasPrefix(arg, "--bootstrap-kubeconfig=") {
 			continue
 		}
 		args = append(args, arg)
@@ -91,19 +96,20 @@ func TestActivateStandaloneE2E(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var kubelet map[string]interface{}
+	var kubelet map[string]any
 	if err := yaml.Unmarshal(data, &kubelet); err != nil {
 		t.Fatal(err)
 	}
 	kubelet["rotateCertificates"] = false
 	kubelet["serverTLSBootstrap"] = false
-	kubelet["authentication"].(map[string]interface{})["webhook"].(map[string]interface{})["enabled"] = false
-	kubelet["authorization"].(map[string]interface{})["mode"] = "AlwaysAllow"
+	testMap(t, testMap(t, kubelet["authentication"])["webhook"])["enabled"] = false
+	testMap(t, kubelet["authorization"])["mode"] = "AlwaysAllow"
 	data, err = yaml.Marshal(kubelet)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if out, err := exec.Command("systemctl", "stop", "kubelet").CombinedOutput(); err != nil {
+	if out, err := exec.CommandContext(context.Background(), "systemctl", "stop", "kubelet").
+		CombinedOutput(); err != nil {
 		t.Fatalf("stop kubelet: %v: %s", err, out)
 	}
 	if err := os.WriteFile(path, data, 0o600); err != nil {
@@ -120,7 +126,8 @@ func TestActivateStandaloneE2E(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if out, err := exec.Command("kubectl", "--kubeconfig=/etc/kubernetes/admin.conf", "delete", "node", name).CombinedOutput(); err != nil {
+	if out, err := exec.CommandContext(context.Background(), "kubectl", "--kubeconfig=/etc/kubernetes/admin.conf", "delete", "node", name).
+		CombinedOutput(); err != nil {
 		t.Fatalf("remove fixture Node: %v: %s", err, out)
 	}
 	actions := [][]string{
@@ -128,7 +135,8 @@ func TestActivateStandaloneE2E(t *testing.T) {
 		{"start", "kubelet"},
 	}
 	for _, action := range actions {
-		if out, err := exec.Command("systemctl", action...).CombinedOutput(); err != nil {
+		if out, err := exec.CommandContext(context.Background(), "systemctl", action...).
+			CombinedOutput(); err != nil {
 			t.Fatalf("activate standalone kubelet: %v: %s", err, out)
 		}
 	}

@@ -11,14 +11,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/labring/sealos/pkg/constants"
 	coordinationv1 "k8s.io/api/coordination/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/uuid"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
-
-	"github.com/labring/sealos/pkg/constants"
 )
 
 const ModeTransitionResource = "sealos-control-plane-mode"
@@ -28,7 +27,11 @@ var ErrModeTransitionPending = errors.New("control-plane conversion is pending")
 // WithModeLease uses the public coordination API to serialize conversions
 // started from different inventories. Host locks also exclude in-flight SSH
 // work when the management process is interrupted or loses its lease.
-func WithModeLease(ctx context.Context, client clientset.Interface, run func(context.Context) error) error {
+func WithModeLease(
+	ctx context.Context,
+	client clientset.Interface,
+	run func(context.Context) error,
+) error {
 	leases := client.CoordinationV1().Leases("kube-system")
 	lease, err := leases.Get(ctx, ModeTransitionResource, metav1.GetOptions{})
 	if err != nil && !apierrors.IsNotFound(err) {
@@ -38,7 +41,7 @@ func WithModeLease(ctx context.Context, client clientset.Interface, run func(con
 		lease = nil
 	}
 	if lease != nil && leaseActive(lease) {
-		return fmt.Errorf("another control-plane conversion holds the cluster lease")
+		return errors.New("another control-plane conversion holds the cluster lease")
 	}
 	identity := string(uuid.NewUUID())
 	duration := int32(60)
@@ -123,14 +126,17 @@ func WithModeLease(ctx context.Context, client clientset.Interface, run func(con
 func leaseActive(lease *coordinationv1.Lease) bool {
 	return lease.Spec.HolderIdentity != nil && *lease.Spec.HolderIdentity != "" &&
 		lease.Spec.RenewTime != nil && lease.Spec.LeaseDurationSeconds != nil &&
-		time.Now().Before(lease.Spec.RenewTime.Add(time.Duration(*lease.Spec.LeaseDurationSeconds)*time.Second))
+		time.Now().
+			Before(lease.Spec.RenewTime.Add(time.Duration(*lease.Spec.LeaseDurationSeconds)*time.Second))
 }
 
 func CheckRemoteModeTransition(ctx context.Context, name string, required bool) error {
 	path := constants.NewPathResolver(name).AdminFile()
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		if required {
-			return fmt.Errorf("admin kubeconfig is required to verify the managed cluster's conversion state")
+			return errors.New(
+				"admin kubeconfig is required to verify the managed cluster's conversion state",
+			)
 		}
 		return nil
 	}
@@ -149,7 +155,11 @@ func CheckRemoteModeTransition(ctx context.Context, name string, required bool) 
 	return checkOptionalModeTransition(ctx, client, required)
 }
 
-func checkOptionalModeTransition(ctx context.Context, client clientset.Interface, required bool) error {
+func checkOptionalModeTransition(
+	ctx context.Context,
+	client clientset.Interface,
+	required bool,
+) error {
 	err := CheckModeTransition(ctx, client)
 	// Existing inventories that have never enabled mode management must retain
 	// their offline reset behavior. Managed inventories fail closed on API errors.
@@ -163,14 +173,21 @@ func CheckModeTransition(ctx context.Context, client clientset.Interface) error 
 	if err := CheckLifecycle(ctx, client); err != nil {
 		return err
 	}
-	_, err := client.CoreV1().ConfigMaps("kube-system").Get(ctx, ModeTransitionResource, metav1.GetOptions{})
+	_, err := client.CoreV1().
+		ConfigMaps("kube-system").
+		Get(ctx, ModeTransitionResource, metav1.GetOptions{})
 	if err == nil {
-		return fmt.Errorf("%w; resume sealos switch before running other lifecycle commands", ErrModeTransitionPending)
+		return fmt.Errorf(
+			"%w; resume sealos switch before running other lifecycle commands",
+			ErrModeTransitionPending,
+		)
 	}
 	if !apierrors.IsNotFound(err) {
 		return err
 	}
-	lease, err := client.CoordinationV1().Leases("kube-system").Get(ctx, ModeTransitionResource, metav1.GetOptions{})
+	lease, err := client.CoordinationV1().
+		Leases("kube-system").
+		Get(ctx, ModeTransitionResource, metav1.GetOptions{})
 	if err == nil && leaseActive(lease) {
 		return ErrModeTransitionPending
 	}

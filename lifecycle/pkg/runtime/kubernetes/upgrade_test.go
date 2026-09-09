@@ -22,6 +22,10 @@ import (
 	"strings"
 	"testing"
 
+	clientkubernetes "github.com/labring/sealos/pkg/client-go/kubernetes"
+	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/runtime/kubernetes/types"
+	v1beta1 "github.com/labring/sealos/pkg/types/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/discovery"
@@ -31,11 +35,6 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 	ckubeadm "k8s.io/kubernetes/cmd/kubeadm/app/constants"
-
-	clientkubernetes "github.com/labring/sealos/pkg/client-go/kubernetes"
-	"github.com/labring/sealos/pkg/constants"
-	"github.com/labring/sealos/pkg/runtime/kubernetes/types"
-	v1beta1 "github.com/labring/sealos/pkg/types/v1beta1"
 )
 
 func TestSanitizeKubeletConfigForPre130(t *testing.T) {
@@ -137,16 +136,32 @@ func TestGetUpgradeCommandsFollowCertificateRenewalPolicy(t *testing.T) {
 			if err != nil {
 				t.Fatalf("getUpgradeApplyCmd() error = %v", err)
 			}
-			if got := strings.Contains(applyCmd, "--certificate-renewal=false"); got != tt.wantApplyDisableRenew {
-				t.Fatalf("getUpgradeApplyCmd() disable-renewal = %v, want %v, cmd = %q", got, tt.wantApplyDisableRenew, applyCmd)
+			if got := strings.Contains(
+				applyCmd,
+				"--certificate-renewal=false",
+			); got != tt.wantApplyDisableRenew {
+				t.Fatalf(
+					"getUpgradeApplyCmd() disable-renewal = %v, want %v, cmd = %q",
+					got,
+					tt.wantApplyDisableRenew,
+					applyCmd,
+				)
 			}
 
 			nodeCmd, err := getUpgradeNodeCmd(tt.version)
 			if err != nil {
 				t.Fatalf("getUpgradeNodeCmd() error = %v", err)
 			}
-			if got := strings.Contains(nodeCmd, "--certificate-renewal=false"); got != tt.wantNodeDisableRenew {
-				t.Fatalf("getUpgradeNodeCmd() disable-renewal = %v, want %v, cmd = %q", got, tt.wantNodeDisableRenew, nodeCmd)
+			if got := strings.Contains(
+				nodeCmd,
+				"--certificate-renewal=false",
+			); got != tt.wantNodeDisableRenew {
+				t.Fatalf(
+					"getUpgradeNodeCmd() disable-renewal = %v, want %v, cmd = %q",
+					got,
+					tt.wantNodeDisableRenew,
+					nodeCmd,
+				)
 			}
 		})
 	}
@@ -169,7 +184,7 @@ func TestGetterKubeadmAPIVersion(t *testing.T) {
 }
 
 func TestMarshalConfigsForVersionAddsCertValidityPeriodsForV131(t *testing.T) {
-	clusterConfig := map[string]interface{}{
+	clusterConfig := map[string]any{
 		"apiVersion": types.KubeadmV1beta4,
 		"kind":       "ClusterConfiguration",
 	}
@@ -190,7 +205,7 @@ func TestMarshalConfigsForVersionAddsCertValidityPeriodsForV131(t *testing.T) {
 }
 
 func TestMarshalConfigsForVersionSkipsCertValidityPeriodsBeforeV131(t *testing.T) {
-	clusterConfig := map[string]interface{}{
+	clusterConfig := map[string]any{
 		"apiVersion": types.KubeadmV1beta3,
 		"kind":       "ClusterConfiguration",
 	}
@@ -301,11 +316,21 @@ func TestGetRemoteCertMigrations(t *testing.T) {
 				t.Fatalf("getRemoteCertMigrations() error = %v", err)
 			}
 			if len(got) != len(tt.wantNames) {
-				t.Fatalf("getRemoteCertMigrations() len = %d, want %d (%v)", len(got), len(tt.wantNames), tt.wantNames)
+				t.Fatalf(
+					"getRemoteCertMigrations() len = %d, want %d (%v)",
+					len(got),
+					len(tt.wantNames),
+					tt.wantNames,
+				)
 			}
 			for i := range got {
 				if got[i].name != tt.wantNames[i] {
-					t.Fatalf("getRemoteCertMigrations()[%d] = %q, want %q", i, got[i].name, tt.wantNames[i])
+					t.Fatalf(
+						"getRemoteCertMigrations()[%d] = %q, want %q",
+						i,
+						got[i].name,
+						tt.wantNames[i],
+					)
 				}
 			}
 		})
@@ -379,7 +404,9 @@ cgroupDriver: systemd`
 		t.Fatalf("autoUpdateConfig() error = %v", err)
 	}
 	if !hasLocalEtcd {
-		t.Fatal("expected kubeadm default etcd config without external etcd to be treated as local etcd")
+		t.Fatal(
+			"expected kubeadm default etcd config without external etcd to be treated as local etcd",
+		)
 	}
 }
 
@@ -401,7 +428,9 @@ func TestUsesLocalEtcd(t *testing.T) {
 		},
 		{
 			name: "external etcd with endpoints",
-			etcd: kubeadm.Etcd{External: &kubeadm.ExternalEtcd{Endpoints: []string{"https://127.0.0.1:2379"}}},
+			etcd: kubeadm.Etcd{
+				External: &kubeadm.ExternalEtcd{Endpoints: []string{"https://127.0.0.1:2379"}},
+			},
 			want: false,
 		},
 		{
@@ -432,7 +461,12 @@ func TestShouldRegenerateRemoteAdminKubeConfig(t *testing.T) {
 
 	for _, tt := range tests {
 		if got := shouldRegenerateRemoteAdminKubeConfig(tt.version); got != tt.want {
-			t.Fatalf("shouldRegenerateRemoteAdminKubeConfig(%q) = %v, want %v", tt.version, got, tt.want)
+			t.Fatalf(
+				"shouldRegenerateRemoteAdminKubeConfig(%q) = %v, want %v",
+				tt.version,
+				got,
+				tt.want,
+			)
 		}
 	}
 }
@@ -445,7 +479,11 @@ func TestBuildRegenerateRemoteAdminKubeConfigCmd(t *testing.T) {
 		"mv -f \"$backup_dir/admin.conf\" /etc/kubernetes/admin.conf",
 	} {
 		if !strings.Contains(cmd, want) {
-			t.Fatalf("buildRegenerateRemoteAdminKubeConfigCmd() output %q does not contain %q", cmd, want)
+			t.Fatalf(
+				"buildRegenerateRemoteAdminKubeConfigCmd() output %q does not contain %q",
+				cmd,
+				want,
+			)
 		}
 	}
 	if strings.Contains(cmd, "kubeadm certs renew admin.conf") {
@@ -471,7 +509,11 @@ func TestSyncUpgradeMigrationConfigCopiesToAllTargets(t *testing.T) {
 	if err := os.MkdirAll(filepath.Dir(localConfigPath), 0o755); err != nil {
 		t.Fatalf("mkdir migration dir: %v", err)
 	}
-	if err := os.WriteFile(localConfigPath, []byte("kind: ClusterConfiguration\n"), 0o600); err != nil {
+	if err := os.WriteFile(
+		localConfigPath,
+		[]byte("kind: ClusterConfiguration\n"),
+		0o600,
+	); err != nil {
 		t.Fatalf("write migration config: %v", err)
 	}
 
@@ -503,7 +545,10 @@ func TestPreV131RemoteIdentityMigrationsAvoidKubeadmPhaseRegeneration(t *testing
 		t.Fatalf("getUpgradeApplyCmd() error = %v", err)
 	}
 	if !strings.Contains(applyCmd, "--certificate-renewal=false") {
-		t.Fatalf("expected pre-v1.31 upgrade apply to keep certificate renewal disabled, got %q", applyCmd)
+		t.Fatalf(
+			"expected pre-v1.31 upgrade apply to keep certificate renewal disabled, got %q",
+			applyCmd,
+		)
 	}
 
 	if got := shouldRegenerateRemoteAdminKubeConfig("v1.29.15"); !got {
@@ -601,7 +646,7 @@ apiServer:
 	if got := rt.getCertSANs(); len(got) != 2 || got[1] != "apiserver.example.local" {
 		t.Fatalf("certSANs = %v, want [127.0.0.1 apiserver.example.local]", got)
 	}
-	if got := rt.kubeadmConfig.ClusterConfiguration.ControlPlaneEndpoint; got != "apiserver.example.local:6443" {
+	if got := rt.kubeadmConfig.ControlPlaneEndpoint; got != "apiserver.example.local:6443" {
 		t.Fatalf("lost the published discovery endpoint: %q", got)
 	}
 }

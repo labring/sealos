@@ -32,7 +32,7 @@ authorization:
 	if err != nil {
 		t.Fatal(err)
 	}
-	var config map[string]interface{}
+	var config map[string]any
 	if err := yaml.Unmarshal(converted, &config); err != nil {
 		t.Fatal(err)
 	}
@@ -57,7 +57,7 @@ authorization:
 	if err != nil {
 		t.Fatal(err)
 	}
-	var got, want map[string]interface{}
+	var got, want map[string]any
 	if err := yaml.Unmarshal(restored, &got); err != nil {
 		t.Fatal(err)
 	}
@@ -120,11 +120,20 @@ func TestRestoredNodeDoesNotReuseAllocatedCIDRs(t *testing.T) {
 			},
 		},
 	}
-	got := restoredNode(original)
-	if got.UID != "" || got.ResourceVersion != "" || got.Spec.PodCIDR != "" || len(got.Spec.PodCIDRs) != 0 {
+	endpoint := "unix:///run/containerd/containerd.sock"
+	got := restoredNode(original, endpoint)
+	if got.Annotations[kubeadmCRISocketAnnotation] != endpoint {
+		t.Fatal("restored Node lacks kubeadm runtime discovery metadata")
+	}
+	if original.Annotations[kubeadmCRISocketAnnotation] != "" {
+		t.Fatal("restoration mutated the saved baseline")
+	}
+	if got.UID != "" || got.ResourceVersion != "" || got.Spec.PodCIDR != "" ||
+		len(got.Spec.PodCIDRs) != 0 {
 		t.Fatalf("restored stale cluster identity: %+v", got)
 	}
-	if got.Spec.Unschedulable || len(got.Spec.Taints) != 1 || got.Labels["example.com/rack"] != "one" {
+	if got.Spec.Unschedulable || len(got.Spec.Taints) != 1 ||
+		got.Labels["example.com/rack"] != "one" {
 		t.Fatalf("changed schedulability or lost administrator metadata: %+v", got)
 	}
 }

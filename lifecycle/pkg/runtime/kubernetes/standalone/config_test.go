@@ -57,7 +57,9 @@ func TestRejectRegisteredKubelet(t *testing.T) {
 			t.Fatalf("accepted unsafe kubelet arguments: %v", args)
 		}
 	}
-	args, err := standaloneArgs([]string{"--config=/var/lib/kubelet/config.yaml", "--node-ip=192.0.2.1", "--kubeconfig="})
+	args, err := standaloneArgs(
+		[]string{"--config=/var/lib/kubelet/config.yaml", "--node-ip=192.0.2.1", "--kubeconfig="},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -101,38 +103,62 @@ patches:
 			},
 		},
 	}
-	data, err := nodeConfig(source, "v1.36.0", "control-plane", "unix:///run/containerd/containerd.sock", api)
+	data, err := nodeConfig(
+		source,
+		"v1.36.0",
+		"control-plane",
+		"unix:///run/containerd/containerd.sock",
+		api,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
 	decoder := utilyaml.NewYAMLOrJSONDecoder(bytes.NewReader(data), 4096)
-	var cluster, init map[string]interface{}
+	var cluster, init map[string]any
 	if err := decoder.Decode(&cluster); err != nil {
 		t.Fatal(err)
 	}
 	if err := decoder.Decode(&init); err != nil {
 		t.Fatal(err)
 	}
-	if cluster["kubernetesVersion"] != "v1.36.0" || cluster["futureField"].(map[string]interface{})["preserve"] != true {
+	if cluster["kubernetesVersion"] != "v1.36.0" ||
+		testMap(t, cluster["futureField"])["preserve"] != true {
 		t.Fatalf("cluster configuration was lost: %v", cluster)
 	}
-	endpoint := init["localAPIEndpoint"].(map[string]interface{})
+	endpoint := testMap(t, init["localAPIEndpoint"])
 	if endpoint["advertiseAddress"] != "2001:db8::1" || endpoint["bindPort"] != float64(7443) {
 		t.Fatalf("wrong local endpoint: %v", endpoint)
 	}
-	if _, exists := init["nodeRegistration"].(map[string]interface{})["kubeletExtraArgs"]; exists {
+	if _, exists := testMap(t, init["nodeRegistration"])["kubeletExtraArgs"]; exists {
 		t.Fatal("manifest generation must not supply kubelet bootstrap arguments")
 	}
-	if init["patches"].(map[string]interface{})["directory"] != "/etc/kubernetes/patches" {
+	if testMap(t, init["patches"])["directory"] != "/etc/kubernetes/patches" {
 		t.Fatal("InitConfiguration patches were lost")
 	}
-	if _, err := nodeConfig(append(append([]byte{}, source...), append([]byte("\n---\n"), source...)...), "v1.36.0", "control-plane", "unix:///runtime.sock", api); err == nil {
+	if _, err := nodeConfig(
+		append(append([]byte{}, source...), append([]byte("\n---\n"), source...)...),
+		"v1.36.0",
+		"control-plane",
+		"unix:///runtime.sock",
+		api,
+	); err == nil {
 		t.Fatal("accepted duplicate ClusterConfiguration documents")
 	}
 }
 
+func testMap(t *testing.T, value any) map[string]any {
+	t.Helper()
+	result, ok := value.(map[string]any)
+	if !ok {
+		t.Fatalf("expected an object, got %T", value)
+	}
+	return result
+}
+
 func TestServiceOverridePreservesLiteralArguments(t *testing.T) {
-	got := serviceOverride([]string{"--config=/var/lib/kubelet/config.yaml", `--hostname-override=$HOME%H"x`})
+	got := serviceOverride(
+		[]string{"--config=/var/lib/kubelet/config.yaml", `--hostname-override=$HOME%H"x`},
+	)
 	if !strings.Contains(got, `"--hostname-override=$$HOME%%H\"x"`) {
 		t.Fatalf("systemd could expand an argument: %s", got)
 	}

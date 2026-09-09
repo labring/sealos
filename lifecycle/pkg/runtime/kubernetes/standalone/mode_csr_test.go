@@ -5,7 +5,7 @@ package standalone
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"testing"
 
 	certificatesv1 "k8s.io/api/certificates/v1"
@@ -24,22 +24,30 @@ func TestApproveKubeletCSRConcurrentApproval(t *testing.T) {
 	}
 	client := fake.NewSimpleClientset(request)
 	attempts := 0
-	client.PrependReactor("update", "certificatesigningrequests", func(action clienttesting.Action) (bool, runtime.Object, error) {
-		if action.GetSubresource() != "approval" {
-			t.Fatalf("unexpected update subresource: %s", action.GetSubresource())
-		}
-		attempts++
-		// A concurrent approver wins the race before our UpdateApproval.
-		approved := request.DeepCopy()
-		approved.Status.Conditions = []certificatesv1.CertificateSigningRequestCondition{{
-			Type: certificatesv1.CertificateApproved, Status: v1.ConditionTrue,
-		}}
-		resource := certificatesv1.SchemeGroupVersion.WithResource("certificatesigningrequests")
-		if err := client.Tracker().Update(resource, approved, ""); err != nil {
-			t.Fatal(err)
-		}
-		return true, nil, apierrors.NewConflict(schema.GroupResource{Resource: "certificatesigningrequests"}, request.Name, fmt.Errorf("concurrent approval"))
-	})
+	client.PrependReactor(
+		"update",
+		"certificatesigningrequests",
+		func(action clienttesting.Action) (bool, runtime.Object, error) {
+			if action.GetSubresource() != "approval" {
+				t.Fatalf("unexpected update subresource: %s", action.GetSubresource())
+			}
+			attempts++
+			// A concurrent approver wins the race before our UpdateApproval.
+			approved := request.DeepCopy()
+			approved.Status.Conditions = []certificatesv1.CertificateSigningRequestCondition{{
+				Type: certificatesv1.CertificateApproved, Status: v1.ConditionTrue,
+			}}
+			resource := certificatesv1.SchemeGroupVersion.WithResource("certificatesigningrequests")
+			if err := client.Tracker().Update(resource, approved, ""); err != nil {
+				t.Fatal(err)
+			}
+			return true, nil, apierrors.NewConflict(
+				schema.GroupResource{Resource: "certificatesigningrequests"},
+				request.Name,
+				errors.New("concurrent approval"),
+			)
+		},
+	)
 	m := &modeSwitch{client: client}
 	if err := m.approveKubeletCSR(context.Background(), request); err != nil {
 		t.Fatal(err)

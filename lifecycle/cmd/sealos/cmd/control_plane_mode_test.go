@@ -114,7 +114,8 @@ func TestSwitchModeConfirmation(t *testing.T) {
 				ran := false
 				cmd := newControlPlaneModeCmdWithConfirm(func(prompt, _ string) (bool, error) {
 					prompted = true
-					if !strings.Contains(prompt, `cluster "test-cluster"`) || !strings.Contains(prompt, mode+" mode") {
+					if !strings.Contains(prompt, `cluster "test-cluster"`) ||
+						!strings.Contains(prompt, mode+" mode") {
 						t.Fatalf("confirmation does not identify the target: %s", prompt)
 					}
 					return test.accepted, test.promptErr
@@ -129,8 +130,14 @@ func TestSwitchModeConfirmation(t *testing.T) {
 				cmd.SetErr(io.Discard)
 				cmd.SetArgs(append([]string{mode, "--cluster", "test-cluster"}, test.flags...))
 				err := cmd.Execute()
-				if (err == nil) != test.wantRun || prompted != test.wantPrompt || ran != test.wantRun {
-					t.Fatalf("unexpected confirmation result: prompted=%t, ran=%t, err=%v", prompted, ran, err)
+				if (err == nil) != test.wantRun || prompted != test.wantPrompt ||
+					ran != test.wantRun {
+					t.Fatalf(
+						"unexpected confirmation result: prompted=%t, ran=%t, err=%v",
+						prompted,
+						ran,
+						err,
+					)
 				}
 				if test.promptErr != nil && !errors.Is(err, test.promptErr) {
 					t.Fatalf("lost confirmation error: %v", err)
