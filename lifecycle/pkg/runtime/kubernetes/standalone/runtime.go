@@ -214,8 +214,12 @@ func probe(ctx context.Context, pod *v1.Pod) error {
 	for _, header := range get.HTTPHeaders {
 		req.Header.Add(header.Name, header.Value)
 	}
+	// Match kubelet HTTPS probes, which do not authenticate the serving certificate.
 	// nosemgrep: problem-based-packs.insecure-transport.go-stdlib.bypass-tls-verification.bypass-tls-verification
-	tr := &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true, MinVersion: tls.VersionTLS12}}
+	tr := &http.Transport{TLSClientConfig: &tls.Config{
+		InsecureSkipVerify: true,
+		MinVersion:         tls.VersionTLS12,
+	}}
 	defer tr.CloseIdleConnections()
 	client := &http.Client{
 		Transport: tr,

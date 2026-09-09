@@ -45,6 +45,7 @@ func maintenance(
 }
 
 func maintenanceCommand(ctx context.Context, output io.Writer, name string, args ...string) error {
+	// Callers supply maintenance tools and separate arguments without invoking a shell.
 	// nosemgrep: go.lang.security.audit.dangerous-exec-command.dangerous-exec-command
 	command := exec.CommandContext(ctx, name, args...)
 	command.Stdout = output
