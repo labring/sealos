@@ -152,9 +152,7 @@ func CheckErr(err error, explainErrMsg ...string) {
 			err = errors.New(strings.Join(explainErrMsg, "  ,"))
 		}
 		logger.Error(err)
-		if os.Getenv("GITHUB_ACTIONS") == "true" {
-			logHostDiagnostics()
-		}
+		logHostDiagnostics()
 	}
 	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 }
