@@ -5,7 +5,6 @@ package kubernetes
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/labring/sealos/pkg/utils/iputils"
@@ -24,17 +23,9 @@ func (k *KubeadmRuntime) deleteWorker(host string) error {
 	if err != nil {
 		return err
 	}
-	var node *v1.Node
-	for index := range nodes.Items {
-		candidate := &nodes.Items[index]
-		for _, address := range candidate.Status.Addresses {
-			if address.Type == v1.NodeInternalIP && address.Address == iputils.GetHostIP(host) {
-				if node != nil && node.UID != candidate.UID {
-					return errors.New("multiple Nodes have the requested worker IP")
-				}
-				node = candidate
-			}
-		}
+	node, err := workerNodeByIP(nodes.Items, host)
+	if err != nil {
+		return err
 	}
 	// Stop and clean kubelet first so it cannot re-register after Node deletion.
 	// An already absent Node is a valid retry; an identity replacement is not.
@@ -72,20 +63,9 @@ func (k *KubeadmRuntime) pendingWorkerJoins(hosts []string) ([]string, error) {
 	}
 	var pending []string
 	for _, host := range hosts {
-		var existing *v1.Node
-		for index := range nodes.Items {
-			node := &nodes.Items[index]
-			for _, address := range node.Status.Addresses {
-				if address.Type == v1.NodeInternalIP && address.Address == iputils.GetHostIP(host) {
-					if existing != nil && existing.UID != node.UID {
-						return nil, fmt.Errorf(
-							"multiple Nodes use worker IP %s",
-							iputils.GetHostIP(host),
-						)
-					}
-					existing = node
-				}
-			}
+		existing, err := workerNodeByIP(nodes.Items, host)
+		if err != nil {
+			return nil, err
 		}
 		if existing == nil {
 			pending = append(pending, host)
@@ -108,6 +88,24 @@ func (k *KubeadmRuntime) pendingWorkerJoins(hosts []string) ([]string, error) {
 		}
 	}
 	return pending, nil
+}
+
+func workerNodeByIP(nodes []v1.Node, host string) (*v1.Node, error) {
+	ip := iputils.GetHostIP(host)
+	var found *v1.Node
+	for index := range nodes {
+		node := &nodes[index]
+		for _, address := range node.Status.Addresses {
+			if address.Type != v1.NodeInternalIP || address.Address != ip {
+				continue
+			}
+			if found != nil && found.UID != node.UID {
+				return nil, fmt.Errorf("multiple Nodes use worker IP %s", ip)
+			}
+			found = node
+		}
+	}
+	return found, nil
 }
 
 func (k *KubeadmRuntime) validateWorkerIdentity(host string, node *v1.Node) error {

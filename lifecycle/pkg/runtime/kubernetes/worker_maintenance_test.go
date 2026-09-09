@@ -185,3 +185,36 @@ func TestWorkerOperationsRejectControlPlaneIdentity(t *testing.T) {
 		t.Fatal("mutated the host before checking its role")
 	}
 }
+
+func TestWorkerOperationsRejectAmbiguousIP(t *testing.T) {
+	for _, mode := range []string{v2.ControlPlaneModeRegistered, v2.ControlPlaneModeStandalone} {
+		t.Run(mode, func(t *testing.T) {
+			runtime, client, execer := workerFixture(mode)
+			duplicate := &v1.Node{
+				ObjectMeta: metav1.ObjectMeta{Name: "duplicate", UID: "other-worker"},
+				Status: v1.NodeStatus{
+					Addresses: []v1.NodeAddress{{Type: v1.NodeInternalIP, Address: "192.0.2.2"}},
+				},
+			}
+			if _, err := client.CoreV1().Nodes().Create(
+				context.Background(), duplicate, metav1.CreateOptions{},
+			); err != nil {
+				t.Fatal(err)
+			}
+			if err := runtime.deleteNodes([]string{"192.0.2.2:22"}); err == nil {
+				t.Fatal("deleted a worker with an ambiguous IP")
+			}
+			if _, err := runtime.pendingWorkerJoins([]string{"192.0.2.2:22"}); err == nil {
+				t.Fatal("adopted a worker with an ambiguous IP")
+			}
+			if len(execer.commands) != 0 {
+				t.Fatal("mutated a host before resolving its identity")
+			}
+			for _, action := range client.Actions() {
+				if action.GetVerb() == "delete" {
+					t.Fatal("deleted a Node with an ambiguous IP")
+				}
+			}
+		})
+	}
+}

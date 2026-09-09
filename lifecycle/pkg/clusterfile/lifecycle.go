@@ -57,46 +57,37 @@ func WithLifecycle(
 	recoveryInventory := operation.RecoveryInventory
 	path := filepath.Join(constants.ClusterDir(name), LifecycleFilename)
 	data, err := os.ReadFile(path)
-	var inventory []byte
-	var joinPreflightHosts []string
-	var rootfsPreflightHosts []string
+	var journal lifecycleInventory
 	switch {
 	case err == nil:
-		var previous lifecycleInventory
-		if err := json.Unmarshal(data, &previous); err != nil {
+		if err := json.Unmarshal(data, &journal); err != nil {
 			return err
 		}
-		if !sameLifecycle(previous.LifecycleOperation, operation) &&
-			!resetSupersedes(previous.LifecycleOperation, operation) {
+		switch {
+		case sameLifecycle(journal.LifecycleOperation, operation):
+			operation = journal.LifecycleOperation
+		case resetSupersedes(journal.LifecycleOperation, operation):
+			journal.JoinPreflightHosts = nil
+			journal.RootfsPreflightHosts = nil
+		default:
 			return errors.New(
 				"a different standalone lifecycle operation is pending; repeat its original request",
 			)
 		}
-		if sameLifecycle(previous.LifecycleOperation, operation) {
-			operation = previous.LifecycleOperation
-			joinPreflightHosts = previous.JoinPreflightHosts
-			rootfsPreflightHosts = previous.RootfsPreflightHosts
-		}
-		inventory = previous.Inventory
-		if len(recoveryInventory) == 0 {
-			recoveryInventory = previous.RecoveryInventory
-		}
 	case !os.IsNotExist(err):
 		return err
 	default:
-		inventory, err = os.ReadFile(constants.Clusterfile(name))
+		journal.Inventory, err = os.ReadFile(constants.Clusterfile(name))
 		if err != nil && !os.IsNotExist(err) {
 			return err
 		}
 	}
+	if len(recoveryInventory) != 0 {
+		journal.RecoveryInventory = recoveryInventory
+	}
 	persist := func(operation LifecycleOperation) error {
-		return WriteMaintenanceJSON(path, lifecycleInventory{
-			LifecycleOperation:   operation,
-			Inventory:            inventory,
-			RecoveryInventory:    recoveryInventory,
-			JoinPreflightHosts:   joinPreflightHosts,
-			RootfsPreflightHosts: rootfsPreflightHosts,
-		})
+		journal.LifecycleOperation = operation
+		return WriteMaintenanceJSON(path, journal)
 	}
 	if operation.Action == "reset" && operation.Approved {
 		if err := run(ctx); err != nil {
@@ -153,15 +144,20 @@ func WithLifecycle(
 // Readers use the committed inventory until the lifecycle journal is cleared.
 // This lets add/delete retries reconstruct the same desired hosts even if the
 // new Clusterfile was written just before a synchronization failure.
-func readLifecycleInventory(path string) ([]byte, error) {
-	if filepath.Base(path) == "Clusterfile" {
+// Reset prefers the recovery inventory, which also includes partially added hosts.
+func readLifecycleInventory(path string, reset bool) ([]byte, error) {
+	managed := filepath.Base(path) == "Clusterfile"
+	if managed || reset {
 		data, err := os.ReadFile(filepath.Join(filepath.Dir(path), LifecycleFilename))
 		if err == nil {
 			var journal lifecycleInventory
 			if err := json.Unmarshal(data, &journal); err != nil {
 				return nil, err
 			}
-			if len(journal.Inventory) != 0 {
+			if reset && len(journal.RecoveryInventory) != 0 {
+				return journal.RecoveryInventory, nil
+			}
+			if managed && len(journal.Inventory) != 0 {
 				return journal.Inventory, nil
 			}
 		} else if !os.IsNotExist(err) {
@@ -265,22 +261,6 @@ func withLifecycleAPI(
 			},
 		})
 	})
-}
-
-func readResetInventory(path string) ([]byte, error) {
-	data, err := os.ReadFile(filepath.Join(filepath.Dir(path), LifecycleFilename))
-	if err == nil {
-		var journal lifecycleInventory
-		if err := json.Unmarshal(data, &journal); err != nil {
-			return nil, err
-		}
-		if len(journal.RecoveryInventory) != 0 {
-			return journal.RecoveryInventory, nil
-		}
-	} else if !os.IsNotExist(err) {
-		return nil, err
-	}
-	return readLifecycleInventory(path)
 }
 
 func CheckLifecycle(ctx context.Context, client clientset.Interface) error {

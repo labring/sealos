@@ -19,9 +19,6 @@ import (
 	"errors"
 	"os"
 
-	"helm.sh/helm/v3/pkg/cli/values"
-	"helm.sh/helm/v3/pkg/getter"
-
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/runtime/decode"
 	"github.com/labring/sealos/pkg/runtime/k3s"
@@ -30,6 +27,8 @@ import (
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"helm.sh/helm/v3/pkg/cli/values"
+	"helm.sh/helm/v3/pkg/getter"
 )
 
 var ErrClusterFileNotExists = errors.New("the cluster file is not exist")
@@ -55,14 +54,11 @@ func (c *ClusterFile) Process() (err error) {
 			return c.decode(clusterFileData)
 		}()
 	})
-	return
+	return err
 }
 
 func (c *ClusterFile) loadClusterFile() ([]byte, error) {
-	body, err := readLifecycleInventory(c.path)
-	if c.resetRecovery {
-		body, err = readResetInventory(c.path)
-	}
+	body, err := readLifecycleInventory(c.path, c.resetRecovery)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +67,7 @@ func (c *ClusterFile) loadClusterFile() ([]byte, error) {
 		return nil, err
 	}
 	logger.Debug("loadClusterFile loadRenderValues: %+v", mergeValues)
-	data := map[string]interface{}{
+	data := map[string]any{
 		"Values": mergeValues,
 	}
 	out := bytes.NewBuffer(nil)
@@ -107,7 +103,7 @@ func (c *ClusterFile) loadClusterFile() ([]byte, error) {
 	return out.Bytes(), nil
 }
 
-func (c *ClusterFile) loadRenderValues() (map[string]interface{}, error) {
+func (c *ClusterFile) loadRenderValues() (map[string]any, error) {
 	valueOpt := &values.Options{
 		ValueFiles: c.customValues,
 		Values:     c.customSets,
