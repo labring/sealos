@@ -22,6 +22,13 @@ type maintenanceSSH struct {
 	ctx context.Context
 }
 
+func (s *maintenanceSSH) Ping(host string) error {
+	if err := s.ctx.Err(); err != nil {
+		return err
+	}
+	return s.Interface.Ping(host)
+}
+
 func (s *maintenanceSSH) CmdAsync(host string, commands ...string) error {
 	if err := s.ctx.Err(); err != nil {
 		return err

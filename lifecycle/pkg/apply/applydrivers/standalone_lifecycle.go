@@ -163,6 +163,10 @@ func standaloneRecoveryCluster(current, desired *v2.Cluster) *v2.Cluster {
 }
 
 func (c *Applier) commitStandaloneInventory() error {
+	localAddresses, err := net.InterfaceAddrs()
+	if err != nil {
+		return err
+	}
 	data, err := yaml.MarshalConfigs(c.getWriteBackObjects()...)
 	if err != nil {
 		return err
@@ -194,18 +198,41 @@ func (c *Applier) commitStandaloneInventory() error {
 			err,
 		)
 	}
-	// A copied local lifecycle marker must not outlive successful synchronization.
-	// The API journal still excludes other clients until this method returns.
+	// Remove remote copies after synchronization. WithLifecycle owns the local
+	// recovery marker and removes it only after the API journal is committed.
 	marker := filepath.Join(
 		constants.ClusterDir(c.ClusterDesired.Name),
 		clusterfile.LifecycleFilename,
 	)
 	for _, host := range c.ClusterDesired.GetMasterIPAndPortList() {
+		if isLocalLifecycleHost(host, localAddresses) {
+			continue
+		}
 		if err := execer.CmdAsync(host, "rm -f -- "+quoteLifecyclePath(marker)); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func isLocalLifecycleHost(host string, addresses []net.Addr) bool {
+	if address, _, err := net.SplitHostPort(host); err == nil {
+		host = address
+	}
+	if host == "localhost" {
+		return true
+	}
+	ip := net.ParseIP(host)
+	if ip.IsLoopback() {
+		return true
+	}
+	for _, address := range addresses {
+		localIP, _, err := net.ParseCIDR(address.String())
+		if err == nil && localIP.Equal(ip) {
+			return true
+		}
+	}
+	return false
 }
 
 func quoteLifecyclePath(value string) string {

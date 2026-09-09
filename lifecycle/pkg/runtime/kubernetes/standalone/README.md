@@ -121,6 +121,11 @@ stays cordoned; a worker cordoned by this workflow is uncordoned only after it
 reports the target kubelet version and a Ready heartbeat newer than the restart,
 using the worker's clock. This implementation does not
 evict workloads; administrators must arrange workload draining where required.
+The workflow records its cordon in the Node annotation
+`sealos.io/standalone-upgrade-cordon` in the same API update. Failed upgrades keep
+the worker cordoned; successful retries remove the annotation and restore
+scheduling. A cordon without this annotation remains administrator-managed,
+including one left by an older Sealos binary that did not record ownership.
 Existing addons must complete their rollout before the upgrade reports success.
 
 Rootfs and patch image guest commands are skipped on standalone masters because

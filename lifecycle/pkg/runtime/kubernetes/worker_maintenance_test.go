@@ -23,6 +23,7 @@ type workerSSH struct {
 	hostname string
 	fail     string
 	commands []string
+	hosts    []string
 }
 
 func (s *workerSSH) CmdToString(host, command, separator string) (string, error) {
@@ -32,11 +33,42 @@ func (s *workerSSH) CmdToString(host, command, separator string) (string, error)
 func (s *workerSSH) CmdAsync(host string, commands ...string) error {
 	for _, command := range commands {
 		s.commands = append(s.commands, command)
+		s.hosts = append(s.hosts, host)
 		if s.fail != "" && strings.Contains(command, s.fail) {
 			return errors.New("injected worker cleanup failure")
 		}
 	}
 	return nil
+}
+
+func TestRegisteredResetContinuesAfterCleanupFailures(t *testing.T) {
+	for _, failure := range []string{"kubeadm reset", "ipvs", removeKubeConfig} {
+		t.Run(failure, func(t *testing.T) {
+			runtime, _, execer := workerFixture(v2.ControlPlaneModeRegistered)
+			execer.fail = failure
+			if err := runtime.reset(); err != nil {
+				t.Fatalf("best-effort reset returned a cleanup error: %v", err)
+			}
+			var resetMaster, cleanedWorkerConfig, cleanedWorkerIPVS bool
+			for index, command := range execer.commands {
+				host := execer.hosts[index]
+				if host == runtime.getMaster0IPAndPort() && strings.Contains(command, "kubeadm reset") {
+					resetMaster = true
+				}
+				if host == runtime.getNodeIPAndPortList()[0] {
+					if command == removeKubeConfig {
+						cleanedWorkerConfig = true
+					}
+					if strings.Contains(command, "ipvs") {
+						cleanedWorkerIPVS = true
+					}
+				}
+			}
+			if !resetMaster || !cleanedWorkerConfig || !cleanedWorkerIPVS {
+				t.Fatalf("reset skipped cleanup after failure: %v", execer.commands)
+			}
+		})
+	}
 }
 
 func workerFixture(mode string) (*KubeadmRuntime, *fake.Clientset, *workerSSH) {
@@ -107,8 +139,10 @@ func TestWorkerDeletionUsesUIDAndAllowsRetry(t *testing.T) {
 		!strings.Contains(execer.commands[0], "systemctl stop kubelet") {
 		t.Fatal("worker cleanup did not stop kubelet first")
 	}
+	deleted := false
 	for _, action := range client.Actions() {
 		if action.GetVerb() == "delete" {
+			deleted = true
 			deletion, ok := action.(clienttesting.DeleteAction)
 			if !ok {
 				t.Fatalf("unexpected delete action %T", action)
@@ -119,6 +153,9 @@ func TestWorkerDeletionUsesUIDAndAllowsRetry(t *testing.T) {
 				t.Fatal("worker deletion did not constrain the original UID")
 			}
 		}
+	}
+	if !deleted {
+		t.Fatal("worker Node was not deleted")
 	}
 	if err := runtime.deleteNodes([]string{"192.0.2.2"}); err != nil {
 		t.Fatalf("could not resume cleanup of an absent worker: %v", err)
