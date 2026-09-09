@@ -114,6 +114,18 @@ func (r *runtimeClient) close() {
 	r.conn.Close()
 }
 
+func (r *runtimeClient) ensureImage(ctx context.Context, image string, alwaysPull bool) error {
+	spec := &cri.ImageSpec{Image: image}
+	status, err := r.ImageStatus(ctx, &cri.ImageStatusRequest{Image: spec})
+	if err != nil {
+		return err
+	}
+	if status.Image == nil || alwaysPull {
+		_, err = r.PullImage(ctx, &cri.PullImageRequest{Image: spec})
+	}
+	return err
+}
+
 func (r *runtimeClient) sandbox(ctx context.Context, name string) (*cri.PodSandbox, error) {
 	response, err := r.ListPodSandbox(ctx, &cri.ListPodSandboxRequest{})
 	if err != nil {

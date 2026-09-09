@@ -122,6 +122,14 @@ func convertKubeletConfig(
 	return result, original, err
 }
 
+func atomicModeJSON(path string, value any) error {
+	data, err := json.MarshalIndent(value, "", "  ")
+	if err != nil {
+		return err
+	}
+	return atomicModeFile(path, data, 0o600)
+}
+
 func atomicModeFile(path string, data []byte, mode os.FileMode) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		return err

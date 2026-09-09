@@ -26,9 +26,8 @@ import (
 )
 
 type modeTransition struct {
-	Target   string   `json:"Target"`
-	Hosts    []string `json:"Hosts"`
-	Verified []string `json:"Verified"`
+	Target string   `json:"Target"`
+	Hosts  []string `json:"Hosts"`
 }
 
 func (k *KubeadmRuntime) SwitchControlPlaneMode(
@@ -88,7 +87,6 @@ func (k *KubeadmRuntime) switchControlPlaneMode(
 		cm = nil
 	}
 	journal.Target = options.Mode
-	journal.Verified = nil
 	var command strings.Builder
 	command.WriteString(strings.Join([]string{
 		shellArgument(k.pathResolver.RootFSSealctlPath()), "switch", shellArgument(options.Mode),
@@ -155,31 +153,23 @@ func (k *KubeadmRuntime) switchControlPlaneMode(
 			},
 		}
 	}
-	save := func() error {
-		if err := ctx.Err(); err != nil {
-			return err
-		}
-		if err := clusterfile.WriteMaintenanceJSON(localMarker, journal); err != nil {
-			return err
-		}
-		data, err := json.Marshal(journal)
-		if err != nil {
-			return err
-		}
-		cm.Data = map[string]string{
-			"transition": string(data),
-		}
-		if newJournal {
-			cm, err = configMaps.Create(ctx, cm, metav1.CreateOptions{})
-			if err == nil {
-				newJournal = false
-			}
-		} else {
-			cm, err = configMaps.Update(ctx, cm, metav1.UpdateOptions{})
-		}
+	if err := ctx.Err(); err != nil {
 		return err
 	}
-	if err := save(); err != nil {
+	if err := clusterfile.WriteMaintenanceJSON(localMarker, journal); err != nil {
+		return err
+	}
+	data, err := json.Marshal(journal)
+	if err != nil {
+		return err
+	}
+	cm.Data = map[string]string{"transition": string(data)}
+	if newJournal {
+		cm, err = configMaps.Create(ctx, cm, metav1.CreateOptions{})
+	} else {
+		cm, err = configMaps.Update(ctx, cm, metav1.UpdateOptions{})
+	}
+	if err != nil {
 		return err
 	}
 	// Propagate the recovery marker before any host changes mode. The API
@@ -195,6 +185,7 @@ func (k *KubeadmRuntime) switchControlPlaneMode(
 			return err
 		}
 	}
+	// Host baselines own progress. Every retry rechecks each host.
 	for _, host := range hosts {
 		if err := ctx.Err(); err != nil {
 			return err
@@ -202,10 +193,6 @@ func (k *KubeadmRuntime) switchControlPlaneMode(
 		logger.Info("convert control plane %s to %s", host, options.Mode)
 		if err := runConversion(host, command.String()); err != nil {
 			return fmt.Errorf("mode conversion on %s paused: %w", host, err)
-		}
-		journal.Verified = append(journal.Verified, host)
-		if err := save(); err != nil {
-			return err
 		}
 	}
 	path := constants.Clusterfile(k.cluster.Name)

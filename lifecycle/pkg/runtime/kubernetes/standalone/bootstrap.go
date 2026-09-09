@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver/v3"
+	yamlutil "github.com/labring/sealos/pkg/utils/yaml"
 	"go.etcd.io/etcd/api/v3/v3rpc/rpctypes"
 	"go.etcd.io/etcd/client/pkg/v3/transport"
 	clientv3 "go.etcd.io/etcd/client/v3"
@@ -29,10 +30,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/apimachinery/pkg/util/wait"
-	utilyaml "k8s.io/apimachinery/pkg/util/yaml"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
-	cri "k8s.io/cri-api/pkg/apis/runtime/v1"
 	"sigs.k8s.io/yaml"
 )
 
@@ -159,20 +158,7 @@ func bootstrapStandalone(ctx context.Context, options BootstrapOptions) error {
 	if err != nil {
 		return err
 	}
-	pod, err := routeControllerPod(state.Plan.Controller)
-	if err != nil {
-		return err
-	}
-	for _, volume := range pod.Spec.Volumes {
-		info, err := os.Stat(volume.HostPath.Path)
-		if err != nil || !info.Mode().IsRegular() {
-			return fmt.Errorf(
-				"controller file %s must be provisioned before bootstrap",
-				volume.HostPath.Path,
-			)
-		}
-	}
-	manifest, err := yaml.Marshal(pod)
+	manifest, err := prepareRouteController(state.Plan.Controller)
 	if err != nil {
 		return err
 	}
@@ -270,14 +256,9 @@ func (b *preparedBootstrap) execute(ctx context.Context, options BootstrapOption
 	if err != nil {
 		return err
 	}
-	image := &cri.ImageSpec{Image: state.Plan.Controller.Image}
-	status, pullErr := runtime.ImageStatus(ctx, &cri.ImageStatusRequest{Image: image})
-	if pullErr == nil && status.Image == nil {
-		_, pullErr = runtime.PullImage(ctx, &cri.PullImageRequest{Image: image})
-	}
 	defer runtime.close()
-	if pullErr != nil {
-		return fmt.Errorf("pull route-controller before bootstrap: %w", pullErr)
+	if err := runtime.ensureImage(ctx, state.Plan.Controller.Image, false); err != nil {
+		return fmt.Errorf("pull route-controller before bootstrap: %w", err)
 	}
 	if err := maintenanceCommand(ctx, options.Output, "systemctl", "stop", "kubelet"); err != nil {
 		return err
@@ -338,14 +319,9 @@ func (b *preparedBootstrap) execute(ctx context.Context, options BootstrapOption
 	}
 	// Write the modified cluster config through the same public schema. The
 	// initial-cluster flags describe etcd membership, not Kubernetes Nodes.
-	var documents []byte
-	for _, doc := range []map[string]any{cluster, init, kubelet} {
-		encoded, err := yaml.Marshal(doc)
-		if err != nil {
-			return err
-		}
-		documents = append(documents, encoded...)
-		documents = append(documents, []byte("\n---\n")...)
+	documents, err := yamlutil.MarshalConfigs(cluster, init, kubelet)
+	if err != nil {
+		return err
 	}
 	if err := atomicModeFile(configPath, documents, 0o600); err != nil {
 		return err
@@ -728,25 +704,16 @@ func joinEtcdLearner(
 }
 
 func saveBootstrapState(state *bootstrapState) error {
-	data, err := json.MarshalIndent(state, "", "  ")
-	if err != nil {
-		return err
-	}
-	return atomicModeFile(bootstrapStatePath, data, 0o600)
+	return atomicModeJSON(bootstrapStatePath, state)
 }
 
 func bootstrapDocuments(data []byte) (map[string]any, map[string]any, map[string]any, error) {
+	decoded, err := configDocuments(data)
+	if err != nil {
+		return nil, nil, nil, err
+	}
 	documents := make(map[string]map[string]any)
-	decoder := utilyaml.NewYAMLOrJSONDecoder(bytes.NewReader(data), 4096)
-	for {
-		var document map[string]any
-		err := decoder.Decode(&document)
-		if errors.Is(err, io.EOF) {
-			break
-		}
-		if err != nil {
-			return nil, nil, nil, err
-		}
+	for _, document := range decoded {
 		kind, _ := document["kind"].(string)
 		if kind == "" {
 			continue
