@@ -4,4 +4,5 @@
 FROM scratch
 COPY standalone.test /fixture
 ENV SEALOS_MODE_CONTROLLER_FIXTURE=1
+# nosemgrep: dockerfile.security.missing-user-entrypoint.missing-user-entrypoint
 ENTRYPOINT ["/fixture", "-test.run=^TestModeControllerFixture$", "-test.timeout=0", "--"]
