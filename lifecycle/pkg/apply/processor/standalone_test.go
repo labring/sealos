@@ -51,7 +51,11 @@ func TestStandaloneResetResumesAfterRuntimeWasRemoved(t *testing.T) {
 		t.Fatal(err)
 	}
 	if runtimeCalls != 1 || cleanupCalls != 2 {
-		t.Fatalf("retried already removed runtime: runtime=%d cleanup=%d", runtimeCalls, cleanupCalls)
+		t.Fatalf(
+			"retried already removed runtime: runtime=%d cleanup=%d",
+			runtimeCalls,
+			cleanupCalls,
+		)
 	}
 }
 
@@ -77,7 +81,9 @@ func TestStandaloneScaleFailureDoesNotPublishBackends(t *testing.T) {
 			MastersToJoin:   []string{"192.0.2.2"},
 			MastersToDelete: []string{"192.0.2.2"},
 		}
-		cluster := &v2.Cluster{Spec: v2.ClusterSpec{ControlPlaneMode: v2.ControlPlaneModeStandalone}}
+		cluster := &v2.Cluster{
+			Spec: v2.ClusterSpec{ControlPlaneMode: v2.ControlPlaneModeStandalone},
+		}
 		operation := processor.Delete
 		if join {
 			operation = processor.Join

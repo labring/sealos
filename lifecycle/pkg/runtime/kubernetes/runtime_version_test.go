@@ -19,15 +19,15 @@ func TestKubernetesVersionUsesConfigurationOrRootfsLabel(t *testing.T) {
 		version string
 	}{
 		{
-			name: "explicit kubeadm version",
+			name:   "explicit kubeadm version",
 			config: "v1.28.15", label: "v1.29.9", version: "v1.28.15",
 		},
 		{
-			name: "legacy configuration with rootfs label",
+			name:  "legacy configuration with rootfs label",
 			label: "v1.28.15", version: "v1.28.15",
 		},
 		{
-			name: "application tags cannot supply Kubernetes version",
+			name:   "application tags cannot supply Kubernetes version",
 			images: []string{"example.com/cilium:v1.16.9", "example.com/kubernetes:v1.28.15"},
 		},
 	} {
@@ -35,11 +35,11 @@ func TestKubernetesVersionUsesConfigurationOrRootfsLabel(t *testing.T) {
 			cluster := &v2.Cluster{}
 			cluster.Spec.Image = test.images
 			cluster.Status.Mounts = []v2.MountImage{{
-				Type: v2.RootfsImage,
+				Type:   v2.RootfsImage,
 				Labels: map[string]string{v2.ImageKubeVersionKey: test.label},
 			}}
 			config := types.NewKubeadmConfig()
-			config.ClusterConfiguration.KubernetesVersion = test.config
+			config.KubernetesVersion = test.config
 			runtime := &KubeadmRuntime{cluster: cluster, kubeadmConfig: config}
 			if got := runtime.getKubeVersion(); got != test.version {
 				t.Fatalf("got Kubernetes version %q, want %q", got, test.version)

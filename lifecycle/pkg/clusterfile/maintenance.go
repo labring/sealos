@@ -6,16 +6,16 @@ package clusterfile
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 
+	"github.com/labring/sealos/pkg/constants"
 	"golang.org/x/sys/unix"
 	utilyaml "k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/yaml"
-
-	"github.com/labring/sealos/pkg/constants"
 )
 
 const ModeTransitionFilename = "control-plane-transition.json"
@@ -50,13 +50,17 @@ func lockMaintenance(name string, conversion, lifecycle bool) (func(), error) {
 	if !conversion {
 		if _, err := os.Stat(filepath.Join(dir, ModeTransitionFilename)); !os.IsNotExist(err) {
 			release()
-			return nil, fmt.Errorf("control-plane mode conversion is incomplete; resume with sealos switch")
+			return nil, errors.New(
+				"control-plane mode conversion is incomplete; resume with sealos switch",
+			)
 		}
 	}
 	if !lifecycle {
 		if _, err := os.Stat(filepath.Join(dir, LifecycleFilename)); !os.IsNotExist(err) {
 			release()
-			return nil, fmt.Errorf("standalone lifecycle is incomplete; resume the original command")
+			return nil, errors.New(
+				"standalone lifecycle is incomplete; resume the original command",
+			)
 		}
 	}
 	return release, nil
@@ -81,9 +85,9 @@ func replaceControlPlaneMode(data []byte, mode string) ([]byte, error) {
 	var result bytes.Buffer
 	count := 0
 	for {
-		var doc map[string]interface{}
+		var doc map[string]any
 		err := decoder.Decode(&doc)
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
@@ -94,9 +98,9 @@ func replaceControlPlaneMode(data []byte, mode string) ([]byte, error) {
 		}
 		if doc["kind"] == "Cluster" {
 			count++
-			spec, ok := doc["spec"].(map[string]interface{})
+			spec, ok := doc["spec"].(map[string]any)
 			if !ok {
-				return nil, fmt.Errorf("Cluster spec is missing")
+				return nil, errors.New("Cluster spec is missing")
 			}
 			spec["controlPlaneMode"] = mode
 		}
@@ -115,7 +119,7 @@ func replaceControlPlaneMode(data []byte, mode string) ([]byte, error) {
 	return result.Bytes(), nil
 }
 
-func WriteMaintenanceJSON(path string, value interface{}) error {
+func WriteMaintenanceJSON(path string, value any) error {
 	data, err := json.MarshalIndent(value, "", "  ")
 	if err != nil {
 		return err

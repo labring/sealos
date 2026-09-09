@@ -28,15 +28,27 @@ type fakeCRI struct {
 	images    map[string]*cri.Image
 }
 
-func (f *fakeCRI) ListPodSandbox(context.Context, *cri.ListPodSandboxRequest, ...grpc.CallOption) (*cri.ListPodSandboxResponse, error) {
+func (f *fakeCRI) ListPodSandbox(
+	context.Context,
+	*cri.ListPodSandboxRequest,
+	...grpc.CallOption,
+) (*cri.ListPodSandboxResponse, error) {
 	return &cri.ListPodSandboxResponse{Items: f.sandboxes}, nil
 }
 
-func (f *fakeCRI) ListContainers(context.Context, *cri.ListContainersRequest, ...grpc.CallOption) (*cri.ListContainersResponse, error) {
+func (f *fakeCRI) ListContainers(
+	context.Context,
+	*cri.ListContainersRequest,
+	...grpc.CallOption,
+) (*cri.ListContainersResponse, error) {
 	return &cri.ListContainersResponse{Containers: []*cri.Container{f.container}}, nil
 }
 
-func (f *fakeCRI) ImageStatus(_ context.Context, request *cri.ImageStatusRequest, _ ...grpc.CallOption) (*cri.ImageStatusResponse, error) {
+func (f *fakeCRI) ImageStatus(
+	_ context.Context,
+	request *cri.ImageStatusRequest,
+	_ ...grpc.CallOption,
+) (*cri.ImageStatusResponse, error) {
 	return &cri.ImageStatusResponse{Image: f.images[request.Image.Image]}, nil
 }
 
@@ -98,11 +110,21 @@ func TestRunningImageResolvesCRIReferences(t *testing.T) {
 		RuntimeServiceClient: fake,
 		ImageServiceClient:   fake,
 	}
-	if err := client.runningImage(context.Background(), "sandbox", "kube-apiserver", "sha256:config"); err != nil {
+	if err := client.runningImage(
+		context.Background(),
+		"sandbox",
+		"kube-apiserver",
+		"sha256:config",
+	); err != nil {
 		t.Fatal(err)
 	}
 	fake.images["registry/image@sha256:manifest"].Id = "sha256:old"
-	if err := client.runningImage(context.Background(), "sandbox", "kube-apiserver", "sha256:config"); err == nil {
+	if err := client.runningImage(
+		context.Background(),
+		"sandbox",
+		"kube-apiserver",
+		"sha256:config",
+	); err == nil {
 		t.Fatal("accepted a running container with the old image")
 	}
 }
@@ -184,7 +206,10 @@ type imageServiceFixture struct {
 	cri.UnimplementedImageServiceServer
 }
 
-func (s *imageServiceFixture) ImageStatus(context.Context, *cri.ImageStatusRequest) (*cri.ImageStatusResponse, error) {
+func (s *imageServiceFixture) ImageStatus(
+	context.Context,
+	*cri.ImageStatusRequest,
+) (*cri.ImageStatusResponse, error) {
 	return &cri.ImageStatusResponse{Image: &cri.Image{Id: "resolved-by-image-service"}}, nil
 }
 
@@ -192,7 +217,7 @@ func TestSeparateKubeletImageService(t *testing.T) {
 	start := func(name string, images bool) string {
 		t.Helper()
 		path := filepath.Join(t.TempDir(), name)
-		listener, err := net.Listen("unix", path)
+		listener, err := (&net.ListenConfig{}).Listen(context.Background(), "unix", path)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -200,7 +225,11 @@ func TestSeparateKubeletImageService(t *testing.T) {
 		if images {
 			cri.RegisterImageServiceServer(server, &imageServiceFixture{})
 		}
-		go server.Serve(listener)
+		go func() {
+			if err := server.Serve(listener); err != nil {
+				t.Errorf("serve fixture: %v", err)
+			}
+		}()
 		t.Cleanup(server.Stop)
 		return "unix://" + path
 	}
@@ -214,12 +243,20 @@ func TestSeparateKubeletImageService(t *testing.T) {
 				config = []byte("imageServiceEndpoint: " + runtimeEndpoint + "\n")
 				args = []string{"--image-service-endpoint=" + imageEndpoint}
 			}
-			client, err := connectKubeletRuntime(context.Background(), runtimeEndpoint, args, config)
+			client, err := connectKubeletRuntime(
+				context.Background(),
+				runtimeEndpoint,
+				args,
+				config,
+			)
 			if err != nil {
 				t.Fatal(err)
 			}
 			defer client.close()
-			response, err := client.ImageStatus(context.Background(), &cri.ImageStatusRequest{Image: &cri.ImageSpec{Image: "registry/image:version"}})
+			response, err := client.ImageStatus(
+				context.Background(),
+				&cri.ImageStatusRequest{Image: &cri.ImageSpec{Image: "registry/image:version"}},
+			)
 			if err != nil {
 				t.Fatal(err)
 			}

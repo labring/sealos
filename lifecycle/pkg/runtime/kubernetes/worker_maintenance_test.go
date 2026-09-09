@@ -5,18 +5,17 @@ package kubernetes
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"strings"
 	"testing"
-
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes/fake"
-	clienttesting "k8s.io/client-go/testing"
 
 	"github.com/labring/sealos/pkg/runtime/kubernetes/types"
 	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/fake"
+	clienttesting "k8s.io/client-go/testing"
 )
 
 type workerSSH struct {
@@ -34,7 +33,7 @@ func (s *workerSSH) CmdAsync(host string, commands ...string) error {
 	for _, command := range commands {
 		s.commands = append(s.commands, command)
 		if s.fail != "" && strings.Contains(command, s.fail) {
-			return fmt.Errorf("injected worker cleanup failure")
+			return errors.New("injected worker cleanup failure")
 		}
 	}
 	return nil
@@ -104,13 +103,19 @@ func TestWorkerDeletionUsesUIDAndAllowsRetry(t *testing.T) {
 	if err := runtime.deleteNodes([]string{"192.0.2.2"}); err != nil {
 		t.Fatal(err)
 	}
-	if len(execer.commands) == 0 || !strings.Contains(execer.commands[0], "systemctl stop kubelet") {
+	if len(execer.commands) == 0 ||
+		!strings.Contains(execer.commands[0], "systemctl stop kubelet") {
 		t.Fatal("worker cleanup did not stop kubelet first")
 	}
 	for _, action := range client.Actions() {
 		if action.GetVerb() == "delete" {
-			options := action.(clienttesting.DeleteAction).GetDeleteOptions()
-			if options.Preconditions == nil || options.Preconditions.UID == nil || *options.Preconditions.UID != "original-worker" {
+			deletion, ok := action.(clienttesting.DeleteAction)
+			if !ok {
+				t.Fatalf("unexpected delete action %T", action)
+			}
+			options := deletion.GetDeleteOptions()
+			if options.Preconditions == nil || options.Preconditions.UID == nil ||
+				*options.Preconditions.UID != "original-worker" {
 				t.Fatal("worker deletion did not constrain the original UID")
 			}
 		}
@@ -127,7 +132,9 @@ func TestWorkerOperationsRejectControlPlaneIdentity(t *testing.T) {
 		t.Fatal(err)
 	}
 	node.Labels = map[string]string{"node-role.kubernetes.io/master": ""}
-	if _, err := client.CoreV1().Nodes().Update(context.Background(), node, metav1.UpdateOptions{}); err != nil {
+	if _, err := client.CoreV1().
+		Nodes().
+		Update(context.Background(), node, metav1.UpdateOptions{}); err != nil {
 		t.Fatal(err)
 	}
 	if err := runtime.deleteNodes([]string{"192.0.2.2"}); err == nil {

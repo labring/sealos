@@ -7,6 +7,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -42,10 +43,15 @@ func dialCRI(ctx context.Context, endpoint string) (*grpc.ClientConn, error) {
 	}
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
-	return grpc.DialContext(ctx, endpoint, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock(),
+	return grpc.DialContext(
+		ctx,
+		endpoint,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithBlock(),
 		grpc.WithContextDialer(func(ctx context.Context, _ string) (net.Conn, error) {
 			return (&net.Dialer{}).DialContext(ctx, "unix", u.Path)
-		}))
+		}),
+	)
 }
 
 func connectRuntime(ctx context.Context, endpoint string) (*runtimeClient, error) {
@@ -75,7 +81,12 @@ func imageServiceEndpoint(args []string, config []byte) (string, error) {
 	return settings.ImageServiceEndpoint, nil
 }
 
-func connectKubeletRuntime(ctx context.Context, endpoint string, args []string, config []byte) (*runtimeClient, error) {
+func connectKubeletRuntime(
+	ctx context.Context,
+	endpoint string,
+	args []string,
+	config []byte,
+) (*runtimeClient, error) {
 	imageEndpoint, err := imageServiceEndpoint(args, config)
 	if err != nil {
 		return nil, err
@@ -110,7 +121,8 @@ func (r *runtimeClient) sandbox(ctx context.Context, name string) (*cri.PodSandb
 	}
 	var found *cri.PodSandbox
 	for _, sandbox := range response.Items {
-		if sandbox.Metadata.GetNamespace() != "kube-system" || sandbox.Metadata.GetName() != name || sandbox.State != cri.PodSandboxState_SANDBOX_READY {
+		if sandbox.Metadata.GetNamespace() != "kube-system" || sandbox.Metadata.GetName() != name ||
+			sandbox.State != cri.PodSandboxState_SANDBOX_READY {
 			continue
 		}
 		if found != nil {
@@ -124,7 +136,10 @@ func (r *runtimeClient) sandbox(ctx context.Context, name string) (*cri.PodSandb
 	return found, nil
 }
 
-func (r *runtimeClient) runningImage(ctx context.Context, sandboxID, containerName, image string) error {
+func (r *runtimeClient) runningImage(
+	ctx context.Context,
+	sandboxID, containerName, image string,
+) error {
 	response, err := r.ListContainers(ctx, &cri.ListContainersRequest{
 		Filter: &cri.ContainerFilter{
 			PodSandboxId: sandboxID,
@@ -134,7 +149,8 @@ func (r *runtimeClient) runningImage(ctx context.Context, sandboxID, containerNa
 		return err
 	}
 	for _, c := range response.Containers {
-		if c.Metadata.GetName() == containerName && c.State == cri.ContainerState_CONTAINER_RUNNING {
+		if c.Metadata.GetName() == containerName &&
+			c.State == cri.ContainerState_CONTAINER_RUNNING {
 			if image != "" {
 				// CRI permits multiple references for an image. Resolve both to
 				// the runtime's image ID instead of comparing reference strings.
@@ -154,7 +170,8 @@ func (r *runtimeClient) runningImage(ctx context.Context, sandboxID, containerNa
 				if err != nil {
 					return err
 				}
-				if actual.Image == nil || expected.Image == nil || actual.Image.Id == "" || actual.Image.Id != expected.Image.Id {
+				if actual.Image == nil || expected.Image == nil || actual.Image.Id == "" ||
+					actual.Image.Id != expected.Image.Id {
 					return fmt.Errorf("%s is running an unexpected image reference", containerName)
 				}
 			}
@@ -197,7 +214,7 @@ func probe(ctx context.Context, pod *v1.Pod) error {
 	for _, header := range get.HTTPHeaders {
 		req.Header.Add(header.Name, header.Value)
 	}
-	tr := &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}} //nolint:gosec // kubelet HTTP probe semantics
+	tr := &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}
 	defer tr.CloseIdleConnections()
 	client := &http.Client{
 		Transport: tr,
@@ -221,7 +238,7 @@ func etcdConfig(api *v1.Pod) (clientv3.Config, error) {
 	args := componentArgs(api)
 	endpoints := strings.Split(flagValue(args, "etcd-servers"), ",")
 	if len(endpoints) == 0 || endpoints[0] == "" {
-		return clientv3.Config{}, fmt.Errorf("missing etcd endpoints in API server manifest")
+		return clientv3.Config{}, errors.New("missing etcd endpoints in API server manifest")
 	}
 	tlsInfo := transport.TLSInfo{
 		TrustedCAFile: flagValue(args, "etcd-cafile"),
@@ -245,11 +262,11 @@ func etcdHealthy(ctx context.Context, client *clientv3.Client) error {
 		return err
 	}
 	if len(members.Members) == 0 {
-		return fmt.Errorf("etcd has no members")
+		return errors.New("etcd has no members")
 	}
 	for _, m := range members.Members {
 		if m.IsLearner || len(m.ClientURLs) == 0 {
-			return fmt.Errorf("etcd membership is still changing")
+			return errors.New("etcd membership is still changing")
 		}
 		for _, endpoint := range m.ClientURLs {
 			status, err := client.Status(ctx, endpoint)
@@ -266,7 +283,7 @@ func etcdHealthy(ctx context.Context, client *clientv3.Client) error {
 		return err
 	}
 	if len(alarms.Alarms) != 0 {
-		return fmt.Errorf("etcd has active alarms")
+		return errors.New("etcd has active alarms")
 	}
 	// A linearizable read confirms that the cluster can still reach consensus.
 	_, err = client.Get(ctx, "/sealos/standalone-upgrade-health")
@@ -275,7 +292,10 @@ func etcdHealthy(ctx context.Context, client *clientv3.Client) error {
 
 func apiVersion(ctx context.Context, pod *v1.Pod) (string, error) {
 	args := componentArgs(pod)
-	endpoint := "https://" + net.JoinHostPort(flagValue(args, "advertise-address"), flagValue(args, "secure-port"))
+	endpoint := "https://" + net.JoinHostPort(
+		flagValue(args, "advertise-address"),
+		flagValue(args, "secure-port"),
+	)
 	config, err := clientcmd.BuildConfigFromFlags(endpoint, "/etc/kubernetes/admin.conf")
 	if err != nil {
 		return "", err
@@ -307,7 +327,7 @@ func apiVersion(ctx context.Context, pod *v1.Pod) (string, error) {
 
 func etcdImageVersion(image string) (*semver.Version, error) {
 	if strings.Contains(image, "@") {
-		return nil, fmt.Errorf("cannot infer the etcd version from a digest-only image")
+		return nil, errors.New("cannot infer the etcd version from a digest-only image")
 	}
 	tag := image[strings.LastIndex(image, ":")+1:]
 	v, err := semver.NewVersion(tag)
@@ -329,7 +349,10 @@ func validateEtcdPeerVersion(current, target *semver.Version, peerVersion string
 		return fmt.Errorf("finish the previous etcd minor upgrade before upgrading to %s", target)
 	}
 	if target.Major() == 3 && target.Minor() == 6 && peer.Minor() == 5 && peer.Patch() < 32 {
-		return fmt.Errorf("etcd 3.6 upgrade requires all 3.5 members at 3.5.32 or later; found %s", peer)
+		return fmt.Errorf(
+			"etcd 3.6 upgrade requires all 3.5 members at 3.5.32 or later; found %s",
+			peer,
+		)
 	}
 	return nil
 }

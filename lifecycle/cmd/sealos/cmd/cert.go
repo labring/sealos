@@ -20,16 +20,14 @@ import (
 	"path"
 	"strings"
 
-	"github.com/labring/sealos/pkg/runtime"
-
-	"github.com/spf13/cobra"
-
 	"github.com/labring/sealos/pkg/apply/processor"
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/runtime"
 	"github.com/labring/sealos/pkg/runtime/factory"
 	fileutils "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/spf13/cobra"
 )
 
 func newCertCmd() *cobra.Command {
@@ -90,13 +88,20 @@ func newCertCmd() *cobra.Command {
 			}
 			var opts []clusterfile.OptionFunc
 			if runtimeConfigPath != "" {
-				opts = append(opts, clusterfile.WithCustomRuntimeConfigFiles([]string{runtimeConfigPath}))
+				opts = append(
+					opts,
+					clusterfile.WithCustomRuntimeConfigFiles([]string{runtimeConfigPath}),
+				)
 			}
 			cf := clusterfile.NewClusterFile(clusterPath, opts...)
 			if err := cf.Process(); err != nil {
 				return err
 			}
-			if err := clusterfile.CheckRemoteModeTransition(cmd.Context(), clusterName, cf.GetCluster().Spec.ControlPlaneMode != ""); err != nil {
+			if err := clusterfile.CheckRemoteModeTransition(
+				cmd.Context(),
+				clusterName,
+				cf.GetCluster().Spec.ControlPlaneMode != "",
+			); err != nil {
 				return err
 			}
 
@@ -112,22 +117,34 @@ func newCertCmd() *cobra.Command {
 					if cmd.Flags().Changed("groups") {
 						renewOpts.Groups = normalizeFlagValues(groups)
 					}
-					logger.Info("using %s cert renew implement on targets %v", cf.GetCluster().GetDistribution(), renewTargets)
+					logger.Info(
+						"using %s cert renew implement on targets %v",
+						cf.GetCluster().GetDistribution(),
+						renewTargets,
+					)
 					return cm.Renew(renewOpts)
 				}
 				logger.Info("using %s cert update implement", cf.GetCluster().GetDistribution())
 				return cm.UpdateCertSANs(altNames)
 			}
 			if len(renewTargets) != 0 {
-				return fmt.Errorf("renew targets %v are not supported for distribution %s", renewTargets, cf.GetCluster().GetDistribution())
+				return fmt.Errorf(
+					"renew targets %v are not supported for distribution %s",
+					renewTargets,
+					cf.GetCluster().GetDistribution(),
+				)
 			}
 			return nil
 		},
 	}
-	cmd.Flags().StringVarP(&clusterName, "cluster", "c", "default", "name of cluster to applied exec action")
-	cmd.Flags().StringSliceVar(&altNames, "alt-names", []string{}, "add extra Subject Alternative Names for certs, domain or ip, eg. sealos.io or 10.103.97.2")
-	cmd.Flags().StringSliceVar(&renewTargets, "renew", nil, "renew local certificate targets; super-admin.conf stays local only")
-	cmd.Flags().StringSliceVar(&groups, "groups", nil, "override admin kubeconfig certificate groups when renewing admin.conf or all")
+	cmd.Flags().
+		StringVarP(&clusterName, "cluster", "c", "default", "name of cluster to applied exec action")
+	cmd.Flags().
+		StringSliceVar(&altNames, "alt-names", []string{}, "add extra Subject Alternative Names for certs, domain or ip, eg. sealos.io or 10.103.97.2")
+	cmd.Flags().
+		StringSliceVar(&renewTargets, "renew", nil, "renew local certificate targets; super-admin.conf stays local only")
+	cmd.Flags().
+		StringSliceVar(&groups, "groups", nil, "override admin kubeconfig certificate groups when renewing admin.conf or all")
 
 	return cmd
 }

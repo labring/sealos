@@ -6,6 +6,7 @@ package standalone
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -38,22 +39,22 @@ type ModeOptions struct {
 }
 
 type modeState struct {
-	Version          int
-	Mode             string
-	Target           string
-	Node             *v1.Node
-	RegisteredUID    types.UID
-	Args             []string
-	ConfigPath       string
-	KubeconfigPath   string
-	Kubeconfig       []byte
-	Settings         map[string]json.RawMessage
-	Endpoint         string
-	RouteManifest    []byte
-	RouteTable       int
-	RouteProtocol    int
-	ManagedService   bool
-	ControllerUpdate *controllerUpdate
+	Version          int                        `json:"Version"`
+	Mode             string                     `json:"Mode"`
+	Target           string                     `json:"Target"`
+	Node             *v1.Node                   `json:"Node"`
+	RegisteredUID    types.UID                  `json:"RegisteredUID"`
+	Args             []string                   `json:"Args"`
+	ConfigPath       string                     `json:"ConfigPath"`
+	KubeconfigPath   string                     `json:"KubeconfigPath"`
+	Kubeconfig       []byte                     `json:"Kubeconfig"`
+	Settings         map[string]json.RawMessage `json:"Settings"`
+	Endpoint         string                     `json:"Endpoint"`
+	RouteManifest    []byte                     `json:"RouteManifest"`
+	RouteTable       int                        `json:"RouteTable"`
+	RouteProtocol    int                        `json:"RouteProtocol"`
+	ManagedService   bool                       `json:"ManagedService"`
+	ControllerUpdate *controllerUpdate          `json:"ControllerUpdate"`
 }
 
 type modeSwitch struct {
@@ -68,16 +69,17 @@ type modeSwitch struct {
 // upgrades and failures; only an explicit registered request reconnects kubelet.
 func SwitchMode(ctx context.Context, options ModeOptions) error {
 	if runtime.GOOS != "linux" {
-		return fmt.Errorf("control-plane conversion requires Linux")
+		return errors.New("control-plane conversion requires Linux")
 	}
 	if options.Mode != ModeStandalone && options.Mode != ModeRegistered {
-		return fmt.Errorf("mode must be registered or standalone")
+		return errors.New("mode must be registered or standalone")
 	}
-	if options.Mode == ModeRegistered && (options.RouteController != nil || options.UpdateController) {
-		return fmt.Errorf("route-controller options are only valid for standalone mode")
+	if options.Mode == ModeRegistered &&
+		(options.RouteController != nil || options.UpdateController) {
+		return errors.New("route-controller options are only valid for standalone mode")
 	}
 	if options.Timeout <= 0 {
-		return fmt.Errorf("timeout must be positive")
+		return errors.New("timeout must be positive")
 	}
 	if options.Output == nil {
 		options.Output = io.Discard
@@ -127,32 +129,31 @@ func SwitchMode(ctx context.Context, options ModeOptions) error {
 		return nil
 	}
 	if m.state.Mode == options.Mode && m.state.Target == "" {
-		if options.Mode == ModeRegistered {
-			return m.waitReady(ctx)
-		}
-		return nil
+		return m.waitReady(ctx, options.UpdateController)
 	}
 	m.state.Target = options.Mode
 	if err := m.save(); err != nil {
 		return err
 	}
-	if options.Mode == ModeStandalone && m.state.ControllerUpdate != nil {
+	switch {
+	case options.Mode == ModeStandalone && m.state.ControllerUpdate != nil:
 		err = m.updateController(ctx)
-	} else if options.Mode == ModeStandalone {
+	case options.Mode == ModeStandalone:
 		err = m.toStandalone(ctx)
-	} else {
+	default:
 		err = m.toRegistered(ctx)
 	}
 	if err != nil {
-		return fmt.Errorf("conversion paused; repeat the command to resume or explicitly request the opposite mode; state: %s: %w", modeRoot, err)
+		return fmt.Errorf(
+			"conversion paused; repeat the command to resume or explicitly request the opposite mode; state: %s: %w",
+			modeRoot,
+			err,
+		)
 	}
-	// Standalone activation is complete once kubelet has been restarted with
-	// standalone arguments. Route reconciliation is asynchronous because CNI
-	// cleanup and host reboot are administrator-owned operations.
-	if options.Mode == ModeRegistered {
-		if err := m.waitReady(ctx); err != nil {
-			return err
-		}
+	// Conversion must allow CNI cleanup after activation. Explicit controller
+	// updates still wait for route readiness before committing their settings.
+	if err := m.waitReady(ctx, options.UpdateController); err != nil {
+		return err
 	}
 	m.state.Mode = options.Mode
 	m.state.Target = ""
@@ -169,13 +170,14 @@ func (m *modeSwitch) save() error {
 }
 
 func kubeletArgv(ctx context.Context) ([]string, error) {
-	data, err := exec.CommandContext(ctx, "systemctl", "show", "--property=MainPID", "--value", "kubelet").Output()
+	data, err := exec.CommandContext(ctx, "systemctl", "show", "--property=MainPID", "--value", "kubelet").
+		Output()
 	if err != nil {
 		return nil, err
 	}
 	pid, err := strconv.Atoi(strings.TrimSpace(string(data)))
 	if err != nil || pid <= 0 {
-		return nil, fmt.Errorf("kubelet must be running for the first conversion")
+		return nil, errors.New("kubelet must be running for the first conversion")
 	}
 	data, err = os.ReadFile(fmt.Sprintf("/proc/%d/cmdline", pid))
 	if err != nil {
@@ -183,7 +185,7 @@ func kubeletArgv(ctx context.Context) ([]string, error) {
 	}
 	argv := strings.Split(strings.TrimRight(string(data), "\x00"), "\x00")
 	if len(argv) < 2 {
-		return nil, fmt.Errorf("cannot identify kubelet arguments")
+		return nil, errors.New("cannot identify kubelet arguments")
 	}
 	return argv[1:], nil
 }
@@ -196,21 +198,24 @@ func (m *modeSwitch) prepare(ctx context.Context) error {
 			return err
 		}
 		validMode := m.state.Mode == ModeRegistered || m.state.Mode == ModeStandalone
-		validTarget := m.state.Target == "" || m.state.Target == ModeRegistered || m.state.Target == ModeStandalone
+		validTarget := m.state.Target == "" || m.state.Target == ModeRegistered ||
+			m.state.Target == ModeStandalone
 		if m.state.Version != 1 || m.state.Node == nil || m.state.Node.UID == "" ||
 			!validMode || !validTarget || m.state.Settings == nil ||
 			!filepath.IsAbs(m.state.ConfigPath) || !filepath.IsAbs(m.state.KubeconfigPath) {
-			return fmt.Errorf("invalid mode conversion baseline")
+			return errors.New("invalid mode conversion baseline")
 		}
 	} else if !os.IsNotExist(err) {
 		return err
 	}
-	if m.UpdateController && (m.state == nil || m.state.Mode != ModeStandalone || m.state.Target == ModeRegistered) {
-		return fmt.Errorf("controller updates require standalone mode; finish conversion first")
+	if m.UpdateController &&
+		(m.state == nil || m.state.Mode != ModeStandalone || m.state.Target == ModeRegistered) {
+		return errors.New("controller updates require standalone mode; finish conversion first")
 	}
 	// Each completed round trip starts a fresh baseline, including administrator
 	// changes to the registered node made since its previous conversion.
-	if m.state == nil || (m.state.Mode == ModeRegistered && m.state.Target == "" && m.Mode == ModeStandalone) {
+	if m.state == nil ||
+		(m.state.Mode == ModeRegistered && m.state.Target == "" && m.Mode == ModeStandalone) {
 		if err := m.capture(ctx); err != nil {
 			return err
 		}
@@ -232,7 +237,7 @@ func (m *modeSwitch) prepare(ctx context.Context) error {
 			return err
 		}
 		if desired != current {
-			return fmt.Errorf("use --update-controller to change an active standalone controller")
+			return errors.New("use --update-controller to change an active standalone controller")
 		}
 	}
 	kubeletConfig, err := os.ReadFile(m.state.ConfigPath)
@@ -247,8 +252,9 @@ func (m *modeSwitch) prepare(ctx context.Context) error {
 	if err := yaml.Unmarshal(m.state.RouteManifest, m.controller); err != nil {
 		return err
 	}
-	if m.controller.Name != "route-controller" || m.controller.Namespace != "kube-system" || len(m.controller.Spec.Containers) != 1 {
-		return fmt.Errorf("invalid route-controller manifest in the conversion baseline")
+	if m.controller.Name != "route-controller" || m.controller.Namespace != "kube-system" ||
+		len(m.controller.Spec.Containers) != 1 {
+		return errors.New("invalid route-controller manifest in the conversion baseline")
 	}
 	if m.Mode == ModeStandalone {
 		container := m.controller.Spec.Containers[0]
@@ -278,7 +284,9 @@ func (m *modeSwitch) capture(ctx context.Context) error {
 		return err
 	}
 	if !filepath.IsAbs(flagValue(args, "kubeconfig")) {
-		return fmt.Errorf("a registered kubelet with an absolute --kubeconfig is required; an existing standalone installation needs a registered baseline before it can be adopted")
+		return errors.New(
+			"a registered kubelet with an absolute --kubeconfig is required; an existing standalone installation needs a registered baseline before it can be adopted",
+		)
 	}
 	if _, err := modeArgs(args); err != nil {
 		return err
@@ -290,16 +298,21 @@ func (m *modeSwitch) capture(ctx context.Context) error {
 			return err
 		}
 	}
-	node, err := m.client.CoreV1().Nodes().Get(ctx, strings.ToLower(strings.TrimSpace(name)), metav1.GetOptions{})
+	node, err := m.client.CoreV1().
+		Nodes().
+		Get(ctx, strings.ToLower(strings.TrimSpace(name)), metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
-	if err := ValidateVersionChange(node.Status.NodeInfo.KubeletVersion, node.Status.NodeInfo.KubeletVersion); err != nil {
+	if err := ValidateVersionChange(
+		node.Status.NodeInfo.KubeletVersion,
+		node.Status.NodeInfo.KubeletVersion,
+	); err != nil {
 		return err
 	}
 	if m.Mode == ModeRegistered {
 		if !nodeReady(node) {
-			return fmt.Errorf("registered Node is not Ready")
+			return errors.New("registered Node is not Ready")
 		}
 		m.state = nil
 		return nil
@@ -308,7 +321,10 @@ func (m *modeSwitch) capture(ctx context.Context) error {
 		return fmt.Errorf("unmanaged standalone systemd override already exists: %s", modeDropin)
 	}
 	if _, err := os.Stat(routeManifestPath); !os.IsNotExist(err) {
-		return fmt.Errorf("unmanaged route-controller manifest already exists: %s", routeManifestPath)
+		return fmt.Errorf(
+			"unmanaged route-controller manifest already exists: %s",
+			routeManifestPath,
+		)
 	}
 	configPath := flagValue(args, "config")
 	data, err := os.ReadFile(configPath)
@@ -323,8 +339,13 @@ func (m *modeSwitch) capture(ctx context.Context) error {
 	if err := yaml.Unmarshal(data, &config); err != nil {
 		return err
 	}
-	if config.StaticPodPath != manifestDir || config.StaticPodURL != "" || flagValue(args, "pod-manifest-path") != "" || flagValue(args, "manifest-url") != "" {
-		return fmt.Errorf("conversion requires staticPodPath=%s and no other manifest source", manifestDir)
+	if config.StaticPodPath != manifestDir || config.StaticPodURL != "" ||
+		flagValue(args, "pod-manifest-path") != "" ||
+		flagValue(args, "manifest-url") != "" {
+		return fmt.Errorf(
+			"conversion requires staticPodPath=%s and no other manifest source",
+			manifestDir,
+		)
 	}
 	_, settings, err := convertKubeletConfig(data, nil)
 	if err != nil {
@@ -335,7 +356,7 @@ func (m *modeSwitch) capture(ctx context.Context) error {
 		endpoint = config.ContainerRuntimeEndpoint
 	}
 	if endpoint == "" {
-		return fmt.Errorf("kubelet must declare its CRI endpoint")
+		return errors.New("kubelet must declare its CRI endpoint")
 	}
 	controller := DefaultRouteControllerOptions()
 	if m.state != nil {
@@ -360,7 +381,10 @@ func (m *modeSwitch) capture(ctx context.Context) error {
 			return fmt.Errorf("route-controller hostPath: %w", err)
 		}
 		if !info.Mode().IsRegular() {
-			return fmt.Errorf("route-controller hostPath must be a regular file: %s", volume.HostPath.Path)
+			return fmt.Errorf(
+				"route-controller hostPath must be a regular file: %s",
+				volume.HostPath.Path,
+			)
 		}
 	}
 	manifest, err := yaml.Marshal(pod)
@@ -432,19 +456,24 @@ func (m *modeSwitch) toStandalone(ctx context.Context) error {
 	return m.command(ctx, "restart", "kubelet")
 }
 
-func (m *modeSwitch) waitReady(ctx context.Context) error {
+func (m *modeSwitch) waitReady(ctx context.Context, waitForController bool) error {
 	var last error
-	err := wait.PollUntilContextCancel(ctx, 2*time.Second, true, func(ctx context.Context) (bool, error) {
-		last = m.ready(ctx)
-		return last == nil, nil
-	})
+	err := wait.PollUntilContextCancel(
+		ctx,
+		2*time.Second,
+		true,
+		func(ctx context.Context) (bool, error) {
+			last = m.ready(ctx, waitForController)
+			return last == nil, nil
+		},
+	)
 	if err != nil {
-		return fmt.Errorf("waiting for %s: %w (last check: %v)", m.Mode, err, last)
+		return fmt.Errorf("waiting for %s: %w (last check: %w)", m.Mode, err, last)
 	}
 	return nil
 }
 
-func (m *modeSwitch) ready(ctx context.Context) error {
+func (m *modeSwitch) ready(ctx context.Context, waitForController bool) error {
 	args, err := kubeletArgv(ctx)
 	if err != nil {
 		return err
@@ -453,16 +482,21 @@ func (m *modeSwitch) ready(ctx context.Context) error {
 		if _, err := standaloneArgs(args); err != nil {
 			return err
 		}
+		if waitForController {
+			if err := m.podReady(ctx, m.controller); err != nil {
+				return err
+			}
+		}
 	} else {
 		if flagValue(args, "kubeconfig") == "" {
-			return fmt.Errorf("registered kubelet has no kubeconfig")
+			return errors.New("registered kubelet has no kubeconfig")
 		}
 		node, err := m.client.CoreV1().Nodes().Get(ctx, m.state.Node.Name, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
 		if node.UID != m.state.RegisteredUID || !nodeReady(node) {
-			return fmt.Errorf("registered Node has not become Ready")
+			return errors.New("registered Node has not become Ready")
 		}
 	}
 	pods, err := m.client.CoreV1().Pods("").List(ctx, metav1.ListOptions{

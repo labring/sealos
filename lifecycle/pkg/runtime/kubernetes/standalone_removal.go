@@ -4,14 +4,13 @@
 package kubernetes
 
 import (
-	"fmt"
+	"errors"
 	"net"
 	"strconv"
 
-	"k8s.io/client-go/tools/clientcmd"
-
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/utils/iputils"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 func (k *KubeadmRuntime) prepareStandaloneRemovalEndpoint(removing, removedWorkers []string) error {
@@ -22,7 +21,7 @@ func (k *KubeadmRuntime) prepareStandaloneRemovalEndpoint(removing, removedWorke
 		}
 	}
 	if len(survivors) == 0 {
-		return fmt.Errorf("removal requires a surviving API server")
+		return errors.New("removal requires a surviving API server")
 	}
 	config, err := clientcmd.LoadFromFile(k.pathResolver.AdminFile())
 	if err != nil {
@@ -30,9 +29,12 @@ func (k *KubeadmRuntime) prepareStandaloneRemovalEndpoint(removing, removedWorke
 	}
 	current := config.Contexts[config.CurrentContext]
 	if current == nil || config.Clusters[current.Cluster] == nil {
-		return fmt.Errorf("admin kubeconfig has no current cluster")
+		return errors.New("admin kubeconfig has no current cluster")
 	}
-	endpoint := "https://" + net.JoinHostPort(iputils.GetHostIP(survivors[0]), strconv.Itoa(int(k.getAPIServerPort())))
+	endpoint := "https://" + net.JoinHostPort(
+		iputils.GetHostIP(survivors[0]),
+		strconv.Itoa(int(k.getAPIServerPort())),
+	)
 	config.Clusters[current.Cluster].Server = endpoint
 	data, err := clientcmd.Write(*config)
 	if err != nil {

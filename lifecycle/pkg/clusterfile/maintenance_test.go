@@ -75,7 +75,9 @@ func TestModeLeaseExcludesAnotherConversionAndReleasesOnFailure(t *testing.T) {
 	if !errors.Is(err, expected) {
 		t.Fatalf("lost the conversion error: %v", err)
 	}
-	_, err = client.CoordinationV1().Leases("kube-system").Get(context.Background(), ModeTransitionResource, metav1.GetOptions{})
+	_, err = client.CoordinationV1().
+		Leases("kube-system").
+		Get(context.Background(), ModeTransitionResource, metav1.GetOptions{})
 	if !apierrors.IsNotFound(err) {
 		t.Fatalf("conversion retained its lease: %v", err)
 	}
@@ -99,13 +101,24 @@ func TestModeJournalBlocksLifecycleAfterLeaseExpires(t *testing.T) {
 func TestModeGuardPreservesLegacyOfflineReset(t *testing.T) {
 	client := fake.NewSimpleClientset()
 	offline := errors.New("API is unavailable")
-	client.PrependReactor("get", "configmaps", func(clienttesting.Action) (bool, runtime.Object, error) {
-		return true, nil, offline
-	})
+	client.PrependReactor(
+		"get",
+		"configmaps",
+		func(clienttesting.Action) (bool, runtime.Object, error) {
+			return true, nil, offline
+		},
+	)
 	if err := checkOptionalModeTransition(context.Background(), client, false); err != nil {
 		t.Fatalf("legacy offline reset was blocked: %v", err)
 	}
-	if err := checkOptionalModeTransition(context.Background(), client, true); !errors.Is(err, offline) {
+	if err := checkOptionalModeTransition(
+		context.Background(),
+		client,
+		true,
+	); !errors.Is(
+		err,
+		offline,
+	) {
 		t.Fatalf("managed inventory bypassed API verification: %v", err)
 	}
 }

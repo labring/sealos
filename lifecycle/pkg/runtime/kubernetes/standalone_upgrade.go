@@ -13,15 +13,14 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver/v3"
+	"github.com/labring/sealos/pkg/runtime/kubernetes/standalone"
+	"github.com/labring/sealos/pkg/utils/logger"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	patchtypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	clientset "k8s.io/client-go/kubernetes"
-
-	"github.com/labring/sealos/pkg/runtime/kubernetes/standalone"
-	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 func shellArgument(value string) string {
@@ -55,16 +54,25 @@ func (k *KubeadmRuntime) upgradeStandaloneCluster(version string) error {
 		if err != nil {
 			return err
 		}
-		node, err := client.Kubernetes().CoreV1().Nodes().Get(context.Background(), name, metav1.GetOptions{})
+		node, err := client.Kubernetes().
+			CoreV1().
+			Nodes().
+			Get(context.Background(), name, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
-		if err := standalone.ValidateVersionChange(node.Status.NodeInfo.KubeletVersion, version); err != nil {
+		if err := standalone.ValidateVersionChange(
+			node.Status.NodeInfo.KubeletVersion,
+			version,
+		); err != nil {
 			return fmt.Errorf("worker %s: %w", name, err)
 		}
 		workerNames[host] = name
 	}
-	proxy, err := client.Kubernetes().CoreV1().ConfigMaps("kube-system").Get(context.Background(), "kube-proxy", metav1.GetOptions{})
+	proxy, err := client.Kubernetes().
+		CoreV1().
+		ConfigMaps("kube-system").
+		Get(context.Background(), "kube-proxy", metav1.GetOptions{})
 	if err == nil {
 		if data := proxy.Data["config.conf"]; data != "" {
 			config += "\n---\n" + data
@@ -90,13 +98,17 @@ func (k *KubeadmRuntime) upgradeStandaloneCluster(version string) error {
 		"--version", shellArgument(version), "--config", shellArgument(remoteConfig),
 		"--binary-dir", shellArgument(k.pathResolver.RootFSBinPath()),
 	}, " ")
-	if patches := k.kubeadmConfig.InitConfiguration.Patches; patches != nil && patches.Directory != "" {
+	if patches := k.kubeadmConfig.InitConfiguration.Patches; patches != nil &&
+		patches.Directory != "" {
 		command += " --patches " + shellArgument(patches.Directory)
 	}
 	masters := k.getMasterIPAndPortList()
 	// Validate every control plane before taking the first one out of service.
 	for _, host := range masters {
-		if err := k.sshCmdAsync(host, "install -d -m 700 /var/lib/sealos/standalone-upgrades"); err != nil {
+		if err := k.sshCmdAsync(
+			host,
+			"install -d -m 700 /var/lib/sealos/standalone-upgrades",
+		); err != nil {
 			return err
 		}
 		if err := k.sshCopy(host, localConfig, remoteConfig); err != nil {
@@ -114,10 +126,17 @@ func (k *KubeadmRuntime) upgradeStandaloneCluster(version string) error {
 	}
 	master0 := k.getMaster0IPAndPort()
 	configArg := " --config " + shellArgument(standalone.CompletedConfigPath)
-	if err := k.sshCmdAsync(master0, "kubeadm init phase upload-config kubeadm"+configArg); err != nil {
+	if err := k.sshCmdAsync(
+		master0,
+		"kubeadm init phase upload-config kubeadm"+configArg,
+	); err != nil {
 		return err
 	}
-	if err := k.sshFetch(master0, "/etc/kubernetes/admin.conf", k.pathResolver.AdminFile()); err != nil {
+	if err := k.sshFetch(
+		master0,
+		"/etc/kubernetes/admin.conf",
+		k.pathResolver.AdminFile(),
+	); err != nil {
 		return err
 	}
 	if err := k.syncLocalAdminKubeConfigCopies(); err != nil {
@@ -127,7 +146,10 @@ func (k *KubeadmRuntime) upgradeStandaloneCluster(version string) error {
 	// configuration remains the cluster's worker configuration.
 	for _, host := range k.getNodeIPAndPortList() {
 		name := workerNames[host]
-		node, err := client.Kubernetes().CoreV1().Nodes().Get(context.Background(), name, metav1.GetOptions{})
+		node, err := client.Kubernetes().
+			CoreV1().
+			Nodes().
+			Get(context.Background(), name, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
@@ -166,13 +188,22 @@ func (k *KubeadmRuntime) upgradeStandaloneCluster(version string) error {
 		if err != nil {
 			return err
 		}
-		if err := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {
-			node, err := client.Kubernetes().CoreV1().Nodes().Get(ctx, name, metav1.GetOptions{})
-			if err != nil {
-				return false, err
-			}
-			return upgradedWorkerReady(node, target, restartedAt), nil
-		}); err != nil {
+		if err := wait.PollUntilContextTimeout(
+			context.Background(),
+			5*time.Second,
+			5*time.Minute,
+			true,
+			func(ctx context.Context) (bool, error) {
+				node, err := client.Kubernetes().
+					CoreV1().
+					Nodes().
+					Get(ctx, name, metav1.GetOptions{})
+				if err != nil {
+					return false, err
+				}
+				return upgradedWorkerReady(node, target, restartedAt), nil
+			},
+		); err != nil {
 			return fmt.Errorf("worker %s has not become Ready at %s: %w", name, version, err)
 		}
 		if !wasCordoned {
@@ -185,8 +216,14 @@ func (k *KubeadmRuntime) upgradeStandaloneCluster(version string) error {
 			}
 		}
 	}
-	_, dnsErr := client.Kubernetes().AppsV1().Deployments("kube-system").Get(context.Background(), "coredns", metav1.GetOptions{})
-	_, proxyErr := client.Kubernetes().AppsV1().DaemonSets("kube-system").Get(context.Background(), "kube-proxy", metav1.GetOptions{})
+	_, dnsErr := client.Kubernetes().
+		AppsV1().
+		Deployments("kube-system").
+		Get(context.Background(), "coredns", metav1.GetOptions{})
+	_, proxyErr := client.Kubernetes().
+		AppsV1().
+		DaemonSets("kube-system").
+		Get(context.Background(), "kube-proxy", metav1.GetOptions{})
 	for _, addon := range []struct {
 		name string
 		err  error
@@ -206,12 +243,21 @@ func (k *KubeadmRuntime) upgradeStandaloneCluster(version string) error {
 		if addon.err != nil {
 			return addon.err
 		}
-		if err := k.sshCmdAsync(master0, "kubeadm init phase addon "+addon.name+configArg); err != nil {
+		if err := k.sshCmdAsync(
+			master0,
+			"kubeadm init phase addon "+addon.name+configArg,
+		); err != nil {
 			return err
 		}
-		if err := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {
-			return standaloneAddonReady(ctx, client.Kubernetes(), addon.name)
-		}); err != nil {
+		if err := wait.PollUntilContextTimeout(
+			context.Background(),
+			5*time.Second,
+			5*time.Minute,
+			true,
+			func(ctx context.Context) (bool, error) {
+				return standaloneAddonReady(ctx, client.Kubernetes(), addon.name)
+			},
+		); err != nil {
 			return fmt.Errorf("addon %s rollout failed: %w", addon.name, err)
 		}
 	}
@@ -224,17 +270,24 @@ func upgradedWorkerReady(node *v1.Node, target *semver.Version, restartedAt time
 		return false
 	}
 	for _, condition := range node.Status.Conditions {
-		if condition.Type == v1.NodeReady && condition.Status == v1.ConditionTrue && condition.LastHeartbeatTime.Time.After(restartedAt) {
+		if condition.Type == v1.NodeReady && condition.Status == v1.ConditionTrue &&
+			condition.LastHeartbeatTime.After(restartedAt) {
 			return true
 		}
 	}
 	return false
 }
 
-func standaloneAddonReady(ctx context.Context, client clientset.Interface, name string) (bool, error) {
+func standaloneAddonReady(
+	ctx context.Context,
+	client clientset.Interface,
+	name string,
+) (bool, error) {
 	switch name {
 	case "coredns":
-		deployment, err := client.AppsV1().Deployments("kube-system").Get(ctx, name, metav1.GetOptions{})
+		deployment, err := client.AppsV1().
+			Deployments("kube-system").
+			Get(ctx, name, metav1.GetOptions{})
 		if err != nil {
 			return false, err
 		}
@@ -248,7 +301,9 @@ func standaloneAddonReady(ctx context.Context, client clientset.Interface, name 
 			status.Replicas == desired &&
 			status.AvailableReplicas == desired, nil
 	case "kube-proxy":
-		daemonSet, err := client.AppsV1().DaemonSets("kube-system").Get(ctx, name, metav1.GetOptions{})
+		daemonSet, err := client.AppsV1().
+			DaemonSets("kube-system").
+			Get(ctx, name, metav1.GetOptions{})
 		if err != nil {
 			return false, err
 		}

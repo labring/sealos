@@ -8,15 +8,14 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"net/url"
 	"path/filepath"
+	"slices"
 	"sort"
-
-	"golang.org/x/sync/errgroup"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/tools/clientcmd"
+	"strings"
 
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
@@ -25,23 +24,34 @@ import (
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/yaml"
+	"golang.org/x/sync/errgroup"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 func (c *Applier) withStandaloneOperation(action string, run func() error) error {
 	initialized := c.ClusterCurrent != nil && !c.ClusterCurrent.CreationTimestamp.IsZero()
 	if initialized && !c.ClusterCurrent.IsStandaloneControlPlane() {
-		return fmt.Errorf("use sealos switch to enter standalone mode")
+		return errors.New("use sealos switch to enter standalone mode")
 	}
 	if initialized && action == "apply" {
-		mj, md := iputils.GetDiffHosts(c.ClusterCurrent.GetMasterIPAndPortList(), c.ClusterDesired.GetMasterIPAndPortList())
-		nj, nd := iputils.GetDiffHosts(c.ClusterCurrent.GetNodeIPAndPortList(), c.ClusterDesired.GetNodeIPAndPortList())
+		mj, md := iputils.GetDiffHosts(
+			c.ClusterCurrent.GetMasterIPAndPortList(),
+			c.ClusterDesired.GetMasterIPAndPortList(),
+		)
+		nj, nd := iputils.GetDiffHosts(
+			c.ClusterCurrent.GetNodeIPAndPortList(),
+			c.ClusterDesired.GetNodeIPAndPortList(),
+		)
 		if len(mj)+len(nj) != 0 && len(md)+len(nd) != 0 {
-			return fmt.Errorf("standalone addition and removal must be submitted as separate lifecycle operations")
+			return errors.New(
+				"standalone addition and removal must be submitted as separate lifecycle operations",
+			)
 		}
-		for _, host := range md {
-			if host == c.ClusterCurrent.GetMaster0IPAndPort() {
-				return fmt.Errorf("master0 machine cannot be deleted; the existing Sealos inventory and registry restriction also applies in standalone mode")
-			}
+		if slices.Contains(md, c.ClusterCurrent.GetMaster0IPAndPort()) {
+			return errors.New(
+				"master0 machine cannot be deleted; the existing Sealos inventory and registry restriction also applies in standalone mode",
+			)
 		}
 	}
 	// Only a digest leaves the inventory. SSH passwords and environment values
@@ -52,8 +62,8 @@ func (c *Applier) withStandaloneOperation(action string, run func() error) error
 		spec.Hosts[index].SSH = nil
 	}
 	request, err := json.Marshal(struct {
-		Spec   interface{}
-		Images []string
+		Spec   any      `json:"Spec"`
+		Images []string `json:"Images"`
 	}{spec, c.RunNewImages})
 	if err != nil {
 		return err
@@ -68,7 +78,7 @@ func (c *Applier) withStandaloneOperation(action string, run func() error) error
 		operation.Hosts = append(operation.Hosts, iputils.GetHostIP(host))
 	}
 	sort.Strings(operation.Hosts)
-	objects := []interface{}{recovery}
+	objects := []any{recovery}
 	if config := c.ClusterFile.GetRuntimeConfig(); config != nil {
 		objects = append(objects, config.GetComponents()...)
 	}
@@ -80,7 +90,10 @@ func (c *Applier) withStandaloneOperation(action string, run func() error) error
 		return err
 	}
 	if initialized && action == "apply" {
-		config, err := clientcmd.BuildConfigFromFlags("", constants.NewPathResolver(c.ClusterDesired.Name).AdminFile())
+		config, err := clientcmd.BuildConfigFromFlags(
+			"",
+			constants.NewPathResolver(c.ClusterDesired.Name).AdminFile(),
+		)
 		if err != nil {
 			return err
 		}
@@ -104,17 +117,25 @@ func (c *Applier) withStandaloneOperation(action string, run func() error) error
 			}
 		}
 		if survivor == "" {
-			return fmt.Errorf("standalone lifecycle requires an existing control plane in the desired inventory")
+			return errors.New(
+				"standalone lifecycle requires an existing control plane in the desired inventory",
+			)
 		}
 		endpoint.Host = net.JoinHostPort(survivor, port)
 		operation.APIServer = endpoint.String()
 	}
-	return clusterfile.WithLifecycle(c.Context, c.ClusterDesired.Name, operation, initialized, func(ctx context.Context) error {
-		previous := c.Context
-		c.Context = ctx
-		defer func() { c.Context = previous }()
-		return run()
-	})
+	return clusterfile.WithLifecycle(
+		c.Context,
+		c.ClusterDesired.Name,
+		operation,
+		initialized,
+		func(ctx context.Context) error {
+			previous := c.Context
+			c.Context = ctx
+			defer func() { c.Context = previous }()
+			return run()
+		},
+	)
 }
 
 func standaloneRecoveryCluster(current, desired *v2.Cluster) *v2.Cluster {
@@ -156,20 +177,29 @@ func (c *Applier) commitStandaloneInventory() error {
 	}
 	group, ctx := errgroup.WithContext(c.Context)
 	for _, host := range c.ClusterDesired.GetMasterIPAndPortList() {
-		host := host
 		group.Go(func() error {
 			if err := ctx.Err(); err != nil {
 				return err
 			}
-			return execer.Copy(host, constants.ClusterDir(c.ClusterDesired.Name), constants.ClusterDir(c.ClusterDesired.Name))
+			return execer.Copy(
+				host,
+				constants.ClusterDir(c.ClusterDesired.Name),
+				constants.ClusterDir(c.ClusterDesired.Name),
+			)
 		})
 	}
 	if err := group.Wait(); err != nil {
-		return fmt.Errorf("inventory synchronization is incomplete; repeat the lifecycle command: %w", err)
+		return fmt.Errorf(
+			"inventory synchronization is incomplete; repeat the lifecycle command: %w",
+			err,
+		)
 	}
 	// A copied local lifecycle marker must not outlive successful synchronization.
 	// The API journal still excludes other clients until this method returns.
-	marker := filepath.Join(constants.ClusterDir(c.ClusterDesired.Name), clusterfile.LifecycleFilename)
+	marker := filepath.Join(
+		constants.ClusterDir(c.ClusterDesired.Name),
+		clusterfile.LifecycleFilename,
+	)
 	for _, host := range c.ClusterDesired.GetMasterIPAndPortList() {
 		if err := execer.CmdAsync(host, "rm -f -- "+quoteLifecyclePath(marker)); err != nil {
 			return err
@@ -180,15 +210,16 @@ func (c *Applier) commitStandaloneInventory() error {
 
 func quoteLifecyclePath(value string) string {
 	// Paths derive from the validated cluster name but still require shell quoting.
-	result := "'"
+	var result strings.Builder
+	result.WriteString("'")
 	for _, character := range value {
 		if character == '\'' {
-			result += "'\"'\"'"
+			result.WriteString("'\"'\"'")
 		} else {
-			result += string(character)
+			result.WriteRune(character)
 		}
 	}
-	return result + "'"
+	return result.String() + "'"
 }
 
 func (c *Applier) deleteStandalone() (err error) {

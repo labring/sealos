@@ -6,6 +6,7 @@ package standalone
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -17,9 +18,13 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-func maintenance(ctx context.Context, timeout time.Duration, run func(context.Context) error) error {
+func maintenance(
+	ctx context.Context,
+	timeout time.Duration,
+	run func(context.Context) error,
+) error {
 	if runtime.GOOS != "linux" || timeout <= 0 {
-		return fmt.Errorf("standalone maintenance requires Linux and a positive timeout")
+		return errors.New("standalone maintenance requires Linux and a positive timeout")
 	}
 	root := filepath.Dir(CompletedConfigPath)
 	if err := os.MkdirAll(root, 0o700); err != nil {
@@ -67,7 +72,7 @@ func checkPendingMaintenance(operation string) error {
 			return err
 		}
 		var state struct {
-			Complete bool
+			Complete bool `json:"Complete"`
 		}
 		if err := json.Unmarshal(data, &state); err != nil {
 			return err

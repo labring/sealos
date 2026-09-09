@@ -5,6 +5,7 @@ package standalone
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"sort"
@@ -39,7 +40,7 @@ func EtcdEndpoints(ctx context.Context) ([]string, error) {
 		}
 	}
 	if len(endpoints) == 0 {
-		return nil, fmt.Errorf("etcd has no voting member endpoints")
+		return nil, errors.New("etcd has no voting member endpoints")
 	}
 	sort.Strings(endpoints)
 	return endpoints, nil
@@ -63,7 +64,11 @@ func memberByPeer(members []*etcdserverpb.Member, peer string) (*etcdserverpb.Me
 	return found, nil
 }
 
-func initialEtcdCluster(members []*etcdserverpb.Member, joiningID uint64, name string) (string, error) {
+func initialEtcdCluster(
+	members []*etcdserverpb.Member,
+	joiningID uint64,
+	name string,
+) (string, error) {
 	var peers []string
 	names := make(map[string]uint64)
 	for _, member := range members {
@@ -86,7 +91,12 @@ func initialEtcdCluster(members []*etcdserverpb.Member, joiningID uint64, name s
 	return strings.Join(peers, ","), nil
 }
 
-func checkRemovalQuorum(ctx context.Context, client *clientv3.Client, members []*etcdserverpb.Member, removing uint64, clusterID uint64) error {
+func checkRemovalQuorum(
+	ctx context.Context,
+	client *clientv3.Client,
+	members []*etcdserverpb.Member,
+	removing, clusterID uint64,
+) error {
 	remaining, healthy := 0, 0
 	for _, member := range members {
 		if member.ID == removing || member.IsLearner {
@@ -103,7 +113,11 @@ func checkRemovalQuorum(ctx context.Context, client *clientv3.Client, members []
 		}
 	}
 	if remaining == 0 || healthy < remaining/2+1 {
-		return fmt.Errorf("etcd removal would leave %d healthy voting members out of %d; a surviving quorum is required", healthy, remaining)
+		return fmt.Errorf(
+			"etcd removal would leave %d healthy voting members out of %d; a surviving quorum is required",
+			healthy,
+			remaining,
+		)
 	}
 	return nil
 }

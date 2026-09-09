@@ -5,20 +5,19 @@ package kubernetes
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes/fake"
-
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/runtime/kubernetes/standalone"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/fake"
 )
 
 type modeSSH struct {
@@ -42,8 +41,9 @@ func (s *modeSSH) CmdAsyncWithContext(ctx context.Context, host string, commands
 func (s *modeSSH) CmdAsync(host string, commands ...string) error {
 	for _, command := range commands {
 		s.commands = append(s.commands, host+"|"+command)
-		if host == s.failHost && strings.Contains(command, "switch '") && strings.Contains(command, "--check-only") == s.checkOnly {
-			return fmt.Errorf("injected conversion failure")
+		if host == s.failHost && strings.Contains(command, "switch '") &&
+			strings.Contains(command, "--check-only") == s.checkOnly {
+			return errors.New("injected conversion failure")
 		}
 	}
 	return nil
@@ -62,7 +62,9 @@ func TestControlPlaneConversionCommitAndFailure(t *testing.T) {
 			if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 				t.Fatal(err)
 			}
-			data := []byte("apiVersion: sealos.io/v1beta1\nkind: Cluster\nmetadata:\n  name: test\nspec:\n  controlPlaneMode: registered\n")
+			data := []byte(
+				"apiVersion: sealos.io/v1beta1\nkind: Cluster\nmetadata:\n  name: test\nspec:\n  controlPlaneMode: registered\n",
+			)
 			if err := os.WriteFile(path, data, 0o600); err != nil {
 				t.Fatal(err)
 			}
@@ -94,17 +96,25 @@ func TestControlPlaneConversionCommitAndFailure(t *testing.T) {
 			}
 			for _, timeout := range ssh.deadlines {
 				if timeout < options.Timeout || timeout > options.Timeout+30*time.Second {
-					t.Fatalf("transport timeout does not cover the requested conversion: %s", timeout)
+					t.Fatalf(
+						"transport timeout does not cover the requested conversion: %s",
+						timeout,
+					)
 				}
 			}
 			data, err = os.ReadFile(path)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if strings.Contains(string(data), "controlPlaneMode: standalone") != (failure == "none") {
+			if strings.Contains(
+				string(data),
+				"controlPlaneMode: standalone",
+			) != (failure == "none") {
 				t.Fatalf("incorrect mode commit after %s: %s", failure, data)
 			}
-			_, err = client.CoreV1().ConfigMaps("kube-system").Get(context.Background(), clusterfile.ModeTransitionResource, metav1.GetOptions{})
+			_, err = client.CoreV1().
+				ConfigMaps("kube-system").
+				Get(context.Background(), clusterfile.ModeTransitionResource, metav1.GetOptions{})
 			if failure == "host" && err != nil {
 				t.Fatalf("lost incomplete conversion journal: %v", err)
 			}
@@ -113,7 +123,9 @@ func TestControlPlaneConversionCommitAndFailure(t *testing.T) {
 			}
 			if failure == "host" {
 				for _, command := range ssh.commands {
-					if strings.HasPrefix(command, "master2|") && strings.Contains(command, "switch '") && !strings.Contains(command, "--check-only") {
+					if strings.HasPrefix(command, "master2|") &&
+						strings.Contains(command, "switch '") &&
+						!strings.Contains(command, "--check-only") {
 						t.Fatal("continued converting after a failed master")
 					}
 				}
@@ -123,7 +135,8 @@ func TestControlPlaneConversionCommitAndFailure(t *testing.T) {
 					t.Fatalf("could not reverse an interrupted conversion: %v", err)
 				}
 				for _, command := range ssh.commands {
-					if strings.Contains(command, "switch 'registered'") && strings.Contains(command, "--route-") {
+					if strings.Contains(command, "switch 'registered'") &&
+						strings.Contains(command, "--route-") {
 						t.Fatalf("registered command received standalone flags: %s", command)
 					}
 				}

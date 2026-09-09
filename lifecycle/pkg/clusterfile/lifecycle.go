@@ -6,45 +6,53 @@ package clusterfile
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"time"
 
+	"github.com/labring/sealos/pkg/constants"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
-
-	"github.com/labring/sealos/pkg/constants"
 )
 
-const LifecycleResource = "sealos-standalone-lifecycle"
-const LifecycleFilename = "standalone-lifecycle.json"
+const (
+	LifecycleResource = "sealos-standalone-lifecycle"
+	LifecycleFilename = "standalone-lifecycle.json"
+)
 
 type LifecycleOperation struct {
-	Action            string
-	Request           string
-	Approved          bool
-	APIServer         string `json:"-"`
-	Hosts             []string
-	RecoveryInventory []byte `json:"-"`
+	Action            string   `json:"Action"`
+	Request           string   `json:"Request"`
+	Approved          bool     `json:"Approved"`
+	APIServer         string   `json:"-"`
+	Hosts             []string `json:"Hosts"`
+	RecoveryInventory []byte   `json:"-"`
 }
 
 type lifecycleInventory struct {
 	LifecycleOperation
-	Inventory            []byte
-	RecoveryInventory    []byte
-	JoinPreflightHosts   []string
-	RootfsPreflightHosts []string
+	Inventory            []byte   `json:"Inventory"`
+	RecoveryInventory    []byte   `json:"RecoveryInventory"`
+	JoinPreflightHosts   []string `json:"JoinPreflightHosts"`
+	RootfsPreflightHosts []string `json:"RootfsPreflightHosts"`
 }
 
 // WithLifecycle records the request before mutation. Only an identical request
 // may resume it; callers commit inventory before returning success. Reset keeps
 // its authorization locally because its own work intentionally removes the API.
 // The caller must hold LockLifecycleMaintenance for this inventory.
-func WithLifecycle(ctx context.Context, name string, operation LifecycleOperation, requireAPI bool, run func(context.Context) error) error {
+func WithLifecycle(
+	ctx context.Context,
+	name string,
+	operation LifecycleOperation,
+	requireAPI bool,
+	run func(context.Context) error,
+) error {
 	endpoint := operation.APIServer
 	recoveryInventory := operation.RecoveryInventory
 	path := filepath.Join(constants.ClusterDir(name), LifecycleFilename)
@@ -52,13 +60,17 @@ func WithLifecycle(ctx context.Context, name string, operation LifecycleOperatio
 	var inventory []byte
 	var joinPreflightHosts []string
 	var rootfsPreflightHosts []string
-	if err == nil {
+	switch {
+	case err == nil:
 		var previous lifecycleInventory
 		if err := json.Unmarshal(data, &previous); err != nil {
 			return err
 		}
-		if !sameLifecycle(previous.LifecycleOperation, operation) && !resetSupersedes(previous.LifecycleOperation, operation) {
-			return fmt.Errorf("a different standalone lifecycle operation is pending; repeat its original request")
+		if !sameLifecycle(previous.LifecycleOperation, operation) &&
+			!resetSupersedes(previous.LifecycleOperation, operation) {
+			return errors.New(
+				"a different standalone lifecycle operation is pending; repeat its original request",
+			)
 		}
 		if sameLifecycle(previous.LifecycleOperation, operation) {
 			operation = previous.LifecycleOperation
@@ -69,9 +81,9 @@ func WithLifecycle(ctx context.Context, name string, operation LifecycleOperatio
 		if len(recoveryInventory) == 0 {
 			recoveryInventory = previous.RecoveryInventory
 		}
-	} else if !os.IsNotExist(err) {
+	case !os.IsNotExist(err):
 		return err
-	} else {
+	default:
 		inventory, err = os.ReadFile(constants.Clusterfile(name))
 		if err != nil && !os.IsNotExist(err) {
 			return err
@@ -113,15 +125,20 @@ func WithLifecycle(ctx context.Context, name string, operation LifecycleOperatio
 	if err != nil {
 		return err
 	}
-	err = withLifecycleAPI(ctx, client, operation, func(ctx context.Context, approved LifecycleOperation) error {
-		if err := persist(approved); err != nil {
-			return err
-		}
-		if operation.Action == "reset" {
-			return nil
-		}
-		return run(ctx)
-	})
+	err = withLifecycleAPI(
+		ctx,
+		client,
+		operation,
+		func(ctx context.Context, approved LifecycleOperation) error {
+			if err := persist(approved); err != nil {
+				return err
+			}
+			if operation.Action == "reset" {
+				return nil
+			}
+			return run(ctx)
+		},
+	)
 	if err != nil {
 		return err
 	}
@@ -174,14 +191,29 @@ func resetSupersedes(previous, requested LifecycleOperation) bool {
 	return true
 }
 
-func withLifecycleAPI(ctx context.Context, client clientset.Interface, operation LifecycleOperation, run func(context.Context, LifecycleOperation) error) error {
+func withLifecycleAPI(
+	ctx context.Context,
+	client clientset.Interface,
+	operation LifecycleOperation,
+	run func(context.Context, LifecycleOperation) error,
+) error {
 	return WithModeLease(ctx, client, func(ctx context.Context) error {
 		maps := client.CoreV1().ConfigMaps("kube-system")
-		if _, err := maps.Get(ctx, ModeTransitionResource, metav1.GetOptions{}); !apierrors.IsNotFound(err) {
-			return fmt.Errorf("cannot start lifecycle while a mode conversion exists or cannot be checked: %v", err)
+		if _, err := maps.Get(
+			ctx,
+			ModeTransitionResource,
+			metav1.GetOptions{},
+		); !apierrors.IsNotFound(
+			err,
+		) {
+			return fmt.Errorf(
+				"cannot start lifecycle while a mode conversion exists or cannot be checked: %w",
+				err,
+			)
 		}
 		cm, err := maps.Get(ctx, LifecycleResource, metav1.GetOptions{})
-		if apierrors.IsNotFound(err) {
+		switch {
+		case apierrors.IsNotFound(err):
 			data, err := json.Marshal(operation)
 			if err != nil {
 				return err
@@ -193,16 +225,18 @@ func withLifecycleAPI(ctx context.Context, client clientset.Interface, operation
 			if err != nil {
 				return err
 			}
-		} else if err != nil {
+		case err != nil:
 			return err
-		} else {
+		default:
 			var previous LifecycleOperation
 			if err := json.Unmarshal([]byte(cm.Data["operation"]), &previous); err != nil {
 				return err
 			}
 			if !sameLifecycle(previous, operation) {
 				if !resetSupersedes(previous, operation) {
-					return fmt.Errorf("a different standalone lifecycle operation is pending in the API")
+					return errors.New(
+						"a different standalone lifecycle operation is pending in the API",
+					)
 				}
 				data, err := json.Marshal(operation)
 				if err != nil {
@@ -225,7 +259,10 @@ func withLifecycleAPI(ctx context.Context, client clientset.Interface, operation
 			return nil
 		}
 		return maps.Delete(ctx, cm.Name, metav1.DeleteOptions{
-			Preconditions: &metav1.Preconditions{UID: &cm.UID, ResourceVersion: &cm.ResourceVersion},
+			Preconditions: &metav1.Preconditions{
+				UID:             &cm.UID,
+				ResourceVersion: &cm.ResourceVersion,
+			},
 		})
 	})
 }
@@ -247,9 +284,14 @@ func readResetInventory(path string) ([]byte, error) {
 }
 
 func CheckLifecycle(ctx context.Context, client clientset.Interface) error {
-	_, err := client.CoreV1().ConfigMaps("kube-system").Get(ctx, LifecycleResource, metav1.GetOptions{})
+	_, err := client.CoreV1().
+		ConfigMaps("kube-system").
+		Get(ctx, LifecycleResource, metav1.GetOptions{})
 	if err == nil {
-		return fmt.Errorf("%w; resume the pending standalone lifecycle operation", ErrModeTransitionPending)
+		return fmt.Errorf(
+			"%w; resume the pending standalone lifecycle operation",
+			ErrModeTransitionPending,
+		)
 	}
 	if !apierrors.IsNotFound(err) {
 		return err

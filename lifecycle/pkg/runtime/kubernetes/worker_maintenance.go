@@ -5,13 +5,13 @@ package kubernetes
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	"github.com/labring/sealos/pkg/utils/iputils"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/labring/sealos/pkg/utils/iputils"
 )
 
 func (k *KubeadmRuntime) deleteWorker(host string) error {
@@ -30,7 +30,7 @@ func (k *KubeadmRuntime) deleteWorker(host string) error {
 		for _, address := range candidate.Status.Addresses {
 			if address.Type == v1.NodeInternalIP && address.Address == iputils.GetHostIP(host) {
 				if node != nil && node.UID != candidate.UID {
-					return fmt.Errorf("multiple Nodes have the requested worker IP")
+					return errors.New("multiple Nodes have the requested worker IP")
 				}
 				node = candidate
 			}
@@ -63,7 +63,10 @@ func (k *KubeadmRuntime) pendingWorkerJoins(hosts []string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	nodes, err := client.Kubernetes().CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
+	nodes, err := client.Kubernetes().
+		CoreV1().
+		Nodes().
+		List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +78,10 @@ func (k *KubeadmRuntime) pendingWorkerJoins(hosts []string) ([]string, error) {
 			for _, address := range node.Status.Addresses {
 				if address.Type == v1.NodeInternalIP && address.Address == iputils.GetHostIP(host) {
 					if existing != nil && existing.UID != node.UID {
-						return nil, fmt.Errorf("multiple Nodes use worker IP %s", iputils.GetHostIP(host))
+						return nil, fmt.Errorf(
+							"multiple Nodes use worker IP %s",
+							iputils.GetHostIP(host),
+						)
 					}
 					existing = node
 				}
@@ -95,7 +101,10 @@ func (k *KubeadmRuntime) pendingWorkerJoins(hosts []string) ([]string, error) {
 			}
 		}
 		if !ready {
-			return nil, fmt.Errorf("worker %s already joined but is not Ready; repair or wait for it before retrying", existing.Name)
+			return nil, fmt.Errorf(
+				"worker %s already joined but is not Ready; repair or wait for it before retrying",
+				existing.Name,
+			)
 		}
 	}
 	return pending, nil
@@ -118,10 +127,16 @@ func (k *KubeadmRuntime) validateWorkerIdentity(host string, node *v1.Node) erro
 }
 
 func (k *KubeadmRuntime) resetWorker(host string) error {
-	if err := k.sshCmdAsync(host, "if systemctl cat kubelet >/dev/null 2>&1; then systemctl stop kubelet; else test ! -e /etc/kubernetes/kubelet.conf && test ! -e /etc/kubernetes/bootstrap-kubelet.conf; fi"); err != nil {
+	if err := k.sshCmdAsync(
+		host,
+		"if systemctl cat kubelet >/dev/null 2>&1; then systemctl stop kubelet; else test ! -e /etc/kubernetes/kubelet.conf && test ! -e /etc/kubernetes/bootstrap-kubelet.conf; fi",
+	); err != nil {
 		return err
 	}
-	if err := k.sshCmdAsync(host, fmt.Sprintf(remoteCleanMasterOrNode, vlogToStr(k.klogLevel), k.getEtcdDataDir())); err != nil {
+	if err := k.sshCmdAsync(
+		host,
+		fmt.Sprintf(remoteCleanMasterOrNode, vlogToStr(k.klogLevel), k.getEtcdDataDir()),
+	); err != nil {
 		return err
 	}
 	if err := k.execIPVSClean(host); err != nil {

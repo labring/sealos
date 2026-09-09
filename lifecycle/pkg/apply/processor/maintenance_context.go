@@ -10,7 +10,7 @@ import (
 )
 
 func setMaintenanceContext(rt runtime.Interface, ctx context.Context) {
-	if configurable, ok := rt.(interface{ SetMaintenanceContext(context.Context) }); ok {
+	if configurable, ok := rt.(interface{ SetMaintenanceContext(ctx context.Context) }); ok {
 		configurable.SetMaintenanceContext(ctx)
 	}
 }

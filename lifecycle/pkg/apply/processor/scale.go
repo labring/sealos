@@ -18,8 +18,6 @@ import (
 	"context"
 	"fmt"
 
-	"golang.org/x/sync/errgroup"
-
 	"github.com/labring/sealos/pkg/bootstrap"
 	"github.com/labring/sealos/pkg/buildah"
 	"github.com/labring/sealos/pkg/checker"
@@ -34,6 +32,7 @@ import (
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/yaml"
+	"golang.org/x/sync/errgroup"
 )
 
 type ScaleProcessor struct {
@@ -78,10 +77,10 @@ func (c *ScaleProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error
 			c.RunConfig,
 			c.MountRootfs,
 			c.Bootstrap,
-			//s.GetPhasePluginFunc(plugin.PhasePreJoin),
+			// s.GetPhasePluginFunc(plugin.PhasePreJoin),
 			c.Join,
 			c.RunGuest,
-			//s.GetPhasePluginFunc(plugin.PhasePostJoin),
+			// s.GetPhasePluginFunc(plugin.PhasePostJoin),
 		)
 		return todoList, nil
 	}
@@ -91,7 +90,7 @@ func (c *ScaleProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error
 		c.PreProcess,
 		c.Delete,
 		c.UndoBootstrap,
-		//c.ApplyCleanPlugin,
+		// c.ApplyCleanPlugin,
 		c.UnMountRootfs,
 	)
 	return todoList, nil
@@ -125,7 +124,10 @@ func (c *ScaleProcessor) Delete(cluster *v2.Cluster) error {
 		return err
 	}
 	if len(c.MastersToDelete) > 0 {
-		return c.Runtime.SyncNodeIPVS(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList())
+		return c.Runtime.SyncNodeIPVS(
+			cluster.GetMasterIPAndPortList(),
+			cluster.GetNodeIPAndPortList(),
+		)
 	}
 	return nil
 }
@@ -137,7 +139,10 @@ func (c *ScaleProcessor) Join(cluster *v2.Cluster) error {
 		return err
 	}
 	if len(c.MastersToJoin) > 0 {
-		return c.Runtime.SyncNodeIPVS(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList())
+		return c.Runtime.SyncNodeIPVS(
+			cluster.GetMasterIPAndPortList(),
+			cluster.GetNodeIPAndPortList(),
+		)
 	}
 	return c.Runtime.SyncNodeIPVS(cluster.GetMasterIPAndPortList(), c.NodesToJoin)
 }
@@ -163,23 +168,48 @@ func (c *ScaleProcessor) JoinCheck(cluster *v2.Cluster) error {
 	scales = append(c.MastersToJoin, c.NodesToJoin...)
 	ips = append(ips, scales...)
 	if cluster.IsStandaloneControlPlane() {
-		if err := checker.RunCheckList([]checker.Interface{checker.NewIPsHostChecker(ips)}, cluster, checker.PhasePre); err != nil {
+		if err := checker.RunCheckList(
+			[]checker.Interface{checker.NewIPsHostChecker(ips)},
+			cluster,
+			checker.PhasePre,
+		); err != nil {
 			return NewCheckError(err)
 		}
-		return NewCheckError(clusterfile.WithJoinPreflight(cluster.Name, scales, func(pending []string) error {
-			return checker.RunCheckList([]checker.Interface{checker.NewContainerdChecker(pending)}, cluster, checker.PhasePre)
-		}))
+		return NewCheckError(
+			clusterfile.WithJoinPreflight(cluster.Name, scales, func(pending []string) error {
+				return checker.RunCheckList(
+					[]checker.Interface{checker.NewContainerdChecker(pending)},
+					cluster,
+					checker.PhasePre,
+				)
+			}),
+		)
 	}
-	return NewCheckError(checker.RunCheckList([]checker.Interface{checker.NewIPsHostChecker(ips), checker.NewContainerdChecker(scales)}, cluster, checker.PhasePre))
+	return NewCheckError(
+		checker.RunCheckList(
+			[]checker.Interface{
+				checker.NewIPsHostChecker(ips),
+				checker.NewContainerdChecker(scales),
+			},
+			cluster,
+			checker.PhasePre,
+		),
+	)
 }
 
 func (c *ScaleProcessor) DeleteCheck(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline DeleteCheck in ScaleProcessor.")
 	var ips []string
 	ips = append(ips, cluster.GetMaster0IPAndPort())
-	//ips = append(ips, c.MastersToDelete...)
-	//ips = append(ips, c.NodesToDelete...)
-	return NewCheckError(checker.RunCheckList([]checker.Interface{checker.NewIPsHostChecker(ips)}, cluster, checker.PhasePre))
+	// ips = append(ips, c.MastersToDelete...)
+	// ips = append(ips, c.NodesToDelete...)
+	return NewCheckError(
+		checker.RunCheckList(
+			[]checker.Interface{checker.NewIPsHostChecker(ips)},
+			cluster,
+			checker.PhasePre,
+		),
+	)
 }
 
 func (c *ScaleProcessor) PreProcess(cluster *v2.Cluster) error {
@@ -201,7 +231,7 @@ func (c *ScaleProcessor) preProcess(cluster *v2.Cluster) error {
 			return fmt.Errorf("rootfs image not found kube version")
 		}
 		clusterPath := constants.Clusterfile(cluster.Name)
-		obj := []interface{}{cluster}
+		obj := []any{cluster}
 		if configs := c.ClusterFile.GetConfigs(); len(configs) > 0 {
 			for i := range configs {
 				obj = append(obj, configs[i])
@@ -260,7 +290,11 @@ func (c *ScaleProcessor) RunConfig(cluster *v2.Cluster) error {
 	for _, cManifest := range cluster.Status.Mounts {
 		manifest := cManifest
 		eg.Go(func() error {
-			cfg := config.NewConfiguration(manifest.ImageName, manifest.MountPoint, c.ClusterFile.GetConfigs())
+			cfg := config.NewConfiguration(
+				manifest.ImageName,
+				manifest.MountPoint,
+				c.ClusterFile.GetConfigs(),
+			)
 			return cfg.Dump()
 		})
 	}
@@ -312,7 +346,13 @@ func (c *ScaleProcessor) UndoBootstrap(_ *v2.Cluster) error {
 	return bs.Delete(hosts...)
 }
 
-func NewScaleProcessor(clusterFile clusterfile.Interface, name string, images v2.ImageList, masterToJoin, masterToDelete, nodeToJoin, nodeToDelete []string, contexts ...context.Context) (Interface, error) {
+func NewScaleProcessor(
+	clusterFile clusterfile.Interface,
+	name string,
+	images v2.ImageList,
+	masterToJoin, masterToDelete, nodeToJoin, nodeToDelete []string,
+	contexts ...context.Context,
+) (Interface, error) {
 	bder, err := buildah.New(name)
 	if err != nil {
 		return nil, err

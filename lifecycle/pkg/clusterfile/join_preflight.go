@@ -5,9 +5,10 @@ package clusterfile
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 	"os"
 	"path/filepath"
+	"slices"
 
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/utils/iputils"
@@ -37,7 +38,7 @@ func withHostPreflight(name string, hosts []string, rootfs bool, check func([]st
 		return err
 	}
 	if journal.Action != "apply" {
-		return fmt.Errorf("join preflight requires an active apply journal")
+		return errors.New("join preflight requires an active apply journal")
 	}
 	var pending []string
 	completed := journal.JoinPreflightHosts
@@ -46,7 +47,7 @@ func withHostPreflight(name string, hosts []string, rootfs bool, check func([]st
 	}
 	for _, host := range hosts {
 		if !containsPreflightHost(journal.Hosts, iputils.GetHostIP(host)) {
-			return fmt.Errorf("join host is outside the active lifecycle inventory")
+			return errors.New("join host is outside the active lifecycle inventory")
 		}
 		if !containsPreflightHost(completed, host) {
 			pending = append(pending, host)
@@ -67,10 +68,5 @@ func withHostPreflight(name string, hosts []string, rootfs bool, check func([]st
 }
 
 func containsPreflightHost(hosts []string, target string) bool {
-	for _, host := range hosts {
-		if host == target {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(hosts, target)
 }

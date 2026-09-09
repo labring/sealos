@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
+	"strconv"
 )
 
 type replacement struct {
@@ -40,7 +42,7 @@ func backupReplacements(dir string, files []replacement) error {
 		}
 		file.Existed = true
 		file.OriginalMode = info.Mode().Perm()
-		file.Backup = filepath.Join(backupDir, fmt.Sprintf("%d", i))
+		file.Backup = filepath.Join(backupDir, strconv.Itoa(i))
 		if err := copyAtomic(file.Destination, file.Backup, 0o600); err != nil {
 			return err
 		}
@@ -59,8 +61,7 @@ func replaceFiles(files []replacement) (attempted int, err error) {
 
 func restoreFiles(files []replacement) error {
 	var result error
-	for i := len(files) - 1; i >= 0; i-- {
-		file := files[i]
+	for _, file := range slices.Backward(files) {
 		var err error
 		if file.Existed {
 			err = copyAtomic(file.Backup, file.Destination, file.OriginalMode)

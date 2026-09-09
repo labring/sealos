@@ -135,12 +135,14 @@ orphaned runtime Pods after the API configuration source is removed, so this
 operation does not promise to preserve running ordinary containers. Kubernetes may retain the old Node
 and mirror Pods after kubelet disconnects.
 
-Success requires standalone kubelet arguments and a successful kubelet restart.
-Route-controller reconciliation and local data-plane health continue
+Success requires standalone kubelet arguments and healthy local control-plane
+containers after kubelet restart. Route-controller reconciliation continues
 asynchronously because CNI cleanup is administrator-owned. It does not require
 deleting old API objects. The command reminds the administrator to clean up and
 reboot the hosts. A failed conversion never automatically reconnects kubelet to
-the API.
+the API. Successful conversion does not certify Pod/Service connectivity.
+The controller keeps its conflict checks and retries after administrator cleanup;
+it never takes over another route owner's entries to make conversion succeed.
 
 ## Reverse conversion
 
@@ -157,6 +159,9 @@ data, including changes made by a standalone upgrade.
 Kubelet then registers itself using its native registration path with a
 temporary NoSchedule taint. Sealos restores saved labels, annotations, custom
 taints and provider identity, preserving administrator-selected schedulability.
+It also publishes the saved effective CRI endpoint in kubeadm's Node annotation
+so kubeadm versions that discover the runtime through Node metadata can reset
+or upgrade the restored control plane, including hosts initialized standalone.
 The original systemd configuration is reactivated, and Node Ready and
 control-plane mirror Pods are checked.
 
@@ -216,7 +221,7 @@ static Pod, HTTP readiness, and route ownership contracts; it does not test a
 particular CNI or the real route-controller routing algorithm. It covers repeated
 round trips with the generated manifest, standalone upgrade before returning,
 metadata preservation, removal of owned routes while preserving another protocol
-in the same table, and recovery from a controller readiness failure.
+in the same table, and completed conversion while controller readiness is failing.
 
 To build the fixture from the lifecycle module directory:
 
