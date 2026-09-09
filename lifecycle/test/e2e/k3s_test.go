@@ -23,17 +23,13 @@ import (
 	"time"
 
 	"github.com/google/go-containerregistry/pkg/name"
-
-	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/util/yaml"
-
 	"github.com/labring/sealos/pkg/utils/logger"
-
 	"github.com/labring/sealos/test/e2e/suites/operators"
 	"github.com/labring/sealos/test/e2e/testhelper/config"
 	"github.com/labring/sealos/test/e2e/testhelper/utils"
-
 	. "github.com/onsi/ginkgo/v2"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
 var _ = Describe("E2E_sealos_k3s_basic_test", func() {
@@ -46,8 +42,10 @@ var _ = Describe("E2E_sealos_k3s_basic_test", func() {
 	Context("sealos k3s suit", func() {
 		BeforeEach(func() {
 			By("build rootfs")
+			// K3s 1.25 can leave CoreDNS NodeHosts unset with the Helm controller
+			// disabled; use a release containing https://github.com/k3s-io/k3s/pull/9354.
 			dFile := config.RootfsDockerfile{
-				BaseImage: "docker.io/labring/k3s:v1.25-latest",
+				BaseImage: "docker.io/labring/k3s:v1.28.15",
 				Copys:     []string{"sealctl opt/"},
 			}
 			tmpdir, err := dFile.Write()
@@ -107,7 +105,13 @@ var _ = Describe("E2E_sealos_k3s_basic_test", func() {
 				logger.Info("waiting for K3s pods to run: %d/%d", running, len(podList.Items))
 				time.Sleep(2 * time.Second)
 			}
-			err = fakeClient.CmdInterface.AsyncExec("kubectl", "get", "nodes", "--kubeconfig", "/etc/rancher/k3s/k3s.yaml")
+			err = fakeClient.CmdInterface.AsyncExec(
+				"kubectl",
+				"get",
+				"nodes",
+				"--kubeconfig",
+				"/etc/rancher/k3s/k3s.yaml",
+			)
 			utils.CheckErr(err)
 			displayImages, err := fakeClient.CRI.ImageList()
 			utils.CheckErr(err)
@@ -119,12 +123,16 @@ var _ = Describe("E2E_sealos_k3s_basic_test", func() {
 						utils.CheckErr(err)
 						logger.Info("image registry is %s", ref.Context().RegistryStr())
 						if ref.Context().RegistryStr() != "sealos.hub:5000" {
-							utils.CheckErr(fmt.Errorf("crictl image is not sealos.hub, %+v", strings.TrimSpace(tag)))
+							utils.CheckErr(
+								fmt.Errorf(
+									"crictl image is not sealos.hub, %+v",
+									strings.TrimSpace(tag),
+								),
+							)
 						}
 					}
 				}
 			}
 		})
 	})
-
 })
