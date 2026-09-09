@@ -41,15 +41,15 @@ func withHostPreflight(name string, hosts []string, rootfs bool, check func([]st
 		return errors.New("join preflight requires an active apply journal")
 	}
 	var pending []string
-	completed := journal.JoinPreflightHosts
+	completed := &journal.JoinPreflightHosts
 	if rootfs {
-		completed = journal.RootfsPreflightHosts
+		completed = &journal.RootfsPreflightHosts
 	}
 	for _, host := range hosts {
-		if !containsPreflightHost(journal.Hosts, iputils.GetHostIP(host)) {
+		if !slices.Contains(journal.Hosts, iputils.GetHostIP(host)) {
 			return errors.New("join host is outside the active lifecycle inventory")
 		}
-		if !containsPreflightHost(completed, host) {
+		if !slices.Contains(*completed, host) {
 			pending = append(pending, host)
 		}
 	}
@@ -59,14 +59,6 @@ func withHostPreflight(name string, hosts []string, rootfs bool, check func([]st
 	if err := check(pending); err != nil {
 		return err
 	}
-	if rootfs {
-		journal.RootfsPreflightHosts = append(journal.RootfsPreflightHosts, pending...)
-	} else {
-		journal.JoinPreflightHosts = append(journal.JoinPreflightHosts, pending...)
-	}
+	*completed = append(*completed, pending...)
 	return WriteMaintenanceJSON(path, journal)
-}
-
-func containsPreflightHost(hosts []string, target string) bool {
-	return slices.Contains(hosts, target)
 }

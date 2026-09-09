@@ -99,7 +99,7 @@ func TestLifecycleInventorySurvivesPartialCommit(t *testing.T) {
 	if !errors.Is(err, failure) {
 		t.Fatal(err)
 	}
-	data, err := readLifecycleInventory(path)
+	data, err := readLifecycleInventory(path, false)
 	if err != nil || string(data) != "original inventory" {
 		t.Fatalf("retry read partly committed inventory: %q, %v", data, err)
 	}
@@ -112,7 +112,7 @@ func TestLifecycleInventorySurvivesPartialCommit(t *testing.T) {
 	); err != nil {
 		t.Fatal(err)
 	}
-	data, err = readLifecycleInventory(path)
+	data, err = readLifecycleInventory(path, false)
 	if err != nil || string(data) != "desired inventory" {
 		t.Fatalf("completion did not expose desired inventory: %q, %v", data, err)
 	}
@@ -162,5 +162,110 @@ func TestResetCanReadAnUncommittedInitialInventory(t *testing.T) {
 	}
 	if cf.GetCluster() == nil || !cf.GetCluster().IsStandaloneControlPlane() {
 		t.Fatal("reset lost the pending initial cluster mode")
+	}
+}
+
+func TestLifecycleInventorySelection(t *testing.T) {
+	for _, scenario := range []struct {
+		name            string
+		journal         *lifecycleInventory
+		wantNormal      string
+		wantReset       string
+		wantCustomReset string
+		wantError       bool
+	}{
+		{
+			name:            "missing journal",
+			wantNormal:      "current",
+			wantReset:       "current",
+			wantCustomReset: "current",
+		},
+		{
+			name:            "empty inventory",
+			journal:         &lifecycleInventory{},
+			wantNormal:      "current",
+			wantReset:       "current",
+			wantCustomReset: "current",
+		},
+		{
+			name:            "committed inventory",
+			journal:         &lifecycleInventory{Inventory: []byte("committed")},
+			wantNormal:      "committed",
+			wantReset:       "committed",
+			wantCustomReset: "current",
+		},
+		{
+			name: "recovery inventory",
+			journal: &lifecycleInventory{
+				Inventory:         []byte("committed"),
+				RecoveryInventory: []byte("recovery"),
+			},
+			wantNormal:      "committed",
+			wantReset:       "recovery",
+			wantCustomReset: "recovery",
+		},
+		{
+			name:      "corrupt journal",
+			wantError: true,
+		},
+	} {
+		t.Run(scenario.name, func(t *testing.T) {
+			root := t.TempDir()
+			journalPath := filepath.Join(root, LifecycleFilename)
+			if scenario.wantError {
+				if err := os.WriteFile(journalPath, []byte("{"), 0o600); err != nil {
+					t.Fatal(err)
+				}
+			} else if scenario.journal != nil {
+				if err := WriteMaintenanceJSON(journalPath, scenario.journal); err != nil {
+					t.Fatal(err)
+				}
+			}
+			for _, request := range []struct {
+				file      string
+				reset     bool
+				want      string
+				wantError bool
+			}{
+				{
+					file:      "Clusterfile",
+					want:      scenario.wantNormal,
+					wantError: scenario.wantError,
+				},
+				{
+					file:      "Clusterfile",
+					reset:     true,
+					want:      scenario.wantReset,
+					wantError: scenario.wantError,
+				},
+				{
+					file: "custom.yaml",
+					want: "current",
+				},
+				{
+					file:      "custom.yaml",
+					reset:     true,
+					want:      scenario.wantCustomReset,
+					wantError: scenario.wantError,
+				},
+			} {
+				path := filepath.Join(root, request.file)
+				if err := os.WriteFile(path, []byte("current"), 0o600); err != nil {
+					t.Fatal(err)
+				}
+				data, err := readLifecycleInventory(path, request.reset)
+				if (err != nil) != request.wantError || string(data) != request.want {
+					t.Fatalf(
+						"%s reset=%t: got %q, %v; want %q, error=%t",
+						request.file,
+						request.reset,
+						data,
+						err,
+						request.want,
+						request.wantError,
+					)
+				}
+			}
+		})
 	}
 }
