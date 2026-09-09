@@ -38,7 +38,9 @@ func TestStandaloneCommitPreservesLocalRecoveryUntilCompletion(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: name},
 				Spec: v2.ClusterSpec{
 					ControlPlaneMode: v2.ControlPlaneModeStandalone,
-					Hosts:            []v2.Host{{IPS: []string{"127.0.0.1:22"}, Roles: []string{v2.MASTER}}},
+					Hosts: []v2.Host{
+						{IPS: []string{"127.0.0.1:22"}, Roles: []string{v2.MASTER}},
+					},
 				},
 			}
 			worker := v2.Host{IPS: []string{"192.0.2.2:22"}, Roles: []string{v2.NODE}}

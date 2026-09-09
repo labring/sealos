@@ -189,7 +189,8 @@ func TestBootstrapBaselinePreservesFutureNodeIdentity(t *testing.T) {
 
 func TestResetCannotSkipUnmanagedMemberRemoval(t *testing.T) {
 	err := Reset(context.Background(), ResetOptions{AllowUninitialized: true})
-	if err == nil || err.Error() != "allow-uninitialized is only valid for whole-cluster destruction" {
+	if err == nil ||
+		err.Error() != "allow-uninitialized is only valid for whole-cluster destruction" {
 		t.Fatalf("reset did not reject allow-uninitialized before maintenance: %v", err)
 	}
 }

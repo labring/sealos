@@ -52,7 +52,8 @@ func TestRegisteredResetContinuesAfterCleanupFailures(t *testing.T) {
 			var resetMaster, cleanedWorkerConfig, cleanedWorkerIPVS bool
 			for index, command := range execer.commands {
 				host := execer.hosts[index]
-				if host == runtime.getMaster0IPAndPort() && strings.Contains(command, "kubeadm reset") {
+				if host == runtime.getMaster0IPAndPort() &&
+					strings.Contains(command, "kubeadm reset") {
 					resetMaster = true
 				}
 				if host == runtime.getNodeIPAndPortList()[0] {
