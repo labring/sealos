@@ -1,7 +1,6 @@
+#!/usr/bin/env python3
 # Copyright 2026 sealos.
 # SPDX-License-Identifier: Apache-2.0
-
-#!/usr/bin/env python3
 """Exercise sealctl membership on a disposable two-host kind cluster.
 
 Requires a Linux sealctl binary and the already built mode-controller fixture.
