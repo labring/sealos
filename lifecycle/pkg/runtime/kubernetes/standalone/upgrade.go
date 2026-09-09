@@ -241,6 +241,7 @@ func (u *upgrade) prepare(ctx context.Context) error {
 	}
 	u.name = strings.ToLower(strings.TrimSpace(u.name))
 	// #nosec G204 -- The validated PID identifies the running kubelet executable.
+	// nosemgrep: go.lang.security.audit.dangerous-exec-command.dangerous-exec-command
 	current, err := exec.CommandContext(ctx, fmt.Sprintf("/proc/%d/exe", pid), "--version").Output()
 	if err != nil {
 		return err
@@ -260,6 +261,7 @@ func (u *upgrade) prepare(ctx context.Context) error {
 			args = []string{"version", "--client=true", "-o", "json"}
 		}
 		// #nosec G204 -- The administrator selects the binary directory; names and arguments are fixed.
+		// nosemgrep: go.lang.security.audit.dangerous-exec-command.dangerous-exec-command
 		out, err := exec.CommandContext(ctx, filepath.Join(u.BinaryDir, binary), args...).Output()
 		if err != nil {
 			return err
@@ -288,6 +290,7 @@ func (u *upgrade) prepare(ctx context.Context) error {
 	}
 	// pflag validates that all preserved command-line options exist in the target kubelet.
 	// #nosec G204 -- Arguments are read from the running kubelet and executed without a shell.
+	// nosemgrep: go.lang.security.audit.dangerous-exec-command.dangerous-exec-command
 	if out, err := exec.CommandContext(ctx, filepath.Join(u.BinaryDir, "kubelet"), append(append([]string{}, u.args...), "--help")...).
 		CombinedOutput(); err != nil {
 		return fmt.Errorf("target kubelet rejects preserved flags: %w: %s", err, out)
