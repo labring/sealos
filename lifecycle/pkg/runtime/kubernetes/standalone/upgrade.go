@@ -158,6 +158,8 @@ func Run(ctx context.Context, options Options) error {
 func (u *upgrade) command(ctx context.Context, name string, args ...string) error {
 	ctx, cancel := context.WithTimeout(ctx, u.Timeout)
 	defer cancel()
+	// Callers select maintenance tools from the administrator's binary directory; no shell is used.
+	// nosemgrep: go.lang.security.audit.dangerous-exec-command.dangerous-exec-command
 	cmd := exec.CommandContext(ctx, name, args...)
 	cmd.Stdout, cmd.Stderr = u.Output, u.Output
 	if err := cmd.Run(); err != nil {
@@ -783,6 +785,7 @@ func (u *upgrade) prepareV2StoreCheck(ctx context.Context, current *semver.Versi
 		}
 	}
 	// #nosec G204 -- The administrator selects the binary directory; the executable and argument are fixed.
+	// nosemgrep: go.lang.security.audit.dangerous-exec-command.dangerous-exec-command
 	out, err := exec.CommandContext(ctx, filepath.Join(u.BinaryDir, "etcdutl"), "version").Output()
 	if err != nil {
 		return fmt.Errorf(

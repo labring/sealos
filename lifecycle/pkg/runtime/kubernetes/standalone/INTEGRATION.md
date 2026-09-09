@@ -169,9 +169,39 @@ removed. No manual etcd member removal was needed. Runtime sandbox cleanup
 reported warnings, which the existing kubeadm and image cleanup flow tolerated.
 All PV/PVC identities and bindings remained unchanged.
 
+The same control plane was re-added successfully with its original hostname,
+address, and role. Native kubeadm created a new etcd member and all three
+endpoints became healthy. Cilium image download delayed Node readiness by
+approximately twenty minutes; the Node subsequently became Ready without
+changing the product's CNI configuration. Comparison with the preceding
+registered snapshot confirmed that only the intentionally replaced Node UID
+changed. All other Node identities, schedulability, PV/PVC identities and
+bindings remained unchanged.
+
+A third forward conversion completed successfully. The first control plane
+rebooted and passed the complete network, logs, exec, port-forward, and admission
+matrix. The next control plane did not recover network access within ten
+minutes of the administrator reboot. Its ext4 data mount exceeded systemd's
+90-second timeout, causing emergency mode; journal recovery completed only after
+the mount unit had failed. An administrator power cycle restored the host, its
+API and controller, all three etcd endpoints, and its complete network matrix.
+The earlier delayed control-plane recovery had the same mount timeout. These
+host storage settings were not changed by the mode-switch implementation.
+The last control plane then rebooted successfully. All three standalone hosts
+passed the complete network matrix with no kubelet API credentials and three
+owned routes per host. The third reverse conversion completed with exit status
+zero. All five Nodes and twelve control-plane mirror Pods were Ready; every
+controller manifest and protocol 99 route was removed, each host's conversion
+target was cleared, and all three etcd endpoints were healthy. Snapshot
+comparison preserved all five Node UIDs and schedulability, all 39 PV/PVC
+identities and bindings, and all ten checked worker local-volume device/inode
+pairs. Restored CRI annotations used the hosts' existing `/run` or `/var/run`
+socket paths, which resolve to the same active containerd runtime.
+
 Local tests passed for the standalone engine, Kubernetes runtime, apply drivers,
 processor, CLI packages, bootstrap, types, and new lifecycle journal cases.
 The three legacy Clusterfile rendering tests also fail on the unchanged upstream
 baseline. Incremental lint reported no issues, and the coverage packages passed
-with the race detector. Final publication and CI verification remain pending
-completion of the live regression.
+with the race detector. Targeted Semgrep scanning of the final security-review
+changes reported no findings. Live regression is complete; final CI verification
+is recorded on the pull request.
