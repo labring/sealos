@@ -43,3 +43,20 @@ func logDiagnosticCommand(command *exec.Cmd) {
 	output, err := command.CombinedOutput()
 	logger.Warn("E2E host diagnostic %v: %v\n%s", command.Args, err, output)
 }
+
+// LogK3sDiagnostics captures startup failures before the test resets K3s.
+func LogK3sDiagnostics() {
+	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
+	defer cancel()
+
+	for _, resource := range []string{"nodes", "pods"} {
+		logDiagnosticCommand(exec.CommandContext(ctx, "kubectl",
+			"--kubeconfig=/etc/rancher/k3s/k3s.yaml", "--request-timeout=10s",
+			"describe", resource, "--all-namespaces"))
+	}
+	logDiagnosticCommand(exec.CommandContext(ctx, "kubectl",
+		"--kubeconfig=/etc/rancher/k3s/k3s.yaml", "--request-timeout=10s",
+		"get", "events", "--all-namespaces", "--sort-by=.lastTimestamp"))
+	logDiagnosticCommand(exec.CommandContext(ctx, "journalctl",
+		"--unit=k3s", "--boot", "--no-pager", "--lines=150"))
+}

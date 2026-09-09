@@ -64,6 +64,9 @@ var _ = Describe("E2E_sealos_k3s_basic_test", func() {
 			utils.CheckErr(err, fmt.Sprintf("failed to build image: %v", err))
 		})
 		AfterEach(func() {
+			if CurrentSpecReport().Failed() {
+				utils.LogK3sDiagnostics()
+			}
 			err = fakeClient.Cluster.Reset()
 			utils.CheckErr(err, fmt.Sprintf("failed to reset cluster for single: %v", err))
 		})
