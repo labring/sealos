@@ -19,7 +19,6 @@ buildTargets := \
 	providers/dbprovider \
 	providers/applaunchpad \
 	providers/imagehub \
-	providers/template \
 	providers/license
 
 buildTargets-all := $(addprefix image-build-,$(buildTargets))
