@@ -151,7 +151,8 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
       }
     },
     refetchIntervalInBackground: false,
-    staleTime: 1000 * 60 * 5
+    refetchOnMount: 'always',
+    staleTime: 0
   });
 
   const statusMap = useMemo(

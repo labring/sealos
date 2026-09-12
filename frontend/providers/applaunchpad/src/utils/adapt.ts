@@ -282,6 +282,9 @@ export const adaptAppDetail = async (
     .filter((item) => item.kind === YamlKindEnum.Service)
     .map((item) => item as V1Service);
   const backendServices = options?.backendServices || allServices;
+  const knownBackendServiceNames = new Set(
+    [...allServices, ...backendServices].map((service) => service.metadata?.name).filter(Boolean)
+  );
 
   const allServicePorts = allServices.flatMap((service) => service.spec?.ports || []);
 
@@ -603,12 +606,22 @@ export const adaptAppDetail = async (
             ? domain
             : domain.split('.').slice(1).join('.') || SEALOS_DOMAIN,
           routes: ingressPaths.length
-            ? ingressPaths.map((path) => ({
-                path: path.path || '/',
-                pathType: (path.pathType || 'Prefix') as NetworkRoutePathType,
-                serviceName: path.backend?.service?.name || service?.metadata?.name || '',
-                servicePort: path.backend?.service?.port?.number || item.port
-              }))
+            ? ingressPaths.map((path) => {
+                // An Ingress may outlive the Service it used to target. Keep valid
+                // alternate backends, but let an unknown backend fall back to the
+                // current main Service on the next edit.
+                const routeServiceName =
+                  path.backend?.service?.name || service?.metadata?.name || '';
+
+                return {
+                  path: path.path || '/',
+                  pathType: (path.pathType || 'Prefix') as NetworkRoutePathType,
+                  serviceName: knownBackendServiceNames.has(routeServiceName)
+                    ? routeServiceName
+                    : '',
+                  servicePort: path.backend?.service?.port?.number || item.port
+                };
+              })
             : [
                 {
                   path: '/',

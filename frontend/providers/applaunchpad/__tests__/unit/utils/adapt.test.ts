@@ -210,6 +210,58 @@ describe('adaptAppDetail', () => {
     expect(app.networks.find((network) => network.port === 81)?.openPublicDomain).toBe(false);
   });
 
+  it('falls back from a missing ingress backend while preserving valid alternate services', async () => {
+    const ingress = createIngress() as any;
+    ingress.spec.rules[0].http.paths = [
+      {
+        path: '/',
+        pathType: 'Prefix',
+        backend: {
+          service: {
+            name: 'demo-old-service',
+            port: { number: 80 }
+          }
+        }
+      },
+      {
+        path: '/api',
+        pathType: 'Prefix',
+        backend: {
+          service: {
+            name: 'api-demo',
+            port: { number: 8080 }
+          }
+        }
+      }
+    ];
+
+    const app = await adaptAppDetail([createDeployment(), createService(), ingress], {
+      SEALOS_DOMAIN: '192.168.13.209.nip.io',
+      SEALOS_USER_DOMAINS: [
+        {
+          name: '192.168.13.209.nip.io',
+          secretName: 'wildcard-cert'
+        }
+      ],
+      backendServices: [createService() as any, createService('api-demo', [8080]) as any]
+    });
+
+    expect(app.networks[0].routes).toEqual([
+      {
+        path: '/',
+        pathType: 'Prefix',
+        serviceName: '',
+        servicePort: 80
+      },
+      {
+        path: '/api',
+        pathType: 'Prefix',
+        serviceName: 'api-demo',
+        servicePort: 8080
+      }
+    ]);
+  });
+
   it('can expose backend service candidates without treating them as current app ports', async () => {
     const app = await adaptAppDetail([createDeployment(), createService(), createIngress()], {
       SEALOS_DOMAIN: '192.168.13.209.nip.io',

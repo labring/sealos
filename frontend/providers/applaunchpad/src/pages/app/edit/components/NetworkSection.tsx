@@ -31,7 +31,11 @@ import type { AppEditType, ApplicationProtocolType } from '@/types/app';
 import RouteRulesModal from './RouteRulesModal';
 import { useCopyData } from '@/utils/tools';
 import { buildExternalUrl, getExternalProtocol } from '@/utils/network-url';
-import { rebindMainServiceRoutes, syncDefaultRouteServicePort } from '@/utils/network-routes';
+import {
+  rebindMainServiceRoutes,
+  serviceIdentityChanges,
+  syncDefaultRouteServicePort
+} from '@/utils/network-routes';
 import type { CustomAccessModalParams } from './CustomAccessModal';
 import type { CertificateCustomAccessModalParams } from './CertificateCustomAccessModal';
 import dynamic from 'next/dynamic';
@@ -277,6 +281,19 @@ const withoutMainServiceBinding = (
     previousServiceName: network.serviceName
   })
 });
+
+const getServiceBindingNetwork = (
+  network: AppEditType['networks'][0],
+  nextOpenNodePort: boolean,
+  nextProtocol: AppEditType['networks'][0]['protocol']
+) =>
+  serviceIdentityChanges({
+    currentNetwork: network,
+    nextOpenNodePort,
+    nextProtocol
+  })
+    ? withoutMainServiceBinding(network)
+    : network;
 
 const getNextAvailablePort = (networks: AppEditType['networks']) => {
   const usedPorts = new Set(networks.map((network) => Number(network.port)).filter(Boolean));
@@ -534,12 +551,19 @@ export function NetworkSection({
           const currentNetwork = currentNetworks[index];
 
           if (APPLICATION_PROTOCOLS.includes(protocol as any)) {
-            if (nodePortHost && currentNetwork.openNodePort) {
+            const openNodePort = Boolean(nodePortHost && currentNetwork.openNodePort);
+            const serviceBindingNetwork = getServiceBindingNetwork(
+              currentNetwork,
+              openNodePort,
+              'TCP'
+            );
+
+            if (openNodePort) {
               clearPublicDomainErrorByIndex(index);
               updateNetworks(
                 index,
                 withDefaultRoutes({
-                  ...withoutMainServiceBinding(currentNetwork),
+                  ...serviceBindingNetwork,
                   protocol: 'TCP',
                   appProtocol: protocol as any,
                   openNodePort: true,
@@ -555,7 +579,7 @@ export function NetworkSection({
               updateNetworks(
                 index,
                 withDefaultRoutes({
-                  ...withoutMainServiceBinding(currentNetwork),
+                  ...serviceBindingNetwork,
                   protocol: 'TCP',
                   appProtocol: protocol as any,
                   openNodePort: false,
@@ -569,10 +593,15 @@ export function NetworkSection({
             }
           } else {
             clearPublicDomainErrorByIndex(index);
+            const serviceBindingNetwork = getServiceBindingNetwork(
+              currentNetwork,
+              true,
+              protocol as any
+            );
             updateNetworks(
               index,
               withDefaultRoutes({
-                ...withoutMainServiceBinding(currentNetwork),
+                ...serviceBindingNetwork,
                 protocol: protocol as any,
                 appProtocol: undefined,
                 openNodePort: true,
