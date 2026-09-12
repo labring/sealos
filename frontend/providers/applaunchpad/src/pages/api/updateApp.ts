@@ -1,9 +1,15 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { templateDeployKey } from '@/constants/app';
 import { ApiResp } from '@/services/kubernet';
 import { jsonRes } from '@/services/backend/response';
 import { YamlKindEnum } from '@/utils/adapt';
 import yaml from 'js-yaml';
-import type { CustomObjectsApi, V1StatefulSet } from '@kubernetes/client-node';
+import type {
+  CustomObjectsApi,
+  V1ObjectMeta,
+  V1OwnerReference,
+  V1StatefulSet
+} from '@kubernetes/client-node';
 import { PatchUtils } from '@kubernetes/client-node';
 import type { AppPatchPropsType } from '@/types/app';
 import { initK8s } from 'sealos-desktop-sdk/service';
@@ -17,6 +23,51 @@ export type Props = {
   patch: AppPatchPropsType;
   stateFulSetYaml?: string;
   appName: string;
+};
+
+const isKubernetesNotFound = (error: any): boolean =>
+  +error?.body?.code === 404 || +error?.response?.statusCode === 404 || +error?.statusCode === 404;
+
+const ownershipInheritingKinds = new Set([
+  'Service',
+  'Ingress',
+  'ConfigMap',
+  'Secret',
+  'HorizontalPodAutoscaler',
+  'Certificate',
+  'Issuer',
+  'PersistentVolumeClaim'
+]);
+
+const getTemplateInstanceOwnerReferences = (
+  ownerReferences: V1OwnerReference[] | undefined
+): V1OwnerReference[] =>
+  (ownerReferences ?? []).filter(
+    (reference) =>
+      reference.kind === 'Instance' && reference.apiVersion?.startsWith('app.sealos.io/')
+  );
+
+const addOrReplaceOwnerReferences = (
+  existing: V1OwnerReference[] | undefined,
+  inherited: V1OwnerReference[]
+): V1OwnerReference[] => {
+  const result = [...(existing ?? [])];
+
+  for (const ownerReference of inherited) {
+    const index = result.findIndex(
+      (item) =>
+        item.apiVersion === ownerReference.apiVersion &&
+        item.kind === ownerReference.kind &&
+        item.name === ownerReference.name
+    );
+    if (index >= 0) {
+      result[index] = ownerReference;
+    } else {
+      result.push(ownerReference);
+    }
+  }
+
+  return result;
 };
 
 async function updateAppCRUrl(
@@ -387,11 +438,66 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         }
         return item.value;
       })
-      .filter((item) => item);
-    await applyYamlList(createYamlList as string[], 'create');
+      .filter((item): item is string => !!item);
+
+    if (createYamlList.length > 0) {
+      let workloadMetadata: V1ObjectMeta | undefined;
+
+      try {
+        const deployment = await k8sApp.readNamespacedDeployment(appName, namespace);
+        workloadMetadata = deployment.body.metadata;
+      } catch (error: any) {
+        if (isKubernetesNotFound(error)) {
+          try {
+            const statefulSet = await k8sApp.readNamespacedStatefulSet(appName, namespace);
+            workloadMetadata = statefulSet.body.metadata;
+          } catch (statefulSetError) {
+            if (!isKubernetesNotFound(statefulSetError)) {
+              throw statefulSetError;
+            }
+          }
+        } else {
+          throw error;
+        }
+      }
+
+      const instanceOwnerReferences = getTemplateInstanceOwnerReferences(
+        workloadMetadata?.ownerReferences
+      );
+      const templateInstanceName = workloadMetadata?.labels?.[templateDeployKey];
+      const ownedCreateYamlList = createYamlList.map((yamlString) => {
+        const resource = yaml.load(yamlString) as Record<string, any>;
+
+        if (ownershipInheritingKinds.has(resource.kind)) {
+          resource.metadata ??= {};
+
+          if (templateInstanceName) {
+            resource.metadata.labels ??= {};
+            resource.metadata.labels[templateDeployKey] = templateInstanceName;
+          }
+
+          if (instanceOwnerReferences.length > 0) {
+            resource.metadata.ownerReferences = addOrReplaceOwnerReferences(
+              resource.metadata.ownerReferences,
+              instanceOwnerReferences
+            );
+          }
+
+          infoLog('Inherited application ownership for new resource', {
+            kind: resource.kind,
+            name: resource.metadata.name,
+            templateInstanceName,
+            inheritedOwnerReferences: instanceOwnerReferences.length
+          });
+        }
+
+        return yaml.dump(resource);
+      });
+      await applyYamlList(ownedCreateYamlList, 'create');
+    }
 
     // delete
-    await Promise.all(
+    const deleteResults = await Promise.allSettled(
       patch.map((item) => {
         const cr = crMap[item.kind];
         if (!cr || item.type !== 'delete' || !item?.name) {
@@ -401,6 +507,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         return cr.delete(item.name);
       })
     );
+    deleteResults.forEach((result) => {
+      if (result.status === 'rejected' && !isKubernetesNotFound(result.reason)) {
+        throw result.reason;
+      }
+    });
 
     // Update AppCR URL in background (non-blocking)
     updateAppCRUrl(k8sCustomObjects, namespace, appName, patch).catch((error) => {
