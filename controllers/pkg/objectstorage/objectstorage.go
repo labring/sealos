@@ -430,6 +430,9 @@ func isUsageAndTrafficBytesTargetMetric(name string) bool {
 }
 
 func getUserWithBucket(bucket string) string {
+	if strings.HasPrefix(bucket, "admin-") {
+		return "admin"
+	}
 	re := regexp.MustCompile(`^([a-zA-Z0-9]{8})-(.*)$`)
 	matches := re.FindStringSubmatch(bucket)
 	if len(matches) == 3 {
