@@ -90,9 +90,22 @@ export const handleK8sError = (
       };
     }
     if ((k8sApiErr.code ?? statusCode) === 409 && errMessage.includes('already exists')) {
+      const resourceKind = String((body as any)?.details?.kind || '').toLowerCase();
+      if (resourceKind === 'deployments' || resourceKind === 'statefulsets') {
+        return {
+          code: ResponseCode.APP_ALREADY_EXISTS,
+          message: ResponseMessages[ResponseCode.APP_ALREADY_EXISTS]
+        };
+      }
       return {
-        code: ResponseCode.APP_ALREADY_EXISTS,
-        message: ResponseMessages[ResponseCode.APP_ALREADY_EXISTS]
+        code: ResponseCode.RESOURCE_ALREADY_EXISTS,
+        message: errMessage || ResponseMessages[ResponseCode.RESOURCE_ALREADY_EXISTS]
+      };
+    }
+    if ((k8sApiErr.code ?? statusCode) === 422) {
+      return {
+        code: ResponseCode.UNPROCESSABLE_ENTITY,
+        message: errMessage || ResponseMessages[ResponseCode.UNPROCESSABLE_ENTITY]
       };
     }
   }

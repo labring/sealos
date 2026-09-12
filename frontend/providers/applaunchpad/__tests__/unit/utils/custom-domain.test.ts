@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   findMatchingCertificateDomain,
+  getChangedCustomDomainBindings,
   getCustomDomainBindings,
   getPublicDomainHost,
   isDomainCoveredByCertificateDomain,
@@ -64,6 +65,28 @@ describe('custom domain helpers', () => {
         networkIndex: 0,
         customDomain: 'hello.icloud.xxx.io',
         publicDomain: 'codex-ms100066-launch.192.168.13.209.nip.io'
+      }
+    ]);
+  });
+
+  it('returns only newly added or retargeted custom domain bindings', () => {
+    const unchanged = createNetwork({ customDomain: 'stable.example.com' });
+    const changed = createNetwork({
+      networkName: 'network-changed',
+      customDomain: 'changed.example.com',
+      publicDomain: 'new-target'
+    });
+
+    expect(
+      getChangedCustomDomainBindings(
+        [unchanged, changed],
+        [unchanged, { ...changed, publicDomain: 'old-target' }]
+      )
+    ).toEqual([
+      {
+        networkIndex: 1,
+        customDomain: 'changed.example.com',
+        publicDomain: 'new-target.192.168.13.209.nip.io'
       }
     ]);
   });

@@ -65,4 +65,51 @@ describe('handleK8sError', () => {
       message: ResponseMessages[ResponseCode.FORBIDDEN]
     });
   });
+
+  it('keeps Kubernetes resource conflicts distinct from application name conflicts', () => {
+    expect(
+      handleK8sError({
+        body: {
+          kind: 'Status',
+          code: 409,
+          message: 'services "demo-service" already exists',
+          details: { kind: 'services', name: 'demo-service' }
+        }
+      })
+    ).toEqual({
+      code: ResponseCode.RESOURCE_ALREADY_EXISTS,
+      message: 'services "demo-service" already exists'
+    });
+  });
+
+  it('keeps workload conflicts mapped to application name conflicts', () => {
+    expect(
+      handleK8sError({
+        body: {
+          kind: 'Status',
+          code: 409,
+          message: 'statefulsets.apps "demo" already exists',
+          details: { kind: 'statefulsets', name: 'demo' }
+        }
+      })
+    ).toEqual({
+      code: ResponseCode.APP_ALREADY_EXISTS,
+      message: ResponseMessages[ResponseCode.APP_ALREADY_EXISTS]
+    });
+  });
+
+  it('returns immutable-field validation errors without masking them as permissions', () => {
+    expect(
+      handleK8sError({
+        body: {
+          kind: 'Status',
+          code: 422,
+          message: 'StatefulSet spec.serviceName is immutable'
+        }
+      })
+    ).toEqual({
+      code: ResponseCode.UNPROCESSABLE_ENTITY,
+      message: 'StatefulSet spec.serviceName is immutable'
+    });
+  });
 });

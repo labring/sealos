@@ -4,6 +4,8 @@ export enum ResponseCode {
   UNAUTHORIZED = 401,
   FORBIDDEN = 403,
   NOT_FOUND = 404,
+  RESOURCE_ALREADY_EXISTS = 409,
+  UNPROCESSABLE_ENTITY = 422,
   SERVER_ERROR = 500,
 
   BALANCE_NOT_ENOUGH = 40001,
@@ -18,6 +20,8 @@ export const ResponseMessages: Record<ResponseCode | number, string> = {
   [ResponseCode.UNAUTHORIZED]: 'Unauthorized, please login again',
   [ResponseCode.FORBIDDEN]: 'Insufficient permissions',
   [ResponseCode.NOT_FOUND]: 'Requested resource not found',
+  [ResponseCode.RESOURCE_ALREADY_EXISTS]: 'The Kubernetes resource already exists',
+  [ResponseCode.UNPROCESSABLE_ENTITY]: 'The requested update cannot be applied',
   [ResponseCode.SERVER_ERROR]: 'Server error',
   [ResponseCode.BALANCE_NOT_ENOUGH]:
     'Almost there! You need additional credits for this deployment.',

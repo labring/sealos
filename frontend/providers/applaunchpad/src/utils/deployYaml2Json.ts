@@ -84,6 +84,12 @@ export const shouldHaveOwnerReference = (kind: string): boolean => {
 
 // Unified service name generation function
 const getServiceName = (data: AppEditType, forNodePort: boolean = false): string => {
+  // StatefulSet.spec.serviceName is immutable. Keep its governing ClusterIP Service stable
+  // while ports and their public exposure are edited.
+  if (!forNodePort && data.kind === 'statefulset' && data.statefulSetServiceName) {
+    return data.statefulSetServiceName;
+  }
+
   const existingServiceName = data.networks.find((network) => {
     return network.openNodePort === forNodePort && network.serviceName;
   })?.serviceName;
@@ -650,7 +656,17 @@ export const json2Service = (
 
   const includeClusterIp = options?.includeClusterIp ?? true;
   const includeNodePort = options?.includeNodePort ?? true;
-  const clusterIpYaml = includeClusterIp && closedPublicPorts.length > 0 ? yaml.dump(template) : '';
+  const governingServicePorts =
+    data.kind === 'statefulset' && closedPublicPorts.length === 0
+      ? namedPorts.map(({ nodePort: _nodePort, ...port }) => port)
+      : closedPublicPorts;
+  template.spec.ports = governingServicePorts;
+  // A StatefulSet always needs its stable governing Service, even when all user ports are
+  // exposed through NodePort Services.
+  const clusterIpYaml =
+    includeClusterIp && (closedPublicPorts.length > 0 || data.kind === 'statefulset')
+      ? yaml.dump(template)
+      : '';
   const nodePortYaml =
     includeNodePort && openPublicPorts.length > 0 ? yaml.dump(templateNodePort) : '';
 

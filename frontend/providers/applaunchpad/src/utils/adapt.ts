@@ -577,7 +577,7 @@ export const adaptAppDetail = async (
         // and only fall back to HTTP when an Ingress proves this TCP port is application traffic.
         const appProtocol = APPLICATION_PROTOCOLS.includes(serviceAppProtocol)
           ? (serviceAppProtocol as ApplicationProtocolType)
-          : ingressAppProtocol ?? (ingress && protocol === 'TCP' ? 'HTTP' : undefined);
+          : (ingressAppProtocol ?? (ingress && protocol === 'TCP' ? 'HTTP' : undefined));
 
         const isCustomDomain =
           !domain.endsWith(SEALOS_DOMAIN) &&
@@ -600,8 +600,8 @@ export const adaptAppDetail = async (
           domain: isCustomDomain
             ? SEALOS_DOMAIN
             : item?.nodePort
-            ? domain
-            : domain.split('.').slice(1).join('.') || SEALOS_DOMAIN,
+              ? domain
+              : domain.split('.').slice(1).join('.') || SEALOS_DOMAIN,
           routes: ingressPaths.length
             ? ingressPaths.map((path) => ({
                 path: path.path || '/',
@@ -670,6 +670,10 @@ export const adaptAppDetail = async (
     volumeMounts: getFilteredVolumeMounts(),
     volumes: getFilteredVolumes(),
     kind: appDeploy?.kind?.toLowerCase() as 'deployment' | 'statefulset',
+    statefulSetServiceName:
+      appDeploy?.kind === YamlKindEnum.StatefulSet
+        ? (appDeploy as V1StatefulSet).spec?.serviceName
+        : undefined,
     source: getAppSource(appDeploy),
     openapi: {
       status: {
@@ -703,6 +707,7 @@ export const adaptEditAppData = (app: AppDetailType): AppEditType => {
     'gpu',
     'labels',
     'kind',
+    'statefulSetServiceName',
     'volumes',
     'volumeMounts',
     'ephemeralStorage',
@@ -736,8 +741,8 @@ export const sliderNumber2MarkList = ({
           ? `${item / 1024} G`
           : `${item} M`
         : type === 'ephemeralStorage'
-        ? `${item}`
-        : `${item / 1000}`,
+          ? `${item}`
+          : `${item / 1000}`,
     value: item
   }));
 };

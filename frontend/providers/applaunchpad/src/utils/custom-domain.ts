@@ -72,3 +72,18 @@ export const getCustomDomainBindings = (networks: AppEditType['networks']) =>
         publicDomain: string;
       } => !!item
     );
+
+export const getChangedCustomDomainBindings = (
+  networks: AppEditType['networks'],
+  originalNetworks: AppEditType['networks'] = []
+) => {
+  const originalBindings = new Set(
+    getCustomDomainBindings(originalNetworks).map(
+      ({ customDomain, publicDomain }) => `${customDomain}|${publicDomain}`
+    )
+  );
+
+  return getCustomDomainBindings(networks).filter(
+    ({ customDomain, publicDomain }) => !originalBindings.has(`${customDomain}|${publicDomain}`)
+  );
+};

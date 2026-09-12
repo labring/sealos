@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { adaptAppDetail } from '@/utils/adapt';
+import { adaptAppDetail, adaptEditAppData } from '@/utils/adapt';
 import type { DeployKindsType } from '@/types/app';
 
 const createDeployment = (): DeployKindsType =>
@@ -150,6 +150,20 @@ const createIngress = (): DeployKindsType =>
   } as DeployKindsType);
 
 describe('adaptAppDetail', () => {
+  it('preserves the governing Service name of an existing StatefulSet in edit data', async () => {
+    const statefulSet = createDeployment() as any;
+    statefulSet.kind = 'StatefulSet';
+    statefulSet.spec.serviceName = 'demo-governing';
+
+    const detail = await adaptAppDetail([statefulSet, createService('demo-governing')], {
+      SEALOS_DOMAIN: '192.168.13.209.nip.io',
+      SEALOS_USER_DOMAINS: []
+    });
+
+    expect(detail.statefulSetServiceName).toBe('demo-governing');
+    expect(adaptEditAppData(detail).statefulSetServiceName).toBe('demo-governing');
+  });
+
   it('keeps a multi-path ingress as one public network with route rules', async () => {
     const app = await adaptAppDetail([createDeployment(), createService(), createIngress()], {
       SEALOS_DOMAIN: '192.168.13.209.nip.io',

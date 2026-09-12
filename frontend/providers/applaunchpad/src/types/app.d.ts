@@ -163,6 +163,8 @@ export interface AppEditType {
   volumes: V1Volume[];
   volumeMounts: V1VolumeMount[];
   kind: 'deployment' | 'statefulset';
+  /** Stable governing Service used by an existing StatefulSet. */
+  statefulSetServiceName?: string;
   // ephemeral-storage limit (unit: Gi)
   ephemeralStorage?: number;
   // shared memory (tmpfs mounted at /dev/shm)
