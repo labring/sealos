@@ -7,6 +7,7 @@ import {
   DBPreviousConfigKey,
   DBReconfigStatusMap,
   DBSourceConfigs,
+  DBTypeEnum,
   MigrationRemark,
   dbStatusMap
 } from '@/constants/db';
@@ -50,21 +51,21 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 import type { BackupItemType } from '../types/db';
 
+export const getDatabaseResourceComponentSpec = (
+  dbType: DBType,
+  componentSpecs: KubeBlockClusterSpec['componentSpecs']
+) => {
+  const componentName =
+    dbType === DBTypeEnum.polardbx ? 'dn-0' : dbType === 'apecloud-mysql' ? 'mysql' : dbType;
+
+  return componentSpecs.find((comp) => String(comp.name) === componentName) || componentSpecs?.[0];
+};
+
 const getDisplayReplicas = (
   dbType: DBType,
   componentSpecs: KubeBlockClusterSpec['componentSpecs']
 ) => {
-  if (dbType === 'polardbx') {
-    return componentSpecs.find((comp) => String(comp.name) === 'cn')?.replicas || 1;
-  }
-
-  const displayComponentName = dbType === 'apecloud-mysql' ? 'mysql' : dbType;
-
-  return (
-    componentSpecs.find((comp) => String(comp.name) === displayComponentName)?.replicas ||
-    componentSpecs?.[0]?.replicas ||
-    1
-  );
+  return getDatabaseResourceComponentSpec(dbType, componentSpecs)?.replicas || 1;
 };
 
 export const getDBSource = (
