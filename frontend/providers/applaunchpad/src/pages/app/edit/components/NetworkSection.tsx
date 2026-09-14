@@ -128,7 +128,8 @@ export function NetworkSection({
           if (APPLICATION_PROTOCOLS.includes(protocol as any)) {
             updateNetworks(index, {
               ...currentNetwork,
-              serviceName: '',
+              // Keep the internal Service when only the application protocol changes.
+              serviceName: currentNetwork.openNodePort ? '' : currentNetwork.serviceName,
               protocol: 'TCP',
               appProtocol: protocol as any,
               openNodePort: false,
@@ -168,7 +169,8 @@ export function NetworkSection({
           if (network.appProtocol && APPLICATION_PROTOCOLS.includes(network.appProtocol)) {
             updateNetworks(index, {
               ...currentNetwork,
-              serviceName: '',
+              // HTTP public access changes the Ingress, not the internal Service.
+              serviceName: currentNetwork.openNodePort ? '' : currentNetwork.serviceName,
               networkName: network.networkName || `network-${nanoid()}`,
               protocol: 'TCP',
               appProtocol: network.appProtocol,
@@ -196,7 +198,9 @@ export function NetworkSection({
           const { index } = action.payload;
           updateNetworks(index, {
             ...currentNetworks[index],
-            serviceName: '',
+            serviceName: currentNetworks[index].openNodePort
+              ? ''
+              : currentNetworks[index].serviceName,
             openPublicDomain: false,
             openNodePort: false,
             nodePort: undefined
