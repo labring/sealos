@@ -67,15 +67,18 @@ export const adaptAppListItem = (app: V1Deployment & V1StatefulSet): AppListItem
       )
     : 0;
 
+  const isPause = !!app?.metadata?.annotations?.[pauseKey];
+
   return {
     id: app.metadata?.uid || ``,
     name: app.metadata?.name || 'app name',
-    isPause: !!app?.metadata?.annotations?.[pauseKey],
+    isPause,
     status:
-      app.status?.readyReplicas === app.status?.replicas
+      isPause
+        ? StatusMap[StatusEnum.Stopped]
+        : app.status?.readyReplicas === app.status?.replicas
         ? StatusMap[StatusEnum.Running]
         : StatusMap[StatusEnum.Waiting],
-    // isPause: !!app?.metadata?.annotations?.[pauseKey],
     createTime: dayjs(app.metadata?.creationTimestamp).format('YYYY/MM/DD HH:mm'),
     cpu: cpuFormatToM(app.spec?.template?.spec?.containers?.[0]?.resources?.limits?.cpu),
     memory: memoryFormatToMi(app.spec?.template?.spec?.containers?.[0]?.resources?.limits?.memory),
