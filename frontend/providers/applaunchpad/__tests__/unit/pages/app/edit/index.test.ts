@@ -48,4 +48,21 @@ describe('EditApp yaml display state', () => {
     expect(handleDomainVerified).toContain('includeNodePort: false');
     expect(handleDomainVerified).toContain("postDeployApp(yamlList, 'replace')");
   });
+
+  it('keeps ClusterIP Service identity through HTTP public-access changes', () => {
+    const source = readFileSync(
+      new URL('../../../../../src/pages/app/edit/components/NetworkSection.tsx', import.meta.url),
+      'utf8'
+    );
+    const helperStart = source.indexOf('const preserveClusterIpServiceBinding');
+    const helperEnd = source.indexOf('const getNextAvailablePort', helperStart);
+    const helper = source.slice(helperStart, helperEnd);
+
+    expect(helperStart).toBeGreaterThanOrEqual(0);
+    expect(helperEnd).toBeGreaterThan(helperStart);
+    expect(helper).toContain(
+      'network.openNodePort ? withoutMainServiceBinding(network) : network'
+    );
+    expect(source.match(/preserveClusterIpServiceBinding\(currentNetwork\)/g)).toHaveLength(3);
+  });
 });
