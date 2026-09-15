@@ -2,7 +2,7 @@ import yaml from 'js-yaml';
 import { describe, expect, it } from 'vitest';
 import { json2ConfigMap, json2DeployCr, yamlString2Objects } from '@/utils/deployYaml2Json';
 import type { AppEditType, DeployKindsType } from '@/types/app';
-import { patchYamlList } from '@/utils/tools';
+import { patchWillRestartApp, patchYamlList } from '@/utils/tools';
 
 const createWorkload = (kind: 'Deployment' | 'StatefulSet', isPrivate: boolean) => ({
   apiVersion: 'apps/v1',
@@ -226,6 +226,7 @@ describe('patchYamlList restart behavior', () => {
         }
       }
     });
+    expect(patchWillRestartApp(actions)).toBe(true);
   });
 
   it('does not restart the workload when only StatefulSet replicas change', () => {
@@ -255,9 +256,14 @@ describe('patchYamlList restart behavior', () => {
 
     expect(statefulSetPatch?.type === 'patch' && statefulSetPatch.value).toBeTruthy();
     expect(
+      statefulSetPatch?.type === 'patch' && statefulSetPatch.value.spec?.template
+    ).toBeTruthy();
+    expect(
       statefulSetPatch?.type === 'patch' &&
         statefulSetPatch.value.spec?.template?.metadata?.labels?.restartTime
     ).toBeFalsy();
+    expect(statefulSetPatch?.type === 'patch' && statefulSetPatch.restartRequired).toBeFalsy();
+    expect(patchWillRestartApp(actions)).toBe(false);
   });
 });
 
@@ -445,6 +451,43 @@ describe('patchYamlList intent-driven normalization', () => {
         }
       }
     });
+  });
+
+  it('marks an added volumeClaimTemplate for controlled StatefulSet recreation', () => {
+    const oldFormWorkload = createWorkload('StatefulSet', false) as any;
+    oldFormWorkload.spec.volumeClaimTemplates = [
+      {
+        metadata: { name: 'data' },
+        spec: { resources: { requests: { storage: '1Gi' } } }
+      }
+    ];
+    const newFormWorkload = clone(oldFormWorkload);
+    newFormWorkload.spec.volumeClaimTemplates.push({
+      metadata: { name: 'storage' },
+      spec: { resources: { requests: { storage: '1Gi' } } }
+    });
+
+    const actions = patchYamlList({
+      parsedOldYamlList: [yaml.dump(oldFormWorkload)],
+      parsedNewYamlList: [yaml.dump(newFormWorkload)],
+      originalYamlList: [oldFormWorkload] as DeployKindsType[]
+    });
+
+    expect(actions).toContainEqual(
+      expect.objectContaining({
+        type: 'recreate',
+        kind: 'StatefulSet',
+        value: expect.objectContaining({
+          spec: expect.objectContaining({
+            volumeClaimTemplates: expect.arrayContaining([
+              expect.objectContaining({ metadata: expect.objectContaining({ name: 'data' }) }),
+              expect.objectContaining({ metadata: expect.objectContaining({ name: 'storage' }) })
+            ])
+          })
+        })
+      })
+    );
+    expect(patchWillRestartApp(actions)).toBe(true);
   });
 
   it('updates explicitly modified workload volumes and volume mounts', () => {

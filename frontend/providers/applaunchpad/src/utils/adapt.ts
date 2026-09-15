@@ -327,6 +327,7 @@ export const adaptAppDetail = async (
     value: string;
     key: string;
     volumeName: string;
+    subPath?: string;
   }> => {
     const configMap = deployKindsMap.ConfigMap;
     if (!configMap?.data || !appDeploy) {
@@ -339,8 +340,13 @@ export const adaptAppDetail = async (
       return [];
     }
     const volumeMounts = appDeploy.spec?.template?.spec?.containers?.[0]?.volumeMounts || [];
-    const results: Array<{ mountPath: string; value: string; key: string; volumeName: string }> =
-      [];
+    const results: Array<{
+      mountPath: string;
+      value: string;
+      key: string;
+      volumeName: string;
+      subPath?: string;
+    }> = [];
 
     configMapVolumes.forEach((volume) => {
       const relatedMounts = volumeMounts.filter((mount) => mount.name === volume.name);
@@ -356,7 +362,8 @@ export const adaptAppDetail = async (
               mountPath: matchedMount.mountPath,
               value: value,
               key: item.key,
-              volumeName: volume.name
+              volumeName: volume.name,
+              subPath: item.path
             });
           }
         });

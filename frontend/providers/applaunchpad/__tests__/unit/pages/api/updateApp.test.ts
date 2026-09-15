@@ -285,9 +285,9 @@ describe('/api/updateApp', () => {
     expect(k8s.k8sNetworkingApp.patchNamespacedIngress.mock.invocationCallOrder[0]).toBeLessThan(
       k8s.k8sApp.deleteNamespacedDeployment.mock.invocationCallOrder[0]
     );
-    expect(k8s.k8sCore.patchNamespacedPersistentVolumeClaim.mock.invocationCallOrder[0]).toBeLessThan(
-      k8s.k8sApp.deleteNamespacedDeployment.mock.invocationCallOrder[0]
-    );
+    expect(
+      k8s.k8sCore.patchNamespacedPersistentVolumeClaim.mock.invocationCallOrder[0]
+    ).toBeLessThan(k8s.k8sApp.deleteNamespacedDeployment.mock.invocationCallOrder[0]);
     expect(res.json).toHaveBeenCalledWith({
       code: 200,
       message: 'Success',
@@ -337,4 +337,104 @@ describe('/api/updateApp', () => {
     });
   });
 
+  it('restarts Pods while preserving non-Pod dependents for an explicit storage topology change', async () => {
+    const k8s = createK8sContext();
+    k8s.k8sApp.readNamespacedStatefulSet.mockRejectedValueOnce({ body: { code: 404 } });
+    initK8sMock.mockResolvedValue(k8s);
+    const res = createResponse();
+    const desiredStatefulSet = {
+      kind: 'StatefulSet',
+      metadata: { name: 'demo' },
+      spec: {
+        volumeClaimTemplates: [{ metadata: { name: 'data' } }, { metadata: { name: 'storage' } }]
+      }
+    };
+
+    await handler(
+      {
+        body: {
+          appName: 'demo',
+          stateFulSetYaml: statefulSetYaml,
+          patch: [
+            {
+              type: 'recreate',
+              kind: 'StatefulSet',
+              value: desiredStatefulSet
+            }
+          ]
+        }
+      } as any,
+      res
+    );
+
+    expect(k8s.k8sApp.deleteNamespacedStatefulSet).toHaveBeenCalledWith('demo', 'ns-demo');
+    expect(k8s.k8sApp.patchNamespacedStatefulSet).not.toHaveBeenCalled();
+    expect(k8s.applyYamlList).toHaveBeenCalledWith(
+      [expect.stringContaining('name: storage')],
+      'create'
+    );
+    expect(k8s.k8sCore.patchNamespacedPersistentVolumeClaim.mock.calls[0][2]).toEqual({
+      metadata: { ownerReferences: [] }
+    });
+    expect(
+      k8s.k8sCore.patchNamespacedPersistentVolumeClaim.mock.invocationCallOrder[0]
+    ).toBeLessThan(k8s.k8sApp.deleteNamespacedStatefulSet.mock.invocationCallOrder[0]);
+    expect(k8s.k8sApp.deleteNamespacedStatefulSet.mock.invocationCallOrder[0]).toBeLessThan(
+      k8s.applyYamlList.mock.invocationCallOrder[0]
+    );
+    expect(k8s.k8sCore.deleteNamespacedPersistentVolumeClaim).not.toHaveBeenCalled();
+    expect(k8s.k8sCore.patchNamespacedPersistentVolumeClaim).toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalledWith({
+      code: 200,
+      message: 'Success',
+      data: undefined,
+      error: undefined
+    });
+  });
+
+  it('upgrades a legacy StatefulSet patch to recreation when it adds a volume template', async () => {
+    const k8s = createK8sContext();
+    k8s.k8sApp.readNamespacedStatefulSet
+      .mockResolvedValueOnce({
+        body: {
+          metadata: { uid: 'old-statefulset-uid' },
+          spec: { volumeClaimTemplates: [{ metadata: { name: 'data' } }] }
+        }
+      })
+      .mockRejectedValueOnce({ body: { code: 404 } })
+      .mockResolvedValueOnce({ body: { metadata: { uid: 'new-statefulset-uid' } } });
+    initK8sMock.mockResolvedValue(k8s);
+    const res = createResponse();
+    const desiredStatefulSet = {
+      kind: 'StatefulSet',
+      metadata: { name: 'demo' },
+      spec: {
+        volumeClaimTemplates: [{ metadata: { name: 'data' } }, { metadata: { name: 'storage' } }]
+      }
+    };
+
+    await handler(
+      {
+        body: {
+          appName: 'demo',
+          stateFulSetYaml: statefulSetYaml,
+          patch: [
+            {
+              type: 'patch',
+              kind: 'StatefulSet',
+              value: desiredStatefulSet
+            }
+          ]
+        }
+      } as any,
+      res
+    );
+
+    expect(k8s.k8sApp.patchNamespacedStatefulSet).not.toHaveBeenCalled();
+    expect(k8s.k8sApp.deleteNamespacedStatefulSet).toHaveBeenCalledWith('demo', 'ns-demo');
+    expect(k8s.applyYamlList).toHaveBeenCalledWith(
+      [expect.stringContaining('name: storage')],
+      'create'
+    );
+  });
 });

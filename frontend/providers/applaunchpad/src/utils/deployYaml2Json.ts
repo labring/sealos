@@ -369,18 +369,25 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
   const configMapVolumeMounts = data.configMapList.map((item) => ({
     name: item.volumeName,
     mountPath: item.mountPath,
-    subPath: item.key
+    subPath: item.subPath || item.key
   }));
 
   const generateConfigMapVolumes = () => {
     if (data.configMapList.length === 0) return [];
     const uniqueVolumeNames = [...new Set(data.configMapList.map((item) => item.volumeName))];
-    return uniqueVolumeNames.map((volumeName) => ({
-      name: volumeName,
-      configMap: {
-        name: data.appName
-      }
-    }));
+    return uniqueVolumeNames.map((volumeName) => {
+      const items = data.configMapList
+        .filter((item) => item.volumeName === volumeName && item.subPath)
+        .map((item) => ({ key: item.key, path: item.subPath as string }));
+
+      return {
+        name: volumeName,
+        configMap: {
+          name: data.appName,
+          ...(items.length > 0 ? { items } : {})
+        }
+      };
+    });
   };
 
   const configMapVolumes = generateConfigMapVolumes();

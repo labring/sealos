@@ -32,7 +32,7 @@ import {
   json2Service
 } from '@/utils/deployYaml2Json';
 import { serviceSideProps } from '@/utils/i18n';
-import { getErrText, patchYamlList } from '@/utils/tools';
+import { getErrText, patchWillRestartApp, patchYamlList } from '@/utils/tools';
 import { getSubmitErrorMessage } from '@/utils/formErrorMessage';
 import { Box, Flex } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
@@ -279,6 +279,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   const { userSourcePrice, loadUserSourcePrice } = useUserStore();
   const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(!!appName);
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
+  const [confirmContent, setConfirmContent] = useState(applyMessage);
   const [errorMessage, setErrorMessage] = useState('');
   const [errorCode, setErrorCode] = useState<ResponseCode>();
   const [already, setAlready] = useState(false);
@@ -291,7 +292,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     manufacturers: ''
   });
   const { openConfirm, ConfirmChild } = useConfirm({
-    content: applyMessage
+    content: confirmContent
   });
   const pxVal = useMemo(() => {
     return Math.max(EDIT_PAGE_MIN_PADDING, Math.floor((screenWidth - EDIT_PAGE_TARGET_WIDTH) / 2));
@@ -833,6 +834,19 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
 
               const parseYamls = formData2Yamls(data);
               setYamlList(formData2DisplayYamls(data));
+
+              const patch = appName
+                ? patchYamlList({
+                    parsedOldYamlList: formOldYamls.current.map((item) => item.value),
+                    parsedNewYamlList: parseYamls.map((item) => item.value),
+                    originalYamlList: crOldYamls.current
+                  })
+                : [];
+              setConfirmContent(
+                patchWillRestartApp(patch)
+                  ? 'Confirm Update Application With Restart?'
+                  : applyMessage
+              );
 
               // gpu inventory check
               if (data.gpu?.type) {
