@@ -162,6 +162,7 @@
   "Private Address": "内网地址",
   "Problem Analysis": "问题分析",
   "Insufficient permissions": "权限不足",
+  "Read-only mode: you can browse and download files, but cannot make changes.": "只读模式：可以浏览和下载文件，不能修改。",
   "Protocol": "协议",
   "Public": "公开",
   "Public Access": "外网访问",
@@ -465,7 +466,7 @@
   "websocket": "WebSocket",
   "within_1_day": "一天内",
   "within_1_hour": "一小时内",
-  "within_5_minute": "五分钟内",
+  "within_5_minutes": "五分钟内",
   "proxy_detected_title": "检测到代理",
   "proxy_detected_message": "使用代理会降低 Sealos 的性能。要禁用代理，请更新您的 DNS 提供商设置。"
 }

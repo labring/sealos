@@ -59,8 +59,10 @@ vet: ## Run go vet against code.
 	go vet ./...
 
 .PHONY: test
-test: manifests generate fmt vet envtest ## Run tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./... -coverprofile cover.out
+test: ## Run tests.
+	@LD_FLAGS=""; \
+	[ -n "$(LICENSE_KEY)" ] && LD_FLAGS="-X ${CONTROLLER_PKG}.encryptionKey=${LICENSE_KEY}"; \
+	go test -race -ldflags "$${LD_FLAGS}" ./... -count=1
 
 
 ##@ Build

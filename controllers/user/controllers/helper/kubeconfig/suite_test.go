@@ -50,6 +50,9 @@ var (
 )
 
 func TestUtils(t *testing.T) {
+	if os.Getenv("RUN_KUBECONFIG_CLUSTER_TESTS") != "true" {
+		t.Skip("set RUN_KUBECONFIG_CLUSTER_TESTS=true to run kubeconfig cluster tests")
+	}
 	RegisterFailHandler(Fail)
 
 	RunSpecs(t, "run helper suite")

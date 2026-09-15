@@ -6,22 +6,26 @@ import (
 )
 
 type item[T any] struct {
-	value      T
-	lastAccess int64
+	value     T
+	expiresAt int64
 }
 
 type TTLMap[T any] struct {
-	m map[string]*item[T]
-	l sync.RWMutex
+	m   map[string]*item[T]
+	l   sync.RWMutex
+	ttl time.Duration
 }
 
 func New[T any](maxTTL int) (m *TTLMap[T]) {
-	m = &TTLMap[T]{m: make(map[string]*item[T])}
+	m = &TTLMap[T]{
+		m:   make(map[string]*item[T]),
+		ttl: time.Duration(maxTTL) * time.Second,
+	}
 	go func() {
 		for now := range time.Tick(2 * time.Second) {
 			m.l.Lock()
 			for k, v := range m.m {
-				if now.Unix()-v.lastAccess > int64(maxTTL) {
+				if now.UnixNano() >= v.expiresAt {
 					delete(m.m, k)
 				}
 			}
@@ -32,24 +36,26 @@ func New[T any](maxTTL int) (m *TTLMap[T]) {
 }
 
 func (m *TTLMap[T]) Len() int {
+	m.l.RLock()
+	defer m.l.RUnlock()
 	return len(m.m)
 }
 
 func (m *TTLMap[T]) Put(k string, v T) {
 	m.l.Lock()
 	defer m.l.Unlock()
-	it := &item[T]{value: v}
-	it.lastAccess = time.Now().Unix()
-	m.m[k] = it
+	m.m[k] = &item[T]{
+		value:     v,
+		expiresAt: time.Now().Add(m.ttl).UnixNano(),
+	}
 }
 
 func (m *TTLMap[T]) Get(k string) (v T, ok bool) {
 	m.l.RLock()
 	defer m.l.RUnlock()
 	it, ok := m.m[k]
-	if ok {
-		v = it.value
-		it.lastAccess = time.Now().Unix()
+	if !ok || time.Now().UnixNano() >= it.expiresAt {
+		return v, false
 	}
-	return v, ok
+	return it.value, true
 }

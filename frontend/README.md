@@ -39,7 +39,6 @@ pnpm dev-desktop
 pnpm dev-app        # applaunchpad
 pnpm dev-db         # dbprovider
 pnpm dev-cost       # costcenter
-pnpm dev-terminal   # terminal
 pnpm dev-template   # template
 
 # or run dev script in app's package directory

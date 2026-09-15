@@ -30,7 +30,6 @@ import { ChangeEventHandler, useMemo, useState } from 'react';
 import { DateRange, DayPicker, SelectRangeEventHandler } from 'react-day-picker';
 import useDateTimeStore from '@/store/date';
 import { formatTimeRange, parseTimeRange } from '@/utils/timeRange';
-import { MySelect } from '@sealos/ui';
 import MyIcon from '../Icon';
 
 interface DatePickerProps extends FlexProps {
@@ -48,8 +47,7 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
   const currentLang = i18n.language;
   const { isOpen, onClose, onOpen } = useDisclosure();
 
-  const { startDateTime, endDateTime, setStartDateTime, setEndDateTime, timeZone, setTimeZone } =
-    useDateTimeStore();
+  const { startDateTime, endDateTime, setStartDateTime, setEndDateTime } = useDateTimeStore();
 
   const now = new Date();
   const sevenDaysAgo = subDays(now, 7);
@@ -462,21 +460,7 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
             </Flex>
           </Flex>
           <Divider />
-          <Flex justify={'space-between'} pl={'12px'} alignItems={'center'} py={'8px'}>
-            <MySelect
-              height="32px"
-              width={'fit-content'}
-              border={'none'}
-              boxShadow={'none'}
-              backgroundColor={'transparent'}
-              color={'grayModern.600'}
-              value={timeZone}
-              list={[
-                { value: 'local', label: 'Local (Asia/Shanghai)' },
-                { value: 'utc', label: 'UTC' }
-              ]}
-              onchange={(val: any) => setTimeZone(val)}
-            />
+          <Flex justify={'flex-end'} alignItems={'center'} py={'8px'}>
             <ButtonGroup variant="outline" spacing="2" px={'10px'}>
               <Button
                 border={'1px solid'}

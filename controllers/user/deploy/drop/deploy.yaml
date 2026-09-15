@@ -454,6 +454,7 @@ webhooks:
       name: user-webhook-service
       namespace: user-system
       path: /validate-user-sealos-io-v1-user
+  timeoutSeconds: 30
   failurePolicy: Fail
   name: vuser.kb.io
   rules:

@@ -50,7 +50,6 @@ desktop:
       noscripts: []
     customerServiceURL: ""
     discordInviteLink: ""
-    forcedLanguage: "en"
     currencySymbol: "usd"
     protocol:
       enabled: true

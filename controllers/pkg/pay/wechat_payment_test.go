@@ -2,69 +2,19 @@ package pay
 
 import (
 	"fmt"
-	"log"
-	"os"
 	"testing"
 	"time"
-
-	"github.com/labring/sealos/controllers/pkg/account"
 )
 
-func setupenvWechatpayment() {
-	// configure the environment variables of wechat pay
-	const (
-		envWechatPrivateKey           = ""
-		envMchID                      = ""
-		envMchCertificateSerialNumber = ""
-		envMchAPIv3Key                = ""
-		envAppID                      = ""
-		// envNotifyCallbackURL          = "your_notify_callback_url_here"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          // 替换为你的支付通知回调URL
-	)
-
-	// check that the environment variables are set
-	if os.Getenv(MchID) == "" {
-		err := os.Setenv(MchID, envMchID)
-		if err != nil {
-			log.Fatalf("Failed to set the environment variable of WeChat merchant account: %v", err)
-		}
-	}
-	if os.Getenv(WechatPrivateKey) == "" {
-		err := os.Setenv(WechatPrivateKey, envWechatPrivateKey)
-		if err != nil {
-			log.Fatalf("Failed to set the environment variable for WeChat private key: %v", err)
-		}
-	}
-	if os.Getenv(MchCertificateSerialNumber) == "" {
-		err := os.Setenv(MchCertificateSerialNumber, envMchCertificateSerialNumber)
-		if err != nil {
-			log.Fatalf(
-				"Failed to set the environment variable of the serial number of the WeChat merchant certificate: %v",
-				err,
-			)
-		}
-	}
-	if os.Getenv(MchAPIv3Key) == "" {
-		err := os.Setenv(MchAPIv3Key, envMchAPIv3Key)
-		if err != nil {
-			log.Fatalf("Failed to set the environment variable of the WeChat API v3 key: %v", err)
-		}
-	}
-	if os.Getenv(AppID) == "" {
-		err := os.Setenv(AppID, envAppID)
-		if err != nil {
-			log.Fatalf("Failed to set the WeChat AppID environment variable: %v", err)
-		}
-	}
-
-	// sandboxEnvironment
-	err := os.Setenv(account.PayIsProduction, "true")
-	if err != nil {
-		return
-	}
-}
-
 func TestWechatPayment_PaymentAndRefund(t *testing.T) {
-	setupenvWechatpayment()
+	requirePaymentTest(t,
+		MchID,
+		WechatPrivateKey,
+		MchCertificateSerialNumber,
+		MchAPIv3Key,
+		AppID,
+		NotifyCallbackURL,
+	)
 	// initialize the wechat pay object
 	wechatPayment := WechatPayment{}
 

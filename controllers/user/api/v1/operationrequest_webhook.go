@@ -72,11 +72,8 @@ func (r ReqValidator) ValidateCreate(
 ) (admission.Warnings, error) {
 	req, ok := obj.(*Operationrequest)
 	if !ok {
-		return admission.Warnings{
-				"obj convert Operationrequest is error",
-			}, errors.New(
-				"obj convert Operationrequest is error",
-			)
+		message := "obj convert Operationrequest is error"
+		return admission.Warnings{message}, errors.New(message)
 	}
 
 	// todo check request, _ := admission.RequestFromContext(ctx), request.UserInfo.Username if legal
@@ -103,11 +100,8 @@ func (r ReqValidator) ValidateCreate(
 				"phase",
 				item.Status.Phase,
 			)
-			return admission.Warnings{
-					"there is a request not completed, can not create new request",
-				}, errors.New(
-					"there is a request not completed, can not create new request",
-				)
+			message := "there is a request not completed, can not create new request"
+			return admission.Warnings{message}, errors.New(message)
 		}
 	}
 	return admission.Warnings{}, nil
@@ -120,26 +114,17 @@ func (r ReqValidator) ValidateUpdate(
 	// todo check request, _ := admission.RequestFromContext(ctx), request.UserInfo.Username if legal
 	oldReq, ok := oldObj.(*Operationrequest)
 	if !ok {
-		return admission.Warnings{
-				"obj convert Operationrequest error",
-			}, errors.New(
-				"obj convert Operationrequest error",
-			)
+		message := "obj convert Operationrequest error"
+		return admission.Warnings{message}, errors.New(message)
 	}
 	newReq, ok := newObj.(*Operationrequest)
 	if !ok {
-		return admission.Warnings{
-				"obj convert Operationrequest error",
-			}, errors.New(
-				"obj convert Operationrequest error",
-			)
+		message := "obj convert Operationrequest error"
+		return admission.Warnings{message}, errors.New(message)
 	}
 	if oldReq.Spec != newReq.Spec {
-		return admission.Warnings{
-				"operation request spec do not support update",
-			}, errors.New(
-				"operation request spec do not support update",
-			)
+		message := "operation request spec do not support update"
+		return admission.Warnings{message}, errors.New(message)
 	}
 	return admission.Warnings{}, nil
 }

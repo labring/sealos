@@ -19,32 +19,36 @@ import (
 
 	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
 	"github.com/labring/sealos/controllers/user/pkg/licensegate"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/cache"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 func SetupLicenseGate(mgr ctrl.Manager) error {
 	logger := ctrl.Log.WithName("license-gate")
-	if err := licensegate.Refresh(context.Background(), mgr.GetAPIReader()); err != nil {
+	reader := mgr.GetAPIReader()
+	if err := licensegate.Refresh(context.Background(), reader); err != nil {
 		logger.Error(err, "initial license gate refresh failed")
 	}
-	informer, err := mgr.GetCache().GetInformer(context.Background(), &licensev1.License{})
+	licenseMetadata := &metav1.PartialObjectMetadata{}
+	licenseMetadata.SetGroupVersionKind(licensev1.GroupVersion.WithKind("License"))
+	informer, err := mgr.GetCache().GetInformer(context.Background(), licenseMetadata)
 	if err != nil {
 		return err
 	}
 	if _, err := informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj any) {
-			if err := licensegate.Refresh(context.Background(), mgr.GetClient()); err != nil {
+			if err := licensegate.Refresh(context.Background(), reader); err != nil {
 				logger.Error(err, "license gate refresh failed on add")
 			}
 		},
 		UpdateFunc: func(oldObj, newObj any) {
-			if err := licensegate.Refresh(context.Background(), mgr.GetClient()); err != nil {
+			if err := licensegate.Refresh(context.Background(), reader); err != nil {
 				logger.Error(err, "license gate refresh failed on update")
 			}
 		},
 		DeleteFunc: func(obj any) {
-			if err := licensegate.Refresh(context.Background(), mgr.GetClient()); err != nil {
+			if err := licensegate.Refresh(context.Background(), reader); err != nil {
 				logger.Error(err, "license gate refresh failed on delete")
 			}
 		},

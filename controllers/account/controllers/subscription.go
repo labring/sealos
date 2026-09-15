@@ -214,7 +214,7 @@ func (sp *SubscriptionProcessor) updateQuota(
 	return nil
 }
 
-const AdminUserName = "sealos-admin"
+const AdminUserName = utils.AdminJWTRequester
 
 type AdminFlushSubscriptionQuotaReq struct {
 	UserUID  uuid.UUID `json:"userUID"  bson:"userUID"`
@@ -227,7 +227,7 @@ func (sp *SubscriptionProcessor) sendFlushQuotaRequest(
 	userUID, planID uuid.UUID,
 	planName string,
 ) error {
-	return sendFlushQuotaRequest(sp.allRegionDomain, sp.jwtManager, userUID, planID, planName)
+	return sendFlushQuotaRequest(sp.allRegionDomain, sp.adminJwtManager, userUID, planID, planName)
 }
 
 func sendFlushQuotaRequest(
@@ -237,7 +237,7 @@ func sendFlushQuotaRequest(
 	planName string,
 ) error {
 	for _, domain := range allRegion {
-		token, err := jwtManager.GenerateToken(utils.JwtUser{
+		token, err := jwtManager.GenerateAdminToken(utils.JwtUser{
 			Requester: AdminUserName,
 		})
 		if err != nil {
@@ -261,6 +261,7 @@ func sendFlushQuotaRequest(
 
 		maxRetries := 3
 		for attempt := 1; attempt <= maxRetries; attempt++ {
+			// #nosec G704 -- domains come from operator-managed region records.
 			req, err := http.NewRequestWithContext(
 				context.Background(),
 				http.MethodPost,
@@ -275,6 +276,7 @@ func sendFlushQuotaRequest(
 			req.Header.Set("Content-Type", "application/json")
 			client := http.Client{}
 
+			// #nosec G704 -- domains come from operator-managed region records.
 			resp, err := client.Do(req)
 			if err != nil {
 				lastErr = fmt.Errorf("failed to send request: %w", err)

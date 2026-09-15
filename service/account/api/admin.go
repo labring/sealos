@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/labring/sealos/controllers/pkg/pay"
 	"github.com/labring/sealos/controllers/pkg/types"
+	"github.com/labring/sealos/controllers/pkg/utils"
 	"github.com/labring/sealos/service/account/dao"
 	"github.com/labring/sealos/service/account/helper"
 	"github.com/sirupsen/logrus"
@@ -373,7 +374,7 @@ func AdminGetUserRealNameInfo(c *gin.Context) {
 	})
 }
 
-const AdminUserName = "sealos-admin"
+const AdminUserName = utils.AdminJWTRequester
 
 func authenticateAdminRequest(c *gin.Context) error {
 	tokenString := c.GetHeader("Authorization")
@@ -381,9 +382,18 @@ func authenticateAdminRequest(c *gin.Context) error {
 		return errors.New("null auth found")
 	}
 	token := strings.TrimPrefix(tokenString, "Bearer ")
+
+	if dao.AdminJwtMgr != nil {
+		if _, err := dao.AdminJwtMgr.ParseAdminUser(token); err == nil {
+			return nil
+		}
+	}
+
+	// Keep accepting tokens signed with the legacy account secret during the
+	// admin-secret migration. Remove this fallback after all callers migrate.
 	user, err := dao.JwtMgr.ParseUser(token)
 	if err != nil {
-		return fmt.Errorf("failed to parse user: %w", err)
+		return fmt.Errorf("failed to parse admin user: %w", err)
 	}
 	if user == nil {
 		return errors.New("user not found")

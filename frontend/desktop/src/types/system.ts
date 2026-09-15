@@ -82,7 +82,6 @@ export type LayoutConfigType = {
   meta: MetaConfigType;
   customerServiceURL?: string;
   discordInviteLink?: string;
-  forcedLanguage?: string;
   currencySymbol?: 'shellCoin' | 'cny' | 'usd';
   protocol?: ProtocolConfigType;
   common: {

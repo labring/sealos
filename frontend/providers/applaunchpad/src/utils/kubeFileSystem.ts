@@ -217,41 +217,26 @@ export class KubeFileSystem {
       }
     });
 
-    if (symlinks.length > 0) {
-      const command = ['ls', '-ldQ', '--color=never'];
+    for (const symlink of symlinks) {
+      let linkTo = symlink.linkTo!;
+      if (linkTo[0] !== '/') {
+        linkTo = (symlink.dir === '/' ? '' : symlink.dir) + '/' + linkTo;
+      }
+      symlink.linkTo = linkTo;
 
       try {
-        symlinks.forEach((symlink) => {
-          let linkTo = symlink.linkTo!;
-          if (linkTo[0] !== '/') {
-            linkTo = (symlink.dir === '/' ? '' : symlink.dir) + '/' + linkTo;
-          }
-          symlink.linkTo = linkTo;
-          command.push(linkTo);
-        });
+        const output = await this.execCommand(namespace, podName, containerName, [
+          'ls',
+          '-ldQ',
+          '--color=never',
+          linkTo
+        ]);
+        if (output[0] === 'd') {
+          symlink.kind = 'd';
+          directories.push(symlink);
+        }
       } catch (error) {
-      } finally {
-        const output = await this.execCommand(namespace, podName, containerName, command);
-        const lines = output.split('\n').filter((v) => !!v);
-
-        try {
-          for (const line of lines) {
-            if (line && line.includes('command terminated with non-zero exit code')) {
-              const parts = line.split('"');
-              try {
-                symlinks.map((symlink) => {
-                  if (symlink.linkTo === parts[1] && !symlink.processed) {
-                    symlink.processed = true;
-                    symlink.kind = line[0];
-                    if (symlink.kind === 'd') {
-                      directories.push(symlink);
-                    }
-                  }
-                });
-              } catch (error) {}
-            }
-          }
-        } catch (error) {}
+        // A dangling or inaccessible symlink must not make its parent directory unreadable.
       }
     }
 

@@ -8,61 +8,19 @@ import (
 	"github.com/labring/sealos/controllers/pkg/account"
 )
 
-func setupenvAlipay() {
-	const (
-		envAppID            = ""
-		envPrivateKey       = ""
-		envAppCertPublicKey = ""
-		envRootCert         = ""
-		envCertPublicKey    = ""
-	)
-
-	// The following is only written if none of these variables are preset
-	if os.Getenv(account.AlipayAppID) == "" {
-		err := os.Setenv(account.AlipayAppID, envAppID)
-		if err != nil {
-			return
-		}
-	}
-	if os.Getenv(account.AlipayPrivateKey) == "" {
-		err := os.Setenv(account.AlipayPrivateKey, envPrivateKey)
-		if err != nil {
-			return
-		}
-	}
-	if os.Getenv(account.AlipayAppCertPublicKey) == "" {
-		err := os.Setenv(account.AlipayAppCertPublicKey, envAppCertPublicKey)
-		if err != nil {
-			return
-		}
-	}
-	if os.Getenv(account.AlipayRootCert) == "" {
-		err := os.Setenv(account.AlipayRootCert, envRootCert)
-		if err != nil {
-			return
-		}
-	}
-	if os.Getenv(account.AlipayCertPublicKey) == "" {
-		err := os.Setenv(account.AlipayCertPublicKey, envCertPublicKey)
-		if err != nil {
-			return
-		}
-	}
-	// sandboxEnvironment
-	err := os.Setenv(account.PayIsProduction, "true")
-	if err != nil {
-		return
-	}
-}
-
 // TestCreatePaymentIntegration test payment creation
 func TestCreatePaymentIntegration(t *testing.T) {
+	requirePaymentTest(t,
+		account.AlipayAppID,
+		account.AlipayPrivateKey,
+		account.AlipayAppCertPublicKey,
+		account.AlipayRootCert,
+		account.AlipayCertPublicKey,
+		account.PayIsProduction,
+	)
 	ap, err := NewAlipayPayment()
 	if err != nil {
-		t.Skipf(
-			"Skip test: NewAlipayPayment failed, possibly because the sandbox was not fully configured：%v",
-			err,
-		)
+		t.Fatalf("NewAlipayPayment() failed: %v", err)
 	}
 	// place an order of $1
 	tradeNo, qrURL, err := ap.CreatePayment(1_000_000, "test-user", "unit tests create payments")
@@ -74,7 +32,14 @@ func TestCreatePaymentIntegration(t *testing.T) {
 
 // Full E2E Test: Payment → Inquiries → Refunds
 func TestSandbox_EndToEnd(t *testing.T) {
-	setupenvAlipay()
+	requirePaymentTest(t,
+		account.AlipayAppID,
+		account.AlipayPrivateKey,
+		account.AlipayAppCertPublicKey,
+		account.AlipayRootCert,
+		account.AlipayCertPublicKey,
+		account.PayIsProduction,
+	)
 	ap, err := NewAlipayPayment()
 	if err != nil {
 		t.Fatalf("NewAlipayPayment() failed: %v", err)
@@ -116,4 +81,16 @@ func TestSandbox_EndToEnd(t *testing.T) {
 		t.Fatalf("RefundPayment() failed: %v", err)
 	}
 	t.Logf("the refund was successful：refundNo=%s, refundFee=%s", refundNo, refundFee)
+}
+
+func requirePaymentTest(t *testing.T, envNames ...string) {
+	t.Helper()
+	if os.Getenv("RUN_PAYMENT_TESTS") != "true" {
+		t.Skip("set RUN_PAYMENT_TESTS=true to run payment provider tests")
+	}
+	for _, name := range envNames {
+		if os.Getenv(name) == "" {
+			t.Skipf("requires %s", name)
+		}
+	}
 }

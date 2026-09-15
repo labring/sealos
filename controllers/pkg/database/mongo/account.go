@@ -1170,6 +1170,14 @@ func (m *mongoDB) CreateBillingIfNotExist() error {
 			},
 		},
 		{
+			// workspace consumption aggregation: equality filters before time range
+			Keys: bson.D{
+				primitive.E{Key: "owner", Value: 1},
+				primitive.E{Key: "status", Value: 1},
+				primitive.E{Key: "time", Value: 1},
+			},
+		},
+		{
 			// recover stable unsettled billings for one billing hour
 			Keys: bson.D{
 				primitive.E{Key: "time", Value: 1},

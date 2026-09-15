@@ -21,7 +21,8 @@ import {
 import { useCustomToast } from '@/hooks/useCustomToast';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import { compareFirstLanguages } from '@/utils/tools';
+import { getLocaleCookieHeader, getPlatformDefaultLocale, getRequestLocale } from '@/utils/locale';
+import { getLayoutConfig } from './api/platform/getLayoutConfig';
 
 export default function Callback() {
   const router = useRouter();
@@ -204,9 +205,12 @@ export default function Callback() {
 }
 
 export async function getServerSideProps({ req, res, locales }: any) {
-  const local =
-    req?.cookies?.NEXT_LOCALE || compareFirstLanguages(req?.headers?.['accept-language'] || 'zh');
-  res.setHeader('Set-Cookie', `NEXT_LOCALE=${local}; Max-Age=2592000; Secure; SameSite=None`);
+  const layoutConfig = await getLayoutConfig();
+  const local = getRequestLocale(
+    req?.cookies?.NEXT_LOCALE,
+    getPlatformDefaultLocale(layoutConfig.version)
+  );
+  res.setHeader('Set-Cookie', getLocaleCookieHeader(local));
 
   return {
     props: {

@@ -6,7 +6,7 @@ LICENSE_KEY ?=
 CONTROLLER_LICENSE_PKG=github.com/labring/sealos/controllers/pkg/license
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
-ENVTEST_K8S_VERSION = 1.25.6
+ENVTEST_K8S_VERSION = 1.25.0
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -61,8 +61,10 @@ vet: ## Run go vet against code.
 	go vet ./...
 
 .PHONY: test
-test: manifests generate fmt vet envtest ## Run tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
+test: envtest ## Run tests.
+	@LD_FLAGS=""; \
+	[ -n "$(LICENSE_KEY)" ] && LD_FLAGS="-X ${CONTROLLER_LICENSE_PKG}.encryptionKey=${LICENSE_KEY}"; \
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test -race -ldflags "$${LD_FLAGS}" ./... -count=1
 
 ##@ Build
 

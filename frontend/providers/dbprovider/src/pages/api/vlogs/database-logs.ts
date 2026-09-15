@@ -1,13 +1,8 @@
 import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import { VLOGS_CONFIG } from '@/config/vlogs';
+import { toVlogsQueryTime } from '@/utils/vlogsTime';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc';
-import timezone from 'dayjs/plugin/timezone';
-
-dayjs.extend(utc);
-dayjs.extend(timezone);
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
@@ -20,8 +15,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       endTime,
       timeRange = '1h',
       keyword = '',
-      pageSize = 100,
-      timeZone = 'local'
+      pageSize = 100
     } = req.body;
 
     if (!namespace || !pvc || !containers || !type) {
@@ -64,17 +58,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       app: ''
     };
 
-    if (startTime && endTime) {
-      if (timeZone === 'local') {
-        vlogsParams.startTime = dayjs(startTime).format('YYYY-MM-DDTHH:mm:ss');
-        vlogsParams.endTime = dayjs(endTime).format('YYYY-MM-DDTHH:mm:ss');
-      } else if (timeZone && timeZone !== 'utc') {
-        vlogsParams.startTime = dayjs(startTime).tz(timeZone).toISOString();
-        vlogsParams.endTime = dayjs(endTime).tz(timeZone).toISOString();
-      } else {
-        vlogsParams.startTime = dayjs(startTime).utc().toISOString();
-        vlogsParams.endTime = dayjs(endTime).utc().toISOString();
-      }
+    if (startTime !== undefined && endTime !== undefined) {
+      vlogsParams.startTime = toVlogsQueryTime(startTime);
+      vlogsParams.endTime = toVlogsQueryTime(endTime);
     } else {
       vlogsParams.time = timeRange;
     }

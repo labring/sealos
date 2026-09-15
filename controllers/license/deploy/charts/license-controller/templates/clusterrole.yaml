@@ -5,7 +5,6 @@ metadata:
 rules:
 - apiGroups: [ "" ]
   resources: [ "namespaces" ]
-  resourceNames: [ "kube-system" ]
   verbs:
   - get
   - list
@@ -106,8 +105,7 @@ metadata:
 rules:
 - apiGroups: [ "" ]
   resources: [ "namespaces" ]
-  resourceNames: [ "kube-system" ]
-  verbs: [ "get" ]
+  verbs: [ "get","watch","list" ]
 - apiGroups:
     - ""
   resources:

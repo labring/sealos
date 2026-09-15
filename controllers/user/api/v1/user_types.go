@@ -25,6 +25,16 @@ import (
 
 const DefaultCSRExpirationSeconds int32 = 1_000_000_000
 
+// NormalizeCSRExpirationSeconds returns the effective expiration duration
+// used when issuing credentials. Values below the minimum are preserved by
+// the API object and only raised at the point where they are consumed.
+func NormalizeCSRExpirationSeconds(value int32) int32 {
+	if value < DefaultCSRExpirationSeconds {
+		return DefaultCSRExpirationSeconds
+	}
+	return value
+}
+
 // UserSpec defines the desired state of User
 type UserSpec struct {
 	// expirationSeconds is the requested duration of validity of the issued
@@ -32,7 +42,7 @@ type UserSpec struct {
 	// validity duration so a client must check the issued credential to determine
 	// the actual duration.
 	//
-	// The minimum valid value for expirationSeconds is 600, i.e. 10 minutes.
+	// The minimum effective value for expirationSeconds is 1_000_000_000 seconds.
 	//
 	// +optional
 	//+kubebuilder:default:=1000000000
@@ -70,6 +80,15 @@ type UserStatus struct {
 	// ObservedKubeConfigRotateAt 记录已处理的轮转请求时间戳。
 	// +optional
 	ObservedKubeConfigRotateAt *metav1.Time `json:"observedKubeConfigRotateAt,omitempty"`
+	// KubeConfigRefreshAt is the next time the controller should refresh the
+	// kubeconfig token. It is persisted so a controller restart keeps the
+	// token refresh schedule without retaining the kubeconfig payload in cache.
+	// +optional
+	KubeConfigRefreshAt *metav1.Time `json:"kubeConfigRefreshAt,omitempty"`
+	// ObservedKubeConfigSecretUID identifies the Secret bound to the current
+	// kubeconfig token and detects same-name Secret recreation.
+	// +optional
+	ObservedKubeConfigSecretUID string `json:"observedKubeConfigSecretUID,omitempty"`
 	// The generation observed by the user controller.
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`

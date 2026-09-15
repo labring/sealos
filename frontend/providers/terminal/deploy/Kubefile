@@ -1,9 +1,0 @@
-FROM scratch
-
-USER 65532:65532
-
-COPY registry registry
-COPY charts charts
-COPY terminal-frontend-entrypoint.sh terminal-frontend-entrypoint.sh
-
-CMD ["bash terminal-frontend-entrypoint.sh"]

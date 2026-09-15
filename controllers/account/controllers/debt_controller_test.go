@@ -79,10 +79,16 @@ const (
 
 // TestReconcileAllFinalUser 测试方法
 func TestReconcileAllFinalUser(t *testing.T) {
-	t.Setenv("LOCAL_REGION", "4b55d7c5-ff65-4eb7-9bcf-726c730a0fad")
+	requireAccountMaintenanceTest(
+		t,
+		database.GlobalCockroachURI,
+		database.LocalCockroachURI,
+		"LOCAL_REGION",
+		EnvJwtSecret,
+	)
 	account, err := database.NewAccountV2(
-		"postgresql://sealos:fb9jg8te4x78ocqrr2vgbs99qauh9flfd1u6g300kq7ywjay3ah7cndr60udd6wg@192.168.10.35:32749/global",
-		"postgresql://sealos:vtzfqp8hbkn7jdstzkbac6cd4u84n6w3s28f8wnqzrts2b96xcs7v58r1a18ihds@192.168.10.35:32749/local",
+		os.Getenv(database.GlobalCockroachURI),
+		os.Getenv(database.LocalCockroachURI),
 	)
 	if err != nil {
 		t.Fatalf("failed to new account: %v", err)
@@ -104,10 +110,7 @@ func TestReconcileAllFinalUser(t *testing.T) {
 		}
 	}
 
-	jwtManager := utils.NewJWTManager(
-		"98r7c1zjllv4kgn67trj1cknprnpcwup3hh38b44puhfrbkmzy9bjipbw4tclr3f",
-		time.Hour*24,
-	)
+	jwtManager := utils.NewJWTManager(os.Getenv(EnvJwtSecret), time.Hour*24)
 
 	// 获取全部 Debt 状态为 FinalDeletionPeriod 的用户
 	allUserUID := make([]uuid.UUID, 0)
@@ -247,19 +250,19 @@ func sendFlushDebtResourceStatusRequest(
 
 			req.Header.Set("Authorization", "Bearer "+token)
 			req.Header.Set("Content-Type", "application/json")
-			client := http.Client{}
+			client := http.Client{Timeout: 30 * time.Second}
 
 			resp, err := client.Do(req)
 			if err != nil {
 				lastErr = fmt.Errorf("failed to send request: %w", err)
 			} else {
-				defer resp.Body.Close()
-
 				if resp.StatusCode == http.StatusOK {
 					lastErr = nil
+					_ = resp.Body.Close()
 					break
 				}
 				lastErr = fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+				_ = resp.Body.Close()
 			}
 
 			if attempt < maxRetries {
@@ -288,12 +291,19 @@ type regionConfig struct {
 	RegionUID string `json:"region_uid"`
 }
 
-var regions = []regionConfig{}
-
 // 1. pause account controller
 // 2. convert all region debt
 // 3. upgrade and restore the account controller
 func TestConvertDebt(t *testing.T) {
+	requireAccountMaintenanceTest(t, "ACCOUNT_DEBT_MIGRATION_REGIONS")
+	var regions []regionConfig
+	regionsJSON := os.Getenv("ACCOUNT_DEBT_MIGRATION_REGIONS")
+	if err := json.Unmarshal([]byte(regionsJSON), &regions); err != nil {
+		t.Fatalf("failed to parse ACCOUNT_DEBT_MIGRATION_REGIONS: %v", err)
+	}
+	if len(regions) == 0 {
+		t.Fatal("ACCOUNT_DEBT_MIGRATION_REGIONS must contain at least one region")
+	}
 	for i := range regions {
 		// 先获取全部的debt crd
 		fmt.Printf(
@@ -344,6 +354,18 @@ func TestConvertDebt(t *testing.T) {
 			regions[i].Region,
 			time.Now().Format(time.RFC3339),
 		)
+	}
+}
+
+func requireAccountMaintenanceTest(t *testing.T, envNames ...string) {
+	t.Helper()
+	if os.Getenv("RUN_ACCOUNT_MAINTENANCE_TESTS") != "true" {
+		t.Skip("set RUN_ACCOUNT_MAINTENANCE_TESTS=true to run account maintenance tests")
+	}
+	for _, name := range envNames {
+		if os.Getenv(name) == "" {
+			t.Skipf("requires %s", name)
+		}
 	}
 }
 

@@ -36,6 +36,7 @@ import (
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	"gorm.io/gorm"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -887,7 +888,8 @@ func (r *BillingReconciler) getUsersForNamespaces(namespaces []string) (map[stri
 		if !strings.HasPrefix(namespace, UserNamespacePrefix) {
 			continue
 		}
-		user := &userv1.User{}
+		user := &metav1.PartialObjectMetadata{}
+		user.SetGroupVersionKind(userv1.GroupVersion.WithKind("User"))
 		if err := r.Get(
 			context.Background(),
 			client.ObjectKey{Name: strings.TrimPrefix(namespace, UserNamespacePrefix)},

@@ -92,7 +92,7 @@ export const valuationMap = new Map([
   ['memory', { unit: 'GiB', scale: 1024, bg: '#36ADEF' }],
   ['storage', { unit: 'GiB', scale: 1024, bg: '#9A8EE0' }],
   ['gpu', { unit: 'GPU Unit', scale: 1000, bg: '#6FCA88' }],
-  ['network', { unit: 'M', scale: 1, bg: '#F182AA' }],
+  ['network', { unit: 'GiB', scale: 1024, bg: '#F182AA' }],
   ['services.nodeports', { unit: 'port_unit', scale: 1000, bg: '#F182AA' }]
 ] as const);
 // export const BillingUnitMap = new Map([

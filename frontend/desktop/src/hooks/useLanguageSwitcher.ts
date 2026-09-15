@@ -1,13 +1,11 @@
-import { useConfigStore } from '@/stores/config';
 import { setCookie } from '@/utils/cookieUtils';
+import { LOCALE_COOKIE_NAME, localeCookieOptions } from '@/utils/locale';
 import { useTranslation } from 'next-i18next';
-import { useEffect } from 'react';
 import { EVENT_NAME } from 'sealos-desktop-sdk';
 import { masterApp } from 'sealos-desktop-sdk/master';
 
 export function useLanguageSwitcher() {
   const { i18n } = useTranslation();
-  const { layoutConfig } = useConfigStore();
 
   const switchLanguage = (targetLang: string) => {
     masterApp?.sendMessageToAll({
@@ -17,19 +15,9 @@ export function useLanguageSwitcher() {
         currentLanguage: targetLang
       }
     });
-    setCookie('NEXT_LOCALE', targetLang, {
-      expires: 30,
-      sameSite: 'None',
-      secure: true
-    });
+    setCookie(LOCALE_COOKIE_NAME, targetLang, localeCookieOptions);
     i18n?.changeLanguage(targetLang);
   };
-
-  useEffect(() => {
-    if (layoutConfig?.forcedLanguage && i18n?.language !== layoutConfig.forcedLanguage) {
-      switchLanguage(layoutConfig.forcedLanguage);
-    }
-  }, [layoutConfig?.forcedLanguage, i18n]);
 
   return {
     currentLanguage: i18n?.language || 'en',

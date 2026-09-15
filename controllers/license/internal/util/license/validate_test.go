@@ -16,6 +16,7 @@ package license
 
 import (
 	"encoding/base64"
+	"os"
 	"testing"
 	"time"
 
@@ -28,6 +29,9 @@ import (
 
 func newTestLicense(t *testing.T) (*licensev1.License, *utilclaims.Claims) {
 	t.Helper()
+	if os.Getenv("LICENSE_KEY") == "" {
+		t.Skip("requires LICENSE_KEY to sign test licenses")
+	}
 	decodeKey, err := base64.StdEncoding.DecodeString(key.GetEncryptionKey())
 	if err != nil {
 		t.Fatalf("failed to decode encryption key: %v", err)

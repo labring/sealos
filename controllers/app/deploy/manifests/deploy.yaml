@@ -125,6 +125,8 @@ spec:
                 type: number
               type:
                 type: string
+              version:
+                type: string
             type: object
           status:
             description: AppStatus defines the observed state of App

@@ -15,15 +15,22 @@
 package pay
 
 import (
+	"os"
 	"testing"
 )
 
 func TestCreateCheckoutSession(t *testing.T) {
+	requirePaymentTest(t, StripeAPIKEY)
+	successURL := os.Getenv("STRIPE_TEST_SUCCESS_URL")
+	cancelURL := os.Getenv("STRIPE_TEST_CANCEL_URL")
+	if successURL == "" || cancelURL == "" {
+		t.Skip("requires STRIPE_TEST_SUCCESS_URL and STRIPE_TEST_CANCEL_URL")
+	}
 	stripe, err := CreateCheckoutSession(
 		2000,
 		"cny",
-		"http://localhost:8080",
-		"http://localhost:8080",
+		successURL,
+		cancelURL,
 	)
 	if err != nil {
 		t.Error(err)

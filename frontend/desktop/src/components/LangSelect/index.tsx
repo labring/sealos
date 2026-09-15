@@ -1,4 +1,5 @@
 import { setCookie } from '@/utils/cookieUtils';
+import { LOCALE_COOKIE_NAME, localeCookieOptions } from '@/utils/locale';
 import {
   Button,
   Flex,
@@ -58,11 +59,7 @@ export default function LangSelectList(props: MenuButtonProps) {
                   currentLanguage: lngKey
                 }
               });
-              setCookie('NEXT_LOCALE', lngKey, {
-                expires: 30,
-                sameSite: 'None',
-                secure: true
-              });
+              setCookie(LOCALE_COOKIE_NAME, lngKey, localeCookieOptions);
               i18n?.changeLanguage(lngKey);
             }}
             key={lngKey}

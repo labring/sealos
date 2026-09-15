@@ -50,6 +50,8 @@ spec:
           - secretRef:
               name: payment-secret
               optional: true
+          - secretRef:
+              name: account-admin-jwt
           - configMapRef:
               name: account-manager-env
         securityContext:

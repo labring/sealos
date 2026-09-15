@@ -98,8 +98,16 @@ func TestBillingPersistenceWithMongoRuntime(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(indexSpecs) != 4 {
-		t.Fatalf("billing index count = %d, want 4", len(indexSpecs))
+	const workspaceConsumptionIndexName = "owner_1_status_1_time_1"
+	hasWorkspaceConsumptionIndex := false
+	for _, indexSpec := range indexSpecs {
+		if indexSpec.Name == workspaceConsumptionIndexName {
+			hasWorkspaceConsumptionIndex = true
+			break
+		}
+	}
+	if !hasWorkspaceConsumptionIndex {
+		t.Fatalf("billing indexes do not include %q", workspaceConsumptionIndexName)
 	}
 	monitorTime := end.Add(-time.Hour)
 	namespaces, err := account.GetTimeUsedNamespaceList(monitorTime, end)

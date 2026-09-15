@@ -39,6 +39,7 @@ import {
   memoryFormatToMi,
   storageFormatToNum
 } from '@/utils/tools';
+import { getReconfigureHistoryConfigurations } from './reconfigureHistory';
 import type { CoreV1EventList, V1Pod } from '@kubernetes/client-node';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
@@ -443,6 +444,10 @@ const getOperationLogConfigurations = (
   item: KubeBlockOpsRequestType,
   dbType: DBType
 ): OpsRequestConfiguration[] => {
+  if (item.spec.type === 'Reconfiguring' && item.spec.reconfigure) {
+    return getReconfigureHistoryConfigurations(item, DBPreviousConfigKey, '-');
+  }
+
   if (simpleOperationTypes.includes(item.spec.type)) {
     return [{ parameterName: item.spec.type, newValue: '-', oldValue: '-' }];
   }
@@ -546,24 +551,6 @@ export const adaptOpsRequest = (
   item: KubeBlockOpsRequestType,
   type: 'Reconfiguring' | 'Switchover'
 ): OpsRequestItemType => {
-  const config = item.metadata.annotations?.[DBPreviousConfigKey];
-
-  let previousConfigurations: {
-    [key: string]: string;
-  } = {};
-
-  if (config) {
-    try {
-      const confObject = JSON.parse(config);
-      Object.entries(confObject).forEach(([key, value]) => {
-        previousConfigurations[key] =
-          typeof value === 'string' ? value.replace(/^['"](.*)['"]$/, '$1') : String(value);
-      });
-    } catch (error) {
-      console.error('Error parsing postgresql.conf annotation:', error);
-    }
-  }
-
   let result: OpsRequestItemType = {
     id: item.metadata.uid,
     name: item.metadata.name,
@@ -576,13 +563,7 @@ export const adaptOpsRequest = (
   };
 
   if (type === 'Reconfiguring') {
-    result.configurations = item.spec.reconfigure!.configurations[0].keys[0].parameters.map(
-      (param) => ({
-        parameterName: param.key,
-        newValue: param.value,
-        oldValue: previousConfigurations[param.key]
-      })
-    );
+    result.configurations = getReconfigureHistoryConfigurations(item, DBPreviousConfigKey);
   }
 
   if (type === 'Switchover') {

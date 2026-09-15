@@ -2,6 +2,8 @@ package controllers
 
 import (
 	"fmt"
+	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -12,10 +14,19 @@ import (
 )
 
 func Test_sendFlushQuotaRequest(t *testing.T) {
-	regions := []string{""}
-	jwtManager := utils.NewJWTManager("", time.Hour)
-	t.Setenv("LOCAL_REGION", "")
-	account, err := database.NewAccountV2("", "")
+	requireAccountExternalTest(t,
+		database.GlobalCockroachURI,
+		database.LocalCockroachURI,
+		"LOCAL_REGION",
+		"ACCOUNT_API_JWT_SECRET",
+		"ACCOUNT_TEST_REGION_DOMAINS",
+	)
+	regions := strings.Split(os.Getenv("ACCOUNT_TEST_REGION_DOMAINS"), ",")
+	jwtManager := utils.NewJWTManager(os.Getenv("ACCOUNT_API_JWT_SECRET"), time.Hour)
+	account, err := database.NewAccountV2(
+		os.Getenv(database.GlobalCockroachURI),
+		os.Getenv(database.LocalCockroachURI),
+	)
 	if err != nil {
 		t.Fatalf("failed to new account: %v", err)
 	}

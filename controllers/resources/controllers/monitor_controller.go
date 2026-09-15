@@ -38,6 +38,7 @@ import (
 	"github.com/labring/sealos/controllers/pkg/utils/env"
 	"github.com/labring/sealos/controllers/pkg/utils/logger"
 	"github.com/labring/sealos/controllers/pkg/utils/retry"
+	resourcecache "github.com/labring/sealos/controllers/resources/controllers/cache"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	"github.com/labring/sealos/controllers/user/controllers/helper/config"
 	"github.com/minio/minio-go/v7"
@@ -57,10 +58,10 @@ import (
 // MonitorReconciler reconciles a Monitor object
 type MonitorReconciler struct {
 	client.Client
+	cache client.Reader
 	logr.Logger
 	Interval                 time.Duration
 	Scheme                   *runtime.Scheme
-	stopCh                   chan struct{}
 	wg                       sync.WaitGroup
 	periodicReconcile        time.Duration
 	gpuAliasCard             map[string]corev1.ResourceName
@@ -135,8 +136,8 @@ const (
 func NewMonitorReconciler(mgr ctrl.Manager) (*MonitorReconciler, error) {
 	r := &MonitorReconciler{
 		Client:                mgr.GetClient(),
+		cache:                 mgr.GetCache(),
 		Logger:                ctrl.Log.WithName("controllers").WithName("Monitor"),
-		stopCh:                make(chan struct{}),
 		periodicReconcile:     1 * time.Minute,
 		PromURL:               os.Getenv(PrometheusURL),
 		ObjectStorageInstance: os.Getenv(ObjectStorageInstance),
@@ -164,7 +165,7 @@ func NewMonitorReconciler(mgr ctrl.Manager) (*MonitorReconciler, error) {
 
 func InitIndexField(mgr ctrl.Manager) error {
 	if err := mgr.GetFieldIndexer().
-		IndexField(context.Background(), &corev1.PersistentVolumeClaim{}, "status.phase", func(rawObj client.Object) []string {
+		IndexField(context.Background(), &corev1.PersistentVolumeClaim{}, resourcecache.PersistentVolumeClaimPhaseKey, func(rawObj client.Object) []string {
 			pvc, ok := rawObj.(*corev1.PersistentVolumeClaim)
 			if !ok {
 				return nil
@@ -174,7 +175,7 @@ func InitIndexField(mgr ctrl.Manager) error {
 		return err
 	}
 	if err := mgr.GetFieldIndexer().
-		IndexField(context.Background(), &kbv1alpha1.Backup{}, "status.phase", func(rawObj client.Object) []string {
+		IndexField(context.Background(), &kbv1alpha1.Backup{}, resourcecache.BackupPhaseKey, func(rawObj client.Object) []string {
 			backup, ok := rawObj.(*kbv1alpha1.Backup)
 			if !ok {
 				return nil
@@ -184,7 +185,7 @@ func InitIndexField(mgr ctrl.Manager) error {
 		return err
 	}
 	return mgr.GetFieldIndexer().
-		IndexField(context.Background(), &corev1.Service{}, "spec.type", func(rawObj client.Object) []string {
+		IndexField(context.Background(), &corev1.Service{}, resourcecache.ServiceTypeKey, func(rawObj client.Object) []string {
 			svc, ok := rawObj.(*corev1.Service)
 			if !ok {
 				return nil
@@ -194,30 +195,35 @@ func InitIndexField(mgr ctrl.Manager) error {
 }
 
 func (r *MonitorReconciler) StartReconciler(ctx context.Context) error {
-	r.startPeriodicReconcile()
+	r.startPeriodicReconcile(ctx)
 	if r.TrafficClient != nil || r.ObjStorageClient != nil {
-		r.startMonitorTraffic()
+		r.startMonitorTraffic(ctx)
 	}
 	<-ctx.Done()
-	r.stopPeriodicReconcile()
+	r.wg.Wait()
 	return nil
 }
 
-func (r *MonitorReconciler) startPeriodicReconcile() {
+func (r *MonitorReconciler) startPeriodicReconcile(ctx context.Context) {
 	r.wg.Add(1)
 	go func() {
 		defer r.wg.Done()
-		waitNextMinute()
+		if !waitForMonitorBoundary(ctx, time.Minute) {
+			return
+		}
 		ticker := time.NewTicker(r.periodicReconcile)
+		defer ticker.Stop()
 		for {
 			select {
 			case <-ticker.C:
+				if ctx.Err() != nil {
+					return
+				}
 				r.enqueueNamespacesForReconcile()
-				if err := r.refreshGPUConfig(context.Background()); err != nil {
+				if err := r.refreshGPUConfig(ctx); err != nil {
 					r.Error(err, "refresh gpu config failed")
 				}
-			case <-r.stopCh:
-				ticker.Stop()
+			case <-ctx.Done():
 				return
 			}
 		}
@@ -230,28 +236,25 @@ func (r *MonitorReconciler) getNamespaceList() (*corev1.NamespaceList, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create label requirement: %w", err)
 	}
-	return namespaceList, r.List(context.Background(), namespaceList, &client.ListOptions{
+	return namespaceList, r.cache.List(context.Background(), namespaceList, &client.ListOptions{
 		LabelSelector: labels.NewSelector().Add(*req),
 	})
 }
 
-func waitNextMinute() {
-	waitTime := time.Until(time.Now().Truncate(time.Minute).Add(1 * time.Minute))
-	if waitTime > 0 {
-		logger.Info("wait for first reconcile", "waitTime", waitTime)
-		time.Sleep(waitTime)
+func waitForMonitorBoundary(ctx context.Context, interval time.Duration) bool {
+	waitTime := time.Until(time.Now().Truncate(interval).Add(interval))
+	logger.Info("wait for first reconcile", "waitTime", waitTime)
+	timer := time.NewTimer(waitTime)
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+		return false
+	case <-timer.C:
+		return ctx.Err() == nil
 	}
 }
 
-func waitNextHour() {
-	waitTime := time.Until(time.Now().Truncate(time.Hour).Add(1 * time.Hour))
-	if waitTime > 0 {
-		logger.Info("wait for first reconcile", "waitTime", waitTime)
-		time.Sleep(waitTime)
-	}
-}
-
-func (r *MonitorReconciler) startMonitorTraffic() {
+func (r *MonitorReconciler) startMonitorTraffic(ctx context.Context) {
 	r.wg.Add(1)
 	go func() {
 		defer r.wg.Done()
@@ -261,30 +264,30 @@ func (r *MonitorReconciler) startMonitorTraffic() {
 				Truncate(time.Hour).
 				Add(1*time.Hour).
 				UTC()
-		waitNextHour()
+		if !waitForMonitorBoundary(ctx, time.Hour) {
+			return
+		}
 		ticker := time.NewTicker(1 * time.Hour)
+		defer ticker.Stop()
 		if err := r.MonitorTrafficUsed(startTime, endTime); err != nil {
 			r.Error(err, "failed to monitor pod traffic used")
 		}
 		for {
 			select {
 			case <-ticker.C:
+				if ctx.Err() != nil {
+					return
+				}
 				startTime, endTime = endTime, endTime.Add(1*time.Hour)
 				if err := r.MonitorTrafficUsed(startTime, endTime); err != nil {
 					r.Error(err, "failed to monitor pod traffic used")
 					break
 				}
-			case <-r.stopCh:
-				ticker.Stop()
+			case <-ctx.Done():
 				return
 			}
 		}
 	}()
-}
-
-func (r *MonitorReconciler) stopPeriodicReconcile() {
-	close(r.stopCh)
-	r.wg.Wait()
 }
 
 func (r *MonitorReconciler) enqueueNamespacesForReconcile() {
@@ -467,7 +470,11 @@ func (r *MonitorReconciler) getInstances(namespace string) (map[string]struct{},
 	instances := make(map[string]struct{})
 	insList := metav1.PartialObjectMetadataList{}
 	insList.SetGroupVersionKind(appv1.GroupVersion.WithKind("InstanceList"))
-	if err := r.List(context.Background(), &insList, client.InNamespace(namespace)); err != nil {
+	if err := r.cache.List(
+		context.Background(),
+		&insList,
+		client.InNamespace(namespace),
+	); err != nil {
 		return nil, fmt.Errorf("failed to list instances: %w", err)
 	}
 	for i := range insList.Items {
@@ -487,7 +494,7 @@ func (r *MonitorReconciler) monitorPodResourceUsage(
 	instances map[string]struct{},
 ) error {
 	podList := &corev1.PodList{}
-	if err := r.List(context.Background(), podList, &client.ListOptions{
+	if err := r.cache.List(context.Background(), podList, &client.ListOptions{
 		Namespace: namespace,
 	}); err != nil {
 		return fmt.Errorf("failed to list pods: %w", err)
@@ -498,7 +505,7 @@ func (r *MonitorReconciler) monitorPodResourceUsage(
 		pod := &podList.Items[i]
 		if pod.Spec.NodeName == "" ||
 			pod.Status.Phase == corev1.PodSucceeded &&
-				time.Since(pod.Status.StartTime.Time) > 1*time.Minute {
+				(pod.Status.StartTime == nil || time.Since(pod.Status.StartTime.Time) > 1*time.Minute) {
 			continue
 		}
 		podResNamed := resources.NewResourceNamed(pod)
@@ -584,9 +591,12 @@ func (r *MonitorReconciler) monitorPVCResourceUsage(
 	instances map[string]struct{},
 ) error {
 	pvcList := &corev1.PersistentVolumeClaimList{}
-	if err := r.List(context.Background(), pvcList, &client.ListOptions{
-		Namespace:     namespace,
-		FieldSelector: fields.OneTermEqualSelector("status.phase", string(corev1.ClaimBound)),
+	if err := r.cache.List(context.Background(), pvcList, &client.ListOptions{
+		Namespace: namespace,
+		FieldSelector: fields.OneTermEqualSelector(
+			resourcecache.PersistentVolumeClaimPhaseKey,
+			string(corev1.ClaimBound),
+		),
 	}); err != nil {
 		return fmt.Errorf("failed to list pvc: %w", err)
 	}
@@ -614,10 +624,10 @@ func (r *MonitorReconciler) monitorDatabaseBackupUsage(
 	resNamed map[string]*resources.ResourceNamed,
 ) error {
 	backupList := &kbv1alpha1.BackupList{}
-	if err := r.List(context.Background(), backupList, &client.ListOptions{
+	if err := r.cache.List(context.Background(), backupList, &client.ListOptions{
 		Namespace: namespace,
 		FieldSelector: fields.OneTermEqualSelector(
-			"status.phase",
+			resourcecache.BackupPhaseKey,
 			string(kbv1alpha1.BackupPhaseCompleted),
 		),
 	}); err != nil {
@@ -649,9 +659,12 @@ func (r *MonitorReconciler) monitorServiceResourceUsage(
 	instances map[string]struct{},
 ) error {
 	svcList := &corev1.ServiceList{}
-	if err := r.List(context.Background(), svcList, &client.ListOptions{
-		Namespace:     namespace,
-		FieldSelector: fields.OneTermEqualSelector("spec.type", string(corev1.ServiceTypeNodePort)),
+	if err := r.cache.List(context.Background(), svcList, &client.ListOptions{
+		Namespace: namespace,
+		FieldSelector: fields.OneTermEqualSelector(
+			resourcecache.ServiceTypeKey,
+			string(corev1.ServiceTypeNodePort),
+		),
 	}); err != nil {
 		return fmt.Errorf("failed to list svc: %w", err)
 	}
@@ -916,7 +929,7 @@ func (r *MonitorReconciler) handlerTrafficUsed(
 
 func (r *MonitorReconciler) refreshGPUConfig(ctx context.Context) error {
 	configmap := &corev1.ConfigMap{}
-	if err := r.Get(ctx, client.ObjectKey{
+	if err := r.cache.Get(ctx, client.ObjectKey{
 		Namespace: gpu.NodeInfoConfigmapNamespace,
 		Name:      gpu.NodeInfoConfigmapName,
 	}, configmap); err != nil {

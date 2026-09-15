@@ -322,7 +322,7 @@ export default function CalculatorPanel({
               </HStack>
               <HStack gap={'40px'}>
                 <CalculatorNumberInput
-                  unit="M"
+                  unit="GiB"
                   value={config.resources.network}
                   width={'280px'}
                   onChange={(str, val) => {

@@ -213,11 +213,12 @@ func (r *OperationRequestMonitorReconciler) synchronizeNamespaceStatus(
 
 	// Check if owner debt status allows resuming and target is in suspended state
 	if isOwnerEligibleForResume(ownerDebtStatus) && isSuspendedDebtStatus(targetDebtStatus) {
+		original := targetNamespace.DeepCopy()
 		// Resume the target namespace
 		targetNamespace.Annotations[types.DebtNamespaceAnnoStatusKey] = types.ResumeDebtNamespaceAnnoStatus
 
 		// Update the target namespace
-		if err := r.Update(ctx, targetNamespace); err != nil {
+		if err := r.Patch(ctx, targetNamespace, client.MergeFrom(original)); err != nil {
 			return fmt.Errorf(
 				"failed to update target namespace %s annotations: %w",
 				targetNamespace.Name,

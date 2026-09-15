@@ -1,4 +1,4 @@
-import { checkPodExecPermission, restartPodByName } from '@/api/app';
+import { restartPodByName } from '@/api/app';
 import MyIcon from '@/components/Icon';
 import { MyTooltip } from '@sealos/ui';
 import PodLineChart from '@/components/PodLineChart';
@@ -31,6 +31,7 @@ import { MOCK_APP_DETAIL } from '@/mock/apps';
 import { useAppStore } from '@/store/app';
 import { track } from '@sealos/gtm';
 import { getErrText } from '@/utils/tools';
+import { getUserSession } from '@/utils/user';
 
 const LogsModal = dynamic(() => import('./LogsModal'));
 const DetailModel = dynamic(() => import('./PodDetailModal'));
@@ -49,7 +50,7 @@ const Pods = ({ pods = [], appName }: { pods: PodDetailType[]; appName: string }
   const { openConfirm: openConfirmRestart, ConfirmChild: RestartConfirmChild } = useConfirm({
     content: 'Please confirm to restart the Pod?'
   });
-  const { appDetail = MOCK_APP_DETAIL, appDetailPods } = useAppStore();
+  const { appDetail = MOCK_APP_DETAIL } = useAppStore();
   const { isOpen: isOpenPodFile, onOpen: onOpenPodFile, onClose: onClosePodFile } = useDisclosure();
 
   const handleRestartPod = useCallback(
@@ -71,31 +72,12 @@ const Pods = ({ pods = [], appName }: { pods: PodDetailType[]; appName: string }
     [t, toast]
   );
 
-  const handleOpenTerminal = useCallback(
-    async (podName: string) => {
-      try {
-        await checkPodExecPermission(podName);
-        track('deployment_action', {
-          event_type: 'terminal_open',
-          module: 'applaunchpad'
-        });
-        const defaultCommand = `kubectl exec -it ${podName} -c ${appName} -- sh -c "clear; (bash || ash || sh)"`;
-        sealosApp.runEvents('openDesktopApp', {
-          appKey: 'system-terminal',
-          query: {
-            defaultCommand
-          },
-          messageData: { type: 'new terminal', command: defaultCommand }
-        });
-      } catch (err) {
-        toast({
-          title: t(getErrText(err, 'Insufficient permissions')),
-          status: 'error'
-        });
-        console.log(err);
-      }
+  const handleOpenFileManagement = useCallback(
+    (index: number) => {
+      setDetailFilePodIndex(index);
+      onOpenPodFile();
     },
-    [appName, t, toast]
+    [onOpenPodFile]
   );
 
   const columns: {
@@ -216,7 +198,37 @@ const Pods = ({ pods = [], appName }: { pods: PodDetailType[]; appName: string }
           <MyTooltip offset={[0, 10]} label={t('Terminal')}>
             <Button
               variant={'square'}
-              onClick={() => handleOpenTerminal(item.podName)}
+              onClick={() => {
+                const ns = getUserSession()?.user?.nsid;
+                const container = item.spec?.containers?.[0]?.name || appName;
+                if (!ns || !item.podName || !container) {
+                  toast({
+                    title: 'Missing terminal parameters',
+                    status: 'error'
+                  });
+                  return;
+                }
+
+                track('deployment_action', {
+                  event_type: 'terminal_open',
+                  module: 'applaunchpad'
+                });
+                sealosApp.runEvents('openDesktopApp', {
+                  appKey: 'system-terminal',
+                  pathname: '/exec',
+                  query: {
+                    ns,
+                    pod: item.podName,
+                    container
+                  },
+                  messageData: {
+                    type: 'InternalAppCall',
+                    ns,
+                    pod: item.podName,
+                    container
+                  }
+                });
+              }}
             >
               <MyIcon
                 className="driver-detail-terminal"
@@ -242,13 +254,7 @@ const Pods = ({ pods = [], appName }: { pods: PodDetailType[]; appName: string }
           </MyTooltip>
           {appDetail.storeList?.length > 0 && (
             <MyTooltip offset={[0, 10]} label={t('File Management')}>
-              <Button
-                variant={'square'}
-                onClick={() => {
-                  setDetailFilePodIndex(i);
-                  onOpenPodFile();
-                }}
-              >
+              <Button variant={'square'} onClick={() => handleOpenFileManagement(i)}>
                 <MyIcon name={'file'} w="18px" h="18px" fill={'#485264'} />
               </Button>
             </MyTooltip>
@@ -301,8 +307,8 @@ const Pods = ({ pods = [], appName }: { pods: PodDetailType[]; appName: string }
                     {col.render
                       ? col.render(app, i)
                       : col.dataIndex
-                      ? `${app[col.dataIndex]}`
-                      : '-'}
+                        ? `${app[col.dataIndex]}`
+                        : '-'}
                   </Td>
                 ))}
               </Tr>
@@ -353,8 +359,8 @@ const Pods = ({ pods = [], appName }: { pods: PodDetailType[]; appName: string }
             alias: item.podName,
             podName: item.podName
           }))}
-          setPodDetail={(e: string) =>
-            setDetailFilePodIndex(pods.findIndex((item) => item.podName === e))
+          setPodDetail={(podName: string) =>
+            handleOpenFileManagement(pods.findIndex((item) => item.podName === podName))
           }
         />
       )}

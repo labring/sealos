@@ -15,6 +15,7 @@
 package controllers
 
 import (
+	"os"
 	"testing"
 
 	"github.com/labring/sealos/controllers/pkg/database"
@@ -22,16 +23,8 @@ import (
 	"github.com/labring/sealos/controllers/pkg/types"
 )
 
-var (
-	testV2GlobalDBURI = ""
-	testV2LocalDBURI  = ""
-)
-
 func TestAccountV2_CreateAccount(t *testing.T) {
-	account, err := database.NewAccountV2(testV2GlobalDBURI, testV2LocalDBURI)
-	if err != nil {
-		t.Errorf("failed to new account : %v", err)
-	}
+	account := newExternalAccountV2(t)
 	defer func() {
 		if err := account.Close(); err != nil {
 			t.Errorf("failed close connection: %v", err)
@@ -51,10 +44,7 @@ func TestAccountV2_CreateAccount(t *testing.T) {
 }
 
 func TestAccountV2_GetAccount(t *testing.T) {
-	account, err := database.NewAccountV2(testV2GlobalDBURI, testV2LocalDBURI)
-	if err != nil {
-		t.Errorf("failed to new account : %v", err)
-	}
+	account := newExternalAccountV2(t)
 	defer func() {
 		if err := account.Close(); err != nil {
 			t.Errorf("failed close connection: %v", err)
@@ -74,10 +64,7 @@ func TestAccountV2_GetAccount(t *testing.T) {
 }
 
 func TestAccountV2_GetUser(t *testing.T) {
-	account, err := database.NewAccountV2(testV2GlobalDBURI, testV2LocalDBURI)
-	if err != nil {
-		t.Errorf("failed to new account : %v", err)
-	}
+	account := newExternalAccountV2(t)
 	defer func() {
 		if err := account.Close(); err != nil {
 			t.Errorf("failed close connection: %v", err)
@@ -91,16 +78,13 @@ func TestAccountV2_GetUser(t *testing.T) {
 }
 
 func TestAccountV2_TransferAccount(t *testing.T) {
-	account, err := database.NewAccountV2(testV2GlobalDBURI, testV2LocalDBURI)
-	if err != nil {
-		t.Errorf("failed to new account : %v", err)
-	}
+	account := newExternalAccountV2(t)
 	defer func() {
 		if err := account.Close(); err != nil {
 			t.Errorf("failed close connection: %v", err)
 		}
 	}()
-	err = account.TransferAccount(
+	err := account.TransferAccount(
 		&types.UserQueryOpts{Owner: "eoxwhh80"},
 		&types.UserQueryOpts{Owner: "1ycieb5b"},
 		85*cockroach.BaseUnit,
@@ -122,10 +106,7 @@ func TestAccountV2_TransferAccount(t *testing.T) {
 }
 
 func TestAccountV2_AddBalance(t *testing.T) {
-	account, err := database.NewAccountV2(testV2GlobalDBURI, testV2LocalDBURI)
-	if err != nil {
-		t.Fatalf("failed to new account : %v", err)
-	}
+	account := newExternalAccountV2(t)
 	defer func() {
 		if err := account.Close(); err != nil {
 			t.Errorf("failed close connection: %v", err)
@@ -150,4 +131,21 @@ func TestAccountV2_AddBalance(t *testing.T) {
 		"success create accountbalance: %+v",
 		(aa.Balance-aa.DeductionBalance)/cockroach.BaseUnit,
 	)
+}
+
+func newExternalAccountV2(t *testing.T) database.AccountV2 {
+	t.Helper()
+	requireAccountExternalTest(t,
+		database.GlobalCockroachURI,
+		database.LocalCockroachURI,
+		"LOCAL_REGION",
+	)
+	account, err := database.NewAccountV2(
+		os.Getenv(database.GlobalCockroachURI),
+		os.Getenv(database.LocalCockroachURI),
+	)
+	if err != nil {
+		t.Fatalf("failed to create account client: %v", err)
+	}
+	return account
 }

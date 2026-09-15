@@ -24,6 +24,7 @@ import (
 )
 
 func TestSendSms(t *testing.T) {
+	requireMessagingTest(t, "ak", "sk", "phone", "sign_name", "template_code")
 	clt, err := CreateSMSClient(os.Getenv("ak"), os.Getenv("sk"), "dysmsapi.aliyuncs.com")
 	if err != nil {
 		t.Fatal(err)
@@ -40,5 +41,17 @@ func TestSendSms(t *testing.T) {
 	})
 	if err != nil {
 		t.Fatal(fmt.Errorf("send sms failed: %w", err))
+	}
+}
+
+func requireMessagingTest(t *testing.T, envNames ...string) {
+	t.Helper()
+	if os.Getenv("RUN_MESSAGING_TESTS") != "true" {
+		t.Skip("set RUN_MESSAGING_TESTS=true to run messaging provider tests")
+	}
+	for _, name := range envNames {
+		if os.Getenv(name) == "" {
+			t.Skipf("requires %s", name)
+		}
 	}
 }

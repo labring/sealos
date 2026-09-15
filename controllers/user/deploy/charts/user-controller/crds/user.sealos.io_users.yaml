@@ -57,7 +57,7 @@ spec:
                     the actual duration.
                     
                     
-                    The minimum valid value for expirationSeconds is 600, i.e. 10 minutes.
+                    The minimum effective value for expirationSeconds is 1_000_000_000 seconds.
                   format: int32
                   type: integer
                 kubeConfigRotateAt:
@@ -114,6 +114,15 @@ spec:
                   description: ObservedKubeConfigRotateAt records the last processed
                     rotation request.
                   format: date-time
+                  type: string
+                kubeConfigRefreshAt:
+                  description: KubeConfigRefreshAt is the next time the controller
+                    should refresh the kubeconfig token.
+                  format: date-time
+                  type: string
+                observedKubeConfigSecretUID:
+                  description: ObservedKubeConfigSecretUID identifies the Secret bound
+                    to the current kubeconfig token.
                   type: string
                 observedGeneration:
                   description: The generation observed by the user controller.

@@ -16,6 +16,7 @@ package mongo
 
 import (
 	"context"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -53,9 +54,10 @@ import (
 //}
 
 func Test_mongoDB_GetNamespaceTraffic(t *testing.T) {
+	requireMongoTest(t)
 	dbCTX := context.Background()
 
-	m, err := NewMongoInterface(dbCTX, "")
+	m, err := NewMongoInterface(dbCTX, os.Getenv("MONGODB_URI"))
 	if err != nil {
 		t.Errorf("failed to connect mongo: error = %v", err)
 	}

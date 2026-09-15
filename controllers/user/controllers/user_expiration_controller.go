@@ -83,7 +83,8 @@ func (r *UserExpirationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		r.Recorder = mgr.GetEventRecorderFor(controllerName)
 	}
 	if r.finalizer == nil {
-		r.finalizer = finalizer.NewFinalizer(r.Client, "sealos.io/user.expiration.finalizers")
+		r.finalizer = finalizer.NewFinalizer(r.Client, "sealos.io/user.expiration.finalizers").
+			WithReader(mgr.GetAPIReader())
 	}
 	r.Scheme = mgr.GetScheme()
 	r.config = mgr.GetConfig()

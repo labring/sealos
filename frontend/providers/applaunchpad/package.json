@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test": "vitest run",
     "link-sdk": "rm -rf node_modules/sealos-desktop-sdk && yalc link sealos-desktop-sdk",
     "unlink-sdk": "yalc remove --all && pnpm install sealos-desktop-sdk"
   },
@@ -79,6 +80,7 @@
     "eslint": "8.33.0",
     "eslint-config-next": "13.5.9",
     "svg-inline-loader": "^0.8.2",
+    "vitest": "^1.6.0",
     "webpack-bundle-analyzer": "^4.9.1"
   }
 }

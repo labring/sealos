@@ -4,6 +4,7 @@ import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { SupportReconfigureDBType } from '@/types/db';
 import { VLOGS_CONFIG } from '@/config/vlogs';
+import { toVlogsQueryTime } from '@/utils/vlogsTime';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 interface VlogsPodQueryParams {
@@ -17,7 +18,7 @@ interface VlogsPodQueryParams {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
-    const { dbName, dbType, startTime, endTime, timeRange = '30d', timeZone = 'local' } = req.body;
+    const { dbName, dbType, startTime, endTime, timeRange = '30d' } = req.body;
 
     if (!dbName || !dbType) {
       throw new Error('Missing required parameters: dbName, dbType');
@@ -76,18 +77,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       podQuery: 'true'
     };
 
-    if (startTime && endTime) {
-      // 如果选择的是本地时区，直接使用本地时间字符串而不是UTC时间
-      if (timeZone === 'local') {
-        const startDate = new Date(startTime);
-        const endDate = new Date(endTime);
-        // 格式化为本地时间字符串: YYYY-MM-DDTHH:mm:ss
-        vlogsParams.startTime = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}T${String(startDate.getHours()).padStart(2, '0')}:${String(startDate.getMinutes()).padStart(2, '0')}:${String(startDate.getSeconds()).padStart(2, '0')}`;
-        vlogsParams.endTime = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}T${String(endDate.getHours()).padStart(2, '0')}:${String(endDate.getMinutes()).padStart(2, '0')}:${String(endDate.getSeconds()).padStart(2, '0')}`;
-      } else {
-        vlogsParams.startTime = new Date(startTime).toISOString();
-        vlogsParams.endTime = new Date(endTime).toISOString();
-      }
+    if (startTime !== undefined && endTime !== undefined) {
+      vlogsParams.startTime = toVlogsQueryTime(startTime);
+      vlogsParams.endTime = toVlogsQueryTime(endTime);
     } else {
       vlogsParams.time = timeRange;
     }
