@@ -129,6 +129,7 @@
   "Name": "Name",
   "Network Configuration": "Network",
   "Network port conflict": "Container port conflict",
+  "No configuration changes": "No configuration changes to update",
   "No Data Available": "No Data",
   "No GPU": "No GPU",
   "Node": "Node",
