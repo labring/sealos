@@ -3,9 +3,16 @@ import { ApiResp } from '@/services/kubernet';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
-import { maxReplicasKey, minReplicasKey, pauseKey, appDeployKey } from '@/constants/app';
-import { json2HPA } from '@/utils/deployYaml2Json';
-import { AppEditType } from '@/types/app';
+import { pauseKey, appDeployKey } from '@/constants/app';
+import {
+  buildPauseData,
+  hasSavedHpa,
+  parsePauseData,
+  type PauseData,
+  resolveStartReplicas,
+  restoreHPAYaml,
+  shouldRestoreHpa
+} from '@/utils/pauseResume';
 import { NetworkingV1Api, PatchUtils } from '@kubernetes/client-node';
 
 type UpdateReplicaParams = {
@@ -117,11 +124,10 @@ export async function PauseApp({
     throw new Error('app data error');
   }
 
-  // store restart data
-  const restartAnnotations: Record<string, string> = {
-    target: '',
-    value: ''
-  };
+  // Capture the live HPA spec verbatim so a later start re-applies the exact
+  // policy; a repeat pause keeps the spec saved by the first one.
+  let pauseData: PauseData = { target: '', value: '' };
+  let foundHpa = false;
 
   const requestQueue: Promise<any>[] = [];
 
@@ -131,10 +137,8 @@ export async function PauseApp({
       appName,
       namespace
     );
-    restartAnnotations.target = hpa?.spec?.metrics?.[0]?.resource?.name || 'cpu';
-    restartAnnotations.value = `${
-      hpa?.spec?.metrics?.[0]?.resource?.target?.averageUtilization || 50
-    }`;
+    pauseData = buildPauseData(hpa, app.kind);
+    foundHpa = true;
     requestQueue.push(k8sAutoscaling.deleteNamespacedHorizontalPodAutoscaler(appName, namespace));
   } catch (error: any) {
     if (error?.statusCode !== 404) {
@@ -153,7 +157,9 @@ export async function PauseApp({
   requestQueue.push(...ingressPromises);
 
   // replace source file
-  app.metadata.annotations[pauseKey] = JSON.stringify(restartAnnotations);
+  if (foundHpa || !hasSavedHpa(app.metadata.annotations[pauseKey])) {
+    app.metadata.annotations[pauseKey] = JSON.stringify(pauseData);
+  }
   app.spec.replicas = 0;
 
   requestQueue.push(apiClient.replace(app));
@@ -176,37 +182,21 @@ export async function StartApp({
     throw new Error('app data error');
   }
 
-  app.spec.replicas = +replica;
+  const pauseData = parsePauseData(app.metadata.annotations[pauseKey]);
+  const isResume = shouldRestoreHpa(pauseData);
+
+  // An elastic (paused) app restores to the saved policy’s minReplicas,
+  // otherwise honor the explicit replica request.
+  app.spec.replicas = isResume
+    ? resolveStartReplicas(pauseData, app.metadata.annotations)
+    : +replica;
 
   const requestQueue: Promise<any>[] = [apiClient.replace(app)];
 
-  if (app.metadata.annotations[pauseKey]) {
-    const pauseData: {
-      target: string;
-      value: string;
-    } = JSON.parse(app.metadata.annotations[pauseKey]);
-
-    // replace source file
+  if (isResume && pauseData) {
     delete app.metadata.annotations[pauseKey];
-    console.log(pauseData, 'pauseData');
-    if (pauseData.target) {
-      const hpaYaml = json2HPA({
-        appName,
-        hpa: {
-          use: true,
-          target: pauseData.target,
-          value: pauseData.value,
-          minReplicas: app.metadata.annotations[minReplicasKey]
-            ? app.metadata.annotations[minReplicasKey]
-            : '1',
-          maxReplicas: app.metadata.annotations[maxReplicasKey]
-            ? app.metadata.annotations[maxReplicasKey]
-            : '2'
-        }
-      } as unknown as AppEditType);
-
-      requestQueue.push(applyYamlList([hpaYaml], 'create'));
-    }
+    const hpaYaml = restoreHPAYaml(appName, pauseData, app.kind);
+    requestQueue.push(applyYamlList([hpaYaml], 'create'));
   }
 
   // handle ingress - change pause to nginx
