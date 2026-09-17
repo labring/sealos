@@ -851,19 +851,20 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
               const parseYamls = formData2Yamls(data);
               setYamlList(formData2DisplayYamls(data));
 
-              const patch = appName
-                ? patchYamlList({
-                    parsedOldYamlList: formOldYamls.current.map((item) => item.value),
-                    parsedNewYamlList: parseYamls.map((item) => item.value),
-                    originalYamlList: crOldYamls.current
-                  })
-                : undefined;
-
-              if (appName && patch.length === 0) {
-                return toast({
-                  status: 'warning',
-                  title: t('No configuration changes')
+              let patch: AppPatchPropsType | undefined;
+              if (appName) {
+                patch = patchYamlList({
+                  parsedOldYamlList: formOldYamls.current.map((item) => item.value),
+                  parsedNewYamlList: parseYamls.map((item) => item.value),
+                  originalYamlList: crOldYamls.current
                 });
+
+                if (patch.length === 0) {
+                  return toast({
+                    status: 'warning',
+                    title: t('No configuration changes')
+                  });
+                }
               }
 
               // gpu inventory check
