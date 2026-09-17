@@ -5,6 +5,7 @@ import { getSmoothStepPath } from '@/utils/smooth-step-path';
 import { formatMoney } from '@/utils/format';
 import { useTranslation } from 'next-i18next';
 import CurrencySymbol from '../CurrencySymbol';
+import { BillingCostStatus, getCostStatusLabelKey } from '@/components/billing/regionConsumption';
 
 const GRID_SIZE = '2.5rem';
 
@@ -34,7 +35,7 @@ export type BillingNode = {
   cost: number;
   type: 'total' | 'region' | 'workspace';
   dependsOn: string | null;
-  status?: 'loading' | 'success' | 'error' | 'partial';
+  status?: BillingCostStatus;
 };
 
 function CostCard({
@@ -49,14 +50,8 @@ function CostCard({
   onClick: (nodeId: string) => void;
 } & Pick<BillingNode, 'id' | 'name' | 'cost' | 'status'>) {
   const { t } = useTranslation();
-  const statusLabel =
-    status === 'error'
-      ? t('common:cost_unavailable')
-      : status === 'loading'
-      ? t('common:cost_loading')
-      : status === 'partial'
-      ? t('common:cost_partial')
-      : null;
+  const statusLabelKey = getCostStatusLabelKey(status);
+  const statusLabel = statusLabelKey ? t(statusLabelKey) : null;
 
   return (
     <button
@@ -71,13 +66,10 @@ function CostCard({
         className="text-gray-900 font-bold data-[selected=true]:text-blue-600"
         data-selected={selected}
       >
-        {status === 'success' || status === 'partial' ? (
+        {status === 'success' ? (
           <>
             <CurrencySymbol />
             <span>{formatMoney(cost).toFixed(2)}</span>
-            {status === 'partial' && statusLabel && (
-              <span className="ml-1 text-amber-700 text-xs font-medium">({statusLabel})</span>
-            )}
           </>
         ) : statusLabel ? (
           <span className="text-amber-700 text-xs font-medium">{statusLabel}</span>
@@ -92,14 +84,12 @@ function CostNodesCanvas({
   selectedRegion: externalSelectedRegion,
   selectedWorkspace: externalSelectedWorkspace,
   onRegionSelect,
-  onRegionRetry,
   onWorkspaceSelect
 }: {
   nodes: BillingNode[];
   selectedRegion?: string | null;
   selectedWorkspace?: string | null;
   onRegionSelect?: (regionId: string | null) => void;
-  onRegionRetry?: (regionId: string) => void;
   onWorkspaceSelect?: (workspaceId: string | null) => void;
 }) {
   const transformContext = useTransformContext();
@@ -295,10 +285,7 @@ function CostNodesCanvas({
             id={node.id}
             name={node.name}
             cost={node.cost}
-            onClick={(id) => {
-              handleRegionSelect(id);
-              if (node.status === 'error') onRegionRetry?.(id);
-            }}
+            onClick={(id) => handleRegionSelect(id)}
             selected={selectedRegion === node.id}
           />
         </CanvasNode>
@@ -329,7 +316,6 @@ type CostTreeProps = {
   selectedRegion?: string | null;
   selectedWorkspace?: string | null;
   onRegionSelect?: (regionId: string | null) => void;
-  onRegionRetry?: (regionId: string) => void;
   onWorkspaceSelect?: (workspaceId: string | null) => void;
 };
 
@@ -339,7 +325,6 @@ export function CostTree({
   selectedRegion: externalSelectedRegion,
   selectedWorkspace: externalSelectedWorkspace,
   onRegionSelect,
-  onRegionRetry,
   onWorkspaceSelect
 }: CostTreeProps) {
   const { t } = useTranslation();
@@ -401,7 +386,6 @@ export function CostTree({
             selectedRegion={externalSelectedRegion}
             selectedWorkspace={externalSelectedWorkspace}
             onRegionSelect={onRegionSelect}
-            onRegionRetry={onRegionRetry}
             onWorkspaceSelect={onWorkspaceSelect}
           />
         </TransformComponent>

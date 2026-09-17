@@ -5,7 +5,7 @@ import axios, { AxiosRequestConfig, AxiosResponse, RawAxiosRequestHeaders } from
 const request = axios.create({
   baseURL: '/',
   withCredentials: true,
-  timeout: 40000
+  timeout: 60000
 });
 
 // request interceptor
