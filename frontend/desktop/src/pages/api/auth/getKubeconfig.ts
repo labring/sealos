@@ -1,6 +1,9 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { jsonRes } from '@/services/backend/response';
-import { getUserKubeconfigNotPatch } from '@/services/backend/kubernetes/admin';
+import {
+  getUserKubeconfigNotPatch,
+  KubeconfigAccessDeniedError
+} from '@/services/backend/kubernetes/admin';
 import { verifyAccessToken, verifyAppToken } from '@/services/backend/auth';
 
 import { switchKubeconfigNamespace } from '@/utils/switchKubeconfigNamespace';
@@ -26,6 +29,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   } catch (err) {
     console.log(err);
+    if (err instanceof KubeconfigAccessDeniedError) {
+      return jsonRes(res, {
+        code: err.statusCode,
+        message: err.message
+      });
+    }
     return jsonRes(res, {
       message: 'Failed to get kubeconfig',
       code: 500

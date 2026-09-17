@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { jsonRes } from '@/services/backend/response';
 import { verifyAccessToken } from '@/services/backend/auth';
-import { K8sApiDefault } from '@/services/backend/kubernetes/admin';
+import { isAdminKubeconfigUser, K8sApiDefault } from '@/services/backend/kubernetes/admin';
 import * as k8s from '@kubernetes/client-node';
 import { k8sRFC3339Time } from '@/utils/format';
 import { switchKubeconfigNamespace } from '@/utils/switchKubeconfigNamespace';
@@ -13,6 +13,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return jsonRes(res, {
         code: 401,
         message: 'invalid token'
+      });
+    }
+
+    if (isAdminKubeconfigUser(regionUser.userCrName)) {
+      return jsonRes(res, {
+        code: 403,
+        message: 'Kubeconfig rotation is forbidden for admin users'
       });
     }
 
