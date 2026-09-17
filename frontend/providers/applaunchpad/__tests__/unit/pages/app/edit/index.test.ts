@@ -29,7 +29,9 @@ describe('EditApp yaml display state', () => {
 
     expect(start).toBeGreaterThanOrEqual(0);
     expect(source.indexOf('removeStoreList(originalIndex)')).toBeGreaterThan(start);
-    expect(source).toContain('existingStores.some((store) => store.path === item.path)');
+    expect(source).toMatch(
+      /existingStores\.some\(\s*\(store\) => store\.path === item\.path\s*\)/
+    );
     expect(source).toContain("t('Store At Least One')");
     expect(source).not.toContain('localStores.length === 1');
   });
@@ -47,5 +49,23 @@ describe('EditApp yaml display state', () => {
     expect(handleDomainVerified).toContain('json2Service(data, ownerReferences, {');
     expect(handleDomainVerified).toContain('includeNodePort: false');
     expect(handleDomainVerified).toContain("postDeployApp(yamlList, 'replace')");
+  });
+
+  it('keeps Service identity when public-access changes do not require a new Service', () => {
+    const source = readFileSync(
+      new URL('../../../../../src/pages/app/edit/components/NetworkSection.tsx', import.meta.url),
+      'utf8'
+    );
+    const helperStart = source.indexOf('const getServiceBindingNetwork');
+    const helperEnd = source.indexOf('const getNextAvailablePort', helperStart);
+    const helper = source.slice(helperStart, helperEnd);
+
+    expect(helperStart).toBeGreaterThanOrEqual(0);
+    expect(helperEnd).toBeGreaterThan(helperStart);
+    expect(helper).toContain('serviceIdentityChanges');
+    expect(helper).toContain('? withoutMainServiceBinding(network)');
+    expect(source).toMatch(
+      /getServiceBindingNetwork\(\s*currentNetwork,\s*false,\s*'TCP'\s*\)/
+    );
   });
 });

@@ -458,7 +458,7 @@ export function NetworkSection({
           updateNetworks(
             index,
             withDefaultRoutes({
-              ...withoutMainServiceBinding(currentNetwork),
+              ...getServiceBindingNetwork(currentNetwork, false, 'TCP'),
               networkName: currentNetwork.networkName || `network-${nanoid()}`,
               protocol: 'TCP',
               appProtocol: currentNetwork.appProtocol || 'HTTP',
@@ -475,8 +475,9 @@ export function NetworkSection({
         case 'DISABLE_EXTERNAL_ACCESS': {
           const { index } = action.payload;
           clearPublicDomainErrorByIndex(index);
+          const currentNetwork = currentNetworks[index];
           updateNetworks(index, {
-            ...withoutMainServiceBinding(currentNetworks[index]),
+            ...getServiceBindingNetwork(currentNetwork, false, 'TCP'),
             openPublicDomain: false,
             openNodePort: false,
             customDomain: '',
