@@ -129,6 +129,7 @@
   "Name": "名字",
   "Network Configuration": "网络配置",
   "Network port conflict": "容器端口冲突",
+  "No configuration changes": "未检测到配置变更，无需提交",
   "No Data Available": "暂无数据",
   "No GPU": "不使用 GPU",
   "Node": "节点",

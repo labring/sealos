@@ -19,7 +19,12 @@ import {
 } from '@/store/static';
 import { useUserStore } from '@/store/user';
 import type { YamlItemType } from '@/types';
-import type { AppEditSyncedFields, AppEditType, DeployKindsType } from '@/types/app';
+import type {
+  AppEditSyncedFields,
+  AppEditType,
+  AppPatchPropsType,
+  DeployKindsType
+} from '@/types/app';
 import { adaptEditAppData, YamlKindEnum } from '@/utils/adapt';
 import type { V1OwnerReference } from '@kubernetes/client-node';
 import {
@@ -394,7 +399,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   );
 
   const submitSuccess = useCallback(
-    async (yamlList: YamlItemType[]) => {
+    async (yamlList: YamlItemType[], submittedPatch?: AppPatchPropsType) => {
       if (!createCompleted) {
         return router.push('/app/detail?name=hello&guide=true');
       }
@@ -404,11 +409,23 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         const parsedNewYamlList = yamlList.map((item) => item.value);
 
         if (appName) {
-          const patch = patchYamlList({
-            parsedOldYamlList: formOldYamls.current.map((item) => item.value),
-            parsedNewYamlList: parsedNewYamlList,
-            originalYamlList: crOldYamls.current
-          });
+          const patch =
+            submittedPatch ||
+            patchYamlList({
+              parsedOldYamlList: formOldYamls.current.map((item) => item.value),
+              parsedNewYamlList: parsedNewYamlList,
+              originalYamlList: crOldYamls.current
+            });
+
+          if (patch.length === 0) {
+            toast({
+              status: 'warning',
+              title: t('No configuration changes')
+            });
+            setIsLoading(false);
+            return;
+          }
+
           await putApp({
             patch,
             appName,
@@ -834,6 +851,21 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
               const parseYamls = formData2Yamls(data);
               setYamlList(formData2DisplayYamls(data));
 
+              const patch = appName
+                ? patchYamlList({
+                    parsedOldYamlList: formOldYamls.current.map((item) => item.value),
+                    parsedNewYamlList: parseYamls.map((item) => item.value),
+                    originalYamlList: crOldYamls.current
+                  })
+                : undefined;
+
+              if (appName && patch.length === 0) {
+                return toast({
+                  status: 'warning',
+                  title: t('No configuration changes')
+                });
+              }
+
               // gpu inventory check
               if (data.gpu?.type) {
                 const inventory = countGpuInventory(data.gpu?.type);
@@ -944,7 +976,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
                       : undefined
                   }
                 });
-                submitSuccess(parseYamls);
+                submitSuccess(parseYamls, patch);
               })();
             }, submitError)();
           }}
