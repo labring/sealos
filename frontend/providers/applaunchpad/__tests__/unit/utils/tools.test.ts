@@ -118,6 +118,20 @@ const getPatchValue = (actions: ReturnType<typeof patchYamlList>, kind: string) 
   return action?.type === 'patch' ? (action.value as any) : undefined;
 };
 
+describe('patchYamlList no-op update', () => {
+  it('returns no actions when the generated configuration is unchanged', () => {
+    const workload = createWorkload('Deployment', false);
+
+    expect(
+      patchYamlList({
+        parsedOldYamlList: [yaml.dump(workload)],
+        parsedNewYamlList: [yaml.dump(workload)],
+        originalYamlList: [clone(workload)] as DeployKindsType[]
+      })
+    ).toEqual([]);
+  });
+});
+
 describe.each(['Deployment', 'StatefulSet'] as const)(
   'patchYamlList private-to-public %s update',
   (kind) => {
