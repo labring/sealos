@@ -12,7 +12,6 @@ Usage: $0 <source-namespace> <new-namespace> <new-domain> [new-image]
 Examples:
   $0 applaunchpad-frontend applaunchpad-brain applaunchpad-brain.192.168.12.53.nip.io
   $0 applaunchpad-frontend applaunchpad-test applaunchpad-test.192.168.12.53.nip.io ghcr.io/labring/sealos:latest
-  $0 template-frontend template-test template-test.192.168.12.53.nip.io
 
 Notes:
   - Automatically copies Deployment, Service, ConfigMap, Ingress from source namespace
