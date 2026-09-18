@@ -43,6 +43,7 @@ const (
 const (
 	LowBalancePeriod      DebtStatusType = "LowBalancePeriod"
 	CriticalBalancePeriod DebtStatusType = "CriticalBalancePeriod"
+	OneDayBalancePeriod   DebtStatusType = "OneDayBalancePeriod"
 	DebtPeriod            DebtStatusType = "DebtPeriod"
 	DebtDeletionPeriod    DebtStatusType = "DebtDeletionPeriod"
 )
