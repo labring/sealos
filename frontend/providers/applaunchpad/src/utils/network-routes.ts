@@ -1,7 +1,17 @@
-import type { AppNetworkRouteType } from '@/types/app';
+import type { AppEditType, AppNetworkRouteType, TransportProtocolType } from '@/types/app';
 
 const targetsMainService = (route: AppNetworkRouteType, networkServiceName?: string) =>
   !route.serviceName || (!!networkServiceName && route.serviceName === networkServiceName);
+
+export const serviceIdentityChanges = ({
+  currentNetwork,
+  nextOpenNodePort,
+  nextProtocol
+}: {
+  currentNetwork: Pick<AppEditType['networks'][number], 'openNodePort' | 'protocol'>;
+  nextOpenNodePort: boolean;
+  nextProtocol: TransportProtocolType;
+}) => currentNetwork.openNodePort !== nextOpenNodePort || currentNetwork.protocol !== nextProtocol;
 
 export const rebindMainServiceRoutes = ({
   routes,
