@@ -314,6 +314,18 @@ const isWorkloadKind = (
 ): kind is YamlKindEnum.Deployment | YamlKindEnum.StatefulSet =>
   kind === YamlKindEnum.Deployment || kind === YamlKindEnum.StatefulSet;
 
+export const patchWillRestartApp = (patch: AppPatchPropsType) =>
+  patch.some((item) => {
+    if (!isWorkloadKind(item.kind)) return false;
+
+    return (
+      item.type === 'recreate' ||
+      item.type === 'create' ||
+      item.type === 'delete' ||
+      (item.type === 'patch' && item.restartRequired === true)
+    );
+  });
+
 const createRestartTimePatch = (workload: DeployKindsType, restartTime: string) => ({
   apiVersion: workload.apiVersion,
   kind: workload.kind,
@@ -359,13 +371,15 @@ const ensureRestartTimePatch = ({
     workloadPatch.value.spec.template.metadata.labels =
       workloadPatch.value.spec.template.metadata.labels || {};
     workloadPatch.value.spec.template.metadata.labels.restartTime = restartTime;
+    workloadPatch.restartRequired = true;
     return;
   }
 
   actions.push({
     type: 'patch',
     kind: workload.kind,
-    value: createRestartTimePatch(workload, restartTime)
+    value: createRestartTimePatch(workload, restartTime),
+    restartRequired: true
   });
 };
 
@@ -606,11 +620,45 @@ export const patchYamlList = ({
         }
       }
 
-      actions.push({
-        type: 'patch',
-        kind: newYamlJson.kind as `${YamlKindEnum}`,
-        value: actionsJson as any
-      });
+      const requiresStatefulSetRecreate =
+        newYamlJson.kind === YamlKindEnum.StatefulSet &&
+        patchTouchesPath(patchRes, '/spec/volumeClaimTemplates') &&
+        (() => {
+          const oldStatefulSet = oldFormJson as any;
+          const newStatefulSet = newYamlJson as any;
+          const oldTemplateNames = new Set(
+            (oldStatefulSet.spec?.volumeClaimTemplates || []).map(
+              (template: any) => template.metadata?.name
+            )
+          );
+          const newTemplateNames = new Set(
+            (newStatefulSet.spec?.volumeClaimTemplates || []).map(
+              (template: any) => template.metadata?.name
+            )
+          );
+
+          return (
+            oldTemplateNames.size !== newTemplateNames.size ||
+            [...oldTemplateNames].some((name) => !newTemplateNames.has(name))
+          );
+        })();
+
+      if (requiresStatefulSetRecreate) {
+        actions.push({
+          type: 'recreate',
+          kind: 'StatefulSet',
+          value: actionsJson as any
+        });
+      } else {
+        actions.push({
+          type: 'patch',
+          kind: newYamlJson.kind as `${YamlKindEnum}`,
+          value: actionsJson as any,
+          restartRequired:
+            isWorkloadKind(newYamlJson.kind) &&
+            patchTouchesPath(patchRes, '/spec/template')
+        });
+      }
     } else {
       actions.push({
         type: 'create',

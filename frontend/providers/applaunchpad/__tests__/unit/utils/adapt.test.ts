@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { adaptAppDetail } from '@/utils/adapt';
+import { json2DeployCr, yamlString2Objects } from '@/utils/deployYaml2Json';
 import type { DeployKindsType } from '@/types/app';
 
 const createDeployment = (): DeployKindsType =>
@@ -290,5 +291,71 @@ describe('adaptAppDetail', () => {
       openNodePort: true,
       openPublicDomain: false
     });
+  });
+
+  it('preserves legacy ConfigMap item paths when adding a StatefulSet volume', async () => {
+    const statefulSet = createDeployment() as any;
+    statefulSet.kind = 'StatefulSet';
+    statefulSet.spec.serviceName = 'demo';
+    statefulSet.spec.volumeClaimTemplates = [{ metadata: { name: 'www' }, spec: {} }];
+    statefulSet.spec.template.spec.volumes = [
+      {
+        name: 'nginx-config',
+        configMap: {
+          name: 'demo',
+          items: [
+            {
+              key: 'default-config',
+              path: './etc/nginx/conf.d/default.conf'
+            }
+          ]
+        }
+      }
+    ];
+    statefulSet.spec.template.spec.containers[0].volumeMounts = [
+      {
+        name: 'nginx-config',
+        mountPath: '/etc/nginx/conf.d/default.conf',
+        subPath: './etc/nginx/conf.d/default.conf'
+      },
+      { name: 'www', mountPath: '/var/www' }
+    ];
+    const configMap = {
+      apiVersion: 'v1',
+      kind: 'ConfigMap',
+      metadata: { name: 'demo' },
+      data: { 'default-config': 'server {}' }
+    } as DeployKindsType;
+
+    const app = await adaptAppDetail([statefulSet, createService(), configMap], {
+      SEALOS_DOMAIN: '192.168.13.209.nip.io',
+      SEALOS_USER_DOMAINS: []
+    });
+    app.storeList.push({ name: 'data', path: '/data', value: 1, storageType: 'local' });
+
+    expect(app.configMapList).toContainEqual({
+      mountPath: '/etc/nginx/conf.d/default.conf',
+      key: 'default-config',
+      value: 'server {}',
+      volumeName: 'nginx-config',
+      subPath: './etc/nginx/conf.d/default.conf'
+    });
+
+    const recreated = yamlString2Objects(json2DeployCr(app, 'statefulset'))[0] as any;
+    expect(recreated.spec.template.spec.volumes).toContainEqual({
+      name: 'nginx-config',
+      configMap: {
+        name: 'demo',
+        items: [{ key: 'default-config', path: './etc/nginx/conf.d/default.conf' }]
+      }
+    });
+    expect(recreated.spec.template.spec.containers[0].volumeMounts).toContainEqual({
+      name: 'nginx-config',
+      mountPath: '/etc/nginx/conf.d/default.conf',
+      subPath: './etc/nginx/conf.d/default.conf'
+    });
+    expect(recreated.spec.volumeClaimTemplates.map((item: any) => item.metadata.name)).toContain(
+      'data'
+    );
   });
 });

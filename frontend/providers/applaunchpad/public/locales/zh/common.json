@@ -52,6 +52,7 @@
   "Confirm": "确认",
   "Confirm Deploy Application?": "确认部署应用？",
   "Confirm Update Application?": "确认更新应用？",
+  "Confirm Update Application With Restart?": "此次变更将重启应用，是否继续？",
   "Confirm deletion": "确认删除",
   "Confirm to restart this application?": "确认重启该应用？",
   "Container Port": "容器暴露端口",

@@ -20,7 +20,15 @@ export const putApp = (data: {
     module: 'applaunchpad'
   });
 
-  return POST('/api/updateApp', data);
+  return POST('/api/updateApp', {
+    ...data,
+    patch: data.patch.map((item) => {
+      if (item.type !== 'patch') return item;
+
+      const { restartRequired: _restartRequired, ...patchItem } = item;
+      return patchItem;
+    })
+  });
 };
 
 export const getMyApps = () =>

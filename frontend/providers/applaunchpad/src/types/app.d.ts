@@ -261,7 +261,14 @@ export interface PodEvent {
 
 export type AppPatchPropsType = (
   | { type: 'delete'; kind: `${YamlKindEnum}`; name: string }
-  | { type: 'patch'; kind: `${YamlKindEnum}`; value: Record<string, any> }
+  | {
+      type: 'patch';
+      kind: `${YamlKindEnum}`;
+      value: Record<string, any>;
+      // Used only by the edit confirmation UI; omitted from update API requests.
+      restartRequired?: boolean;
+    }
+  | { type: 'recreate'; kind: 'StatefulSet'; value: Record<string, any> }
   | { type: 'create'; kind: `${YamlKindEnum}`; value: string }
 )[];
 
