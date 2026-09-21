@@ -1,4 +1,10 @@
 import {
+  CODE_REFRESH_PREFIX,
+  exchangeAuthorizationCode,
+  refreshCodeToken
+} from '@/services/backend/oauth2/authorization-code';
+import { codeParameters, limitCodeHttp } from '@/services/backend/oauth2/code-http';
+import {
   OAuth2ErrorResponseSchema,
   OAuth2TokenRequestSchema,
   OAuth2TokenSuccessResponseSchema
@@ -23,6 +29,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    const normalized = normalizeOAuth2Body(req.body);
+    if (
+      normalized.grant_type === 'authorization_code' ||
+      (normalized.grant_type === 'refresh_token' &&
+        typeof normalized.refresh_token === 'string' &&
+        normalized.refresh_token.startsWith(CODE_REFRESH_PREFIX))
+    ) {
+      const params = codeParameters(req.body);
+      await limitCodeHttp(req, params.grant_type === 'authorization_code');
+      const payload =
+        params.grant_type === 'authorization_code'
+          ? await exchangeAuthorizationCode(params)
+          : await refreshCodeToken(params);
+      return res.status(200).json(OAuth2TokenSuccessResponseSchema.parse(payload));
+    }
     const parsedBodyResult = OAuth2TokenRequestSchema.safeParse(normalizeOAuth2Body(req.body));
     if (!parsedBodyResult.success) {
       return res.status(400).json(
