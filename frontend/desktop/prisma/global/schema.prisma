@@ -44,6 +44,7 @@ model OAuthClient {
   user              User?           @relation(fields: [userUid], references: [uid], onDelete: SetNull)
   clientSecretHash  String?
   allowedGrantTypes String[]        @default([])
+  redirectUris      String[]        @default([])
   name              String
   logoUrl           String?
   createdAt         DateTime        @default(now())
@@ -532,4 +533,54 @@ enum TaskType {
 enum TaskStatus {
   NOT_COMPLETED
   COMPLETED
+}
+
+// Separate state and credentials for authorization-code clients; device grants are untouched.
+model OAuthAuthorizationRequest {
+  id          String   @id @default(uuid()) @db.Uuid
+  clientId    String
+  redirectUri String
+  state       String
+  challenge   String
+  browserHash String
+  status      String   @default("PENDING")
+  userUid     String?  @db.Uuid
+  codeHash    String?  @unique
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+
+  @@index([expiresAt])
+  @@index([clientId])
+}
+
+model OAuthRefreshSession {
+  id        String                  @id @default(uuid()) @db.Uuid
+  clientId  String
+  userUid   String                  @db.Uuid
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime                @default(now())
+  tokens    OAuthCodeRefreshToken[]
+
+  @@index([clientId])
+  @@index([userUid])
+  @@index([expiresAt])
+}
+
+model OAuthCodeRefreshToken {
+  hash       String              @id
+  sessionId  String              @db.Uuid
+  session    OAuthRefreshSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  consumedAt DateTime?
+  createdAt  DateTime            @default(now())
+
+  @@index([sessionId])
+}
+
+model OAuthCodeRateLimit {
+  key       String   @id
+  count     Int      @default(1)
+  expiresAt DateTime
+
+  @@index([expiresAt])
 }

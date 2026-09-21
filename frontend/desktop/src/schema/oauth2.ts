@@ -14,6 +14,7 @@ export const OAuthClientSchema = z.object({
   userUid: z.string().uuid().nullable().optional(),
   clientSecretHash: z.string().nullable().optional(),
   allowedGrantTypes: z.array(z.string()),
+  redirectUris: z.array(z.string()).default([]),
   name: z.string().min(1),
   logoUrl: z.string().url().nullable().optional(),
   createdAt: z.date(),
@@ -88,6 +89,9 @@ export const OAuth2TokenSuccessResponseSchema = z.object({
 
 export const OAuth2ErrorCodeSchema = z.enum([
   'invalid_request',
+  'invalid_scope',
+  'unsupported_response_type',
+  'temporarily_unavailable',
   'invalid_client',
   'invalid_grant',
   'unauthorized_client',

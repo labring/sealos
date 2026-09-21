@@ -1,5 +1,11 @@
 import { OauthProvider } from '@/types/user';
 
+const CODE_PENDING_REQUEST_ID_KEY = 'oauth_code_pending_request_id';
+
+export const setPendingCodeRequestId = (requestId: string) => {
+  if (typeof window !== 'undefined') sessionStorage.setItem(CODE_PENDING_REQUEST_ID_KEY, requestId);
+};
+
 const OAUTH2_PENDING_REQUEST_ID_KEY = 'oauth2_pending_request_id';
 
 export const getProxiedOAuth2InitiatorUrl = ({
@@ -58,6 +64,9 @@ export const consumePendingOauth2RequestId = () => {
 
 export const consumePendingOauth2RedirectPath = () => {
   const requestId = consumePendingOauth2RequestId();
-  if (!requestId) return '';
-  return buildOauth2ConsentPath(requestId);
+  if (requestId) return buildOauth2ConsentPath(requestId);
+  if (typeof window === 'undefined') return '';
+  const codeRequestId = sessionStorage.getItem(CODE_PENDING_REQUEST_ID_KEY);
+  sessionStorage.removeItem(CODE_PENDING_REQUEST_ID_KEY);
+  return codeRequestId ? `/oauth2/code?request_id=${encodeURIComponent(codeRequestId)}` : '';
 };
