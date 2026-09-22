@@ -49,7 +49,7 @@ func (k *KubeadmRuntime) InitMaster0() error {
 	if err != nil {
 		return fmt.Errorf("init master0 failed, error: %s. Please clean and reinstall", err.Error())
 	}
-	return nil
+	return k.copyMasterKubeConfig(master0)
 }
 
 func (k *KubeadmRuntime) imagePull(hostAndPort, version string) error {

@@ -25,6 +25,15 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+// copyKubeAdminConfigCommand keeps the long-standing convenience contract for
+// the node where the cluster is bootstrapped. Additional nodes deliberately do
+// not receive this cluster-admin credential.
+const copyKubeAdminConfigCommand = `rm -rf $HOME/.kube/config && mkdir -p $HOME/.kube && cp /etc/kubernetes/admin.conf $HOME/.kube/config`
+
+func (k *KubeadmRuntime) copyMasterKubeConfig(host string) error {
+	return k.sshCmdAsync(host, copyKubeAdminConfigCommand)
+}
+
 func (k *KubeadmRuntime) deleteStaticPod(component string) error {
 	podIDSh := fmt.Sprintf("crictl ps -a --name %s -o json", component)
 	type crictlPS struct {
