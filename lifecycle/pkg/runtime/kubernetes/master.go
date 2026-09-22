@@ -49,7 +49,7 @@ func (k *KubeadmRuntime) InitMaster0() error {
 	if err != nil {
 		return fmt.Errorf("init master0 failed, error: %s. Please clean and reinstall", err.Error())
 	}
-	return k.copyMasterKubeConfig(master0)
+	return nil
 }
 
 func (k *KubeadmRuntime) imagePull(hostAndPort, version string) error {
@@ -175,10 +175,6 @@ func (k *KubeadmRuntime) joinMasters(masters []string) error {
 			return fmt.Errorf("add master0 apiserver domain hosts in %s failed %v", master, err)
 		}
 
-		err = k.copyMasterKubeConfig(master)
-		if err != nil {
-			return err
-		}
 		logger.Info("succeeded in joining %s as master", master)
 	}
 	return nil

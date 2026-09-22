@@ -460,9 +460,6 @@ func (k *KubeadmRuntime) syncRemoteAdminKubeConfigIdentity(version string) error
 			); err != nil {
 				return fmt.Errorf("regenerate admin.conf on %s: %w", master, err)
 			}
-			if err := k.copyMasterKubeConfig(master); err != nil {
-				return fmt.Errorf("refresh $HOME/.kube/config on %s: %w", master, err)
-			}
 		}
 		return nil
 	}
@@ -504,9 +501,6 @@ func (k *KubeadmRuntime) syncRemoteAdminKubeConfigWithLocalIdentityModel(version
 		}
 		if err := k.sshCopy(master, filepath.Join(stagingDir, adminKubeConfigName), path.Join("/etc/kubernetes", adminKubeConfigName)); err != nil {
 			return fmt.Errorf("copy admin.conf to %s: %w", master, err)
-		}
-		if err := k.copyMasterKubeConfig(master); err != nil {
-			return fmt.Errorf("refresh $HOME/.kube/config on %s: %w", master, err)
 		}
 	}
 	return nil
