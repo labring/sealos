@@ -17,6 +17,7 @@ limitations under the License.
 package kubernetes
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"

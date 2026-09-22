@@ -17,6 +17,7 @@ package kubernetes
 import (
 	"context"
 	"strings"
+	"sync"
 	"testing"
 
 	clientkubernetes "github.com/labring/sealos/pkg/client-go/kubernetes"
@@ -46,11 +47,18 @@ func TestDeleteStaticPodMissingContainerError(t *testing.T) {
 
 type stubSSH struct {
 	cmdToStringResponses map[string]string
+	copyCalls            []string
+	mu                   sync.Mutex
 }
 
 var _ ssh.Interface = (*stubSSH)(nil)
 
-func (s *stubSSH) Copy(host, src, dst string) error { return nil }
+func (s *stubSSH) Copy(host, src, dst string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.copyCalls = append(s.copyCalls, host+"|"+src+"|"+dst)
+	return nil
+}
 
 func (s *stubSSH) Fetch(host, src, dst string) error { return nil }
 
