@@ -118,7 +118,7 @@ func newCertCmd() *cobra.Command {
 	}
 	cmd.Flags().StringVarP(&clusterName, "cluster", "c", "default", "name of cluster to applied exec action")
 	cmd.Flags().StringSliceVar(&altNames, "alt-names", []string{}, "add extra Subject Alternative Names for certs, domain or ip, eg. sealos.io or 10.103.97.2")
-	cmd.Flags().StringSliceVar(&renewTargets, "renew", nil, "renew local cert targets; local admin.conf is synced to node $HOME/.kube/config, super-admin.conf stays local only")
+	cmd.Flags().StringSliceVar(&renewTargets, "renew", nil, "renew local certificate targets; super-admin.conf stays local only")
 	cmd.Flags().StringSliceVar(&groups, "groups", nil, "override admin kubeconfig certificate groups when renewing admin.conf or all")
 
 	return cmd
