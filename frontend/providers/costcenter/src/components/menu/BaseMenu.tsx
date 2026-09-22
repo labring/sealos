@@ -4,12 +4,14 @@ import {
   ButtonProps,
   Flex,
   FlexProps,
+  Input,
   Popover,
   PopoverContent,
   PopoverTrigger,
+  Text,
   useDisclosure
 } from '@chakra-ui/react';
-import { useCallback } from 'react';
+import { useCallback, useRef, useState } from 'react';
 // 多个下拉选项异步获取，如何处理菜单
 
 export default function BaseMenu({
@@ -21,6 +23,8 @@ export default function BaseMenu({
   neeReset = false,
   triggerRender,
   itemRender,
+  searchPlaceholder,
+  emptyText,
   ...props
 }: {
   isDisabled: boolean;
@@ -31,13 +35,31 @@ export default function BaseMenu({
   triggerRender?: (props: { text: string; idx: number }) => JSX.Element;
   itemRender?: (props: { text: string; idx: number }) => JSX.Element;
   innerWidth?: ButtonProps['width'];
+  searchPlaceholder?: string;
+  emptyText?: string;
 } & FlexProps) {
   const { isOpen, onClose, onOpen } = useDisclosure();
-
-  const onClick = useCallback((idx: number) => {
-    setItem(idx);
+  const [search, setSearch] = useState('');
+  const searchRef = useRef<HTMLInputElement>(null);
+  const closeMenu = useCallback(() => {
     onClose();
-  }, []);
+    setSearch('');
+  }, [onClose]);
+  // Preserve the original index after searching so selection still uses the namespace ID.
+  const visibleItems = itemlist
+    .map((text, idx) => ({ text, idx }))
+    .filter(
+      ({ text, idx }) =>
+        !searchPlaceholder || idx === 0 || text.toLowerCase().includes(search.trim().toLowerCase())
+    );
+
+  const onClick = useCallback(
+    (idx: number) => {
+      setItem(idx);
+      closeMenu();
+    },
+    [setItem, closeMenu]
+  );
   // useEffect(() => {
   // 	if (neeReset) {
   // 		onClick(0);
@@ -46,7 +68,12 @@ export default function BaseMenu({
 
   return (
     <Flex {...props}>
-      <Popover onClose={onClose} onOpen={onOpen} isOpen={isOpen}>
+      <Popover
+        onClose={closeMenu}
+        onOpen={onOpen}
+        isOpen={isOpen}
+        initialFocusRef={searchPlaceholder ? searchRef : undefined}
+      >
         <PopoverTrigger>
           <Button
             variant={'white-bg-icon'}
@@ -100,35 +127,56 @@ export default function BaseMenu({
           gap={'4px'}
           borderRadius={'6px'}
         >
-          {itemlist.map((v, idx) => (
-            <Button
-              variant={'white-bg-icon'}
-              key={v + idx}
-              w={'auto'}
-              {...(idx === itemIdx
-                ? {
-                    color: 'brightBlue.600',
-                    bg: 'rgba(17, 24, 36, 0.05)'
-                  }
-                : {
-                    color: 'grayModern.600',
-                    bg: 'white'
-                  })}
-              fontFamily="PingFang SC"
+          {searchPlaceholder && (
+            <Input
+              ref={searchRef}
+              aria-label={searchPlaceholder}
+              placeholder={searchPlaceholder}
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              size="sm"
               fontSize="12px"
-              fontWeight="400"
-              lineHeight="18px"
-              p={'4px 6px'}
-              borderRadius={'4px'}
-              justifyContent={'flex-start'}
-              overflowX={'hidden'}
-              whiteSpace={'nowrap'}
-              textOverflow={'ellipsis'}
-              onClick={() => onClick(idx)}
-            >
-              {itemRender ? itemRender({ text: v, idx }) : v}
-            </Button>
-          ))}
+              borderRadius="4px"
+            />
+          )}
+          <Flex direction="column" gap="4px" maxH="240px" overflowY="auto">
+            {visibleItems.map(({ text: v, idx }) => (
+              <Button
+                variant={'white-bg-icon'}
+                key={v + idx}
+                flexShrink={0}
+                title={v}
+                w={'auto'}
+                {...(idx === itemIdx
+                  ? {
+                      color: 'brightBlue.600',
+                      bg: 'rgba(17, 24, 36, 0.05)'
+                    }
+                  : {
+                      color: 'grayModern.600',
+                      bg: 'white'
+                    })}
+                fontFamily="PingFang SC"
+                fontSize="12px"
+                fontWeight="400"
+                lineHeight="18px"
+                p={'4px 6px'}
+                borderRadius={'4px'}
+                justifyContent={'flex-start'}
+                overflowX={'hidden'}
+                whiteSpace={'nowrap'}
+                textOverflow={'ellipsis'}
+                onClick={() => onClick(idx)}
+              >
+                {itemRender ? itemRender({ text: v, idx }) : v}
+              </Button>
+            ))}
+            {searchPlaceholder && search.trim() && visibleItems.every(({ idx }) => idx === 0) && (
+              <Text role="status" fontSize="12px" color="grayModern.600" px="6px" py="4px">
+                {emptyText}
+              </Text>
+            )}
+          </Flex>
         </PopoverContent>
       </Popover>
     </Flex>

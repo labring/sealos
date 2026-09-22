@@ -1009,6 +1009,9 @@ importers:
         specifier: ^4.4.1
         version: 4.4.7(@types/react@18.2.37)(immer@9.0.21)(react@18.2.0)
     devDependencies:
+      '@testing-library/react':
+        specifier: 14.1.2
+        version: 14.1.2(react-dom@18.2.0)(react@18.2.0)
       '@types/js-cookie':
         specifier: ^3.0.4
         version: 3.0.6
@@ -1039,12 +1042,18 @@ importers:
       eslint-config-next:
         specifier: 13.2.4
         version: 13.2.4(eslint@8.36.0)(typescript@5.2.2)
+      jsdom:
+        specifier: 20.0.3
+        version: 20.0.3
       prettier:
         specifier: ^2.8.8
         version: 2.8.8
       sass:
         specifier: ^1.68.0
         version: 1.69.5
+      vitest:
+        specifier: 1.6.1
+        version: 1.6.1(@types/node@18.15.5)(jsdom@20.0.3)(sass@1.69.5)
 
   providers/dbprovider:
     dependencies:
@@ -21852,6 +21861,28 @@ packages:
       - terser
     dev: true
 
+  /vite-node@1.6.1(@types/node@18.15.5)(sass@1.69.5):
+    resolution: {integrity: sha512-YAXkfvGtuTzwWbDSACdJSg4A4DZiAqckWe90Zapc/sEX3XvHcw1NdurM/6od8J207tSDqNbSsgdCacBgvJKFuA==}
+    engines: {node: ^18.0.0 || >=20.0.0}
+    hasBin: true
+    dependencies:
+      cac: 6.7.14
+      debug: 4.4.1
+      pathe: 1.1.2
+      picocolors: 1.1.1
+      vite: 5.4.21(@types/node@18.15.5)(sass@1.69.5)
+    transitivePeerDependencies:
+      - '@types/node'
+      - less
+      - lightningcss
+      - sass
+      - sass-embedded
+      - stylus
+      - sugarss
+      - supports-color
+      - terser
+    dev: true
+
   /vite@5.4.21(@types/node@18.13.0)(sass@1.69.5):
     resolution: {integrity: sha512-o5a9xKjbtuhY6Bi5S3+HvbRERmouabWbyUcpXXUA1u+GNUKoROi9byOJ8M0nHbHYHkYICiMlqxkg1KkYmm25Sw==}
     engines: {node: ^18.0.0 || >=20.0.0}
@@ -21884,6 +21915,46 @@ packages:
         optional: true
     dependencies:
       '@types/node': 18.13.0
+      esbuild: 0.21.5
+      postcss: 8.5.8
+      rollup: 4.62.4
+      sass: 1.69.5
+    optionalDependencies:
+      fsevents: 2.3.3
+    dev: true
+
+  /vite@5.4.21(@types/node@18.15.5)(sass@1.69.5):
+    resolution: {integrity: sha512-o5a9xKjbtuhY6Bi5S3+HvbRERmouabWbyUcpXXUA1u+GNUKoROi9byOJ8M0nHbHYHkYICiMlqxkg1KkYmm25Sw==}
+    engines: {node: ^18.0.0 || >=20.0.0}
+    hasBin: true
+    peerDependencies:
+      '@types/node': ^18.0.0 || >=20.0.0
+      less: '*'
+      lightningcss: ^1.21.0
+      sass: '*'
+      sass-embedded: '*'
+      stylus: '*'
+      sugarss: '*'
+      terser: ^5.4.0
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+      less:
+        optional: true
+      lightningcss:
+        optional: true
+      sass:
+        optional: true
+      sass-embedded:
+        optional: true
+      stylus:
+        optional: true
+      sugarss:
+        optional: true
+      terser:
+        optional: true
+    dependencies:
+      '@types/node': 18.15.5
       esbuild: 0.21.5
       postcss: 8.5.8
       rollup: 4.62.4
@@ -21937,6 +22008,64 @@ packages:
       tinypool: 0.8.4
       vite: 5.4.21(@types/node@18.13.0)(sass@1.69.5)
       vite-node: 1.6.1(@types/node@18.13.0)(sass@1.69.5)
+      why-is-node-running: 2.3.0
+    transitivePeerDependencies:
+      - less
+      - lightningcss
+      - sass
+      - sass-embedded
+      - stylus
+      - sugarss
+      - supports-color
+      - terser
+    dev: true
+
+  /vitest@1.6.1(@types/node@18.15.5)(jsdom@20.0.3)(sass@1.69.5):
+    resolution: {integrity: sha512-Ljb1cnSJSivGN0LqXd/zmDbWEM0RNNg2t1QW/XUhYl/qPqyu7CsqeWtqQXHVaJsecLPuDoak2oJcZN2QoRIOag==}
+    engines: {node: ^18.0.0 || >=20.0.0}
+    hasBin: true
+    peerDependencies:
+      '@edge-runtime/vm': '*'
+      '@types/node': ^18.0.0 || >=20.0.0
+      '@vitest/browser': 1.6.1
+      '@vitest/ui': 1.6.1
+      happy-dom: '*'
+      jsdom: '*'
+    peerDependenciesMeta:
+      '@edge-runtime/vm':
+        optional: true
+      '@types/node':
+        optional: true
+      '@vitest/browser':
+        optional: true
+      '@vitest/ui':
+        optional: true
+      happy-dom:
+        optional: true
+      jsdom:
+        optional: true
+    dependencies:
+      '@types/node': 18.15.5
+      '@vitest/expect': 1.6.1
+      '@vitest/runner': 1.6.1
+      '@vitest/snapshot': 1.6.1
+      '@vitest/spy': 1.6.1
+      '@vitest/utils': 1.6.1
+      acorn-walk: 8.3.5
+      chai: 4.5.0
+      debug: 4.4.1
+      execa: 8.0.1
+      jsdom: 20.0.3
+      local-pkg: 0.5.1
+      magic-string: 0.30.21
+      pathe: 1.1.2
+      picocolors: 1.1.1
+      std-env: 3.10.0
+      strip-literal: 2.1.1
+      tinybench: 2.9.0
+      tinypool: 0.8.4
+      vite: 5.4.21(@types/node@18.15.5)(sass@1.69.5)
+      vite-node: 1.6.1(@types/node@18.15.5)(sass@1.69.5)
       why-is-node-running: 2.3.0
     transitivePeerDependencies:
       - less
