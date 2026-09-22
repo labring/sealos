@@ -13,6 +13,7 @@ import { generateOwnerReference, shouldHaveOwnerReference } from '@/utils/deploy
 import { appDeployKey } from '@/constants/app';
 import { buildExternalUrl } from '@/utils/network-url';
 import { ResponseCode } from '@/types/response';
+import { recreateStatefulSetForExpansion } from '@/services/backend/statefulSetResize';
 
 export type Props = {
   patch: AppPatchPropsType;
@@ -470,6 +471,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
               await k8sApp.replaceNamespacedStatefulSet(appName, namespace, jsonPatch);
               return { recreated: false, kind: YamlKindEnum.StatefulSet };
             } catch (replaceError) {
+              // Only immutable-field validation during an actual expansion may orphan/recreate.
+              // Authorization, conflicts and ordinary update errors must still fail closed.
+              if (
+                Number(getK8sErrorCode(replaceError)) === 422 &&
+                (jsonPatch as V1StatefulSet).spec?.volumeClaimTemplates &&
+                (await recreateStatefulSetForExpansion(
+                  k8sApp,
+                  namespace,
+                  appName,
+                  jsonPatch as V1StatefulSet
+                ))
+              ) {
+                return { recreated: true, kind: YamlKindEnum.StatefulSet };
+              }
               warnLog('statefulSet patch/replace failed; not falling back to delete/create', {
                 yaml: yaml.dump(jsonPatch)
               });

@@ -97,7 +97,7 @@ export const handleK8sError = (
     }
   }
 
-  if (/forbidden|permission denied/i.test(errMessage)) {
+  if (statusCode === undefined && /forbidden|permission denied/i.test(errMessage)) {
     return {
       code: forbiddenCode,
       message: ResponseMessages[forbiddenCode]

@@ -66,3 +66,9 @@ describe('handleK8sError', () => {
     });
   });
 });
+
+it('preserves immutable-field validation errors containing Forbidden', () => {
+  const message =
+    'StatefulSet is invalid: spec: Forbidden: updates to statefulset spec are forbidden';
+  expect(handleK8sError({ body: { code: 422, message } })).toEqual({ code: 422, message });
+});
