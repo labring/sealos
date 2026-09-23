@@ -873,7 +873,6 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
                   ? 'Confirm Update Application With Restart?'
                   : applyMessage
               );
-
               // gpu inventory check
               if (data.gpu?.type) {
                 const inventory = countGpuInventory(data.gpu?.type);
