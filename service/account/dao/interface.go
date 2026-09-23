@@ -2761,10 +2761,7 @@ func (m *Account) GetBillingHistoryNamespaceList(
 		return nil, fmt.Errorf("failed to list workspace subscription: %w", err)
 	}
 	result.Namespaces = append(result.Namespaces, subNSList...)
-	if len(result.Namespaces) == 0 {
-		return [][]string{}, nil
-	}
-	return m.GetWorkspaceName(result.Namespaces)
+	return m.getBillingWorkspaces(req.UserUID, result.Namespaces)
 }
 
 func (m *MongoDB) getBillingCollection() *mongo.Collection {
