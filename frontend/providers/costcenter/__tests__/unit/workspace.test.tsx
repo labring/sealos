@@ -111,9 +111,33 @@ describe('workspace ID search', () => {
     expect(useBillingStore.getState().getNamespace()?.[0]).toBe('');
 
     fireEvent.click(screen.getByRole('button', { name: 'all_workspace' }));
+    const nameInput = await screen.findByRole('textbox', { name: 'search_workspace_name' });
+    fireEvent.change(nameInput, { target: { value: ' THIRD ' } });
+    expect(screen.queryByRole('button', { name: 'Same name' })).toBeNull();
     fireEvent.click(await screen.findByRole('button', { name: 'Third workspace' }));
     expect(screen.getByRole('button', { name: 'ns-third' })).toBeTruthy();
     expect(useBillingStore.getState().getNamespace()?.[0]).toBe('ns-third');
+    await waitFor(() =>
+      expect(screen.queryByRole('textbox', { name: 'search_workspace_name' })).toBeNull()
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Third workspace' }));
+    const reopenedNameInput = await screen.findByRole('textbox', { name: 'search_workspace_name' });
+    expect((reopenedNameInput as HTMLInputElement).value).toBe('');
+    fireEvent.change(reopenedNameInput, { target: { value: 'same' } });
+    const sameNames = screen.getAllByRole('button', { name: 'Same name' });
+    expect(sameNames).toHaveLength(2);
+    fireEvent.click(sameNames[1]);
+    expect(useBillingStore.getState().getNamespace()?.[0]).toBe('ns-second');
+    await waitFor(() =>
+      expect(screen.queryByRole('textbox', { name: 'search_workspace_name' })).toBeNull()
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Same name' }));
+    fireEvent.change(await screen.findByRole('textbox', { name: 'search_workspace_name' }), {
+      target: { value: 'missing' }
+    });
+    expect(screen.getByRole('status').textContent).toBe('No Data Available');
+    fireEvent.click(screen.getByRole('button', { name: 'all_workspace' }));
+    expect(useBillingStore.getState().getNamespace()?.[0]).toBe('');
     client.clear();
   });
 });

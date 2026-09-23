@@ -61,6 +61,8 @@ export default function NamespaceMenu({
       itemlist={namespaceList.map((v) => v[1])}
       {...props}
       innerWidth={innerWidth}
+      searchPlaceholder={t('search_workspace_name')}
+      emptyText={t('No Data Available')}
     />
   );
 }

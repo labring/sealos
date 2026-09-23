@@ -135,6 +135,8 @@ export default function BaseMenu({
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               size="sm"
+              w="100%"
+              minW={0}
               fontSize="12px"
               borderRadius="4px"
             />
