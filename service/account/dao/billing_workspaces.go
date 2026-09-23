@@ -25,13 +25,21 @@ func billingWorkspaceQuery(db *gorm.DB, userUID uuid.UUID, historical []string) 
 		Where(`"UserWorkspace"."isPrivate" = ?`, true)
 	// Keep the user's own private workspace first, including localized names.
 	return query.Clauses(clause.OrderBy{Expression: clause.Expr{
-		SQL: "CASE WHEN uid IN (?) THEN 0 ELSE 1 END, id", Vars: []interface{}{privateMembership},
+		SQL: "CASE WHEN uid IN (?) THEN 0 ELSE 1 END, id", Vars: []any{privateMembership},
 	}})
 }
 
-func (g *Cockroach) getBillingWorkspaces(userUID uuid.UUID, historical []string) ([][]string, error) {
+func (g *Cockroach) getBillingWorkspaces(
+	userUID uuid.UUID,
+	historical []string,
+) ([][]string, error) {
 	var workspaces []types.Workspace
-	if err := billingWorkspaceQuery(g.ck.GetLocalDB(), userUID, historical).Find(&workspaces).Error; err != nil {
+	if err := billingWorkspaceQuery(
+		g.ck.GetLocalDB(),
+		userUID,
+		historical,
+	).Find(&workspaces).
+		Error; err != nil {
 		return nil, fmt.Errorf("failed to list billing workspaces: %w", err)
 	}
 	result := make([][]string, 0, len(workspaces))

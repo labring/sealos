@@ -34,7 +34,8 @@ func TestBillingWorkspaceMembershipScope(t *testing.T) {
 				t.Fatalf("missing membership restriction %q: %s", clause, query)
 			}
 		}
-		want := []interface{}{userUID, types.JoinStatusInWorkspace}
+		want := make([]any, 0, 2+len(history)+3)
+		want = append(want, userUID, types.JoinStatusInWorkspace)
 		for _, namespace := range history {
 			want = append(want, namespace)
 		}
@@ -47,7 +48,10 @@ func TestBillingWorkspaceMembershipScope(t *testing.T) {
 		}
 		if !strings.Contains(query, `ORDER BY CASE WHEN uid IN`) ||
 			!strings.Contains(query, `"UserWorkspace"."isPrivate" = `) {
-			t.Fatalf("own private workspace must be first regardless of display language: %s", query)
+			t.Fatalf(
+				"own private workspace must be first regardless of display language: %s",
+				query,
+			)
 		}
 	}
 }
