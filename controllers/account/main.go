@@ -410,10 +410,11 @@ func main() {
 			"/mutate-resource-creator":   false,
 			"/validate-resource-creator": true,
 		} {
-			mgr.GetWebhookServer().Register(path, &webhook.Admission{Handler: &accountv1.ResourceCreator{
-				Reader: mgr.GetAPIReader(), UserNamespace: userconfig.GetUserSystemNamespace(),
-				Validate: validate,
-			}})
+			mgr.GetWebhookServer().
+				Register(path, &webhook.Admission{Handler: &accountv1.ResourceCreator{
+					Reader: mgr.GetAPIReader(), UserNamespace: userconfig.GetUserSystemNamespace(),
+					Validate: validate,
+				}})
 		}
 		mgr.GetWebhookServer().
 			Register("/validate-v1-sealos-cloud", &webhook.Admission{Handler: &accountv1.DebtValidate{Client: mgr.GetClient(), AccountV2: v2Account, TTLUserMap: maps.New[*types.UsableBalanceWithCredits](env.GetIntEnvWithDefault("DEBT_WEBHOOK_CACHE_USER_TTL", 15))}})

@@ -75,7 +75,8 @@ func creatorTarget(obj *unstructured.Unstructured) bool {
 }
 
 func creatorAppWorkload(obj *unstructured.Unstructured) bool {
-	return obj.GetAPIVersion() == "apps/v1" && (obj.GetKind() == "Deployment" || obj.GetKind() == "StatefulSet")
+	return obj.GetAPIVersion() == "apps/v1" &&
+		(obj.GetKind() == "Deployment" || obj.GetKind() == "StatefulSet")
 }
 
 func sameCreator(a, b map[string]string) bool {
@@ -135,7 +136,13 @@ func (h *ResourceCreator) Handle(ctx context.Context, req admission.Request) adm
 		return admission.Denied("resource creator annotations are managed by Sealos")
 	}
 	if creatorAppWorkload(obj) {
-		templateAnnotations, _, err := unstructured.NestedStringMap(obj.Object, "spec", "template", "metadata", "annotations")
+		templateAnnotations, _, err := unstructured.NestedStringMap(
+			obj.Object,
+			"spec",
+			"template",
+			"metadata",
+			"annotations",
+		)
 		if err != nil {
 			return admission.Errored(http.StatusBadRequest, err)
 		}
@@ -148,11 +155,24 @@ func (h *ResourceCreator) Handle(ctx context.Context, req admission.Request) adm
 			}
 			copyCreator(templateAnnotations, annotations)
 			if len(templateAnnotations) > 0 {
-				if err := unstructured.SetNestedStringMap(obj.Object, templateAnnotations, "spec", "template", "metadata", "annotations"); err != nil {
+				if err := unstructured.SetNestedStringMap(
+					obj.Object,
+					templateAnnotations,
+					"spec",
+					"template",
+					"metadata",
+					"annotations",
+				); err != nil {
 					return admission.Errored(http.StatusBadRequest, err)
 				}
 			} else {
-				unstructured.RemoveNestedField(obj.Object, "spec", "template", "metadata", "annotations")
+				unstructured.RemoveNestedField(
+					obj.Object,
+					"spec",
+					"template",
+					"metadata",
+					"annotations",
+				)
 			}
 		}
 	}
@@ -167,7 +187,11 @@ func (h *ResourceCreator) Handle(ctx context.Context, req admission.Request) adm
 	return admission.PatchResponseFromRaw(req.Object.Raw, updated)
 }
 
-func (h *ResourceCreator) creationIdentity(ctx context.Context, req admission.Request, obj *unstructured.Unstructured) (map[string]string, error) {
+func (h *ResourceCreator) creationIdentity(
+	ctx context.Context,
+	req admission.Request,
+	obj *unstructured.Unstructured,
+) (map[string]string, error) {
 	// AppLaunchpad creates the other workload kind before deleting the old one during
 	// Deployment <-> StatefulSet conversion. Read the live source, not request annotations.
 	if obj.GetAPIVersion() == "apps/v1" && h.Reader != nil {
@@ -175,7 +199,11 @@ func (h *ResourceCreator) creationIdentity(ctx context.Context, req admission.Re
 		if obj.GetKind() == "Deployment" {
 			source = &appsv1.StatefulSet{}
 		}
-		err := h.Reader.Get(ctx, types.NamespacedName{Namespace: req.Namespace, Name: obj.GetName()}, source)
+		err := h.Reader.Get(
+			ctx,
+			types.NamespacedName{Namespace: req.Namespace, Name: obj.GetName()},
+			source,
+		)
 		if err != nil && !apierrors.IsNotFound(err) {
 			return nil, err
 		}
