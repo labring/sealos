@@ -38,6 +38,7 @@ import (
 	"github.com/labring/sealos/controllers/pkg/utils/env"
 	"github.com/labring/sealos/controllers/pkg/utils/maps"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
+	userconfig "github.com/labring/sealos/controllers/user/controllers/helper/config"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -405,6 +406,15 @@ func main() {
 	if os.Getenv("DISABLE_WEBHOOKS") == _true {
 		setupLog.Info("disable all webhooks")
 	} else {
+		for path, validate := range map[string]bool{
+			"/mutate-resource-creator":   false,
+			"/validate-resource-creator": true,
+		} {
+			mgr.GetWebhookServer().Register(path, &webhook.Admission{Handler: &accountv1.ResourceCreator{
+				Reader: mgr.GetAPIReader(), UserNamespace: userconfig.GetUserSystemNamespace(),
+				Validate: validate,
+			}})
+		}
 		mgr.GetWebhookServer().
 			Register("/validate-v1-sealos-cloud", &webhook.Admission{Handler: &accountv1.DebtValidate{Client: mgr.GetClient(), AccountV2: v2Account, TTLUserMap: maps.New[*types.UsableBalanceWithCredits](env.GetIntEnvWithDefault("DEBT_WEBHOOK_CACHE_USER_TTL", 15))}})
 		// Start HTTP server for property reload handler (without TLS)
