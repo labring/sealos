@@ -5,6 +5,7 @@ package v1
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -28,7 +29,9 @@ func (m *creatorTestManager) GetAPIReader() client.Reader      { return nil }
 
 func TestResourceCreatorSharedServer(t *testing.T) {
 	server := webhook.NewServer(webhook.Options{})
-	if err := (&ResourceCreator{}).SetupWithManager(&creatorTestManager{server: server}); err != nil {
+	if err := (&ResourceCreator{}).SetupWithManager(
+		&creatorTestManager{server: server},
+	); err != nil {
 		t.Fatal(err)
 	}
 	obj := creatorObject("devbox.sealos.io/v1alpha2", "Devbox")
@@ -39,7 +42,15 @@ func TestResourceCreatorSharedServer(t *testing.T) {
 	}
 	for _, path := range []string{"/mutate-resource-creator", "/validate-resource-creator"} {
 		t.Run(path, func(t *testing.T) {
-			request := httptest.NewRequest(http.MethodPost, path, bytes.NewReader(body))
+			request, err := http.NewRequestWithContext(
+				context.Background(),
+				http.MethodPost,
+				path,
+				bytes.NewReader(body),
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
 			request.Header.Set("Content-Type", "application/json")
 			response := httptest.NewRecorder()
 			server.WebhookMux().ServeHTTP(response, request)

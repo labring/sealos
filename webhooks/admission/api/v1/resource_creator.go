@@ -59,8 +59,10 @@ func (h *ResourceCreator) SetupWithManager(mgr ctrl.Manager) error {
 	mutator, validator := *h, *h
 	mutator.Validate = false
 	validator.Validate = true
-	mgr.GetWebhookServer().Register("/mutate-resource-creator", &admission.Webhook{Handler: &mutator})
-	mgr.GetWebhookServer().Register("/validate-resource-creator", &admission.Webhook{Handler: &validator})
+	mgr.GetWebhookServer().
+		Register("/mutate-resource-creator", &admission.Webhook{Handler: &mutator})
+	mgr.GetWebhookServer().
+		Register("/validate-resource-creator", &admission.Webhook{Handler: &validator})
 	return nil
 }
 
