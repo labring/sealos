@@ -46,6 +46,7 @@ export enum TableHeaderID {
   'Handle' = 'Handle',
   'Region' = 'Region',
   'Namespace' = 'workspace',
+  'NamespaceID' = 'workspace_id',
   'TransferType' = 'Transfer Type',
   'TraderID' = 'Trader ID',
   'Status' = 'Invoice Status',
