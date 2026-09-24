@@ -14,7 +14,6 @@
 
 resources:
 - manifests.yaml
-- resource-creator.yaml
 - service.yaml
 
 configurations:

@@ -80,6 +80,13 @@ metadata:
   name: admission-manager-role
 rules:
 - apiGroups:
+  - apps
+  resources:
+  - deployments
+  - statefulsets
+  verbs:
+  - get
+- apiGroups:
   - ""
   resources:
   - namespaces
@@ -465,6 +472,48 @@ webhooks:
     - namespaces
   sideEffects: None
 {{ end }}
+{{ if .resourceCreatorWebhookEnabled }}
+- name: mutate-resource-creator.sealos.io
+  admissionReviewVersions: [v1]
+  clientConfig:
+    service:
+      name: admission-webhook-service
+      namespace: sealos-system
+      path: /mutate-resource-creator
+  failurePolicy: Fail
+  timeoutSeconds: 5
+  sideEffects: None
+  namespaceSelector:
+    matchExpressions:
+      - key: user.sealos.io/owner
+        operator: Exists
+  rules:
+    - apiGroups: [apps]
+      apiVersions: [v1]
+      operations: [CREATE, UPDATE]
+      resources: [deployments, statefulsets]
+      scope: Namespaced
+    - apiGroups: [devbox.sealos.io]
+      apiVersions: [v1alpha2]
+      operations: [CREATE, UPDATE]
+      resources: [devboxes]
+      scope: Namespaced
+    - apiGroups: [objectstorage.sealos.io]
+      apiVersions: [v1]
+      operations: [CREATE, UPDATE]
+      resources: [objectstoragebuckets]
+      scope: Namespaced
+    - apiGroups: [batch]
+      apiVersions: [v1]
+      operations: [CREATE, UPDATE]
+      resources: [cronjobs]
+      scope: Namespaced
+    - apiGroups: [apps.kubeblocks.io]
+      apiVersions: [v1alpha1, v1]
+      operations: [CREATE, UPDATE]
+      resources: [clusters]
+      scope: Namespaced
+{{ end }}
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
@@ -534,4 +583,46 @@ webhooks:
     resources:
     - namespaces
   sideEffects: None
+{{ end }}
+{{ if .resourceCreatorWebhookEnabled }}
+- name: validate-resource-creator.sealos.io
+  admissionReviewVersions: [v1]
+  clientConfig:
+    service:
+      name: admission-webhook-service
+      namespace: sealos-system
+      path: /validate-resource-creator
+  failurePolicy: Fail
+  timeoutSeconds: 5
+  sideEffects: None
+  namespaceSelector:
+    matchExpressions:
+      - key: user.sealos.io/owner
+        operator: Exists
+  rules:
+    - apiGroups: [apps]
+      apiVersions: [v1]
+      operations: [CREATE, UPDATE]
+      resources: [deployments, statefulsets]
+      scope: Namespaced
+    - apiGroups: [devbox.sealos.io]
+      apiVersions: [v1alpha2]
+      operations: [CREATE, UPDATE]
+      resources: [devboxes]
+      scope: Namespaced
+    - apiGroups: [objectstorage.sealos.io]
+      apiVersions: [v1]
+      operations: [CREATE, UPDATE]
+      resources: [objectstoragebuckets]
+      scope: Namespaced
+    - apiGroups: [batch]
+      apiVersions: [v1]
+      operations: [CREATE, UPDATE]
+      resources: [cronjobs]
+      scope: Namespaced
+    - apiGroups: [apps.kubeblocks.io]
+      apiVersions: [v1alpha1, v1]
+      operations: [CREATE, UPDATE]
+      resources: [clusters]
+      scope: Namespaced
 {{ end }}

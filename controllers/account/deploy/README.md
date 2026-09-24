@@ -2,23 +2,6 @@
 
 Account Controller 的 Helm Chart 部署配置。
 
-## 应用和数据库创建人记录
-
-资源创建人准入 webhook 在用户命名空间内，为 AppLaunchpad 主工作负载、KubeBlocks Cluster、Devbox、ObjectStorageBucket 和 CronJob 写入以下 annotations：
-
-- `resource.sealos.io/creator-user-cr-name`：从已认证身份提取的区域用户标识（如 `2kvpbpql`），不是桌面短 ID；非用户主体不写入。
-- `resource.sealos.io/creator-type`：`user`、`service` 或 `unknown`。
-
-创建人 webhook 不查询数据库；只记录请求身份，User.id 映射由独立 admin 应用的查询接口处理，不新增表。更新保留原记录，历史资源不因编辑补写创建人。Deployment/StatefulSet 转换在旧主资源仍存在时继承原记录；删除后重建重新记录。后台服务使用自身凭据创建时记录服务身份，不推测发起账号。
-
-部署需要同时更新控制器镜像与 webhook 配置，并保持 `DISABLE_WEBHOOKS` 未启用。创建人 webhook 使用 `failurePolicy: Fail`：服务不可达时，匹配命名空间内的 Deployment、StatefulSet、数据库 Cluster、Devbox、ObjectStorageBucket 和 CronJob 创建/更新会被阻止；创建人处理不依赖账号映射数据库，但应用类型转换仍需读取 Kubernetes 中的原工作负载。升级应先确保新控制器端点与证书可用，再启用新 webhook；回退旧镜像前需移除这两条配置，停用期间无法保证创建人记录完整。
-
-本仓库此次仅提供创建人 webhook。创建账号、按账号查询资源、按命名空间查询资源由独立 admin 应用实现；不在 account-service 或子应用列表、详情接口增加创建人查询字段。匹配范围为带 `user.sealos.io/owner` 标签且名称以 `ns-` 开头的命名空间，应用需带 `cloud.sealos.io/app-deploy-manager` 标签，数据库支持 `apps.kubeblocks.io/v1alpha1` 与 `v1` 的顶层 Cluster。
-
-应用管理同时保护 `metadata.annotations` 和 `spec.template.metadata.annotations` 的两个创建人字段；Pod 从模板继承，单独用于 Pod 统计，不计为独立业务。已有顶层记录的应用后续更新时会把原创建人同步到模板，这可能触发滚动更新；完全无记录的历史应用不推测创建人，已有 Pod 不批量回填。其他业务只写顶层，CronJob 的 jobTemplate 等嵌套模板不写入。Service、Ingress、PVC、ConfigMap、Secret、Job 等附属资源不注入。
-
-新增支持 `devbox.sealos.io/v1alpha2` Devbox、`objectstorage.sealos.io/v1` ObjectStorageBucket、`batch/v1` CronJob；不把对象存储账号 ObjectStorageUser 当成桶，不对控制器派生资源重复注入。镜像服务尚未确认可标注的顶层资源，不在本 webhook 的覆盖范围；各类型的 admin 查询适配需单独交付。
-
 ## 快速开始
 
 ### 最精简配置

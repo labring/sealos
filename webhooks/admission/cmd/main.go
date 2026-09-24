@@ -181,6 +181,11 @@ func main() {
 		os.Exit(1)
 	}
 
+	if err := (&v1.ResourceCreator{}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create resource creator webhook")
+		os.Exit(1)
+	}
+
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

@@ -25,6 +25,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
@@ -44,6 +45,23 @@ type ResourceCreator struct {
 	Reader        client.Reader
 	UserNamespace string
 	Validate      bool
+}
+
+// SetupWithManager shares the admission manager's server, TLS certificate and service.
+// A generic handler covers built-in resources and optional CRDs without registering
+// their Go types or requiring those CRDs to be installed.
+// +kubebuilder:rbac:groups=apps,resources=deployments;statefulsets,verbs=get
+func (h *ResourceCreator) SetupWithManager(mgr ctrl.Manager) error {
+	h.Reader = mgr.GetAPIReader()
+	if h.UserNamespace == "" {
+		h.UserNamespace = "user-system"
+	}
+	mutator, validator := *h, *h
+	mutator.Validate = false
+	validator.Validate = true
+	mgr.GetWebhookServer().Register("/mutate-resource-creator", &admission.Webhook{Handler: &mutator})
+	mgr.GetWebhookServer().Register("/validate-resource-creator", &admission.Webhook{Handler: &validator})
+	return nil
 }
 
 func creatorTarget(obj *unstructured.Unstructured) bool {
