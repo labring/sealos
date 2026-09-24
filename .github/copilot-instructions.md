@@ -165,9 +165,9 @@ Always run `make format` before committing to pass CI format checks.
 ## Pull Request Guidelines
 
 ### PR Title Specification
-All pull request titles **must** follow the [Conventional Commits specification](https://www.conventionalcommits.org/en/v1.0.0/) and include both **type** and **scope** fields.
+All pull request titles **must** follow the [Conventional Commits specification](https://www.conventionalcommits.org/en/v1.0.0/). The **scope** field is optional.
 
-**Required format**: `<type>(<scope>): <description>`
+**Supported formats**: `<type>: <description>` or `<type>(<scope>): <description>`
 
 **Available types**:
 - `feat`: New features
@@ -183,6 +183,7 @@ All pull request titles **must** follow the [Conventional Commits specification]
 - `revert`: Revert previous changes
 
 **Example PR titles**:
+- `fix: resolve desktop identity propagation after workspace init`
 - `feat(lifecycle): add new cluster management command`
 - `fix(controllers): resolve user controller memory leak`
 - `docs(frontend): update component usage examples`
