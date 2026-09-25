@@ -1,5 +1,5 @@
 import { json2ResourceOps } from '@/utils/json2Yaml';
-import { adaptDBDetail } from '@/utils/adapt';
+import { adaptDBDetail, getDatabaseResourceComponentSpec } from '@/utils/adapt';
 import { KbPgClusterType } from '@/types/cluster';
 import { updateDatabaseSchemas } from '@/types/apis/v2alpha';
 import z from 'zod';
@@ -98,7 +98,10 @@ export async function updateDatabase(
 
     const dbDetail = adaptDBDetail(clusterData);
 
-    const currentSpec = clusterData.spec?.componentSpecs?.[0];
+    const currentSpec = getDatabaseResourceComponentSpec(
+      dbDetail.dbType,
+      clusterData.spec?.componentSpecs || []
+    );
     const currentCpu = currentSpec?.resources?.limits?.cpu || '1000m';
     const currentMemory = currentSpec?.resources?.limits?.memory || '1Gi';
     const currentStorage =
