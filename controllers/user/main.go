@@ -281,6 +281,13 @@ func main() {
 			setupLog.Error(err, "unable to create webhook", "webhook", "User")
 			os.Exit(1)
 		}
+		if err = (&controllers.NamespaceValidator{
+			Disabled:                !enableStrictNamespacePSA,
+			EnableAdminClusterAdmin: enableAdminClusterAdmin,
+		}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Namespace")
+			os.Exit(1)
+		}
 	}
 
 	if err = (&controllers.OperationReqReconciler{}).SetupWithManager(
