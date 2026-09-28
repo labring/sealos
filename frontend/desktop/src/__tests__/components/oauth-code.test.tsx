@@ -56,7 +56,17 @@ describe('authorization code consent page', () => {
     expect(screen.getByRole('button', { name: 'Approve' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Deny' })).toBeTruthy();
   });
-  it('resumes the new request after login without changing device request redirects', async () => {
+  it('resumes the current code request instead of an abandoned device login', async () => {
+    setPendingOauth2RequestId('abandoned-device-request');
+    useSessionStore.setState({ token: '', session: undefined });
+    renderPage();
+    await waitFor(() =>
+      expect(replace).toHaveBeenCalledWith(`/signin?oauth_code_request_id=${requestId}`)
+    );
+    expect(consumePendingOauth2RedirectPath()).toBe(`/oauth2/code?request_id=${requestId}`);
+    expect(consumePendingOauth2RedirectPath()).toBe('');
+  });
+  it('resumes a newer device login without retaining the abandoned code request', async () => {
     useSessionStore.setState({ token: '', session: undefined });
     renderPage();
     await waitFor(() =>
@@ -64,7 +74,6 @@ describe('authorization code consent page', () => {
     );
     setPendingOauth2RequestId('device-request');
     expect(consumePendingOauth2RedirectPath()).toBe('/oauth2/consent?request_id=device-request');
-    expect(consumePendingOauth2RedirectPath()).toBe(`/oauth2/code?request_id=${requestId}`);
     expect(consumePendingOauth2RedirectPath()).toBe('');
   });
   it('announces decision errors and lets the user recover', async () => {

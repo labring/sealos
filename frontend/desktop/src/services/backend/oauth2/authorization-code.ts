@@ -40,10 +40,15 @@ const transaction = async <T>(run: (db: Prisma.TransactionClient) => Promise<T>)
   }
 };
 
-const clientFor = async (clientId: string, grant: string) => {
+const publicClient = async (clientId: string) => {
   if (!clientId) throw new OAuth2HttpError(400, 'invalid_request', 'client_id is required');
   const client = await globalPrisma.oAuthClient.findUnique({ where: { clientId } });
   if (!client || client.clientType !== 'PUBLIC') throw new OAuth2HttpError(400, 'invalid_client');
+  return client;
+};
+
+const clientFor = async (clientId: string, grant: string) => {
+  const client = await publicClient(clientId);
   if (!client.allowedGrantTypes.includes(grant))
     throw new OAuth2HttpError(400, 'unauthorized_client');
   return client;
@@ -109,7 +114,7 @@ export const limitCodeRequests = async (identity: string) => {
 
 export const beginCodeAuthorization = async (params: Record<string, string>) => {
   ensureCodeEnabled();
-  const client = await clientFor(params.client_id, 'authorization_code');
+  const client = await publicClient(params.client_id);
   if (!client.redirectUris.some((uri) => matchesRedirect(params.redirect_uri, uri))) {
     throw new OAuth2HttpError(400, 'invalid_request', 'Unregistered redirect_uri');
   }
@@ -119,6 +124,8 @@ export const beginCodeAuthorization = async (params: Record<string, string>) => 
       ...(params.state ? { state: params.state } : {})
     })
   });
+  if (!client.allowedGrantTypes.includes('authorization_code'))
+    return reject('unauthorized_client');
   if (params.response_type !== 'code') return reject('unsupported_response_type');
   if (params.scope) return reject('invalid_scope');
   if (

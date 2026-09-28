@@ -3,7 +3,9 @@ import { OauthProvider } from '@/types/user';
 const CODE_PENDING_REQUEST_ID_KEY = 'oauth_code_pending_request_id';
 
 export const setPendingCodeRequestId = (requestId: string) => {
-  if (typeof window !== 'undefined') sessionStorage.setItem(CODE_PENDING_REQUEST_ID_KEY, requestId);
+  if (typeof window === 'undefined') return;
+  sessionStorage.removeItem(OAUTH2_PENDING_REQUEST_ID_KEY);
+  sessionStorage.setItem(CODE_PENDING_REQUEST_ID_KEY, requestId);
 };
 
 const OAUTH2_PENDING_REQUEST_ID_KEY = 'oauth2_pending_request_id';
@@ -47,6 +49,7 @@ export const buildOauth2ConsentPath = (requestId: string) =>
 
 export const setPendingOauth2RequestId = (requestId: string) => {
   if (typeof window === 'undefined') return;
+  sessionStorage.removeItem(CODE_PENDING_REQUEST_ID_KEY);
   sessionStorage.setItem(OAUTH2_PENDING_REQUEST_ID_KEY, requestId);
 };
 

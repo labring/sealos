@@ -394,6 +394,38 @@ describe.skipIf(!databaseUrl)('authorization code HTTP contract', () => {
       vi.useRealTimers();
     }
   });
+  it('returns grant errors to a registered callback but never to an untrusted callback', async () => {
+    await db.oAuthClient.update({
+      where: { clientId },
+      data: { allowedGrantTypes: ['refresh_token'] }
+    });
+    try {
+      const rejected = await call(authorize, { query: query() });
+      expect(rejected.statusCode).toBe(302);
+      const callback = new URL(rejected.headers.Location);
+      expect(callback.href.split('?')[0]).toBe(redirectUri);
+      expect(callback.searchParams.get('error')).toBe('unauthorized_client');
+      expect(callback.searchParams.get('state')).toBe('test-state');
+      expect(callback.searchParams.has('code')).toBe(false);
+      const untrusted = await call(authorize, {
+        query: { ...query(), redirect_uri: 'https://untrusted.example/callback' }
+      });
+      expect(untrusted.statusCode).toBe(400);
+      expect(untrusted.body.error).toBe('invalid_request');
+      expect(untrusted.headers.Location).toBeUndefined();
+      const unknown = await call(authorize, {
+        query: { ...query(), client_id: `${clientId}-unknown` }
+      });
+      expect(unknown.statusCode).toBe(400);
+      expect(unknown.body.error).toBe('invalid_client');
+      expect(unknown.headers.Location).toBeUndefined();
+    } finally {
+      await db.oAuthClient.update({
+        where: { clientId },
+        data: { allowedGrantTypes: ['authorization_code', 'refresh_token'] }
+      });
+    }
+  });
   it('preserves device authorization and legacy JWT refresh when code flow is off', async () => {
     const legacyId = `${clientId}-device`;
     await db.oAuthClient.create({
@@ -406,7 +438,7 @@ describe.skipIf(!databaseUrl)('authorization code HTTP contract', () => {
     try {
       expect(
         (await call(authorize, { query: { ...query(), client_id: legacyId } })).body.error
-      ).toBe('unauthorized_client');
+      ).toBe('invalid_request');
       global.AppConfig.desktop.auth.oauth2idp.authorizationCodeEnabled = false;
       const device = (await import('@/pages/api/auth/oauth2/device')).default;
       const context = (await import('@/pages/api/auth/oauth2/authorize/context')).default;
