@@ -54,7 +54,9 @@ func TestExpirationNotificationsAcrossLicenses(t *testing.T) {
 			if err := notificationv1.AddToScheme(scheme); err != nil {
 				t.Fatal(err)
 			}
-			old := &licensev1.License{ObjectMeta: metav1.ObjectMeta{Name: "default", Namespace: adminNamespace}}
+			old := &licensev1.License{
+				ObjectMeta: metav1.ObjectMeta{Name: "default", Namespace: adminNamespace},
+			}
 			old.Status.Phase = licensev1.LicenseStatusPhaseActive
 			old.Status.ExpirationTime = metav1.NewTime(now.Add(24 * time.Hour))
 			if tc.oldExpired {
@@ -64,15 +66,26 @@ func TestExpirationNotificationsAcrossLicenses(t *testing.T) {
 			renewal := old.DeepCopy()
 			renewal.Name = "renewal"
 			renewal.Status.Phase = tc.renewalPhase
-			renewal.Status.ExpirationTime = metav1.NewTime(now.Add(time.Duration(tc.renewalDays) * 24 * time.Hour))
+			renewal.Status.ExpirationTime = metav1.NewTime(
+				now.Add(time.Duration(tc.renewalDays) * 24 * time.Hour),
+			)
 			if tc.deleting {
 				renewal.DeletionTimestamp = &metav1.Time{Time: now}
 				renewal.Finalizers = []string{"test"}
 			}
-			warning := &notificationv1.Notification{ObjectMeta: metav1.ObjectMeta{Name: licenseExpiringPrefix, Namespace: adminNamespace, Labels: map[string]string{readStatusLabel: falseStatus}}}
+			warning := &notificationv1.Notification{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      licenseExpiringPrefix,
+					Namespace: adminNamespace,
+					Labels:    map[string]string{readStatusLabel: falseStatus},
+				},
+			}
 			expired := warning.DeepCopy()
 			expired.Name = licenseExpiredPrefix
-			c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(old, renewal, warning, expired).Build()
+			c := fake.NewClientBuilder().
+				WithScheme(scheme).
+				WithObjects(old, renewal, warning, expired).
+				Build()
 			n := &LicenseNotifier{Client: c, Logger: logr.Discard()}
 			// Repeated reconciles in either order must converge to the same cluster warning.
 			for _, l := range []*licensev1.License{renewal, old, old, renewal} {
@@ -81,11 +94,21 @@ func TestExpirationNotificationsAcrossLicenses(t *testing.T) {
 				}
 				for name, want := range map[string]bool{licenseExpiringPrefix: tc.wantUnread, licenseExpiredPrefix: tc.wantExpired} {
 					got := &notificationv1.Notification{}
-					if err := c.Get(context.Background(), types.NamespacedName{Name: name, Namespace: adminNamespace}, got); err != nil {
+					if err := c.Get(
+						context.Background(),
+						types.NamespacedName{Name: name, Namespace: adminNamespace},
+						got,
+					); err != nil {
 						t.Fatal(err)
 					}
 					if isNotificationUnread(got) != want {
-						t.Fatalf("after %s: %s unread=%v, want %v", l.Name, name, isNotificationUnread(got), want)
+						t.Fatalf(
+							"after %s: %s unread=%v, want %v",
+							l.Name,
+							name,
+							isNotificationUnread(got),
+							want,
+						)
 					}
 				}
 			}

@@ -161,7 +161,8 @@ func (n *LicenseNotifier) checkLicenseExpiration(
 			candidate.Status.Phase != licensev1.LicenseStatusPhaseExpired {
 			return
 		}
-		if selected == nil || candidate.Status.ExpirationTime.After(selected.Status.ExpirationTime.Time) {
+		if selected == nil ||
+			candidate.Status.ExpirationTime.After(selected.Status.ExpirationTime.Time) {
 			selected = candidate
 		}
 	}
