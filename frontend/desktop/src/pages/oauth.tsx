@@ -6,7 +6,7 @@ import { useConfigStore } from '@/stores/config';
 import useAppStore, { BRAIN_APP_KEY } from '@/stores/app';
 import { useGuideModalStore } from '@/stores/guideModal';
 import { parseOpenappQuery } from '@/utils/format';
-import { gtmLoginStart } from '@/utils/gtm';
+import { gtmLoginStart, gtmWebsiteTokenLoginSuccess } from '@/utils/gtm';
 import { ensureLocaleCookie } from '@/utils/ssrLocale';
 import { createTemplateInstance } from '@/api/platform';
 import { getRegionToken, initRegionToken } from '@/api/auth';
@@ -15,6 +15,7 @@ import { SwitchRegionType } from '@/constants/account';
 import { sessionConfig } from '@/utils/sessionConfig';
 import { switchKubeconfigNamespace } from '@/utils/switchKubeconfigNamespace';
 import { AccessTokenPayload } from '@/types/token';
+import { ProductUserTraits } from '@/types/analytics';
 import { jwtDecode } from 'jwt-decode';
 import { isString } from 'lodash';
 import { useMutation } from '@tanstack/react-query';
@@ -80,7 +81,9 @@ export default function OAuth() {
       templateForm,
       workspaceUid,
       switchRegionType,
-      workspaceName
+      workspaceName,
+      login_source,
+      login_user_type
     } = router.query;
 
     const marketingQuery: MarketingQuery = {
@@ -144,6 +147,7 @@ export default function OAuth() {
 
         delSession();
         setGlobalToken(globalToken); // Sets global token and cookie immediately
+        let productUserTraits: ProductUserTraits;
 
         // INIT mode: initialize new region
         if (switchRegionType === SwitchRegionType.INIT) {
@@ -158,7 +162,7 @@ export default function OAuth() {
             throw new Error('No result data');
           }
 
-          await sessionConfig(initRegionTokenResult.data);
+          productUserTraits = await sessionConfig(initRegionTokenResult.data);
         } else {
           // Normal mode: get region token
           const regionTokenRes = await getRegionToken();
@@ -167,7 +171,7 @@ export default function OAuth() {
             throw new Error('Failed to get region token');
           }
 
-          await sessionConfig(regionTokenRes.data);
+          productUserTraits = await sessionConfig(regionTokenRes.data);
 
           // Switch workspace if needed
           const currentSession = useSessionStore.getState().session;
@@ -186,6 +190,12 @@ export default function OAuth() {
             }
           }
         }
+
+        gtmWebsiteTokenLoginSuccess({
+          source: login_source,
+          userType: login_user_type,
+          productUserTraits
+        });
 
         if (
           (await openBrainGithubDeploy(marketingQuery)) ||
