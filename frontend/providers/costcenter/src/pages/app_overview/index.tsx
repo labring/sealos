@@ -6,6 +6,7 @@ import SwitchPage from '@/components/billing/SwitchPage';
 import AppNameMenu from '@/components/menu/AppNameMenu';
 import AppTypeMenu from '@/components/menu/AppTypeMenu';
 import CycleMenu from '@/components/menu/CycleMenu';
+import NamespaceIdMenu from '@/components/menu/NamespaceIdMenu';
 import NamespaceMenu from '@/components/menu/NamespaceMenu';
 import RegionMenu from '@/components/menu/RegionMenu';
 import { Refresh } from '@/components/Refresh';
@@ -18,7 +19,7 @@ import { Box, Flex, Heading, HStack, Img, Text, useMediaQuery } from '@chakra-ui
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 function Billing() {
   const { t } = useTranslation();
@@ -33,6 +34,9 @@ function Billing() {
   const [pageSize, setPageSize] = useState(3);
   const namespace = getNamespace()?.[0] || '';
   // console.log('namespace', namespace)
+  useEffect(() => {
+    setPage(1);
+  }, [namespace, regionUid]);
   const queryBody = {
     endTime,
     startTime,
@@ -126,6 +130,15 @@ function Billing() {
               {t('workspace')}
             </Text>
             <NamespaceMenu
+              isDisabled={isFetching}
+              innerWidth={isBigScreen2 ? '280px' : isBigScreen1 ? '180px' : '360px'}
+            />
+          </Flex>
+          <Flex align={'center'} mb="16px" mr="40px">
+            <Text fontSize={'12px'} width={'80px'} color={'grayModern.900'} fontWeight={'500'}>
+              {t('workspace_id')}
+            </Text>
+            <NamespaceIdMenu
               isDisabled={isFetching}
               innerWidth={isBigScreen2 ? '280px' : isBigScreen1 ? '180px' : '360px'}
             />

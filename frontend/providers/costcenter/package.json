@@ -6,7 +6,8 @@
     "dev": "next dev --port 3001",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "vitest run"
   },
   "dependencies": {
     "@alicloud/dysmsapi20170525": "^2.0.24",
@@ -58,6 +59,7 @@
     "zustand": "^4.4.1"
   },
   "devDependencies": {
+    "@testing-library/react": "14.1.2",
     "@types/js-cookie": "^3.0.4",
     "@types/js-yaml": "^4.0.6",
     "@types/jsonwebtoken": "^9.0.3",
@@ -68,7 +70,9 @@
     "@types/react-dom": "18.0.11",
     "eslint": "8.36.0",
     "eslint-config-next": "13.2.4",
+    "jsdom": "20.0.3",
     "prettier": "^2.8.8",
-    "sass": "^1.68.0"
+    "sass": "^1.68.0",
+    "vitest": "1.6.1"
   }
 }

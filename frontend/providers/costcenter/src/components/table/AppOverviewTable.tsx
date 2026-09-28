@@ -105,6 +105,10 @@ export function AppOverviewTable({
           return namespaceMap.get(props.getValue()) || props.getValue();
         }
       }),
+      columnHelper.accessor((row) => row.namespace, {
+        id: TableHeaderID.NamespaceID,
+        header: getCustomTh()
+      }),
       columnHelper.accessor((row) => row.amount, {
         id: TableHeaderID.TotalAmount,
         header: getCustomTh({
@@ -130,7 +134,7 @@ export function AppOverviewTable({
         }
       })
     ];
-  }, [t, regionName]);
+  }, [t, regionName, namespaceMap]);
   const table = useReactTable({
     data,
     state: {

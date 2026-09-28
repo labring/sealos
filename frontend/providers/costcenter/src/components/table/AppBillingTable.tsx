@@ -110,6 +110,10 @@ export function AppBillingTable({
           return namespaceMap.get(props.getValue()) || props.getValue();
         }
       }),
+      columnHelper.accessor((row) => row.namespace, {
+        id: TableHeaderID.NamespaceID,
+        header: getCustomTh()
+      }),
       columnHelper.accessor((row) => row.time, {
         id: TableHeaderID.TransactionTime,
         header: getCustomTh(),
@@ -137,7 +141,7 @@ export function AppBillingTable({
         cell: getAppBillingDetailCell()
       })
     ];
-  }, [regionName, t]);
+  }, [regionName, t, namespaceMap]);
   const table = useReactTable({
     data,
     state: {

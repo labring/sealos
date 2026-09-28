@@ -8,9 +8,10 @@ import { APPBillingItem, ApiResp } from '@/types';
 import { Flex, HStack, TabPanel, Text, useMediaQuery } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import AppNameMenu from '../menu/AppNameMenu';
 import AppTypeMenu from '../menu/AppTypeMenu';
+import NamespaceIdMenu from '../menu/NamespaceIdMenu';
 import NamespaceMenu from '../menu/NamespaceMenu';
 import RegionMenu from '../menu/RegionMenu';
 import { AppBillingTable } from '../table/AppBillingTable';
@@ -28,13 +29,17 @@ export default function InOutTabPanel() {
     '(min-width: 1200px)',
     '(min-width: 1440px)'
   ]);
+  const namespace = getNamespace()?.[0] || '';
+  useEffect(() => {
+    setPage(1);
+  }, [namespace, regionUid]);
   const queryBody = {
     endTime,
     startTime,
     regionUid,
     appType: getAppType(),
     appName: getAppName(),
-    namespace: getNamespace()?.[0] || '',
+    namespace,
     page,
     pageSize
   };
@@ -96,6 +101,15 @@ export default function InOutTabPanel() {
             {t('workspace')}
           </Text>
           <NamespaceMenu
+            isDisabled={isFetching}
+            innerWidth={isBigScreen2 ? '300px' : isBigScreen1 ? '180px' : '300px'}
+          />
+        </Flex>
+        <Flex align={'center'} mb="16px" mr="40px">
+          <Text fontSize={'12px'} width={'80px'} color={'grayModern.900'} fontWeight={'500'}>
+            {t('workspace_id')}
+          </Text>
+          <NamespaceIdMenu
             isDisabled={isFetching}
             innerWidth={isBigScreen2 ? '300px' : isBigScreen1 ? '180px' : '300px'}
           />
