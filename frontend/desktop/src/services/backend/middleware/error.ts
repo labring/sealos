@@ -9,9 +9,16 @@ export const ErrorHandler =
       await handler(req, res);
     } catch (error) {
       console.log(error);
+      const statusCode =
+        error &&
+        typeof error === 'object' &&
+        'statusCode' in error &&
+        typeof error.statusCode === 'number'
+          ? error.statusCode
+          : 500;
       jsonRes(res, {
         message,
-        code: 500
+        code: statusCode
       });
     }
   };
