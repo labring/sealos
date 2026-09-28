@@ -36,3 +36,28 @@ export const gtmLoginSuccess = ({
     context: 'app',
     ...productUserTraits
   });
+
+/** Records website token logins only; other token redirects can switch regions. */
+export const gtmWebsiteTokenLoginSuccess = ({
+  source,
+  userType,
+  productUserTraits
+}: {
+  source: unknown;
+  userType: unknown;
+  productUserTraits: ProductUserTraits;
+}) => {
+  if (
+    (source !== 'email' && source !== 'google_one_tap') ||
+    (userType !== 'new' && userType !== 'existing')
+  ) {
+    return;
+  }
+
+  gtmLoginSuccess({
+    method: source === 'email' ? 'email' : 'oauth2',
+    oauth2Provider: source === 'google_one_tap' ? 'GOOGLE' : undefined,
+    user_type: userType,
+    productUserTraits
+  });
+};

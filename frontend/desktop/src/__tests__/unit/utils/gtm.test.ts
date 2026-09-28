@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { gtmLoginSuccess } from '@/utils/gtm';
+import { gtmLoginSuccess, gtmWebsiteTokenLoginSuccess } from '@/utils/gtm';
 
 describe('gtmLoginSuccess', () => {
   beforeEach(() => {
@@ -78,5 +78,42 @@ describe('gtmLoginSuccess', () => {
         context: 'app'
       }
     ]);
+  });
+
+  it('records website email and Google One Tap token logins with the correct method', () => {
+    const push = vi.mocked(window.dataLayer.push);
+    const productUserTraits = { user_username: 'user', user_name: 'User', user_email: '' };
+
+    gtmWebsiteTokenLoginSuccess({ source: 'email', userType: 'new', productUserTraits });
+    gtmWebsiteTokenLoginSuccess({
+      source: 'google_one_tap',
+      userType: 'existing',
+      productUserTraits
+    });
+
+    expect(push).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ event: 'login_success', method: 'email', user_type: 'new' })
+    );
+    expect(push).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        event: 'login_success',
+        method: 'oauth2',
+        oauth2_provider: 'GOOGLE',
+        user_type: 'existing'
+      })
+    );
+  });
+
+  it('does not record region transfers or unrecognized token login metadata', () => {
+    const push = vi.mocked(window.dataLayer.push);
+    const productUserTraits = { user_username: 'user', user_name: 'User', user_email: '' };
+
+    gtmWebsiteTokenLoginSuccess({ source: undefined, userType: 'new', productUserTraits });
+    gtmWebsiteTokenLoginSuccess({ source: 'email', userType: undefined, productUserTraits });
+    gtmWebsiteTokenLoginSuccess({ source: ['email'], userType: 'existing', productUserTraits });
+
+    expect(push).not.toHaveBeenCalled();
   });
 });
