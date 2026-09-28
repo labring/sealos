@@ -9,6 +9,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createSubscriptionPayment } from '@/api/plan';
 import { useCustomToast } from '@/hooks/useCustomToast';
 import { useState } from 'react';
+import { isSubscriptionExpired } from '@/utils/subscription';
 
 export function getPlanBackgroundClass(planName: string, isPayg: boolean, inDebt: boolean): string {
   if (inDebt) return 'bg-plan-debt';
@@ -61,6 +62,13 @@ export function PlanHeader({ children, onRenewSuccess }: PlanHeaderProps) {
   const isCancelled = !!subscription?.CancelAtPeriodEnd && !isFreePlan;
   const stateLower = subscription?.Status?.toLowerCase?.() || '';
   const isNormal = stateLower === 'normal';
+  const subscriptionExpired = subscription
+    ? isSubscriptionExpired({
+        status: subscription.Status,
+        currentPeriodEndAt: subscription.CurrentPeriodEndAt
+      })
+    : false;
+  const canResume = isCancelled && !subscriptionExpired;
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
 
   const cancelPlanMutation = useMutation({
@@ -248,21 +256,19 @@ export function PlanHeader({ children, onRenewSuccess }: PlanHeaderProps) {
                     <span>{isCancelled ? t('common:cancelled') : t('common:cancel_plan')}</span>
                   </Button>
                 )}
-                {isCancelled && (
+                {canResume && (
                   <Button
                     size="lg"
                     disabled={resumePlanMutation.isLoading || !canManagePayment}
                     onClick={() => {
                       if (!subscription) return;
 
-                      const statusLower = subscription.Status?.toLowerCase?.() || '';
-                      const isDeleted = statusLower === 'deleted';
-                      const periodEndMs = subscription.CurrentPeriodEndAt
-                        ? new Date(subscription.CurrentPeriodEndAt).getTime()
-                        : 0;
-                      const isExpired = !periodEndMs || periodEndMs <= Date.now();
-
-                      if (isDeleted || isExpired) {
+                      if (
+                        isSubscriptionExpired({
+                          status: subscription.Status,
+                          currentPeriodEndAt: subscription.CurrentPeriodEndAt
+                        })
+                      ) {
                         toast({
                           title: t('common:resume_plan_expired_title'),
                           description: t('common:resume_plan_expired_desc'),
@@ -292,12 +298,18 @@ export function PlanHeader({ children, onRenewSuccess }: PlanHeaderProps) {
 
                 {/* Keep UpgradePlanDialog mounted even when cancelled, so message-driven open works */}
                 {children?.({
-                  trigger: isCancelled ? (
+                  trigger: canResume ? (
                     <span className="hidden" />
                   ) : (
                     <Button size="lg" disabled={!canManagePayment}>
                       <Sparkles />
-                      <span>{inDebt ? t('common:renew') : t('common:upgrade_plan')}</span>
+                      <span>
+                        {subscriptionExpired
+                          ? t('common:subscribe_plan')
+                          : inDebt
+                          ? t('common:renew')
+                          : t('common:upgrade_plan')}
+                      </span>
                     </Button>
                   )
                 })}
