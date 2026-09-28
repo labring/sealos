@@ -123,6 +123,7 @@ export type AuthConfigType = {
   };
   oauth2idp: {
     enabled: boolean;
+    authorizationCodeEnabled?: boolean;
   };
   idp: {
     password?: {
