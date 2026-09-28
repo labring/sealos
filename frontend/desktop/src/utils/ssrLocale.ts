@@ -19,7 +19,7 @@ export function ensureLocaleCookie({
   res,
   defaultLocale = 'en'
 }: {
-  req: IncomingMessage & { cookies?: Record<string, string> };
+  req: IncomingMessage & { cookies?: Partial<Record<string, string>> };
   res: ServerResponse;
   defaultLocale?: 'en' | 'zh';
 }): 'en' | 'zh' {

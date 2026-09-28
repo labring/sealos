@@ -6,6 +6,12 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   plugins: [tsconfigPaths(), react()],
   resolve: {
+    alias: {
+      '@sealos/shadcn-ui/button': new URL(
+        '../packages/shadcn-ui/src/components/ui/button.tsx',
+        import.meta.url
+      ).pathname
+    },
     conditions: ['node', 'import', 'default']
   },
   test: {

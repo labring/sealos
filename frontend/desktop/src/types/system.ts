@@ -129,6 +129,7 @@ export type AuthConfigType = {
   cloudVitrualMachineUrl: string;
   oauth2idp: {
     enabled: boolean;
+    authorizationCodeEnabled?: boolean;
   };
   idp: {
     password?: {
