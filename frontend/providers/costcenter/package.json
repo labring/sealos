@@ -62,6 +62,7 @@
     "react-i18next": "^14.1.2",
     "react-zoom-pan-pinch": "^3.7.0",
     "sealos-desktop-sdk": "workspace:*",
+    "sharp": "^0.32.6",
     "sonner": "^2.0.7",
     "tailwindcss": "^4.1.12",
     "typescript": "^5.2.2",
