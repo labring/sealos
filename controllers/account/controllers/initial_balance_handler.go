@@ -2,9 +2,11 @@ package controllers
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 	"net/http"
 	"strconv"
+
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 // ParseInitialBalance uses the same signed int64 micro-unit representation as
@@ -16,7 +18,7 @@ func ParseInitialBalance(raw string, defaultBalance int64) (int64, error) {
 	}
 	balance, err := strconv.ParseInt(raw, 10, 64)
 	if err != nil || balance < 0 {
-		return 0, fmt.Errorf("BASE_BALANCE must be a non-negative decimal int64 in micro-units")
+		return 0, errors.New("BASE_BALANCE must be a non-negative decimal int64 in micro-units")
 	}
 	return balance, nil
 }
@@ -39,14 +41,20 @@ func (h *InitialBalanceHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 		return
 	}
 	if h.ConfigError != nil || h.Balance < 0 || h.RegionUID == "" {
-		http.Error(w, "Platform initial balance configuration is invalid", http.StatusServiceUnavailable)
+		http.Error(
+			w,
+			"Platform initial balance configuration is invalid",
+			http.StatusServiceUnavailable,
+		)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(struct {
+	if err := json.NewEncoder(w).Encode(struct {
 		Version      int    `json:"version"`
 		Balance      string `json:"balance"`
 		UnitsPerYuan string `json:"unitsPerYuan"`
 		RegionUID    string `json:"regionUid"`
-	}{1, strconv.FormatInt(h.Balance, 10), "1000000", h.RegionUID})
+	}{1, strconv.FormatInt(h.Balance, 10), "1000000", h.RegionUID}); err != nil {
+		ctrl.Log.WithName("initial-balance-handler").Error(err, "failed to encode response")
+	}
 }

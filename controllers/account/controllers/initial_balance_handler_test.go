@@ -13,10 +13,15 @@ func TestParseInitialBalance(t *testing.T) {
 		want    int64
 		invalid bool
 	}{
-		{"", 5000000, false}, {"0", 0, false}, {"7250000", 7250000, false},
+		{"", 5000000, false},
+		{"0", 0, false},
+		{"7250000", 7250000, false},
 		{"9223372036854775807", 9223372036854775807, false},
-		{"5e+06", 0, true}, {"-1", 0, true}, {"1.5", 0, true},
-		{" 5000000", 0, true}, {"9223372036854775808", 0, true},
+		{"5e+06", 0, true},
+		{"-1", 0, true},
+		{"1.5", 0, true},
+		{" 5000000", 0, true},
+		{"9223372036854775808", 0, true},
 	} {
 		t.Run(tc.raw, func(t *testing.T) {
 			got, err := ParseInitialBalance(tc.raw, 5000000)
@@ -38,8 +43,17 @@ func TestInitialBalanceHandler(t *testing.T) {
 		{"invalid explicit configuration", "GET", errors.New("invalid"), 503},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			h := InitialBalanceHandler{Balance: 7250000, RegionUID: "region-uid", ConfigError: tc.configError}
-			r := httptest.NewRequest(tc.method, "/v1alpha1/account-initial-balance", nil)
+			h := InitialBalanceHandler{
+				Balance:     7250000,
+				RegionUID:   "region-uid",
+				ConfigError: tc.configError,
+			}
+			r := httptest.NewRequestWithContext(
+				t.Context(),
+				tc.method,
+				"/v1alpha1/account-initial-balance",
+				nil,
+			)
 			w := httptest.NewRecorder()
 			h.ServeHTTP(w, r)
 			if w.Code != tc.want {
@@ -56,7 +70,9 @@ func TestInitialBalanceHandler(t *testing.T) {
 				if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
 					t.Fatal(err)
 				}
-				if body["balance"] != "7250000" || body["unitsPerYuan"] != "1000000" || body["regionUid"] != "region-uid" || body["version"] != float64(1) {
+				if body["balance"] != "7250000" || body["unitsPerYuan"] != "1000000" ||
+					body["regionUid"] != "region-uid" ||
+					body["version"] != float64(1) {
 					t.Fatalf("unexpected policy: %v", body)
 				}
 			}
