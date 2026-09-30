@@ -22,7 +22,6 @@ import (
 	"flag"
 	"net/http"
 	"os"
-	"strconv"
 	"time"
 
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
@@ -305,11 +304,15 @@ func main() {
 		setupLog.Error(err, "unable to init region env")
 		os.Exit(1)
 	}
-	if os.Getenv(cockroach.EnvBaseBalance) != "" {
-		balance, err := strconv.ParseInt(os.Getenv(cockroach.EnvBaseBalance), 10, 64)
-		if err == nil {
-			v2Account.ZeroAccount.Balance = balance
-		}
+	initialBalance, initialBalanceErr := controllers.ParseInitialBalance(
+		os.Getenv(cockroach.EnvBaseBalance), v2Account.ZeroAccount.Balance,
+	)
+	if initialBalanceErr != nil {
+		// Preserve legacy reconciliation availability, but fail the policy endpoint
+		// closed until an operator fixes configuration and restarts the controller.
+		setupLog.Error(initialBalanceErr, "invalid initial balance configuration")
+	} else {
+		v2Account.ZeroAccount.Balance = initialBalance
 	}
 	skipExpiredUserTimeDuration := time.Hour * 24 * 2
 	if os.Getenv("SKIP_EXPIRED_USER_TIME") != "" {
@@ -417,10 +420,17 @@ func main() {
 			AdminJwtSecret:    adminJwtSecret,
 		}
 		go func() {
+			mux := http.NewServeMux()
+			mux.Handle("/v1alpha1/account-initial-balance", &controllers.InitialBalanceHandler{
+				Balance:     v2Account.ZeroAccount.Balance,
+				RegionUID:   v2Account.GetLocalRegion().UID.String(),
+				ConfigError: initialBalanceErr,
+			})
+			mux.Handle("/", reloadHandler)
 			setupLog.Info("starting property reload HTTP server", "port", 9444)
 			server := &http.Server{
 				Addr:              ":9444",
-				Handler:           reloadHandler,
+				Handler:           mux,
 				ReadHeaderTimeout: 10 * time.Second,
 			}
 			if err := server.ListenAndServe(); err != nil {
