@@ -88,14 +88,28 @@ export function makeAPIClient(
     }
   });
 }
+
+export function resolveRequestRegionUid(
+  requestedRegionUid: unknown,
+  sessionRegionUid?: string,
+  currentRegionUid?: string
+) {
+  const requested = typeof requestedRegionUid === 'string' ? requestedRegionUid.trim() : '';
+  return requested || sessionRegionUid || currentRegionUid;
+}
+
 export async function makeAPIClientByHeader(req: NextApiRequest, res: NextApiResponse) {
   const token = req.body.internalToken;
-  const regionUid = req.body.regionUid;
   const payload = await verifyInternalToken(token);
   if (!payload) {
     jsonRes(res, { code: 401, message: 'Authorization failed' });
     return null;
   }
+  const regionUid = resolveRequestRegionUid(
+    req.body.regionUid,
+    payload.regionUid,
+    Config().cloud.regionUid
+  );
   const region = await getRegionByUid(regionUid);
   const client = makeAPIClient(region, payload);
   return client;
