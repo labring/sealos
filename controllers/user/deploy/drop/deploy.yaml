@@ -433,6 +433,26 @@ webhooks:
     service:
       name: user-webhook-service
       namespace: user-system
+      path: /validate--v1-namespace
+  failurePolicy: Fail
+  name: vnamespace.user.sealos.io
+  rules:
+  - apiGroups:
+    - ""
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - namespaces
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: user-webhook-service
+      namespace: user-system
       path: /validate-user-sealos-io-v1-operationrequest
   failurePolicy: Fail
   name: voperationrequest.kb.io
