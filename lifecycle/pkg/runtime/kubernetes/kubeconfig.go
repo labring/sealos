@@ -21,41 +21,17 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"path/filepath"
 
 	"golang.org/x/sync/errgroup"
 )
 
+// copyKubeAdminConfigCommand keeps the long-standing convenience contract for
+// the node where the cluster is bootstrapped. Additional nodes deliberately do
+// not receive this cluster-admin credential.
 const copyKubeAdminConfigCommand = `rm -rf $HOME/.kube/config && mkdir -p $HOME/.kube && cp /etc/kubernetes/admin.conf $HOME/.kube/config`
-
-func (k *KubeadmRuntime) copyKubeConfigFileToNodes(hosts ...string) error {
-	src := k.pathResolver.AdminFile()
-	eg, _ := errgroup.WithContext(context.Background())
-	for _, node := range hosts {
-		node := node
-		eg.Go(func() error {
-			home, err := k.execer.CmdToString(node, "echo $HOME", "")
-			if err != nil {
-				return err
-			}
-			dst := filepath.Join(home, ".kube", "config")
-			return k.execer.Copy(node, src, dst)
-		})
-	}
-	return eg.Wait()
-}
 
 func (k *KubeadmRuntime) copyMasterKubeConfig(host string) error {
 	return k.sshCmdAsync(host, copyKubeAdminConfigCommand)
-}
-
-func (k *KubeadmRuntime) syncLocalAdminKubeConfigCopies() error {
-	hosts := append([]string{}, k.getMasterIPAndPortList()...)
-	hosts = append(hosts, k.getNodeIPAndPortList()...)
-	if len(hosts) == 0 {
-		return nil
-	}
-	return k.copyKubeConfigFileToNodes(hosts...)
 }
 
 func (k *KubeadmRuntime) deleteStaticPod(component string) error {
