@@ -509,27 +509,6 @@ export const patchYamlList = ({
         workloadTemplateChanged = true;
       }
 
-      const requiresStatefulSetRecreate =
-        newYamlJson.kind === YamlKindEnum.StatefulSet &&
-        patchTouchesPath(patchRes, '/spec/volumeClaimTemplates') &&
-        (() => {
-          const oldTemplateNames = new Set(
-            ((oldFormJson as any).spec?.volumeClaimTemplates || []).map(
-              (template: any) => template.metadata?.name
-            )
-          );
-          const newTemplateNames = new Set(
-            ((newYamlJson as any).spec?.volumeClaimTemplates || []).map(
-              (template: any) => template.metadata?.name
-            )
-          );
-
-          return (
-            oldTemplateNames.size !== newTemplateNames.size ||
-            [...oldTemplateNames].some((name) => !newTemplateNames.has(name))
-          );
-        })();
-
       /* Generate a new json using the formPatchResult and the crJson */
       const actionsJson = (() => {
         try {
@@ -641,6 +620,29 @@ export const patchYamlList = ({
         }
       }
 
+      const requiresStatefulSetRecreate =
+        newYamlJson.kind === YamlKindEnum.StatefulSet &&
+        patchTouchesPath(patchRes, '/spec/volumeClaimTemplates') &&
+        (() => {
+          const oldStatefulSet = oldFormJson as any;
+          const newStatefulSet = newYamlJson as any;
+          const oldTemplateNames = new Set(
+            (oldStatefulSet.spec?.volumeClaimTemplates || []).map(
+              (template: any) => template.metadata?.name
+            )
+          );
+          const newTemplateNames = new Set(
+            (newStatefulSet.spec?.volumeClaimTemplates || []).map(
+              (template: any) => template.metadata?.name
+            )
+          );
+
+          return (
+            oldTemplateNames.size !== newTemplateNames.size ||
+            [...oldTemplateNames].some((name) => !newTemplateNames.has(name))
+          );
+        })();
+
       if (requiresStatefulSetRecreate) {
         actions.push({
           type: 'recreate',
@@ -653,7 +655,8 @@ export const patchYamlList = ({
           kind: newYamlJson.kind as `${YamlKindEnum}`,
           value: actionsJson as any,
           restartRequired:
-            isWorkloadKind(newYamlJson.kind) && patchTouchesPath(patchRes, '/spec/template')
+            isWorkloadKind(newYamlJson.kind) &&
+            patchTouchesPath(patchRes, '/spec/template')
         });
       }
     } else {
