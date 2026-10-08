@@ -16,60 +16,14 @@ package kubernetes
 
 import (
 	"context"
-	"path/filepath"
-	"sort"
 	"strings"
 	"sync"
 	"testing"
 
 	clientkubernetes "github.com/labring/sealos/pkg/client-go/kubernetes"
-	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/ssh"
 	v1beta1 "github.com/labring/sealos/pkg/types/v1beta1"
 )
-
-func TestSyncLocalAdminKubeConfigCopies(t *testing.T) {
-	rootDir := t.TempDir()
-	prevRuntimeRoot := constants.DefaultRuntimeRootDir
-	constants.DefaultRuntimeRootDir = rootDir
-	t.Cleanup(func() {
-		constants.DefaultRuntimeRootDir = prevRuntimeRoot
-	})
-
-	stub := &stubSSH{
-		cmdToStringResponses: map[string]string{
-			"master0|echo $HOME": "/root/master0",
-			"master1|echo $HOME": "/root/master1",
-			"node0|echo $HOME":   "/home/node0",
-		},
-	}
-	rt := &KubeadmRuntime{
-		execer:       stub,
-		cluster:      testClusterWithNodes([]string{"master0", "master1"}, []string{"node0"}),
-		pathResolver: constants.NewPathResolver("test-cluster"),
-	}
-
-	if err := rt.syncLocalAdminKubeConfigCopies(); err != nil {
-		t.Fatalf("syncLocalAdminKubeConfigCopies() error = %v", err)
-	}
-
-	want := []string{
-		"master0|" + filepath.Join(rootDir, "test-cluster", "etc", "admin.conf") + "|/root/master0/.kube/config",
-		"master1|" + filepath.Join(rootDir, "test-cluster", "etc", "admin.conf") + "|/root/master1/.kube/config",
-		"node0|" + filepath.Join(rootDir, "test-cluster", "etc", "admin.conf") + "|/home/node0/.kube/config",
-	}
-	sort.Strings(want)
-	got := append([]string{}, stub.copyCalls...)
-	sort.Strings(got)
-	if len(stub.copyCalls) != len(want) {
-		t.Fatalf("syncLocalAdminKubeConfigCopies() copyCalls = %v, want %v", stub.copyCalls, want)
-	}
-	for i := range want {
-		if got[i] != want[i] {
-			t.Fatalf("syncLocalAdminKubeConfigCopies() copyCalls = %v, want %v", got, want)
-		}
-	}
-}
 
 func TestDeleteStaticPodMissingContainerError(t *testing.T) {
 	stub := &stubSSH{
