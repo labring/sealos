@@ -111,7 +111,8 @@ func (c *Applier) applyDesired() (result error) {
 	}
 	if c.ClusterCurrent != nil && !c.ClusterCurrent.CreationTimestamp.IsZero() &&
 		c.ClusterCurrent.IsStandaloneControlPlane() != c.ClusterDesired.IsStandaloneControlPlane() {
-		return errors.New("use sealos switch control-plane to convert kubelets before changing controlPlaneMode")
+		const message = "use sealos switch control-plane to convert kubelets before changing controlPlaneMode"
+		return errors.New(message)
 	}
 	requireModeAPI := c.ClusterCurrent != nil && !c.ClusterCurrent.CreationTimestamp.IsZero() &&
 		(mode != "" || c.ClusterCurrent.Spec.ControlPlaneMode != "")

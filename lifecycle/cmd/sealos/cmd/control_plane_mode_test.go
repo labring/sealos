@@ -135,7 +135,9 @@ func TestSwitchModeConfirmation(t *testing.T) {
 				cmd.AddCommand(group)
 				cmd.SetOut(io.Discard)
 				cmd.SetErr(io.Discard)
-				cmd.SetArgs(append([]string{"control-plane", mode, "--cluster", "test-cluster"}, test.flags...))
+				args := []string{"control-plane", mode, "--cluster", "test-cluster"}
+				args = append(args, test.flags...)
+				cmd.SetArgs(args)
 				err := cmd.Execute()
 				if (err == nil) != test.wantRun || prompted != test.wantPrompt ||
 					ran != test.wantRun {
