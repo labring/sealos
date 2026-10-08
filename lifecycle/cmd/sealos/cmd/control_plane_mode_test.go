@@ -135,7 +135,8 @@ func TestSwitchModeConfirmation(t *testing.T) {
 				cmd.AddCommand(group)
 				cmd.SetOut(io.Discard)
 				cmd.SetErr(io.Discard)
-				args := []string{"control-plane", mode, "--cluster", "test-cluster"}
+				args := make([]string, 0, 4+len(test.flags))
+				args = append(args, "control-plane", mode, "--cluster", "test-cluster")
 				args = append(args, test.flags...)
 				cmd.SetArgs(args)
 				err := cmd.Execute()
