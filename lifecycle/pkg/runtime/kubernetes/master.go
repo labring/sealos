@@ -175,10 +175,6 @@ func (k *KubeadmRuntime) joinMasters(masters []string) error {
 			return fmt.Errorf("add master0 apiserver domain hosts in %s failed %v", master, err)
 		}
 
-		err = k.copyMasterKubeConfig(master)
-		if err != nil {
-			return err
-		}
 		logger.Info("succeeded in joining %s as master", master)
 	}
 	return nil

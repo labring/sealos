@@ -19,7 +19,12 @@ import {
 } from '@/store/static';
 import { useUserStore } from '@/store/user';
 import type { YamlItemType } from '@/types';
-import type { AppEditSyncedFields, AppEditType, DeployKindsType } from '@/types/app';
+import type {
+  AppEditSyncedFields,
+  AppEditType,
+  AppPatchPropsType,
+  DeployKindsType
+} from '@/types/app';
 import { adaptEditAppData, YamlKindEnum } from '@/utils/adapt';
 import type { V1OwnerReference } from '@kubernetes/client-node';
 import {
@@ -32,7 +37,7 @@ import {
   json2Service
 } from '@/utils/deployYaml2Json';
 import { serviceSideProps } from '@/utils/i18n';
-import { getErrText, patchYamlList } from '@/utils/tools';
+import { getErrText, patchWillRestartApp, patchYamlList } from '@/utils/tools';
 import { getSubmitErrorMessage } from '@/utils/formErrorMessage';
 import { Box, Flex } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
@@ -279,6 +284,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   const { userSourcePrice, loadUserSourcePrice } = useUserStore();
   const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(!!appName);
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
+  const [confirmContent, setConfirmContent] = useState(applyMessage);
   const [errorMessage, setErrorMessage] = useState('');
   const [errorCode, setErrorCode] = useState<ResponseCode>();
   const [already, setAlready] = useState(false);
@@ -291,7 +297,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     manufacturers: ''
   });
   const { openConfirm, ConfirmChild } = useConfirm({
-    content: applyMessage
+    content: confirmContent
   });
   const pxVal = useMemo(() => {
     return Math.max(EDIT_PAGE_MIN_PADDING, Math.floor((screenWidth - EDIT_PAGE_TARGET_WIDTH) / 2));
@@ -394,7 +400,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   );
 
   const submitSuccess = useCallback(
-    async (yamlList: YamlItemType[]) => {
+    async (yamlList: YamlItemType[], submittedPatch?: AppPatchPropsType) => {
       if (!createCompleted) {
         return router.push('/app/detail?name=hello&guide=true');
       }
@@ -404,11 +410,23 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         const parsedNewYamlList = yamlList.map((item) => item.value);
 
         if (appName) {
-          const patch = patchYamlList({
-            parsedOldYamlList: formOldYamls.current.map((item) => item.value),
-            parsedNewYamlList: parsedNewYamlList,
-            originalYamlList: crOldYamls.current
-          });
+          const patch =
+            submittedPatch ||
+            patchYamlList({
+              parsedOldYamlList: formOldYamls.current.map((item) => item.value),
+              parsedNewYamlList: parsedNewYamlList,
+              originalYamlList: crOldYamls.current
+            });
+
+          if (patch.length === 0) {
+            toast({
+              status: 'warning',
+              title: t('No configuration changes')
+            });
+            setIsLoading(false);
+            return;
+          }
+
           await putApp({
             patch,
             appName,
@@ -834,6 +852,27 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
               const parseYamls = formData2Yamls(data);
               setYamlList(formData2DisplayYamls(data));
 
+              let patch: AppPatchPropsType | undefined;
+              if (appName) {
+                patch = patchYamlList({
+                  parsedOldYamlList: formOldYamls.current.map((item) => item.value),
+                  parsedNewYamlList: parseYamls.map((item) => item.value),
+                  originalYamlList: crOldYamls.current
+                });
+
+                if (patch.length === 0) {
+                  return toast({
+                    status: 'warning',
+                    title: t('No configuration changes')
+                  });
+                }
+              }
+
+              setConfirmContent(
+                patchWillRestartApp(patch || [])
+                  ? 'Confirm Update Application With Restart?'
+                  : applyMessage
+              );
               // gpu inventory check
               if (data.gpu?.type) {
                 const inventory = countGpuInventory(data.gpu?.type);
@@ -944,7 +983,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
                       : undefined
                   }
                 });
-                submitSuccess(parseYamls);
+                submitSuccess(parseYamls, patch);
               })();
             }, submitError)();
           }}

@@ -145,9 +145,40 @@ func (n *LicenseNotifier) checkLicenseExpiration(
 	ctx context.Context,
 	license *licensev1.License,
 ) error {
-	if license.Status.ExpirationTime.IsZero() {
+	// Notifications describe cluster coverage, not each historical license. Use
+	// the furthest expiration among validated licenses so an old license cannot
+	// overwrite the notification after a renewal has been activated.
+	licenses := &licensev1.LicenseList{}
+	if err := n.List(ctx, licenses); err != nil {
+		return fmt.Errorf("failed to list licenses for expiration notification: %w", err)
+	}
+	var selected *licensev1.License
+	consider := func(candidate *licensev1.License) {
+		if !candidate.DeletionTimestamp.IsZero() || candidate.Status.ExpirationTime.IsZero() {
+			return
+		}
+		if candidate.Status.Phase != licensev1.LicenseStatusPhaseActive &&
+			candidate.Status.Phase != licensev1.LicenseStatusPhaseExpired {
+			return
+		}
+		if selected == nil ||
+			candidate.Status.ExpirationTime.After(selected.Status.ExpirationTime.Time) {
+			selected = candidate
+		}
+	}
+	for i := range licenses.Items {
+		candidate := &licenses.Items[i]
+		if client.ObjectKeyFromObject(candidate) == client.ObjectKeyFromObject(license) {
+			// The informer may not yet reflect the status just reconciled.
+			continue
+		}
+		consider(candidate)
+	}
+	consider(license)
+	if selected == nil {
 		return nil
 	}
+	license = selected
 
 	now := time.Now()
 	expirationTime := license.Status.ExpirationTime.Time
@@ -155,6 +186,9 @@ func (n *LicenseNotifier) checkLicenseExpiration(
 
 	// Determine if license is expired or expiring soon
 	if timeUntilExpiration <= 0 {
+		if err := n.markNotificationsReadIfExists(ctx, licenseExpiringPrefix); err != nil {
+			return fmt.Errorf("failed to mark expiring notification as read: %w", err)
+		}
 		// License has expired
 		if license.Status.Phase == licensev1.LicenseStatusPhaseExpired {
 			titleEn := "License Expired"

@@ -105,7 +105,6 @@ func (k *KubeadmRuntime) ScaleUp(newMasterIPList []string, newNodeIPList []strin
 		if err := k.joinNodes(newNodeIPList); err != nil {
 			return err
 		}
-		return k.copyKubeConfigFileToNodes(newNodeIPList...)
 	}
 	return nil
 }

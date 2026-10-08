@@ -83,6 +83,81 @@ const ignoreNotFound = async <T>(promise: Promise<T>) => {
   }
 };
 
+const waitForStatefulSetDeletion = async (k8sApp: any, appName: string, namespace: string) => {
+  for (let attempt = 0; attempt < 20; attempt++) {
+    try {
+      await k8sApp.readNamespacedStatefulSet(appName, namespace);
+    } catch (error: any) {
+      if (Number(getK8sErrorCode(error)) === 404) {
+        return;
+      }
+      throw error;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  }
+
+  throw new Error(`Timed out waiting for StatefulSet ${appName} to be deleted`);
+};
+
+const requiresStatefulSetRecreation = (current: V1StatefulSet, target: Record<string, any>) => {
+  const currentTemplateNames = new Set(
+    (current.spec?.volumeClaimTemplates || []).map((template) => template.metadata?.name)
+  );
+  const targetTemplates = target.spec?.volumeClaimTemplates;
+
+  if (!Array.isArray(targetTemplates)) {
+    return false;
+  }
+
+  const targetTemplateNames = new Set(
+    targetTemplates.map((template: { metadata?: { name?: string } }) => template.metadata?.name)
+  );
+
+  return (
+    currentTemplateNames.size !== targetTemplateNames.size ||
+    [...currentTemplateNames].some((name) => !targetTemplateNames.has(name))
+  );
+};
+
+const normalizeLegacyStatefulSetRecreatePatch = async ({
+  patch,
+  k8sApp,
+  appName,
+  namespace
+}: {
+  patch: AppPatchPropsType;
+  k8sApp: { readNamespacedStatefulSet: (name: string, namespace: string) => Promise<any> };
+  appName: string;
+  namespace: string;
+}): Promise<AppPatchPropsType> => {
+  const legacyPatch = patch.find(
+    (item): item is Extract<AppPatchPropsType[number], { type: 'patch' }> =>
+      item.type === 'patch' &&
+      item.kind === YamlKindEnum.StatefulSet &&
+      item.value?.metadata?.name === appName &&
+      Array.isArray(item.value?.spec?.volumeClaimTemplates)
+  );
+
+  if (!legacyPatch) {
+    return patch;
+  }
+
+  const current = await k8sApp.readNamespacedStatefulSet(appName, namespace);
+  if (!requiresStatefulSetRecreation(current.body as V1StatefulSet, legacyPatch.value)) {
+    return patch;
+  }
+
+  infoLog('normalize legacy StatefulSet patch to recreation for storage topology change', {
+    appName
+  });
+  return patch.map((item) =>
+    item === legacyPatch
+      ? { ...item, type: 'recreate' as const, kind: YamlKindEnum.StatefulSet }
+      : item
+  );
+};
+
 async function getWorkloadOwnerReferences({
   k8sApp,
   namespace,
@@ -665,12 +740,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       })
     );
 
-    const patchItems = patch.filter(
+    const normalizedPatch = await normalizeLegacyStatefulSetRecreatePatch({
+      patch,
+      k8sApp,
+      appName,
+      namespace
+    });
+    const patchItems = normalizedPatch.filter(
       (item): item is Extract<AppPatchPropsType[number], { type: 'patch' }> => {
         const cr = crMap[item.kind];
         return !!cr && item.type === 'patch' && !!item.value?.metadata;
       }
     );
+    const recreateItems = normalizedPatch.filter(
+      (item): item is Extract<AppPatchPropsType[number], { type: 'recreate' }> =>
+        item.type === 'recreate' && item.kind === YamlKindEnum.StatefulSet
+    );
+    if (recreateItems.length > 1) {
+      throw new Error('Only one StatefulSet recreation can be requested at a time');
+    }
     const workloadPatches = patchItems.filter((item) => isWorkloadKind(item.kind));
     const regularPatches = patchItems.filter((item) => !isWorkloadKind(item.kind));
     const applyPatchItem = (
@@ -688,7 +776,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     await Promise.all(regularPatches.map(applyPatchItem));
 
     // create
-    const createItems = patch
+    const createItems = normalizedPatch
       .map((item) => {
         const cr = crMap[item.kind];
         if (!cr || item.type !== 'create') {
@@ -710,7 +798,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     );
     const replacingWorkload =
       workloadCreateItems.length > 0 &&
-      patch.some(
+      normalizedPatch.some(
         (item) => item.type === 'delete' && isWorkloadKind(item.kind) && item.name === appName
       );
     let createdWorkloadOwnerReferences: ReturnType<typeof generateOwnerReference> | undefined;
@@ -722,7 +810,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       );
 
       const createdWorkloadKind = workloadCreateItems[0].resource.kind as
-        'Deployment' | 'StatefulSet';
+        | 'Deployment'
+        | 'StatefulSet';
       createdWorkloadOwnerReferences = await getWorkloadOwnerReferences({
         k8sApp,
         namespace,
@@ -760,19 +849,42 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       }
     }
 
-    const workloadPatchResults = await Promise.all(workloadPatches.map(applyPatchItem));
-    const recreatedWorkloadPatch = workloadPatchResults.find((result) => result?.recreated);
+    let recreatedWorkloadPatch: { recreated: true; kind: 'StatefulSet' } | undefined;
+    const recreateItem = recreateItems[0];
+    if (recreateItem) {
+      infoLog('recreate StatefulSet for storage topology change', { appName });
+      // Keep non-Pod dependents while the StatefulSet deletion restarts its Pods.
+      await patchExistingOwnerReferences({
+        k8sCore,
+        k8sNetworkingApp,
+        k8sAutoscaling,
+        k8sCustomObjects,
+        namespace,
+        appName,
+        ownerReferences: []
+      });
+      await k8sApp.deleteNamespacedStatefulSet(appName, namespace);
+      await waitForStatefulSetDeletion(k8sApp, appName, namespace);
+      await applyYamlList([yaml.dump(recreateItem.value)], 'create');
+      recreatedWorkloadPatch = { recreated: true, kind: 'StatefulSet' };
+    }
 
-    if (recreatedWorkloadPatch) {
+    const workloadPatchResults = await Promise.all(workloadPatches.map(applyPatchItem));
+    const patchedRecreatedWorkload = workloadPatchResults.find((result) => result?.recreated);
+
+    if (recreatedWorkloadPatch || patchedRecreatedWorkload) {
       createdWorkloadOwnerReferences = await getWorkloadOwnerReferences({
         k8sApp,
         namespace,
         appName,
-        kind: recreatedWorkloadPatch.kind
+        kind: (recreatedWorkloadPatch || patchedRecreatedWorkload).kind
       });
     }
 
-    if (createdWorkloadOwnerReferences && (replacingWorkload || recreatedWorkloadPatch)) {
+    if (
+      createdWorkloadOwnerReferences &&
+      (replacingWorkload || recreatedWorkloadPatch || patchedRecreatedWorkload)
+    ) {
       await patchExistingOwnerReferences({
         k8sCore,
         k8sNetworkingApp,
@@ -786,7 +898,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     // delete
     await Promise.all(
-      patch.map((item) => {
+      normalizedPatch.map((item) => {
         const cr = crMap[item.kind];
         if (!cr || item.type !== 'delete' || !item?.name) {
           return;
@@ -797,7 +909,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     );
 
     // Update AppCR URL in background (non-blocking)
-    updateAppCRUrl(k8sCustomObjects, namespace, appName, patch).catch((error) => {
+    updateAppCRUrl(k8sCustomObjects, namespace, appName, normalizedPatch).catch((error) => {
       errLog('AppCR URL update failed', error);
     });
 

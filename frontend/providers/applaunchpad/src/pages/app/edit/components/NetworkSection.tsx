@@ -278,6 +278,11 @@ const withoutMainServiceBinding = (
   })
 });
 
+const preserveClusterIpServiceBinding = (
+  network: AppEditType['networks'][0]
+): AppEditType['networks'][0] =>
+  network.openNodePort ? withoutMainServiceBinding(network) : network;
+
 const getNextAvailablePort = (networks: AppEditType['networks']) => {
   const usedPorts = new Set(networks.map((network) => Number(network.port)).filter(Boolean));
 
@@ -441,7 +446,7 @@ export function NetworkSection({
           updateNetworks(
             index,
             withDefaultRoutes({
-              ...withoutMainServiceBinding(currentNetwork),
+              ...preserveClusterIpServiceBinding(currentNetwork),
               networkName: currentNetwork.networkName || `network-${nanoid()}`,
               protocol: 'TCP',
               appProtocol: currentNetwork.appProtocol || 'HTTP',
@@ -458,8 +463,9 @@ export function NetworkSection({
         case 'DISABLE_EXTERNAL_ACCESS': {
           const { index } = action.payload;
           clearPublicDomainErrorByIndex(index);
+          const currentNetwork = currentNetworks[index];
           updateNetworks(index, {
-            ...withoutMainServiceBinding(currentNetworks[index]),
+            ...preserveClusterIpServiceBinding(currentNetwork),
             openPublicDomain: false,
             openNodePort: false,
             customDomain: '',
@@ -555,7 +561,7 @@ export function NetworkSection({
               updateNetworks(
                 index,
                 withDefaultRoutes({
-                  ...withoutMainServiceBinding(currentNetwork),
+                  ...preserveClusterIpServiceBinding(currentNetwork),
                   protocol: 'TCP',
                   appProtocol: protocol as any,
                   openNodePort: false,

@@ -77,6 +77,12 @@ export default function Notification(props: NotificationProps) {
           draft.popupMessage = sortedMessages[0];
         })
       );
+    } else {
+      setMessageConfig(
+        produce((draft) => {
+          draft.popupMessage = undefined;
+        })
+      );
     }
 
     onAmount(unReadCount);
