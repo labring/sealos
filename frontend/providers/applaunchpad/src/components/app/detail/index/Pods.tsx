@@ -50,7 +50,7 @@ const Pods = ({ pods = [], appName }: { pods: PodDetailType[]; appName: string }
   const { openConfirm: openConfirmRestart, ConfirmChild: RestartConfirmChild } = useConfirm({
     content: 'Please confirm to restart the Pod?'
   });
-  const { appDetail = MOCK_APP_DETAIL, appDetailPods } = useAppStore();
+  const { appDetail = MOCK_APP_DETAIL } = useAppStore();
   const { isOpen: isOpenPodFile, onOpen: onOpenPodFile, onClose: onClosePodFile } = useDisclosure();
 
   const handleRestartPod = useCallback(
@@ -70,6 +70,14 @@ const Pods = ({ pods = [], appName }: { pods: PodDetailType[]; appName: string }
       }
     },
     [t, toast]
+  );
+
+  const handleOpenFileManagement = useCallback(
+    (index: number) => {
+      setDetailFilePodIndex(index);
+      onOpenPodFile();
+    },
+    [onOpenPodFile]
   );
 
   const columns: {
@@ -246,13 +254,7 @@ const Pods = ({ pods = [], appName }: { pods: PodDetailType[]; appName: string }
           </MyTooltip>
           {appDetail.storeList?.length > 0 && (
             <MyTooltip offset={[0, 10]} label={t('File Management')}>
-              <Button
-                variant={'square'}
-                onClick={() => {
-                  setDetailFilePodIndex(i);
-                  onOpenPodFile();
-                }}
-              >
+              <Button variant={'square'} onClick={() => handleOpenFileManagement(i)}>
                 <MyIcon name={'file'} w="18px" h="18px" fill={'#485264'} />
               </Button>
             </MyTooltip>
@@ -357,8 +359,8 @@ const Pods = ({ pods = [], appName }: { pods: PodDetailType[]; appName: string }
             alias: item.podName,
             podName: item.podName
           }))}
-          setPodDetail={(e: string) =>
-            setDetailFilePodIndex(pods.findIndex((item) => item.podName === e))
+          setPodDetail={(podName: string) =>
+            handleOpenFileManagement(pods.findIndex((item) => item.podName === podName))
           }
         />
       )}

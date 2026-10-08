@@ -1,7 +1,9 @@
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
-import { jsonRes } from '@/services/backend/response';
+import { handleK8sError, jsonRes } from '@/services/backend/response';
+import { assertPodExecPermission } from '@/services/backend/podExecPermission';
 import { ApiResp } from '@/services/kubernet';
+import { ResponseCode } from '@/types/response';
 import { KubeFileSystem } from '@/utils/kubeFileSystem';
 import formidable from 'formidable';
 import type { NextApiRequest, NextApiResponse } from 'next';
@@ -9,11 +11,10 @@ import { PassThrough } from 'stream';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
-    const { namespace, k8sExec } = await getK8s({
+    const { kc, namespace, k8sExec } = await getK8s({
       kubeconfig: await authSession(req.headers)
     });
 
-    const kubefs = new KubeFileSystem(k8sExec);
     const {
       containerName,
       path: encodedPath,
@@ -25,6 +26,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     };
     const path = decodeURIComponent(encodedPath);
 
+    await assertPodExecPermission({ kc, namespace, podName });
+    const kubefs = new KubeFileSystem(k8sExec);
     let form: any;
     let task = new Promise<string>((resolve, reject) => {
       form = formidable({
@@ -58,10 +61,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     jsonRes(res, { data: 'success' });
   } catch (err: any) {
-    jsonRes(res, {
-      code: 500,
-      error: err
-    });
+    jsonRes(res, handleK8sError(err, { forbiddenCode: ResponseCode.FORBIDDEN }));
   }
 }
 

@@ -62,7 +62,6 @@ type MonitorReconciler struct {
 	logr.Logger
 	Interval                 time.Duration
 	Scheme                   *runtime.Scheme
-	stopCh                   chan struct{}
 	wg                       sync.WaitGroup
 	periodicReconcile        time.Duration
 	gpuAliasCard             map[string]corev1.ResourceName
@@ -139,7 +138,6 @@ func NewMonitorReconciler(mgr ctrl.Manager) (*MonitorReconciler, error) {
 		Client:                mgr.GetClient(),
 		cache:                 mgr.GetCache(),
 		Logger:                ctrl.Log.WithName("controllers").WithName("Monitor"),
-		stopCh:                make(chan struct{}),
 		periodicReconcile:     1 * time.Minute,
 		PromURL:               os.Getenv(PrometheusURL),
 		ObjectStorageInstance: os.Getenv(ObjectStorageInstance),
@@ -197,30 +195,35 @@ func InitIndexField(mgr ctrl.Manager) error {
 }
 
 func (r *MonitorReconciler) StartReconciler(ctx context.Context) error {
-	r.startPeriodicReconcile()
+	r.startPeriodicReconcile(ctx)
 	if r.TrafficClient != nil || r.ObjStorageClient != nil {
-		r.startMonitorTraffic()
+		r.startMonitorTraffic(ctx)
 	}
 	<-ctx.Done()
-	r.stopPeriodicReconcile()
+	r.wg.Wait()
 	return nil
 }
 
-func (r *MonitorReconciler) startPeriodicReconcile() {
+func (r *MonitorReconciler) startPeriodicReconcile(ctx context.Context) {
 	r.wg.Add(1)
 	go func() {
 		defer r.wg.Done()
-		waitNextMinute()
+		if !waitForMonitorBoundary(ctx, time.Minute) {
+			return
+		}
 		ticker := time.NewTicker(r.periodicReconcile)
+		defer ticker.Stop()
 		for {
 			select {
 			case <-ticker.C:
+				if ctx.Err() != nil {
+					return
+				}
 				r.enqueueNamespacesForReconcile()
-				if err := r.refreshGPUConfig(context.Background()); err != nil {
+				if err := r.refreshGPUConfig(ctx); err != nil {
 					r.Error(err, "refresh gpu config failed")
 				}
-			case <-r.stopCh:
-				ticker.Stop()
+			case <-ctx.Done():
 				return
 			}
 		}
@@ -238,23 +241,20 @@ func (r *MonitorReconciler) getNamespaceList() (*corev1.NamespaceList, error) {
 	})
 }
 
-func waitNextMinute() {
-	waitTime := time.Until(time.Now().Truncate(time.Minute).Add(1 * time.Minute))
-	if waitTime > 0 {
-		logger.Info("wait for first reconcile", "waitTime", waitTime)
-		time.Sleep(waitTime)
+func waitForMonitorBoundary(ctx context.Context, interval time.Duration) bool {
+	waitTime := time.Until(time.Now().Truncate(interval).Add(interval))
+	logger.Info("wait for first reconcile", "waitTime", waitTime)
+	timer := time.NewTimer(waitTime)
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+		return false
+	case <-timer.C:
+		return ctx.Err() == nil
 	}
 }
 
-func waitNextHour() {
-	waitTime := time.Until(time.Now().Truncate(time.Hour).Add(1 * time.Hour))
-	if waitTime > 0 {
-		logger.Info("wait for first reconcile", "waitTime", waitTime)
-		time.Sleep(waitTime)
-	}
-}
-
-func (r *MonitorReconciler) startMonitorTraffic() {
+func (r *MonitorReconciler) startMonitorTraffic(ctx context.Context) {
 	r.wg.Add(1)
 	go func() {
 		defer r.wg.Done()
@@ -264,30 +264,30 @@ func (r *MonitorReconciler) startMonitorTraffic() {
 				Truncate(time.Hour).
 				Add(1*time.Hour).
 				UTC()
-		waitNextHour()
+		if !waitForMonitorBoundary(ctx, time.Hour) {
+			return
+		}
 		ticker := time.NewTicker(1 * time.Hour)
+		defer ticker.Stop()
 		if err := r.MonitorTrafficUsed(startTime, endTime); err != nil {
 			r.Error(err, "failed to monitor pod traffic used")
 		}
 		for {
 			select {
 			case <-ticker.C:
+				if ctx.Err() != nil {
+					return
+				}
 				startTime, endTime = endTime, endTime.Add(1*time.Hour)
 				if err := r.MonitorTrafficUsed(startTime, endTime); err != nil {
 					r.Error(err, "failed to monitor pod traffic used")
 					break
 				}
-			case <-r.stopCh:
-				ticker.Stop()
+			case <-ctx.Done():
 				return
 			}
 		}
 	}()
-}
-
-func (r *MonitorReconciler) stopPeriodicReconcile() {
-	close(r.stopCh)
-	r.wg.Wait()
 }
 
 func (r *MonitorReconciler) enqueueNamespacesForReconcile() {

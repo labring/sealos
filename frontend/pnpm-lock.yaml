@@ -858,6 +858,9 @@ importers:
       svg-inline-loader:
         specifier: ^0.8.2
         version: 0.8.2
+      vitest:
+        specifier: ^1.6.0
+        version: 1.6.1(@types/node@18.13.0)(sass@1.69.5)
       webpack-bundle-analyzer:
         specifier: ^4.9.1
         version: 4.10.1

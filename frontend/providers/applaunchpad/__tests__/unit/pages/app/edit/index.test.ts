@@ -29,7 +29,9 @@ describe('EditApp yaml display state', () => {
 
     expect(start).toBeGreaterThanOrEqual(0);
     expect(source.indexOf('removeStoreList(originalIndex)')).toBeGreaterThan(start);
-    expect(source).toContain('existingStores.some((store) => store.path === item.path)');
+    expect(source).toMatch(
+      /existingStores\.some\(\s*\(store\) => store\.path === item\.path\s*\)/
+    );
     expect(source).toContain("t('Store At Least One')");
     expect(source).not.toContain('localStores.length === 1');
   });

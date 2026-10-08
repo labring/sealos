@@ -3,9 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
-	"sync"
 	"time"
 
 	notificationv1 "github.com/labring/sealos/controllers/pkg/notification/api/v1"
@@ -25,8 +23,6 @@ type WorkspaceSubscriptionDebtProcessor struct {
 	*AccountReconciler
 	db           *gorm.DB
 	pollInterval time.Duration
-	wg           sync.WaitGroup
-	stopChan     chan struct{}
 }
 
 // 债务状态定义
@@ -78,50 +74,44 @@ func NewWorkspaceSubscriptionDebtProcessor(
 		AccountReconciler: reconciler,
 		db:                reconciler.AccountV2.GetGlobalDB(),
 		pollInterval:      1 * time.Minute,
-		stopChan:          make(chan struct{}),
 	}
 }
 
+func (wdp *WorkspaceSubscriptionDebtProcessor) NeedLeaderElection() bool { return true }
+
 // Start 启动债务处理器
-func (wdp *WorkspaceSubscriptionDebtProcessor) Start(ctx context.Context) {
-	wdp.wg.Add(1)
-	go func() {
-		defer wdp.wg.Done()
-		ticker := time.NewTicker(wdp.pollInterval)
-		defer ticker.Stop()
+func (wdp *WorkspaceSubscriptionDebtProcessor) Start(ctx context.Context) error {
+	wdp.Logger.Info("start workspace subscription debt controller")
+	defer wdp.Logger.Info("stop workspace subscription debt controller")
+	ticker := time.NewTicker(wdp.pollInterval)
+	defer ticker.Stop()
 
-		idleCount := 0
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-wdp.stopChan:
-				return
-			case <-ticker.C:
-				count, err := wdp.processExpiredWorkspaces(ctx)
-				if err != nil {
-					log.Printf("Failed to process expired workspace subscriptions: %v", err)
-				}
+	idleCount := 0
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-ticker.C:
+			if ctx.Err() != nil {
+				return nil
+			}
+			count, err := wdp.processExpiredWorkspaces(ctx)
+			if err != nil {
+				wdp.Logger.Error(err, "failed to process expired workspace subscriptions")
+			}
 
-				// 动态调整检查间隔
-				if count == 0 {
-					idleCount++
-					if idleCount > 10 { // 10次空闲后增加间隔
-						ticker.Reset(wdp.pollInterval * 2)
-					}
-				} else {
-					idleCount = 0
-					ticker.Reset(wdp.pollInterval)
+			// 动态调整检查间隔
+			if count == 0 {
+				idleCount++
+				if idleCount > 10 { // 10次空闲后增加间隔
+					ticker.Reset(wdp.pollInterval * 2)
 				}
+			} else {
+				idleCount = 0
+				ticker.Reset(wdp.pollInterval)
 			}
 		}
-	}()
-}
-
-// Stop 停止债务处理器
-func (wdp *WorkspaceSubscriptionDebtProcessor) Stop() {
-	close(wdp.stopChan)
-	wdp.wg.Wait()
+	}
 }
 
 func (wdp *WorkspaceSubscriptionDebtProcessor) determineCurrentStatus(
@@ -374,7 +364,8 @@ func (wdp *WorkspaceSubscriptionDebtProcessor) syncWorkspaceDebtStatus(
 	if err := wdp.readWorkspaceNotices(
 		ctx,
 		namespaces,
-		wdp.getWorkspaceStatusesGreaterThan(currentDebtStatus)...); err != nil {
+		wdp.getWorkspaceStatusesGreaterThan(currentDebtStatus)...,
+	); err != nil {
 		return fmt.Errorf("read workspace notices error: %w", err)
 	}
 

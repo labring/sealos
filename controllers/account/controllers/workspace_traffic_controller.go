@@ -356,15 +356,28 @@ func (c *WorkspaceTrafficController) updateWorkspaceTrafficStatus(
 	return nil
 }
 
-// ProcessTrafficWithTimeRange processes workspace traffic within time ranges
-func (c *WorkspaceTrafficController) ProcessTrafficWithTimeRange() {
-	c.Logger.Info("start workspace traffic controller")
-	startTime := time.Now().Add(-1 * time.Minute)
+func (c *WorkspaceTrafficController) NeedLeaderElection() bool { return true }
 
-	for range time.NewTicker(time.Minute).C {
+// Start processes workspace traffic until the manager stops this leader.
+func (c *WorkspaceTrafficController) Start(ctx context.Context) error {
+	c.Logger.Info("start workspace traffic controller")
+	defer c.Logger.Info("stop workspace traffic controller")
+	startTime := time.Now().Add(-1 * time.Minute)
+	ticker := time.NewTicker(time.Minute)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-ticker.C:
+		}
+		if ctx.Err() != nil {
+			return nil
+		}
 		c.Logger.Info("time to process workspace traffic", "startTime", startTime)
 		endTime := time.Now()
-		result, err := c.TrafficDB.GetNamespaceTraffic(context.Background(), startTime, endTime)
+		result, err := c.TrafficDB.GetNamespaceTraffic(ctx, startTime, endTime)
 		if err != nil {
 			c.Logger.Error(err, "failed to get namespace traffic")
 			endTime = startTime

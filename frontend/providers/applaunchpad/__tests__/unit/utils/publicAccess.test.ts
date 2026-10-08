@@ -66,16 +66,20 @@ describe('public access readiness', () => {
     });
   });
 
-  it('does not mark arbitrary non-success responses ready', async () => {
-    const result = await getPublicAddressReadyResult(
-      new Response('bad gateway', { status: 502 }),
-      'https://app.example.com'
+  it('treats application HTTP errors as accessible after the route resolves', async () => {
+    const url = 'https://app.example.com';
+    const results = await Promise.all(
+      [
+        new Response(null, { status: 404 }),
+        new Response('unauthorized', { status: 401 }),
+        new Response('internal server error', { status: 500 })
+      ].map((response) => getPublicAddressReadyResult(response, url))
     );
 
-    expect(result).toEqual({
-      ready: false,
-      url: 'https://app.example.com',
-      error: 'HTTP 502'
-    });
+    expect(results).toEqual([
+      { ready: true, url },
+      { ready: true, url },
+      { ready: true, url }
+    ]);
   });
 });
