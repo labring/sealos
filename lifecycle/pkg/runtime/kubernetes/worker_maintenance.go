@@ -23,7 +23,7 @@ func (k *KubeadmRuntime) deleteWorker(host string) error {
 	if err != nil {
 		return err
 	}
-	node, err := workerNodeByIP(nodes.Items, host)
+	node, err := nodeByHostIP(nodes.Items, host)
 	if err != nil {
 		return err
 	}
@@ -63,7 +63,7 @@ func (k *KubeadmRuntime) pendingWorkerJoins(hosts []string) ([]string, error) {
 	}
 	var pending []string
 	for _, host := range hosts {
-		existing, err := workerNodeByIP(nodes.Items, host)
+		existing, err := nodeByHostIP(nodes.Items, host)
 		if err != nil {
 			return nil, err
 		}
@@ -90,7 +90,7 @@ func (k *KubeadmRuntime) pendingWorkerJoins(hosts []string) ([]string, error) {
 	return pending, nil
 }
 
-func workerNodeByIP(nodes []v1.Node, host string) (*v1.Node, error) {
+func nodeByHostIP(nodes []v1.Node, host string) (*v1.Node, error) {
 	ip := iputils.GetHostIP(host)
 	var found *v1.Node
 	for index := range nodes {
@@ -100,7 +100,7 @@ func workerNodeByIP(nodes []v1.Node, host string) (*v1.Node, error) {
 				continue
 			}
 			if found != nil && found.UID != node.UID {
-				return nil, fmt.Errorf("multiple Nodes use worker IP %s", ip)
+				return nil, fmt.Errorf("multiple Nodes use host IP %s", ip)
 			}
 			found = node
 		}

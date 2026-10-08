@@ -334,7 +334,13 @@ func (k *KubeadmRuntime) removeStandaloneMasters(
 		}
 	}
 	for _, host := range hosts {
-		if err := k.sshCmdAsync(host, command); err != nil {
+		var err error
+		if destroy {
+			err = k.sshCmdAsync(host, command)
+		} else {
+			err = k.removeStandaloneMaster(host, command)
+		}
+		if err != nil {
 			return fmt.Errorf("standalone removal on %s paused: %w", host, err)
 		}
 	}

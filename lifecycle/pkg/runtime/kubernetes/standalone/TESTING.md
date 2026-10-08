@@ -69,6 +69,21 @@ routes, workload cleanup and host reboot were administrator actions. Initial
 script conversion was reversed before managed adoption; manual legacy-plan
 repair does not establish automatic recovery for older binaries.
 
+## Converted-master removal regression
+
+The review fix was validated on the existing three-master/two-worker v1.28.15
+cluster. A master converted from registered mode still had its original Node.
+`sealos delete --masters` removed that Node after host cleanup, then
+`sealos add --masters` successfully rejoined the same address and hostname without
+registering a Node. Etcd returned to three healthy voting members. All three
+masters passed static-container, API, PodIP and Service connectivity checks;
+their Clusterfiles matched. The other four Node UIDs and all 39 PV/PVC identities
+and bindings were preserved, and both workers remained Ready.
+
+Unit tests additionally cover UID deletion preconditions, an absent-Node retry,
+and preserving the Node on host identity mismatch or reset failure. Mode
+switching still leaves Node cleanup to the administrator.
+
 ## Coverage limits
 
 External etcd, etcd 3.5-to-3.6 migration, rootless control planes, non-default

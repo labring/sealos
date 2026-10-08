@@ -4,15 +4,64 @@
 package kubernetes
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"net"
 	"slices"
 	"strconv"
 
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/utils/iputils"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/clientcmd"
 )
+
+func (k *KubeadmRuntime) removeStandaloneMaster(host, command string) error {
+	client, err := k.getKubeInterface()
+	if err != nil {
+		return err
+	}
+	ctx := context.Background()
+	nodes := client.Kubernetes().CoreV1().Nodes()
+	list, err := nodes.List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	node, err := nodeByHostIP(list.Items, host)
+	if err != nil {
+		return err
+	}
+	if node != nil {
+		name, err := k.execHostname(host)
+		if err != nil {
+			return err
+		}
+		if name != node.Name {
+			return fmt.Errorf(
+				"control-plane IP belongs to Node %s, but the host reports %s",
+				node.Name,
+				name,
+			)
+		}
+	}
+	if err := k.sshCmdAsync(host, command); err != nil {
+		return err
+	}
+	// Switching preserves Nodes for administrator cleanup. Explicit removal
+	// must also remove a converted host's old Node so its name can be reused.
+	if node == nil {
+		return nil
+	}
+	err = nodes.Delete(ctx, node.Name, metav1.DeleteOptions{
+		Preconditions: &metav1.Preconditions{UID: &node.UID},
+	})
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+	return err
+}
 
 func (k *KubeadmRuntime) prepareStandaloneRemovalEndpoint(removing, removedWorkers []string) error {
 	var survivors []string
