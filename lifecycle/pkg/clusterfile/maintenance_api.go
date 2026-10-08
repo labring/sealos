@@ -178,7 +178,7 @@ func CheckModeTransition(ctx context.Context, client clientset.Interface) error 
 		Get(ctx, ModeTransitionResource, metav1.GetOptions{})
 	if err == nil {
 		return fmt.Errorf(
-			"%w; resume sealos switch before running other lifecycle commands",
+			"%w; resume sealos switch control-plane before running other lifecycle commands",
 			ErrModeTransitionPending,
 		)
 	}

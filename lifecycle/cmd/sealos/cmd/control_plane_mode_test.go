@@ -15,9 +15,13 @@ import (
 func TestSwitchModeFlagIsolation(t *testing.T) {
 	find := func(mode string) *cobra.Command {
 		t.Helper()
-		parent := newControlPlaneModeCmd()
-		if parent.Name() != "switch" {
+		parent := newSwitchCmd()
+		if parent.Name() != "switch" || len(parent.Commands()) != 1 {
 			t.Fatalf("unexpected parent command: %s", parent.Name())
+		}
+		parent = parent.Commands()[0]
+		if parent.Name() != "control-plane" {
+			t.Fatalf("unexpected switch group: %s", parent.Name())
 		}
 		for _, child := range parent.Commands() {
 			if child.Name() == mode {
@@ -112,7 +116,7 @@ func TestSwitchModeConfirmation(t *testing.T) {
 			t.Run(mode+"/"+test.name, func(t *testing.T) {
 				prompted := false
 				ran := false
-				cmd := newControlPlaneModeCmdWithConfirm(func(prompt, _ string) (bool, error) {
+				group := newControlPlaneModeCmdWithConfirm(func(prompt, _ string) (bool, error) {
 					prompted = true
 					if !strings.Contains(prompt, `cluster "test-cluster"`) ||
 						!strings.Contains(prompt, mode+" mode") {
@@ -120,15 +124,18 @@ func TestSwitchModeConfirmation(t *testing.T) {
 					}
 					return test.accepted, test.promptErr
 				})
-				for _, child := range cmd.Commands() {
+				for _, child := range group.Commands() {
 					child.RunE = func(_ *cobra.Command, _ []string) error {
 						ran = true
 						return nil
 					}
 				}
+				cmd := newSwitchCmd()
+				cmd.RemoveCommand(cmd.Commands()[0])
+				cmd.AddCommand(group)
 				cmd.SetOut(io.Discard)
 				cmd.SetErr(io.Discard)
-				cmd.SetArgs(append([]string{mode, "--cluster", "test-cluster"}, test.flags...))
+				cmd.SetArgs(append([]string{"control-plane", mode, "--cluster", "test-cluster"}, test.flags...))
 				err := cmd.Execute()
 				if (err == nil) != test.wantRun || prompted != test.wantPrompt ||
 					ran != test.wantRun {
@@ -144,5 +151,37 @@ func TestSwitchModeConfirmation(t *testing.T) {
 				}
 			})
 		}
+	}
+}
+
+func TestSwitchClusterFlagPositions(t *testing.T) {
+	for _, args := range [][]string{
+		{"-c", "test-cluster", "control-plane", "standalone"},
+		{"control-plane", "-c", "test-cluster", "standalone"},
+		{"control-plane", "standalone", "-c", "test-cluster"},
+	} {
+		t.Run(strings.Join(args, " "), func(t *testing.T) {
+			cmd := newSwitchCmd()
+			mode, _, err := cmd.Find([]string{"control-plane", "standalone"})
+			if err != nil {
+				t.Fatal(err)
+			}
+			ran := false
+			mode.RunE = func(cmd *cobra.Command, _ []string) error {
+				ran = true
+				cluster, err := cmd.Flags().GetString("cluster")
+				if err != nil || cluster != "test-cluster" {
+					t.Fatalf("unexpected cluster: %q, err=%v", cluster, err)
+				}
+				return nil
+			}
+			cmd.SetArgs(append(args, "--check-only"))
+			if err := cmd.Execute(); err != nil {
+				t.Fatal(err)
+			}
+			if !ran {
+				t.Fatal("mode command was not executed")
+			}
+		})
 	}
 }

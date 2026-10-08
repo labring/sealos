@@ -32,7 +32,7 @@ import (
 func (c *Applier) withStandaloneOperation(action string, run func() error) error {
 	initialized := c.ClusterCurrent != nil && !c.ClusterCurrent.CreationTimestamp.IsZero()
 	if initialized && !c.ClusterCurrent.IsStandaloneControlPlane() {
-		return errors.New("use sealos switch to enter standalone mode")
+		return errors.New("use sealos switch control-plane standalone to enter standalone mode")
 	}
 	if initialized && action == "apply" {
 		mj, md := iputils.GetDiffHosts(
