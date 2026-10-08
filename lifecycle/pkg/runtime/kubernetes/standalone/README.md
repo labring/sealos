@@ -7,6 +7,11 @@ sealctl executable must include this implementation.
 
 ## Commands
 
+Mode switching uses `sealos switch control-plane <mode>`. The earlier flat
+`sealos switch <mode>` syntax is no longer supported. `--cluster`/`-c` selects
+the inventory and defaults to `default`; it can appear before or after the
+`control-plane` and mode subcommands. Mode-specific flags belong to their mode.
+
 | Operation | Implementation |
 | --- | --- |
 | New cluster with `spec.controlPlaneMode: standalone` | Public kubeadm certificate, kubeconfig and manifest phases; start standalone kubelet; publish normal worker configuration |
@@ -15,16 +20,16 @@ sealctl executable must include this implementation.
 | `sealos add/delete --nodes ADDRESS` | Common registered-worker path, including completed-join detection on retry and UID-checked deletion after kubelet cleanup |
 | `sealos run KUBERNETES_IMAGE` | Sequential standalone master upgrades, then registered workers and existing addons |
 | `sealos reset` | Clean workers and managed masters, allowing the authorized reset to resume after the API stops |
-| `sealos switch standalone/registered` | Convert all existing masters and commit the mode after every host succeeds |
+| `sealos switch control-plane standalone/registered` | Convert all existing masters and commit the mode after every host succeeds |
 
 Master0 deletion retains the existing Sealos restriction; registry migration is
 not implemented. Removing every master requires reset. Submit additions and
 removals separately. Existing delete/reset confirmations remain unchanged.
 
 ```sh
-sealos switch standalone --cluster default --check-only
-sealos switch standalone --cluster default
-sealos switch registered --cluster default -y
+sealos switch control-plane standalone --cluster default --check-only
+sealos switch control-plane standalone --cluster default
+sealos switch control-plane registered --cluster default -y
 ```
 
 Switching asks for the same hostname confirmation as delete/reset. `--yes`/`-y`
@@ -55,8 +60,8 @@ Explicit ownership, kubeconfig and health flags take precedence over config.
 Update an active deployment using only the settings to change:
 
 ```sh
-sealos switch standalone --update-controller --route-controller-image example/controller:v2 -y
-sealos switch standalone --update-controller --route-table 200 --route-protocol 111 -y
+sealos switch control-plane standalone --update-controller --route-controller-image example/controller:v2 -y
+sealos switch control-plane standalone --update-controller --route-table 200 --route-protocol 111 -y
 ```
 
 Unspecified values retain the saved settings. An empty `--route-controller-config ''`

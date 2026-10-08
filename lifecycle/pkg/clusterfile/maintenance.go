@@ -51,7 +51,7 @@ func lockMaintenance(name string, conversion, lifecycle bool) (func(), error) {
 		if _, err := os.Stat(filepath.Join(dir, ModeTransitionFilename)); !os.IsNotExist(err) {
 			release()
 			return nil, errors.New(
-				"control-plane mode conversion is incomplete; resume with sealos switch",
+				"control-plane mode conversion is incomplete; resume with sealos switch control-plane",
 			)
 		}
 	}

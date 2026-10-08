@@ -22,12 +22,13 @@ func newControlPlaneModeCmd() *cobra.Command {
 }
 
 func newControlPlaneModeCmdWithConfirm(ask func(string, string) (bool, error)) *cobra.Command {
-	var name string
 	cmd := &cobra.Command{
-		Use:   "switch",
+		Use:   "control-plane",
 		Short: "Switch the control-plane kubelet mode",
+		Example: "  sealos switch control-plane standalone --check-only\n" +
+			"  sealos switch control-plane standalone -c default\n" +
+			"  sealos switch control-plane registered -c default -y",
 	}
-	cmd.PersistentFlags().StringVarP(&name, "cluster", "c", "default", "Cluster inventory name")
 	for _, mode := range []string{standalone.ModeStandalone, standalone.ModeRegistered} {
 		var yes bool
 		options := standalone.ModeOptions{
@@ -36,8 +37,17 @@ func newControlPlaneModeCmdWithConfirm(ask func(string, string) (bool, error)) *
 		subcommand := &cobra.Command{
 			Use:   mode,
 			Short: "Switch all control planes to " + mode + " mode",
-			Args:  cobra.NoArgs,
-			PreRunE: func(_ *cobra.Command, _ []string) error {
+			Example: fmt.Sprintf(
+				"  sealos switch control-plane %s -c default --check-only\n"+
+					"  sealos switch control-plane %s -c default -y",
+				mode, mode,
+			),
+			Args: cobra.NoArgs,
+			PreRunE: func(cmd *cobra.Command, _ []string) error {
+				name, err := cmd.Flags().GetString("cluster")
+				if err != nil {
+					return err
+				}
 				if yes || options.CheckOnly {
 					return nil
 				}
@@ -57,6 +67,10 @@ func newControlPlaneModeCmdWithConfirm(ask func(string, string) (bool, error)) *
 				return nil
 			},
 			RunE: func(cmd *cobra.Command, _ []string) error {
+				name, err := cmd.Flags().GetString("cluster")
+				if err != nil {
+					return err
+				}
 				options.ControllerFields = []string{}
 				for _, name := range standalone.RouteControllerFlags {
 					if cmd.Flags().Changed(name) {
