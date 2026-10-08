@@ -186,9 +186,6 @@ func (k *KubeadmRuntime) joinStandaloneMasters(hosts []string) error {
 		if err := k.execHostsAppend(host, host, k.getAPIServerDomain()); err != nil {
 			return err
 		}
-		if err := k.copyMasterKubeConfig(host); err != nil {
-			return err
-		}
 	}
 	return nil
 }

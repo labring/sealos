@@ -143,9 +143,6 @@ func (k *KubeadmRuntime) upgradeStandaloneCluster(version string) error {
 	); err != nil {
 		return err
 	}
-	if err := k.syncLocalAdminKubeConfigCopies(); err != nil {
-		return err
-	}
 	// Registered workers can use kubeadm's normal node upgrade. Their kubelet
 	// configuration remains the cluster's worker configuration.
 	for _, host := range k.getNodeIPAndPortList() {
