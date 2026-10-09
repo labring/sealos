@@ -1,9 +1,0 @@
-FROM scratch
-
-USER 65532:65532
-
-COPY registry registry
-COPY charts charts
-COPY applaunchpad-frontend-entrypoint.sh applaunchpad-frontend-entrypoint.sh
-
-CMD ["bash applaunchpad-frontend-entrypoint.sh"]
