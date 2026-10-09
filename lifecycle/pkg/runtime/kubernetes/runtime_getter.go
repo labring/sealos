@@ -22,26 +22,33 @@ import (
 	"path"
 	"strings"
 
-	"golang.org/x/sync/errgroup"
-
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"golang.org/x/sync/errgroup"
 )
 
 func (k *KubeadmRuntime) getKubeVersion() string {
-	return k.kubeadmConfig.ClusterConfiguration.KubernetesVersion
+	if version := k.kubeadmConfig.KubernetesVersion; version != "" {
+		return version
+	}
+	// Older clusters may have a kubeadm ConfigMap whose
+	// ClusterConfiguration omits kubernetesVersion. The committed rootfs image
+	// is the authoritative version used by Sealos for those clusters.
+	return k.getKubeVersionFromImage()
 }
 
 // old implementation doesn't consider multiple rootfs images; here get the first rootfs image
 func (k *KubeadmRuntime) getKubeVersionFromImage() string {
-	img := k.cluster.GetRootfsImage()
-	if img == nil || img.Labels == nil {
-		return ""
+	if img := k.cluster.GetRootfsImage(); img != nil && img.Labels != nil {
+		if version := img.Labels[v1beta1.ImageKubeVersionKey]; version != "" {
+			return version
+		}
 	}
-	return img.Labels[v1beta1.ImageKubeVersionKey]
+
+	return ""
 }
 
 func (k *KubeadmRuntime) getMaster0IP() string {
@@ -92,7 +99,10 @@ func (k *KubeadmRuntime) execIPVSClean(ip string) error {
 func (k *KubeadmRuntime) syncNodeIPVSYaml(masterIPs, nodesIPs []string) error {
 	masters := make([]string, 0)
 	for _, master := range masterIPs {
-		masters = append(masters, fmt.Sprintf("%s:%d", iputils.GetHostIP(master), k.getAPIServerPort()))
+		masters = append(
+			masters,
+			fmt.Sprintf("%s:%d", iputils.GetHostIP(master), k.getAPIServerPort()),
+		)
 	}
 
 	eg, _ := errgroup.WithContext(context.Background())
@@ -112,7 +122,14 @@ func (k *KubeadmRuntime) syncNodeIPVSYaml(masterIPs, nodesIPs []string) error {
 
 func (k *KubeadmRuntime) execIPVSPod(ip string, masters []string) error {
 	image := k.cluster.GetLvscareImage()
-	return k.remoteUtil.StaticPod(ip, k.getVipAndPort(), constants.LvsCareStaticPodName, image, masters, kubernetesEtcStaticPod)
+	return k.remoteUtil.StaticPod(
+		ip,
+		k.getVipAndPort(),
+		constants.LvsCareStaticPodName,
+		image,
+		masters,
+		kubernetesEtcStaticPod,
+	)
 }
 
 func (k *KubeadmRuntime) execToken(ip, certificateKey string) (string, error) {
@@ -133,14 +150,21 @@ func (k *KubeadmRuntime) execCert(ip string) error {
 	if err != nil {
 		return err
 	}
-	return k.remoteUtil.Cert(ip, k.getCertSANs(), iputils.GetHostIP(ip), hostname, k.getServiceCIDR(), k.getDNSDomain())
+	return k.remoteUtil.Cert(
+		ip,
+		k.getCertSANs(),
+		iputils.GetHostIP(ip),
+		hostname,
+		k.getServiceCIDR(),
+		k.getDNSDomain(),
+	)
 }
 
 func (k *KubeadmRuntime) sshCmdAsync(host string, cmd ...string) error {
 	return k.execer.CmdAsync(host, cmd...)
 }
 
-func (k *KubeadmRuntime) sshCmdToString(host string, cmd string) (string, error) {
+func (k *KubeadmRuntime) sshCmdToString(host, cmd string) (string, error) {
 	return k.execer.CmdToString(host, cmd, "")
 }
 

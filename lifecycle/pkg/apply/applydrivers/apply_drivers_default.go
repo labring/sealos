@@ -19,18 +19,14 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
-
-	"github.com/labring/sealos/pkg/runtime/k3s"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"golang.org/x/sync/errgroup"
 
 	"github.com/labring/sealos/pkg/apply/processor"
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/exec"
+	"github.com/labring/sealos/pkg/runtime/k3s"
 	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/system"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
@@ -38,9 +34,16 @@ import (
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/yaml"
+	"golang.org/x/sync/errgroup"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func NewDefaultApplier(ctx context.Context, cluster *v2.Cluster, cf clusterfile.Interface, images []string) (Interface, error) {
+func NewDefaultApplier(
+	ctx context.Context,
+	cluster *v2.Cluster,
+	cf clusterfile.Interface,
+	images []string,
+) (Interface, error) {
 	if cluster.Name == "" {
 		return nil, fmt.Errorf("cluster name cannot be empty")
 	}
@@ -83,9 +86,54 @@ type Applier struct {
 }
 
 func (c *Applier) Apply() error {
+	lock := clusterfile.LockMaintenance
+	if c.ClusterDesired.IsStandaloneControlPlane() {
+		lock = func(name string, _ bool) (func(), error) {
+			return clusterfile.LockLifecycleMaintenance(name)
+		}
+	}
+	release, err := lock(c.ClusterDesired.Name, false)
+	if err != nil {
+		return err
+	}
+	defer release()
+	if c.ClusterDesired.IsStandaloneControlPlane() {
+		return c.withStandaloneOperation("apply", c.applyDesired)
+	}
+	return c.applyDesired()
+}
+
+func (c *Applier) applyDesired() (result error) {
+	mode := c.ClusterDesired.Spec.ControlPlaneMode
+	if mode != "" && mode != v2.ControlPlaneModeRegistered &&
+		mode != v2.ControlPlaneModeStandalone {
+		return fmt.Errorf("unknown controlPlaneMode %q", mode)
+	}
+	if c.ClusterCurrent != nil && !c.ClusterCurrent.CreationTimestamp.IsZero() &&
+		c.ClusterCurrent.IsStandaloneControlPlane() != c.ClusterDesired.IsStandaloneControlPlane() {
+		const message = "use sealos switch control-plane to convert kubelets before changing controlPlaneMode"
+		return errors.New(message)
+	}
+	requireModeAPI := c.ClusterCurrent != nil && !c.ClusterCurrent.CreationTimestamp.IsZero() &&
+		(mode != "" || c.ClusterCurrent.Spec.ControlPlaneMode != "")
+	if !c.ClusterDesired.IsStandaloneControlPlane() {
+		if err := clusterfile.CheckRemoteModeTransition(
+			c.Context,
+			c.ClusterDesired.Name,
+			requireModeAPI,
+		); err != nil {
+			return err
+		}
+	}
 	// clusterErr and appErr should not appear in the same time
 	var clusterErr, appErr error
 	defer func() {
+		if c.ClusterDesired.IsStandaloneControlPlane() {
+			if result == nil {
+				result = c.commitStandaloneInventory()
+			}
+			return
+		}
 		var checkError *processor.CheckError
 		var preProcessError *processor.PreProcessError
 		switch {
@@ -99,7 +147,10 @@ func (c *Applier) Apply() error {
 	c.initStatus()
 	if c.ClusterCurrent == nil || c.ClusterCurrent.CreationTimestamp.IsZero() {
 		if !c.ClusterDesired.CreationTimestamp.IsZero() {
-			if yes, _ := confirm.Confirm("Desired cluster CreationTimestamp is not zero, do you want to initialize it again?", "you have canceled to create cluster"); !yes {
+			if yes, _ := confirm.Confirm(
+				"Desired cluster CreationTimestamp is not zero, do you want to initialize it again?",
+				"you have canceled to create cluster",
+			); !yes {
 				clusterErr = processor.NewPreProcessError(fmt.Errorf("canceled to create cluster"))
 				return clusterErr
 			}
@@ -123,12 +174,12 @@ func (c *Applier) Apply() error {
 	return clusterErr
 }
 
-func (c *Applier) getWriteBackObjects() []interface{} {
-	obj := []interface{}{c.ClusterDesired}
+func (c *Applier) getWriteBackObjects() []any {
+	obj := []any{c.ClusterDesired}
 	distribution := c.ClusterFile.GetCluster().GetDistribution()
 	if runtimeConfig := c.ClusterFile.GetRuntimeConfig(); runtimeConfig != nil {
 		if components := runtimeConfig.GetComponents(); len(components) > 0 {
-			if distribution == k3s.Distribution {
+			if distribution == k3s.Distribution || c.ClusterDesired.IsStandaloneControlPlane() {
 				obj = append(obj, components...)
 			}
 		}
@@ -150,7 +201,7 @@ func (c *Applier) initStatus() {
 
 // todo: atomic updating status after each installation for better reconcile?
 // todo: set up signal handler
-func (c *Applier) updateStatus(clusterErr error, appErr error) {
+func (c *Applier) updateStatus(clusterErr, appErr error) {
 	switch clusterErr.(type) {
 	case *processor.CheckError, *processor.PreProcessError:
 		return
@@ -165,7 +216,10 @@ func (c *Applier) updateStatus(clusterErr error, appErr error) {
 		condition = v2.NewSuccessClusterCondition()
 		c.ClusterDesired.Status.Phase = v2.ClusterSuccess
 	}
-	c.ClusterDesired.Status.Conditions = v2.UpdateCondition(c.ClusterDesired.Status.Conditions, condition)
+	c.ClusterDesired.Status.Conditions = v2.UpdateCondition(
+		c.ClusterDesired.Status.Conditions,
+		condition,
+	)
 
 	// update command condition using appErr
 	var cmdCondition v2.CommandCondition
@@ -179,10 +233,13 @@ func (c *Applier) updateStatus(clusterErr error, appErr error) {
 		return
 	}
 	cmdCondition.Images = c.RunNewImages
-	c.ClusterDesired.Status.CommandConditions = v2.UpdateCommandCondition(c.ClusterDesired.Status.CommandConditions, cmdCondition)
+	c.ClusterDesired.Status.CommandConditions = v2.UpdateCommandCondition(
+		c.ClusterDesired.Status.CommandConditions,
+		cmdCondition,
+	)
 }
 
-func (c *Applier) reconcileCluster() (clusterErr error, appErr error) {
+func (c *Applier) reconcileCluster() (clusterErr, appErr error) {
 	// sync newVersion pki and etc dir in `.sealos/default/pki` and `.sealos/default/etc`
 	processor.SyncNewVersionConfig(c.ClusterDesired.Name)
 	if len(c.RunNewImages) != 0 {
@@ -191,14 +248,29 @@ func (c *Applier) reconcileCluster() (clusterErr error, appErr error) {
 			return nil, appErr
 		}
 	}
-	mj, md := iputils.GetDiffHosts(c.ClusterCurrent.GetMasterIPAndPortList(), c.ClusterDesired.GetMasterIPAndPortList())
-	nj, nd := iputils.GetDiffHosts(c.ClusterCurrent.GetNodeIPAndPortList(), c.ClusterDesired.GetNodeIPAndPortList())
+	mj, md := iputils.GetDiffHosts(
+		c.ClusterCurrent.GetMasterIPAndPortList(),
+		c.ClusterDesired.GetMasterIPAndPortList(),
+	)
+	nj, nd := iputils.GetDiffHosts(
+		c.ClusterCurrent.GetNodeIPAndPortList(),
+		c.ClusterDesired.GetNodeIPAndPortList(),
+	)
 	return c.scaleCluster(mj, md, nj, nd), nil
 }
 
 func (c *Applier) initCluster() error {
-	logger.Info("Start to create a new cluster: master %s, worker %s, registry %s", c.ClusterDesired.GetMasterIPList(), c.ClusterDesired.GetNodeIPList(), c.ClusterDesired.GetRegistryIP())
-	createProcessor, err := processor.NewCreateProcessor(c.Context, c.ClusterDesired.Name, c.ClusterFile)
+	logger.Info(
+		"Start to create a new cluster: master %s, worker %s, registry %s",
+		c.ClusterDesired.GetMasterIPList(),
+		c.ClusterDesired.GetNodeIPList(),
+		c.ClusterDesired.GetRegistryIP(),
+	)
+	createProcessor, err := processor.NewCreateProcessor(
+		c.Context,
+		c.ClusterDesired.Name,
+		c.ClusterFile,
+	)
 	if err != nil {
 		return err
 	}
@@ -231,12 +303,29 @@ func (c *Applier) scaleCluster(mj, md, nj, nd []string) error {
 		return nil
 	}
 	logger.Info("start to scale this cluster")
-	logger.Debug("current cluster: master %s, worker %s", c.ClusterCurrent.GetMasterIPAndPortList(), c.ClusterCurrent.GetNodeIPAndPortList())
-	logger.Debug("desired cluster: master %s, worker %s", c.ClusterDesired.GetMasterIPAndPortList(), c.ClusterDesired.GetNodeIPAndPortList())
+	logger.Debug(
+		"current cluster: master %s, worker %s",
+		c.ClusterCurrent.GetMasterIPAndPortList(),
+		c.ClusterCurrent.GetNodeIPAndPortList(),
+	)
+	logger.Debug(
+		"desired cluster: master %s, worker %s",
+		c.ClusterDesired.GetMasterIPAndPortList(),
+		c.ClusterDesired.GetNodeIPAndPortList(),
+	)
 
 	localpath := constants.Clusterfile(c.ClusterDesired.Name)
 	cf := clusterfile.NewClusterFile(localpath)
-	scaleProcessor, err := processor.NewScaleProcessor(cf, c.ClusterDesired.Name, c.ClusterDesired.Spec.Image, mj, md, nj, nd)
+	scaleProcessor, err := processor.NewScaleProcessor(
+		cf,
+		c.ClusterDesired.Name,
+		c.ClusterDesired.Spec.Image,
+		mj,
+		md,
+		nj,
+		nd,
+		c.Context,
+	)
 	if err != nil {
 		return err
 	}
@@ -250,6 +339,44 @@ func (c *Applier) scaleCluster(mj, md, nj, nd []string) error {
 }
 
 func (c *Applier) Delete() error {
+	if c.ClusterDesired.IsStandaloneControlPlane() {
+		release, err := clusterfile.LockLifecycleMaintenance(c.ClusterDesired.Name)
+		if err != nil {
+			return err
+		}
+		defer release()
+		if err := c.withStandaloneOperation("reset", c.deleteStandalone); err != nil {
+			return err
+		}
+		if err := os.Remove(
+			constants.Clusterfile(c.ClusterDesired.Name),
+		); err != nil &&
+			!os.IsNotExist(err) {
+			return err
+		}
+		if err := os.Remove(
+			filepath.Join(
+				constants.ClusterDir(c.ClusterDesired.Name),
+				processor.StandaloneResetProgressFile,
+			),
+		); err != nil &&
+			!os.IsNotExist(err) {
+			return err
+		}
+		return nil
+	}
+	release, err := clusterfile.LockMaintenance(c.ClusterDesired.Name, false)
+	if err != nil {
+		return err
+	}
+	defer release()
+	if err := clusterfile.CheckRemoteModeTransition(
+		c.Context,
+		c.ClusterDesired.Name,
+		c.ClusterDesired.Spec.ControlPlaneMode != "",
+	); err != nil {
+		return err
+	}
 	t := metav1.Now()
 	c.ClusterDesired.DeletionTimestamp = &t
 	defer func() {

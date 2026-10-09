@@ -21,14 +21,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/labring/sealos/pkg/utils/file"
-
 	"github.com/Masterminds/semver/v3"
-	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/util/json"
-	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
-
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/runtime/kubernetes/types"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
@@ -37,6 +30,10 @@ import (
 	"github.com/labring/sealos/pkg/utils/rand"
 	stringsutil "github.com/labring/sealos/pkg/utils/strings"
 	"github.com/labring/sealos/pkg/utils/yaml"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/util/json"
+	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 )
 
 var (
@@ -105,7 +102,7 @@ func (k *KubeadmRuntime) getCGroupDriver(node string) (string, error) {
 
 // MergeKubeadmConfig Unsafe, dangerous use of goroutines.
 func (k *KubeadmRuntime) MergeKubeadmConfig(node string) error {
-	var mergeErr = func() error {
+	mergeErr := func() error {
 		for _, fn := range []string{
 			"",                              // generate default kubeadm configs
 			k.getDefaultKubeadmConfig(node), // merging from predefined path of file if file exists
@@ -149,13 +146,22 @@ func (k *KubeadmRuntime) getDefaultKubeadmConfig(node string) string {
 	}
 	out, err := k.execer.Cmd(node, fmt.Sprintf("cat %s", defaultKubeadm))
 	if err != nil {
-		logger.Warn("load rootfs kubeadm config error: %+v, using default rootfs kubeadm config", err)
+		logger.Warn(
+			"load rootfs kubeadm config error: %+v, using default rootfs kubeadm config",
+			err,
+		)
 		return filepath.Join(k.pathResolver.RootFSEtcPath(), defaultRootfsKubeadmFileName)
 	}
-	kubeadmPath := path.Join(k.pathResolver.TmpPath(), fmt.Sprintf("kubeadm-%s.yaml", iputils.GetHostIP(node)))
-	err = file.WriteFile(kubeadmPath, out)
+	kubeadmPath := path.Join(
+		k.pathResolver.TmpPath(),
+		fmt.Sprintf("kubeadm-%s.yaml", iputils.GetHostIP(node)),
+	)
+	err = fileutil.WriteFile(kubeadmPath, out)
 	if err != nil {
-		logger.Warn("write temp kubeadm config error: %+v, using default rootfs kubeadm config", err)
+		logger.Warn(
+			"write temp kubeadm config error: %+v, using default rootfs kubeadm config",
+			err,
+		)
 		return filepath.Join(k.pathResolver.RootFSEtcPath(), defaultRootfsKubeadmFileName)
 	}
 	return kubeadmPath
@@ -215,7 +221,7 @@ func (k *KubeadmRuntime) mergeWithBuiltinKubeadmConfig() error {
 	if err != nil {
 		return err
 	}
-	//unmarshal data from configmap
+	// unmarshal data from configmap
 	obj, err := yaml.UnmarshalToMap([]byte(data))
 	if err != nil {
 		return err
@@ -235,10 +241,17 @@ func (k *KubeadmRuntime) mergeWithBuiltinKubeadmConfig() error {
 	}
 	logger.Debug("current cluster certSANs: %+v", certs)
 	k.setCertSANs(certs)
+	endpoint, _, err := unstructured.NestedString(obj, "controlPlaneEndpoint")
+	if err != nil {
+		return err
+	}
+	if endpoint != "" {
+		k.setControlPlaneEndpoint(endpoint)
+	}
 	return k.setNetWorking(obj)
 }
 
-func (k *KubeadmRuntime) setNetWorking(obj map[string]interface{}) error {
+func (k *KubeadmRuntime) setNetWorking(obj map[string]any) error {
 	networkingMap, found, err := unstructured.NestedStringMap(obj, "networking")
 	if !found || err != nil {
 		return fmt.Errorf("networking section not found or cannot be parsed: %v", err)
@@ -368,6 +381,7 @@ func (k *KubeadmRuntime) setJoinInternalIP(nodeIP string) {
 		},
 	}
 }
+
 func (k *KubeadmRuntime) setInitInternalIP(nodeIP string) {
 	k.kubeadmConfig.InitConfiguration.NodeRegistration.KubeletExtraArgs = []kubeadm.Arg{
 		{
@@ -403,7 +417,7 @@ func (k *KubeadmRuntime) setCgroupDriver(cGroup string) {
 func (k *KubeadmRuntime) setInitTaints() {
 	if len(k.cluster.GetAllIPS()) == 1 &&
 		k.kubeadmConfig.InitConfiguration.NodeRegistration.Taints == nil {
-		//set this field to an empty slice avoid to taint control-plane in single host
+		// set this field to an empty slice avoid to taint control-plane in single host
 		k.kubeadmConfig.InitConfiguration.NodeRegistration.Taints = make([]v1.Taint, 0)
 	}
 }
@@ -411,7 +425,9 @@ func (k *KubeadmRuntime) setInitTaints() {
 func (k *KubeadmRuntime) setExcludeCIDRs() {
 	k.kubeadmConfig.KubeProxyConfiguration.IPVS.ExcludeCIDRs = append(
 		k.kubeadmConfig.KubeProxyConfiguration.IPVS.ExcludeCIDRs, fmt.Sprintf("%s/32", k.getVip()))
-	k.kubeadmConfig.KubeProxyConfiguration.IPVS.ExcludeCIDRs = stringsutil.RemoveDuplicate(k.kubeadmConfig.KubeProxyConfiguration.IPVS.ExcludeCIDRs)
+	k.kubeadmConfig.IPVS.ExcludeCIDRs = stringsutil.RemoveDuplicate(
+		k.kubeadmConfig.IPVS.ExcludeCIDRs,
+	)
 }
 
 func (k *KubeadmRuntime) getEtcdDataDir() string {
@@ -437,13 +453,22 @@ func (k *KubeadmRuntime) getCRISocket(node string) (string, error) {
 //nolint:all
 func (k *KubeadmRuntime) setCRISocket(criSocket string) {
 	if k.kubeadmConfig.JoinConfiguration.NodeRegistration.CRISocket == "" {
-		k.kubeadmConfig.JoinConfiguration.NodeRegistration.CRISocket = fmt.Sprintf("unix://%s", criSocket)
+		k.kubeadmConfig.JoinConfiguration.NodeRegistration.CRISocket = fmt.Sprintf(
+			"unix://%s",
+			criSocket,
+		)
 	}
 	if k.kubeadmConfig.InitConfiguration.NodeRegistration.CRISocket == "" {
-		k.kubeadmConfig.InitConfiguration.NodeRegistration.CRISocket = fmt.Sprintf("unix://%s", criSocket)
+		k.kubeadmConfig.InitConfiguration.NodeRegistration.CRISocket = fmt.Sprintf(
+			"unix://%s",
+			criSocket,
+		)
 	}
 	if k.kubeadmConfig.KubeletConfiguration.ContainerRuntimeEndpoint == "" {
-		k.kubeadmConfig.KubeletConfiguration.ContainerRuntimeEndpoint = fmt.Sprintf("unix://%s", criSocket)
+		k.kubeadmConfig.KubeletConfiguration.ContainerRuntimeEndpoint = fmt.Sprintf(
+			"unix://%s",
+			criSocket,
+		)
 	}
 }
 
@@ -518,7 +543,11 @@ func (k *KubeadmRuntime) generateJoinNodeConfigs(node string) ([]byte, error) {
 		return nil, err
 	}
 	k.cleanJoinLocalAPIEndPoint()
-	k.setAPIServerEndpoint(k.getVipAndPort())
+	endpoint := k.kubeadmConfig.ControlPlaneEndpoint
+	if endpoint == "" {
+		endpoint = fmt.Sprintf("%s:%d", k.getAPIServerDomain(), k.getAPIServerPort())
+	}
+	k.setAPIServerEndpoint(endpoint)
 	k.setJoinInternalIP(iputils.GetHostIP(node))
 
 	conversion, err := k.kubeadmConfig.ToConvertedKubeadmConfig()
@@ -567,7 +596,7 @@ func (k *KubeadmRuntime) setCGroupDriverAndSocket(node string) error {
 
 func (k *KubeadmRuntime) setImageSocket() {
 	imageEndpoint := k.cluster.GetImageEndpoint()
-	k.kubeadmConfig.KubeletConfiguration.ImageServiceEndpoint = fmt.Sprintf("unix://%s", imageEndpoint)
+	k.kubeadmConfig.ImageServiceEndpoint = "unix://" + imageEndpoint
 	k.kubeadmConfig.InitConfiguration.NodeRegistration.ImagePullPolicy = v1.PullNever
 	k.kubeadmConfig.JoinConfiguration.NodeRegistration.ImagePullPolicy = v1.PullNever
 }

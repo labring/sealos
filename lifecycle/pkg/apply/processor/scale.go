@@ -18,8 +18,6 @@ import (
 	"context"
 	"fmt"
 
-	"golang.org/x/sync/errgroup"
-
 	"github.com/labring/sealos/pkg/bootstrap"
 	"github.com/labring/sealos/pkg/buildah"
 	"github.com/labring/sealos/pkg/checker"
@@ -34,19 +32,21 @@ import (
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/yaml"
+	"golang.org/x/sync/errgroup"
 )
 
 type ScaleProcessor struct {
-	ClusterFile     clusterfile.Interface
-	Runtime         runtime.Interface
-	Buildah         buildah.Interface
-	pullImages      []string
-	MastersToJoin   []string
-	MastersToDelete []string
-	NodesToJoin     []string
-	NodesToDelete   []string
-	IsScaleUp       bool
-	Guest           guest.Interface
+	maintenanceContext context.Context
+	ClusterFile        clusterfile.Interface
+	Runtime            runtime.Interface
+	Buildah            buildah.Interface
+	pullImages         []string
+	MastersToJoin      []string
+	MastersToDelete    []string
+	NodesToJoin        []string
+	NodesToDelete      []string
+	IsScaleUp          bool
+	Guest              guest.Interface
 }
 
 func (c *ScaleProcessor) Execute(cluster *v2.Cluster) error {
@@ -56,6 +56,9 @@ func (c *ScaleProcessor) Execute(cluster *v2.Cluster) error {
 	}
 
 	for _, f := range pipLine {
+		if err := checkMaintenanceContext(c.maintenanceContext); err != nil {
+			return err
+		}
 		if err = f(cluster); err != nil {
 			return err
 		}
@@ -74,10 +77,10 @@ func (c *ScaleProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error
 			c.RunConfig,
 			c.MountRootfs,
 			c.Bootstrap,
-			//s.GetPhasePluginFunc(plugin.PhasePreJoin),
+			// s.GetPhasePluginFunc(plugin.PhasePreJoin),
 			c.Join,
 			c.RunGuest,
-			//s.GetPhasePluginFunc(plugin.PhasePostJoin),
+			// s.GetPhasePluginFunc(plugin.PhasePostJoin),
 		)
 		return todoList, nil
 	}
@@ -87,7 +90,7 @@ func (c *ScaleProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error
 		c.PreProcess,
 		c.Delete,
 		c.UndoBootstrap,
-		//c.ApplyCleanPlugin,
+		// c.ApplyCleanPlugin,
 		c.UnMountRootfs,
 	)
 	return todoList, nil
@@ -121,7 +124,10 @@ func (c *ScaleProcessor) Delete(cluster *v2.Cluster) error {
 		return err
 	}
 	if len(c.MastersToDelete) > 0 {
-		return c.Runtime.SyncNodeIPVS(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList())
+		return c.Runtime.SyncNodeIPVS(
+			cluster.GetMasterIPAndPortList(),
+			cluster.GetNodeIPAndPortList(),
+		)
 	}
 	return nil
 }
@@ -133,7 +139,10 @@ func (c *ScaleProcessor) Join(cluster *v2.Cluster) error {
 		return err
 	}
 	if len(c.MastersToJoin) > 0 {
-		return c.Runtime.SyncNodeIPVS(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList())
+		return c.Runtime.SyncNodeIPVS(
+			cluster.GetMasterIPAndPortList(),
+			cluster.GetNodeIPAndPortList(),
+		)
 	}
 	return c.Runtime.SyncNodeIPVS(cluster.GetMasterIPAndPortList(), c.NodesToJoin)
 }
@@ -158,16 +167,49 @@ func (c *ScaleProcessor) JoinCheck(cluster *v2.Cluster) error {
 	ips = append(ips, cluster.GetMaster0IPAndPort())
 	scales = append(c.MastersToJoin, c.NodesToJoin...)
 	ips = append(ips, scales...)
-	return NewCheckError(checker.RunCheckList([]checker.Interface{checker.NewIPsHostChecker(ips), checker.NewContainerdChecker(scales)}, cluster, checker.PhasePre))
+	if cluster.IsStandaloneControlPlane() {
+		if err := checker.RunCheckList(
+			[]checker.Interface{checker.NewIPsHostChecker(ips)},
+			cluster,
+			checker.PhasePre,
+		); err != nil {
+			return NewCheckError(err)
+		}
+		return NewCheckError(
+			clusterfile.WithJoinPreflight(cluster.Name, scales, func(pending []string) error {
+				return checker.RunCheckList(
+					[]checker.Interface{checker.NewContainerdChecker(pending)},
+					cluster,
+					checker.PhasePre,
+				)
+			}),
+		)
+	}
+	return NewCheckError(
+		checker.RunCheckList(
+			[]checker.Interface{
+				checker.NewIPsHostChecker(ips),
+				checker.NewContainerdChecker(scales),
+			},
+			cluster,
+			checker.PhasePre,
+		),
+	)
 }
 
 func (c *ScaleProcessor) DeleteCheck(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline DeleteCheck in ScaleProcessor.")
 	var ips []string
 	ips = append(ips, cluster.GetMaster0IPAndPort())
-	//ips = append(ips, c.MastersToDelete...)
-	//ips = append(ips, c.NodesToDelete...)
-	return NewCheckError(checker.RunCheckList([]checker.Interface{checker.NewIPsHostChecker(ips)}, cluster, checker.PhasePre))
+	// ips = append(ips, c.MastersToDelete...)
+	// ips = append(ips, c.NodesToDelete...)
+	return NewCheckError(
+		checker.RunCheckList(
+			[]checker.Interface{checker.NewIPsHostChecker(ips)},
+			cluster,
+			checker.PhasePre,
+		),
+	)
 }
 
 func (c *ScaleProcessor) PreProcess(cluster *v2.Cluster) error {
@@ -189,14 +231,16 @@ func (c *ScaleProcessor) preProcess(cluster *v2.Cluster) error {
 			return fmt.Errorf("rootfs image not found kube version")
 		}
 		clusterPath := constants.Clusterfile(cluster.Name)
-		obj := []interface{}{cluster}
+		obj := []any{cluster}
 		if configs := c.ClusterFile.GetConfigs(); len(configs) > 0 {
 			for i := range configs {
 				obj = append(obj, configs[i])
 			}
 		}
-		if err = yaml.MarshalFile(clusterPath, obj...); err != nil {
-			return err
+		if !cluster.IsStandaloneControlPlane() {
+			if err = yaml.MarshalFile(clusterPath, obj...); err != nil {
+				return err
+			}
 		}
 	}
 	if err = SyncClusterStatus(cluster, c.Buildah, false); err != nil {
@@ -213,6 +257,7 @@ func (c *ScaleProcessor) preProcess(cluster *v2.Cluster) error {
 		return fmt.Errorf("failed to init runtime: %v", err)
 	}
 	c.Runtime = rt
+	setMaintenanceContext(rt, c.maintenanceContext)
 
 	return err
 }
@@ -245,7 +290,11 @@ func (c *ScaleProcessor) RunConfig(cluster *v2.Cluster) error {
 	for _, cManifest := range cluster.Status.Mounts {
 		manifest := cManifest
 		eg.Go(func() error {
-			cfg := config.NewConfiguration(manifest.ImageName, manifest.MountPoint, c.ClusterFile.GetConfigs())
+			cfg := config.NewConfiguration(
+				manifest.ImageName,
+				manifest.MountPoint,
+				c.ClusterFile.GetConfigs(),
+			)
 			return cfg.Dump()
 		})
 	}
@@ -286,18 +335,24 @@ func sortAndFilterNoneApplicationMounts(cluster *v2.Cluster) ([]v2.MountImage, e
 func (c *ScaleProcessor) Bootstrap(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline Bootstrap in ScaleProcessor")
 	hosts := append(c.MastersToJoin, c.NodesToJoin...)
-	bs := bootstrap.New(cluster)
+	bs := bootstrap.New(cluster, c.maintenanceContext)
 	return bs.Apply(hosts...)
 }
 
 func (c *ScaleProcessor) UndoBootstrap(_ *v2.Cluster) error {
 	logger.Info("Executing pipeline UndoBootstrap in ScaleProcessor")
 	hosts := append(c.MastersToDelete, c.NodesToDelete...)
-	bs := bootstrap.New(c.ClusterFile.GetCluster())
+	bs := bootstrap.New(c.ClusterFile.GetCluster(), c.maintenanceContext)
 	return bs.Delete(hosts...)
 }
 
-func NewScaleProcessor(clusterFile clusterfile.Interface, name string, images v2.ImageList, masterToJoin, masterToDelete, nodeToJoin, nodeToDelete []string) (Interface, error) {
+func NewScaleProcessor(
+	clusterFile clusterfile.Interface,
+	name string,
+	images v2.ImageList,
+	masterToJoin, masterToDelete, nodeToJoin, nodeToDelete []string,
+	contexts ...context.Context,
+) (Interface, error) {
 	bder, err := buildah.New(name)
 	if err != nil {
 		return nil, err
@@ -307,15 +362,20 @@ func NewScaleProcessor(clusterFile clusterfile.Interface, name string, images v2
 		return nil, err
 	}
 
+	ctx := context.Background()
+	if len(contexts) > 0 {
+		ctx = contexts[0]
+	}
 	return &ScaleProcessor{
-		MastersToDelete: masterToDelete,
-		MastersToJoin:   masterToJoin,
-		NodesToDelete:   nodeToDelete,
-		NodesToJoin:     nodeToJoin,
-		ClusterFile:     clusterFile,
-		Buildah:         bder,
-		pullImages:      images,
-		IsScaleUp:       len(masterToJoin) > 0 || len(nodeToJoin) > 0,
-		Guest:           gs,
+		maintenanceContext: ctx,
+		MastersToDelete:    masterToDelete,
+		MastersToJoin:      masterToJoin,
+		NodesToDelete:      nodeToDelete,
+		NodesToJoin:        nodeToJoin,
+		ClusterFile:        clusterFile,
+		Buildah:            bder,
+		pullImages:         images,
+		IsScaleUp:          len(masterToJoin) > 0 || len(nodeToJoin) > 0,
+		Guest:              gs,
 	}, nil
 }
