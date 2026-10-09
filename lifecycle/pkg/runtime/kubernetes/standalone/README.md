@@ -43,7 +43,7 @@ Sealos generates the static Pod manifest. Standalone mode accepts:
 
 | Flag | Default |
 | --- | --- |
-| `--route-controller-image` | `ghcr.io/zijiren233/route-controller:main` |
+| `--route-controller-image` | `ghcr.io/labring-sigs/route-controller:0.1.0` |
 | `--route-controller-kubeconfig` | `/etc/kubernetes/route-controller/kubeconfig` |
 | `--route-controller-config` | Unset |
 | `--route-table` | `254` |
@@ -78,7 +78,7 @@ For a new cluster, these optional fields belong to the normal Cluster spec:
 spec:
   controlPlaneMode: standalone
   routeController:
-    image: ghcr.io/zijiren233/route-controller:main
+    image: ghcr.io/labring-sigs/route-controller:0.1.0
     kubeconfig: /etc/kubernetes/route-controller/kubeconfig
     table: 254
     protocol: 99
@@ -88,6 +88,14 @@ Omitted fields use the same defaults as switching. Fresh-cluster controller
 credentials must match the cluster CA and have suitable RBAC; provision them
 before bootstrap. Sealos does not create a controller identity or copy
 administrator-owned controller credentials during master addition.
+
+Switching also reads `spec.routeController.image`. An explicit
+`--route-controller-image` overrides that value and is saved to the Clusterfile
+on every master after a successful switch. Other controller flags continue to
+use the host baseline. To change an active controller's image, set the field
+or pass the flag and run `sealos switch control-plane standalone --update-controller -y`.
+Adding a master inherits the active controller settings from an existing master.
+An omitted image does not replace an existing host's saved controller image.
 
 ## Administrator boundary
 

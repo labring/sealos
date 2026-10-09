@@ -26,6 +26,7 @@ import (
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/runtime/kubernetes/standalone"
+	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
@@ -64,11 +65,15 @@ func TestControlPlaneConversionCommitAndFailure(t *testing.T) {
 	for _, scenario := range []struct {
 		failure string
 		recover string
+		image   string
+		flag    string
 	}{
 		{failure: "preflight"},
 		{failure: "host", recover: standalone.ModeStandalone},
 		{failure: "host", recover: standalone.ModeRegistered},
 		{failure: "none"},
+		{failure: "none", image: "registry.example/controller:custom"},
+		{failure: "none", image: "registry.example/controller:custom", flag: "registry.example/controller:override"},
 	} {
 		t.Run(scenario.failure+"/"+scenario.recover, func(t *testing.T) {
 			failure := scenario.failure
@@ -78,6 +83,7 @@ func TestControlPlaneConversionCommitAndFailure(t *testing.T) {
 				constants.DefaultRuntimeRootDir = previousRoot
 			})
 			cluster := testCluster([]string{"master0", "master1", "master2"})
+			cluster.Spec.RouteController = &v2.RouteControllerConfig{Image: scenario.image}
 			path := constants.Clusterfile(cluster.Name)
 			if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 				t.Fatal(err)
@@ -104,8 +110,17 @@ func TestControlPlaneConversionCommitAndFailure(t *testing.T) {
 				pathResolver: constants.NewPathResolver(cluster.Name),
 			}
 			options := standalone.ModeOptions{
-				Mode:    standalone.ModeStandalone,
-				Timeout: 10 * time.Minute,
+				Mode:             standalone.ModeStandalone,
+				Timeout:          10 * time.Minute,
+				ControllerFields: []string{},
+			}
+			expectedImage := scenario.image
+			if scenario.flag != "" {
+				controller := standalone.DefaultRouteControllerOptions()
+				controller.Image = scenario.flag
+				options.RouteController = &controller
+				options.ControllerFields = []string{"route-controller-image"}
+				expectedImage = scenario.flag
 			}
 			err := rt.SwitchControlPlaneMode(context.Background(), options)
 			if (err != nil) != (failure != "none") {
@@ -125,6 +140,15 @@ func TestControlPlaneConversionCommitAndFailure(t *testing.T) {
 			data, err = os.ReadFile(path)
 			if err != nil {
 				t.Fatal(err)
+			}
+			if failure == "none" && expectedImage != "" {
+				if !strings.Contains(string(data), "image: "+expectedImage) {
+					t.Fatalf("controller image was not committed: %s", data)
+				}
+				imageArgument := "--route-controller-image '" + expectedImage + "'"
+				if !strings.Contains(ssh.commands[0], imageArgument) {
+					t.Fatalf("incorrect controller image selection: %s", ssh.commands[0])
+				}
 			}
 			if strings.Contains(
 				string(data),

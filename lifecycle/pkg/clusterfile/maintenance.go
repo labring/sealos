@@ -79,19 +79,19 @@ func lockMaintenance(name string, conversion, lifecycle bool) (func(), error) {
 
 // SetControlPlaneMode preserves all Clusterfile documents and unknown fields.
 // Only the cluster's committed mode changes after every host has been verified.
-func SetControlPlaneMode(path, mode string) error {
+func SetControlPlaneMode(path, mode, controllerImage string) error {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
-	data, err = replaceControlPlaneMode(data, mode)
+	data, err = replaceControlPlaneMode(data, mode, controllerImage)
 	if err != nil {
 		return err
 	}
 	return WriteMaintenanceFile(path, data)
 }
 
-func replaceControlPlaneMode(data []byte, mode string) ([]byte, error) {
+func replaceControlPlaneMode(data []byte, mode, controllerImage string) ([]byte, error) {
 	decoder := utilyaml.NewYAMLOrJSONDecoder(bytes.NewReader(data), 4096)
 	var result bytes.Buffer
 	count := 0
@@ -114,6 +114,14 @@ func replaceControlPlaneMode(data []byte, mode string) ([]byte, error) {
 				return nil, errors.New("Cluster spec is missing")
 			}
 			spec["controlPlaneMode"] = mode
+			if controllerImage != "" {
+				controller, _ := spec["routeController"].(map[string]any)
+				if controller == nil {
+					controller = make(map[string]any)
+				}
+				controller["image"] = controllerImage
+				spec["routeController"] = controller
+			}
 		}
 		encoded, err := yaml.Marshal(doc)
 		if err != nil {
