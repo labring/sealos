@@ -5,7 +5,6 @@
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "dev-desktop": "pnpm -r --filter ./desktop run dev",
-    "dev-app": "pnpm -r --filter ./providers/applaunchpad  run dev",
     "dev-db": "pnpm -r --filter ./providers/dbprovider  run dev",
     "dev-cost": "pnpm -r --filter ./providers/costcenter  run dev",
     "dev-license": "pnpm -r --filter ./providers/license  run dev",
