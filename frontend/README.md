@@ -36,7 +36,6 @@ You can either run apps in workspace root or in specific app's directory.
 pnpm dev-desktop
 
 # Run specific provider app
-pnpm dev-app        # applaunchpad
 pnpm dev-db         # dbprovider
 pnpm dev-cost       # costcenter
 pnpm dev-template   # template
