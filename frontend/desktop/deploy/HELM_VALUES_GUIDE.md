@@ -124,7 +124,7 @@ desktopConfig:
   cfSiteKey: ''
 ```
 
-`templateUrl`, `applaunchpadUrl`, and `objectstorageUrl` are generated automatically from `cloudDomain`.
+`templateUrl`, `applaunchpadUrl`, `dbproviderUrl`, and `objectstorageUrl` are generated automatically from `cloudDomain`.
 
 ### 10. 桌面布局配置
 

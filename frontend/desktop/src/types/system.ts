@@ -21,6 +21,7 @@ export type CommonConfigType = {
   templateUrl?: string;
   objectstorageUrl: string;
   applaunchpadUrl: string;
+  dbproviderUrl: string;
   trackingEnabled: boolean;
   licenseCheckEnabled?: boolean;
 };
@@ -30,6 +31,7 @@ export type CommonClientConfigType = DeepRequired<
     | 'apiEnabled'
     | 'objectstorageUrl'
     | 'applaunchpadUrl'
+    | 'dbproviderUrl'
     | 'templateUrl'
     | 'realNameCallbackUrl'
   >

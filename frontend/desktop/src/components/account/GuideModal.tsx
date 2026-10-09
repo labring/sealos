@@ -23,7 +23,8 @@ import {
   quitGuideDriverObj,
   startDriver,
   appLaunchpadDriverObj,
-  templateDriverObj
+  templateDriverObj,
+  databaseDriverObj
 } from './driver';
 import { WindowSize } from '@/types';
 import { Image } from '@chakra-ui/react';
@@ -123,6 +124,30 @@ const GuideModal = () => {
           title: t('v2:devbox_step_3'),
           description: t('v2:devbox_step_3_desc'),
           image: '/images/onboarding/devbox-3.png'
+        }
+      ],
+      stepNumbers: 3
+    },
+    {
+      key: 'system-dbprovider',
+      icon: installedApps.find((app) => app.key === 'system-dbprovider')?.icon || '',
+      title: t('v2:database_title'),
+      description: t('v2:database_desc'),
+      steps: [
+        {
+          title: t('v2:database_step_1'),
+          description: t('v2:database_step_1_desc'),
+          image: '/images/onboarding/database-1.png'
+        },
+        {
+          title: t('v2:database_step_2'),
+          description: t('v2:database_step_2_desc'),
+          image: '/images/onboarding/database-2.png'
+        },
+        {
+          title: t('v2:database_step_3'),
+          description: t('v2:database_step_3_desc'),
+          image: '/images/onboarding/database-3.png'
         }
       ],
       stepNumbers: 3
@@ -333,6 +358,8 @@ const GuideModal = () => {
                         return startDriver(appLaunchpadDriverObj(openDesktopApp, t));
                       case 'system-template':
                         return startDriver(templateDriverObj(openDesktopApp, t));
+                      case 'system-dbprovider':
+                        return startDriver(databaseDriverObj(openDesktopApp, t));
                       case 'system-devbox':
                         return startDriver(devboxDriverObj(openDesktopApp, t));
                       default:

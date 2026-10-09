@@ -6,6 +6,7 @@ cloud:
   proxyDomain: "127.0.0.1.nip.io"
   allowedOrigins:
     - "https://applaunchpad.127.0.0.1.nip.io"
+    - "https://dbprovider.127.0.0.1.nip.io"
     - "https://costcenter.127.0.0.1.nip.io"
     - "https://cronjob.127.0.0.1.nip.io"
     - "https://objectstorage.127.0.0.1.nip.io"
@@ -24,6 +25,7 @@ common:
   templateUrl: "https://template.127.0.0.1.nip.io"
   objectstorageUrl: "https://objectstorage.127.0.0.1.nip.io"
   applaunchpadUrl: "https://applaunchpad.127.0.0.1.nip.io"
+  dbproviderUrl: "https://dbprovider.127.0.0.1.nip.io"
   trackingEnabled: false
 database:
   mongodbURI: "thisismongodburi"

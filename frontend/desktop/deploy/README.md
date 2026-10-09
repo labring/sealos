@@ -170,6 +170,7 @@ cloud:
   proxyDomain: 'cloud.example.com'
   allowedOrigins:
     - 'https://applaunchpad.cloud.example.com'
+    - 'https://dbprovider.cloud.example.com'
     - 'https://costcenter.cloud.example.com'
     - 'https://cronjob.cloud.example.com'
     - 'https://objectstorage.cloud.example.com'
@@ -195,6 +196,7 @@ common:
   realNameCallbackUrl: 'https://cloud.example.org/api/account/faceIdRealNameAuthCallback'
   templateUrl: 'https://template.example.org'
   applaunchpadUrl: 'https://applaunchpad.example.org'
+  dbproviderUrl: 'https://dbprovider.example.org'
   objectstorageUrl: 'https://objectstorage.example.org'
   cfSiteKey: ''
 
@@ -478,7 +480,7 @@ sealos run desktop-frontend:latest \
 - **OAuth providers**: `githubEnabled`, `googleEnabled`, `wechatEnabled`, `oauth2Enabled` and their `*ClientId`, `*ClientSecret`
 - **Features**: `guideEnabled`, `rechargeEnabled`, `trackingEnabled`, `apiEnabled`, `realNameAuthEnabled`
 - **Communication**: `smsEnabled`, `emailEnabled`, `emailHost`, `emailPort`, `emailUser`, `emailPassword`
-- **URLs**: `workorderUrl` and service URLs auto-generated from `cloudDomain` (`template`, `applaunchpad`, `objectstorage`)
+- **URLs**: `workorderUrl` and service URLs auto-generated from `cloudDomain` (`template`, `applaunchpad`, `dbprovider`, `objectstorage`)
 - **Database**: `databaseMongodbURI`, `databaseGlobalCockroachdbURI`, `databaseLocalCockroachdbURI`
 - **Team management**: `maxTeamCount`, `maxTeamMemberCount`
 

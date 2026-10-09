@@ -355,6 +355,115 @@ export const templateDriverObj = (openDesktopApp: any, t: TFunction): Config => 
   }
 });
 
+export const databaseDriverObj = (openDesktopApp: any, t: TFunction): Config => ({
+  onPopoverRender() {
+    track('guide_start', {
+      module: 'guide',
+      guide_name: 'database'
+    });
+  },
+
+  showProgress: true,
+  allowClose: false,
+  allowClickMaskNextStep: false,
+  isShowButtons: false,
+  allowKeyboardControl: false,
+  disableActiveInteraction: false,
+  stagePadding: 0,
+  stageRadius: 12,
+
+  // @ts-ignore
+  steps: [
+    {
+      element: '.system-dbprovider',
+      popover: {
+        side: 'right',
+        align: 'center',
+        borderRadius: '12px 12px 12px 12px',
+        PopoverBody: (
+          <Box>
+            <Flex alignItems={'center'} justifyContent={'space-between'}>
+              <Text color={'#fff'} fontSize={'14px'} fontWeight={600}>
+                {t('v2:database_create_title')}
+              </Text>
+              <Box
+                cursor={'pointer'}
+                ml={'auto'}
+                onClick={() => {
+                  track('guide_exit', {
+                    module: 'guide',
+                    guide_name: 'database'
+                  });
+
+                  currentDriver.destroy();
+                  currentDriver = null;
+                  startDriver(quitGuideDriverObj(t));
+                }}
+              >
+                <X width={'16px'} height={'16px'} />
+              </Box>
+            </Flex>
+            <Text mt={'8px'} color={'#FFFFFFCC'} fontSize={'14px'} fontWeight={400}>
+              {t('v2:database_create_desc')}
+            </Text>
+            <Flex justifyContent={'space-between'} mt={'16px'} alignItems={'center'}>
+              <Text color={'grayModern.900'} fontSize={'13px'} fontWeight={500}>
+                1/4
+              </Text>
+              <Center
+                color={'#fff'}
+                fontSize={'14px'}
+                fontWeight={500}
+                cursor={'pointer'}
+                borderRadius={'8px'}
+                background={'rgba(255, 255, 255, 0.20)'}
+                w={'fit-content'}
+                h={'32px'}
+                p={'8px'}
+                onClick={() => {
+                  currentDriver.destroy();
+                  currentDriver = null;
+                  openDesktopApp({
+                    appKey: 'system-dbprovider',
+                    pathname: '/redirect',
+                    query: {
+                      action: 'guide'
+                    },
+                    messageData: {},
+                    appSize: 'maximize'
+                  });
+                }}
+              >
+                {t('v2:next')}
+              </Center>
+            </Flex>
+          </Box>
+        )
+      }
+    }
+  ],
+  onHighlightStarted: (element) => {
+    const el = element as any;
+    if (el) {
+      el._originalBorderRadius = el.style.borderRadius;
+      el._originalBorder = el.style.border;
+
+      el.style.borderRadius = '8px';
+      el.style.border = '1.5px solid #1C4EF5';
+    }
+  },
+  onDeselected: (element?: Element) => {
+    if (element) {
+      const el = element as any;
+      el.style.borderRadius = el._originalBorderRadius || '';
+      el.style.border = el._originalBorder || '';
+    }
+  },
+  onDestroyed: () => {
+    useGuideModalStore.getState().setIsDriverActive(false);
+  }
+});
+
 export const quitGuideDriverObj = (t: TFunction): Config => ({
   showProgress: false,
   allowClose: false,

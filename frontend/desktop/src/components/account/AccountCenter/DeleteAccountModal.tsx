@@ -73,7 +73,7 @@ type DeleteExecutionState = {
 
 const appKeyList = [
   '',
-  '',
+  'system-dbprovider',
   'system-applaunchpad',
   '',
   'system-cronjob',

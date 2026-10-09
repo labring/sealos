@@ -18,5 +18,6 @@
 	"REMAIN_APP": "Remaining applications in current region",
 	"REMAIN_TEMPLATE": "Remaining templates in current region",
 	"REMAIN_OBJECT_STORAGE": "Remaining object storage in current region",
+	"REMAIN_DATABASE": "Remaining databases in current region",
 	"KUBECONFIG_NOT_FOUND": "Kubeconfig not found"
 }

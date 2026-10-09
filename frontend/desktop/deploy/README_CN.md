@@ -170,6 +170,7 @@ cloud:
   proxyDomain: 'cloud.example.com'
   allowedOrigins:
     - 'https://applaunchpad.cloud.example.com'
+    - 'https://dbprovider.cloud.example.com'
     - 'https://costcenter.cloud.example.com'
     - 'https://cronjob.cloud.example.com'
     - 'https://objectstorage.cloud.example.com'
@@ -195,6 +196,7 @@ common:
   realNameCallbackUrl: 'https://cloud.example.org/api/account/faceIdRealNameAuthCallback'
   templateUrl: 'https://template.example.org'
   applaunchpadUrl: 'https://applaunchpad.example.org'
+  dbproviderUrl: 'https://dbprovider.example.org'
   objectstorageUrl: 'https://objectstorage.example.org'
   cfSiteKey: ''
 
@@ -473,7 +475,7 @@ sealos run desktop-frontend:latest \
 - **OAuth 提供商**: `githubEnabled`, `googleEnabled`, `wechatEnabled`, `oauth2Enabled` 及其对应的 `*ClientId`, `*ClientSecret`
 - **功能开关**: `guideEnabled`, `rechargeEnabled`, `trackingEnabled`, `apiEnabled`, `realNameAuthEnabled`
 - **通讯配置**: `smsEnabled`, `emailEnabled`, `emailHost`, `emailPort`, `emailUser`, `emailPassword`
-- **URL 配置**: `workorderUrl`，以及基于 `cloudDomain` 自动生成的服务地址（`template`、`applaunchpad`、`objectstorage`）
+- **URL 配置**: `workorderUrl`，以及基于 `cloudDomain` 自动生成的服务地址（`template`、`applaunchpad`、`dbprovider`、`objectstorage`）
 - **数据库配置**: `databaseMongodbURI`, `databaseGlobalCockroachdbURI`, `databaseLocalCockroachdbURI`
 - **团队管理**: `maxTeamCount`, `maxTeamMemberCount`
 
