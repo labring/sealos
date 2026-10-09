@@ -233,7 +233,6 @@ desktopConfig:
   realNameCallbackUrl: "https://cloud.example.org/api/account/faceIdRealNameAuthCallback"
   templateUrl: "https://template.example.org"
   applaunchpadUrl: "https://applaunchpad.example.org"
-  dbproviderUrl: "https://dbprovider.example.org"
   objectstorageUrl: "https://objectstorage.example.org"
   cfSiteKey: ""
   layoutTitle: "Sealos Cloud"

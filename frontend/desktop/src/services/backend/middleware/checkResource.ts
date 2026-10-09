@@ -45,7 +45,6 @@ export const resourceGuard =
     const baseTemplateUrl = global.AppConfig.common.templateUrl;
     const baseObjectStorageUrl = global.AppConfig.common.objectstorageUrl;
     const baseApplaunchPadUrl = global.AppConfig.common.applaunchpadUrl;
-    const baseDbproviderUrl = global.AppConfig.common.dbproviderUrl;
 
     const kc = await getUserKubeconfigNotPatch(userCr.crName);
     if (!kc)
@@ -104,16 +103,6 @@ export const resourceGuard =
         return jsonRes(res, {
           code: 409,
           message: RESOURCE_STATUS.REMAIN_APP
-        });
-    }
-    if (baseDbproviderUrl) {
-      const dbproviderUrl = baseDbproviderUrl + '/api/getDBList';
-      const result = await fetchFilter(await genReq(dbproviderUrl));
-      if (!result.isOk) return;
-      if (result.data?.data?.length !== 0)
-        return jsonRes(res, {
-          code: 409,
-          message: RESOURCE_STATUS.REMAIN_DATABASE
         });
     }
     await Promise.resolve(next?.());

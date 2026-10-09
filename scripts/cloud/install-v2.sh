@@ -365,7 +365,6 @@ cloudImages=(
     # frontends
     ["frontend-desktop"]="sealos-cloud-desktop-frontend"
     ["frontend-applaunchpad"]="sealos-cloud-applaunchpad-frontend"
-    ["frontend-dbprovider"]="sealos-cloud-dbprovider-frontend"
     ["frontend-costcenter"]="sealos-cloud-costcenter-frontend"
     ["frontend-license"]="sealos-cloud-license-frontend"
 
@@ -478,11 +477,6 @@ run_cloud(){
       --env cloudPort=\"${varCloudPort}\" \
       ${tls_optional} \
       --env certSecretName=\"wildcard-cert\" "
-
-    run_and_log "sealos run ${registry_domain}/${sealos_cloud_image_repository}/${cloudImages["frontend-dbprovider"]}:${sealos_cloud_version} \
-    --env cloudDomain=${varCloudDomain} \
-    --env cloudPort=\"${varCloudPort}\" \
-    --env certSecretName=\"wildcard-cert\" "
 
     run_and_log "sealos run ${registry_domain}/${sealos_cloud_image_repository}/${cloudImages["frontend-costcenter"]}:${sealos_cloud_version} \
     --env cloudDomain=${varCloudDomain} \

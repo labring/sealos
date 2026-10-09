@@ -18,6 +18,5 @@
   "REMAIN_APP": "当前可用区残留应用",
   "REMAIN_TEMPLATE": "当前可用区残留模板",
   "REMAIN_OBJECT_STORAGE": "当前可用区残留对象存储",
-  "REMAIN_DATABASE": "当前可用区残留数据库",
   "KUBECONFIG_NOT_FOUND": "未找到Kubeconfig"
 }

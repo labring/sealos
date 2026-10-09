@@ -634,17 +634,14 @@ export default function Apps() {
       const guidedElements = [
         'system-devbox',
         'system-applaunchpad',
-        'system-template',
-        'system-dbprovider'
+        'system-template'
       ];
       if (guidedElements.includes(item.key)) {
         if (openDesktopApp) {
           openDesktopApp({
             appKey: item.key,
             pathname:
-              item.key === 'system-applaunchpad' || item.key === 'system-dbprovider'
-                ? '/redirect'
-                : '/',
+              item.key === 'system-applaunchpad' ? '/redirect' : '/',
             query: {
               action: 'guide'
             },
@@ -695,8 +692,7 @@ export default function Apps() {
     const notDraggableApps = [
       'system-devbox',
       'system-applaunchpad',
-      'system-template',
-      'system-dbprovider'
+      'system-template'
     ];
     if (notDraggableApps.includes(app.key)) {
       e.preventDefault();
