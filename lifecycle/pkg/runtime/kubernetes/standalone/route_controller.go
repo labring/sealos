@@ -74,7 +74,7 @@ func routeOptionsFromState(state *modeState) (RouteControllerOptions, error) {
 }
 
 const (
-	DefaultRouteControllerImage      = "ghcr.io/zijiren233/route-controller:main"
+	DefaultRouteControllerImage      = "ghcr.io/labring-sigs/route-controller:0.1.0"
 	DefaultRouteControllerKubeconfig = "/etc/kubernetes/route-controller/kubeconfig"
 	controllerKubeconfigMount        = "/etc/route-controller/kubeconfig"
 	controllerConfigMount            = "/etc/route-controller/config.yaml"

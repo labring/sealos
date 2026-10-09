@@ -36,6 +36,9 @@ metadata:
 spec:
   image: [example/kubernetes:v1.31.9]
   customField: preserved
+  routeController:
+    image: registry.example/controller:old
+    customField: preserved
 ---
 apiVersion: kubeadm.k8s.io/v1beta4
 kind: ClusterConfiguration
@@ -49,7 +52,11 @@ spec:
 `)
 	for _, mode := range []string{"standalone", "registered"} {
 		var err error
-		data, err = replaceControlPlaneMode(data, mode)
+		image := ""
+		if mode == "standalone" {
+			image = "registry.example/controller:new"
+		}
+		data, err = replaceControlPlaneMode(data, mode, image)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -60,6 +67,7 @@ spec:
 			"podSubnet: 10.244.0.0/16",
 			"kind: Config",
 			"data: preserved",
+			"image: registry.example/controller:new",
 		} {
 			if !strings.Contains(string(data), value) {
 				t.Fatalf("mode commit lost %q: %s", value, data)

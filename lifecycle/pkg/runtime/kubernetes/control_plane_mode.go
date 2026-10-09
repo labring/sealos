@@ -22,6 +22,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -98,6 +99,7 @@ func (k *KubeadmRuntime) switchControlPlaneMode(
 		cm = nil
 	}
 	journal.Target = options.Mode
+	controllerImage := ""
 	var command strings.Builder
 	command.WriteString(strings.Join([]string{
 		shellArgument(k.pathResolver.RootFSSealctlPath()), "switch", shellArgument(options.Mode),
@@ -114,6 +116,15 @@ func (k *KubeadmRuntime) switchControlPlaneMode(
 		fields := standalone.RouteControllerFlags
 		if options.ControllerFields != nil {
 			fields = options.ControllerFields
+		}
+		if !slices.Contains(fields, "route-controller-image") {
+			if saved := k.cluster.Spec.RouteController; saved != nil && saved.Image != "" {
+				controller.Image = saved.Image
+				fields = append(slices.Clone(fields), "route-controller-image")
+			}
+		}
+		if slices.Contains(fields, "route-controller-image") {
+			controllerImage = controller.Image
 		}
 		if options.UpdateController {
 			command.WriteString(" --update-controller")
@@ -207,7 +218,7 @@ func (k *KubeadmRuntime) switchControlPlaneMode(
 		}
 	}
 	path := constants.Clusterfile(k.cluster.Name)
-	if err := clusterfile.SetControlPlaneMode(path, options.Mode); err != nil {
+	if err := clusterfile.SetControlPlaneMode(path, options.Mode, controllerImage); err != nil {
 		return err
 	}
 	for _, host := range hosts {
