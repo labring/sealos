@@ -2,7 +2,10 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { HttpStatusCode } from 'axios';
 import { verifyGlobalToken, verifyRegionalJwt } from '@/services/backend/auth';
 import { getRegionToken } from '@/services/backend/regionAuth';
-import { getUserKubeconfigNotPatch } from '@/services/backend/kubernetes/admin';
+import {
+  getUserKubeconfigNotPatch,
+  KubeconfigAccessDeniedError
+} from '@/services/backend/kubernetes/admin';
 import { jsonRes } from '@/services/backend/response';
 import { switchKubeconfigNamespace } from '@/utils/switchKubeconfigNamespace';
 import { AccessTokenPayload } from '@/types/token';
@@ -49,6 +52,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   } catch (err) {
     console.log(err);
+    if (err instanceof KubeconfigAccessDeniedError) {
+      return jsonRes(res, {
+        code: err.statusCode,
+        message: err.message
+      });
+    }
     return jsonRes(res, {
       message: 'Failed to get default kubeconfig',
       code: HttpStatusCode.InternalServerError
