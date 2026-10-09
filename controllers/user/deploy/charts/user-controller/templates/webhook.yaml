@@ -53,6 +53,26 @@ metadata:
   annotations:
     cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ include "user.fullname" . }}-serving-cert
 webhooks:
+  - name: vnamespace.user.sealos.io
+    admissionReviewVersions:
+      - v1
+    clientConfig:
+      service:
+        name: {{ include "user.fullname" . }}-webhook-service
+        namespace: {{ .Release.Namespace }}
+        path: /validate--v1-namespace
+    failurePolicy: Fail
+    rules:
+      - apiGroups:
+          - ""
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - namespaces
+    sideEffects: None
   - name: voperationrequest.kb.io
     admissionReviewVersions:
       - v1
