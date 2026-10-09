@@ -479,3 +479,58 @@ func TestResourceCreatorSkipsAuxiliaryKinds(t *testing.T) {
 		}
 	}
 }
+
+func TestResourceCreatorAdminUpdates(t *testing.T) {
+	for _, kind := range []string{"Devbox", "Deployment", "StatefulSet"} {
+		for _, operation := range []string{"backfill", "change", "delete"} {
+			for _, username := range []string{"system:serviceaccount:user-system:admin", "system:serviceaccount:user-system:alice", "system:serviceaccount:ns-admin:admin", "admin"} {
+				t.Run(kind+"/"+operation+"/"+username, func(t *testing.T) {
+					version := "apps/v1"
+					if kind == "Devbox" {
+						version = "devbox.sealos.io/v1alpha2"
+					}
+					old := creatorObject(version, kind)
+					old.SetNamespace("ns-admin")
+					if operation != "backfill" {
+						old.SetAnnotations(map[string]string{CreatorUserCrNameAnnotation: "alice", CreatorTypeAnnotation: "user"})
+					}
+					obj := old.DeepCopy()
+					annotations := map[string]string{"other": "keep"}
+					if operation != "delete" {
+						annotations[CreatorUserCrNameAnnotation] = "bob"
+						annotations[CreatorTypeAnnotation] = "service"
+					}
+					obj.SetAnnotations(annotations)
+					if creatorAppWorkload(obj) {
+						if err := unstructured.SetNestedStringMap(obj.Object, map[string]string{CreatorUserCrNameAnnotation: "stale", CreatorTypeAnnotation: "user", "template-other": "keep"}, "spec", "template", "metadata", "annotations"); err != nil {
+							t.Fatal(err)
+						}
+					}
+					req := creatorRequest(t, obj, old, username)
+					want := old.GetAnnotations()
+					if username == "system:serviceaccount:user-system:admin" {
+						want = annotations
+					}
+					got := mutateCreator(t, creatorHandler(), req)
+					if !sameCreator(got.GetAnnotations(), want) || got.GetAnnotations()["other"] != "keep" {
+						t.Fatalf("unexpected annotations: %v, want creator %v", got.GetAnnotations(), want)
+					}
+					if creatorAppWorkload(obj) {
+						template, _, err := unstructured.NestedStringMap(got.Object, "spec", "template", "metadata", "annotations")
+						if err != nil || !sameCreator(template, want) || template["template-other"] != "keep" {
+							t.Fatalf("unexpected template: %v, error %v", template, err)
+						}
+					}
+					validator := creatorHandler()
+					validator.Validate = true
+					if username != "system:serviceaccount:user-system:admin" && validator.Handle(context.Background(), req).Allowed {
+						t.Fatal("validator accepted unauthorized update")
+					}
+					if username == "system:serviceaccount:user-system:admin" && creatorAppWorkload(obj) && validator.Handle(context.Background(), req).Allowed {
+						t.Fatal("validator accepted inconsistent template")
+					}
+				})
+			}
+		}
+	}
+}
