@@ -64,7 +64,6 @@ export const LogTable = ({
         cell: ({ row }) => {
           return (
             <Box
-              flexShrink={0}
               overflow={'hidden'}
               color={'#18181B'}
               fontSize={'14px'}
@@ -75,6 +74,8 @@ export const LogTable = ({
               pl={'0px'}
               alignItems={'flex-start'}
               alignSelf={'stretch'}
+              wordBreak={'break-word'}
+              whiteSpace={'normal'}
             >
               {formatTime(row.original.timestamp, 'YYYY/MM/DD HH:mm:ss')}
             </Box>
