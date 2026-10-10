@@ -17,8 +17,8 @@ export const raw2schema = (raw: DBDetailType): z.Infer<typeof dbDetailSchema> =>
     type: raw.dbType,
     version: raw.dbVersion,
     resource: {
-      cpu: raw.cpu as CPUResourceEnum,
-      memory: raw.memory as MemoryResourceEnum,
+      cpu: (raw.cpu / 1000) as CPUResourceEnum,
+      memory: (raw.memory / 1024) as MemoryResourceEnum,
       storage: raw.storage as number,
       replicas: raw.replicas as ReplicasResourceEnum
     },
@@ -26,8 +26,8 @@ export const raw2schema = (raw: DBDetailType): z.Infer<typeof dbDetailSchema> =>
     status: raw.status.value,
     createTime: raw.createTime,
     totalResource: {
-      cpu: raw.totalCpu as CPUResourceEnum,
-      memory: raw.totalMemory as MemoryResourceEnum,
+      cpu: (raw.totalCpu / 1000) as CPUResourceEnum,
+      memory: (raw.totalMemory / 1024) as MemoryResourceEnum,
       storage: raw.totalStorage as number
     },
     isDiskSpaceOverflow: raw.isDiskSpaceOverflow,

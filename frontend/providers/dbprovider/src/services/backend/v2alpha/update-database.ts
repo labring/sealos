@@ -1,5 +1,5 @@
 import { json2ResourceOps } from '@/utils/json2Yaml';
-import { adaptDBDetail } from '@/utils/adapt';
+import { adaptDBDetail, getDatabaseResourceComponentSpec } from '@/utils/adapt';
 import { KbPgClusterType } from '@/types/cluster';
 import { updateDatabaseSchemas } from '@/types/apis/v2alpha';
 import z from 'zod';
@@ -23,13 +23,11 @@ const schema2Raw = (currentData: any, updateQuota: any) => {
   };
 };
 
-const raw2Schema = (rawDbDetail: any, originalRequest: any, updateQuota: any) => {
-  const finalCpu = updateQuota.cpu !== undefined ? updateQuota.cpu : rawDbDetail.cpu;
-  const finalMemory = updateQuota.memory !== undefined ? updateQuota.memory : rawDbDetail.memory;
-  const finalStorage =
-    updateQuota.storage !== undefined ? updateQuota.storage : rawDbDetail.storage;
-  const finalReplicas =
-    updateQuota.replicas !== undefined ? updateQuota.replicas : rawDbDetail.replicas;
+const raw2Schema = (rawDbDetail: any) => {
+  const finalCpu = rawDbDetail.cpu / 1000;
+  const finalMemory = rawDbDetail.memory / 1024;
+  const finalStorage = rawDbDetail.storage;
+  const finalReplicas = rawDbDetail.replicas;
 
   const convertedData = {
     id: rawDbDetail.id,
@@ -52,13 +50,13 @@ const raw2Schema = (rawDbDetail: any, originalRequest: any, updateQuota: any) =>
     replicas: finalReplicas,
 
     totalResource: {
-      cpu: finalCpu * finalReplicas,
-      memory: finalMemory * finalReplicas,
-      storage: finalStorage * finalReplicas
+      cpu: rawDbDetail.totalCpu / 1000,
+      memory: rawDbDetail.totalMemory / 1024,
+      storage: rawDbDetail.totalStorage
     },
-    totalCpu: finalCpu * finalReplicas,
-    totalMemory: finalMemory * finalReplicas,
-    totalStorage: finalStorage * finalReplicas,
+    totalCpu: rawDbDetail.totalCpu / 1000,
+    totalMemory: rawDbDetail.totalMemory / 1024,
+    totalStorage: rawDbDetail.totalStorage,
 
     terminationPolicy: rawDbDetail.terminationPolicy
   };
@@ -98,20 +96,16 @@ export async function updateDatabase(
 
     const dbDetail = adaptDBDetail(clusterData);
 
-    const currentSpec = clusterData.spec?.componentSpecs?.[0];
-    const currentCpu = currentSpec?.resources?.limits?.cpu || '1000m';
-    const currentMemory = currentSpec?.resources?.limits?.memory || '1Gi';
-    const currentStorage =
-      currentSpec?.volumeClaimTemplates?.[0]?.spec?.resources?.requests?.storage || '3Gi';
-    const currentReplicas = currentSpec?.replicas || 3;
-
-    const currentCpuNum = parseCpuToUserFormat(currentCpu);
-    const currentMemoryNum = parseMemoryToUserFormat(currentMemory);
-    const currentStorageNum = parseStorageToUserFormat(currentStorage);
+    const currentComponentSpecs = clusterData.spec?.componentSpecs || [];
+    const currentSpec = getDatabaseResourceComponentSpec(dbDetail.dbType, currentComponentSpecs);
+    const currentCpuNum = dbDetail.cpu / 1000;
+    const currentMemoryNum = dbDetail.memory / 1024;
+    const currentStorageNum = dbDetail.storage;
+    const currentReplicas = currentSpec?.replicas || dbDetail.replicas;
 
     const currentDataInternal = {
-      cpu: dbDetail.cpu * 1000,
-      memory: dbDetail.memory * 1024,
+      cpu: dbDetail.cpu,
+      memory: dbDetail.memory,
       storage: dbDetail.storage,
       replicas: dbDetail.replicas,
       dbType: dbDetail.dbType,
@@ -135,25 +129,37 @@ export async function updateDatabase(
     const opsRequests: any[] = [];
 
     if (needsVerticalScaling) {
-      const verticalScalingYaml = json2ResourceOps(rawDbForm, 'VerticalScaling');
+      const verticalScalingYaml = json2ResourceOps(
+        rawDbForm,
+        'VerticalScaling',
+        currentComponentSpecs
+      );
       const opsRequest = yaml.load(verticalScalingYaml) as any;
       opsRequests.push(opsRequest);
     }
 
     if (needsHorizontalScaling) {
-      const horizontalScalingYaml = json2ResourceOps(rawDbForm, 'HorizontalScaling');
+      const horizontalScalingYaml = json2ResourceOps(
+        rawDbForm,
+        'HorizontalScaling',
+        currentComponentSpecs
+      );
       const opsRequest = yaml.load(horizontalScalingYaml) as any;
       opsRequests.push(opsRequest);
     }
 
     if (needsVolumeExpansion) {
-      const volumeExpansionYaml = json2ResourceOps(rawDbForm, 'VolumeExpansion');
+      const volumeExpansionYaml = json2ResourceOps(
+        rawDbForm,
+        'VolumeExpansion',
+        currentComponentSpecs
+      );
       const opsRequest = yaml.load(volumeExpansionYaml) as any;
       opsRequests.push(opsRequest);
     }
 
     if (opsRequests.length === 0) {
-      const result = raw2Schema(dbDetail, null, {});
+      const result = raw2Schema(dbDetail);
 
       return {
         code: 200,
@@ -181,7 +187,7 @@ export async function updateDatabase(
 
     const adaptedDbDetail = adaptDBDetail(updatedClusterData);
 
-    const result = raw2Schema(adaptedDbDetail, null, quota);
+    const result = raw2Schema(adaptedDbDetail);
 
     return {
       code: 200,
@@ -198,38 +204,4 @@ export async function updateDatabase(
 
     throw err;
   }
-}
-
-function parseCpuToUserFormat(cpu: string): number {
-  if (cpu.endsWith('m')) {
-    return parseInt(cpu.slice(0, -1)) / 1000;
-  }
-  return parseFloat(cpu);
-}
-
-function parseMemoryToUserFormat(memory: string): number {
-  if (memory.endsWith('Gi')) {
-    return parseInt(memory.slice(0, -2));
-  }
-  if (memory.endsWith('Mi')) {
-    const miValue = parseInt(memory.slice(0, -2));
-    return miValue / 1024;
-  }
-  if (memory.endsWith('Ki')) {
-    return parseInt(memory.slice(0, -2)) / 1048576;
-  }
-  return parseFloat(memory);
-}
-
-function parseStorageToUserFormat(storage: string): number {
-  if (storage.endsWith('Gi')) {
-    return parseInt(storage.slice(0, -2));
-  }
-  if (storage.endsWith('Mi')) {
-    return parseInt(storage.slice(0, -2)) / 1024;
-  }
-  if (storage.endsWith('Ti')) {
-    return parseInt(storage.slice(0, -2)) * 1024;
-  }
-  return parseFloat(storage);
 }

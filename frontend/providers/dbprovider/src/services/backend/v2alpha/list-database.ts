@@ -108,8 +108,8 @@ const raw2schema = async (
       | 'deleting',
     createTime: raw.createTime,
     totalResource: {
-      cpu: raw.totalCpu as CPUResourceEnum,
-      memory: raw.totalMemory as MemoryResourceEnum,
+      cpu: (raw.totalCpu / 1000) as CPUResourceEnum,
+      memory: (raw.totalMemory / 1024) as MemoryResourceEnum,
       storage: raw.totalStorage as number
     },
     isDiskSpaceOverflow: raw.isDiskSpaceOverflow,
