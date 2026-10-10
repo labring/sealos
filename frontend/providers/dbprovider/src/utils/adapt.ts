@@ -6,7 +6,9 @@ import {
   DBNameLabel,
   DBPreviousConfigKey,
   DBReconfigStatusMap,
+  DBResourceChangeKey,
   DBSourceConfigs,
+  DBTypeEnum,
   MigrationRemark,
   dbStatusMap
 } from '@/constants/db';
@@ -37,7 +39,7 @@ import {
   formatTime,
   memoryFormatToGi,
   memoryFormatToMi,
-  storageFormatToNum
+  storageFormatToGi
 } from '@/utils/tools';
 import { getReconfigureHistoryConfigurations } from './reconfigureHistory';
 import type { CoreV1EventList, V1Pod } from '@kubernetes/client-node';
@@ -50,21 +52,21 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 import type { BackupItemType } from '../types/db';
 
+export const getDatabaseResourceComponentSpec = (
+  dbType: DBType,
+  componentSpecs: KubeBlockClusterSpec['componentSpecs']
+) => {
+  const componentName =
+    dbType === DBTypeEnum.polardbx ? 'dn-0' : dbType === 'apecloud-mysql' ? 'mysql' : dbType;
+
+  return componentSpecs.find((comp) => String(comp.name) === componentName) || componentSpecs?.[0];
+};
+
 const getDisplayReplicas = (
   dbType: DBType,
   componentSpecs: KubeBlockClusterSpec['componentSpecs']
 ) => {
-  if (dbType === 'polardbx') {
-    return componentSpecs.find((comp) => String(comp.name) === 'cn')?.replicas || 1;
-  }
-
-  const displayComponentName = dbType === 'apecloud-mysql' ? 'mysql' : dbType;
-
-  return (
-    componentSpecs.find((comp) => String(comp.name) === displayComponentName)?.replicas ||
-    componentSpecs?.[0]?.replicas ||
-    1
-  );
+  return getDatabaseResourceComponentSpec(dbType, componentSpecs)?.replicas || 1;
 };
 
 export const getDBSource = (
@@ -93,7 +95,7 @@ export const getDBSource = (
   };
 };
 
-function calcTotalResource(obj: KubeBlockClusterSpec['componentSpecs']) {
+function calcTotalResource(obj: KubeBlockClusterSpec['componentSpecs'], dbType: DBType) {
   let cpu = 0;
   let memory = 0;
   let totalCpu = 0;
@@ -104,9 +106,8 @@ function calcTotalResource(obj: KubeBlockClusterSpec['componentSpecs']) {
   obj.forEach((comp) => {
     const parseCpu = cpuFormatToM(comp?.resources?.limits?.cpu || '0');
     const parseMemory = memoryFormatToMi(comp?.resources?.limits?.memory || '0');
-    const parseStorage = storageFormatToNum(
-      comp?.volumeClaimTemplates?.[0]?.spec?.resources?.requests?.storage || '0'
-    );
+    const dataVolume = comp?.volumeClaimTemplates?.find((volume) => volume.name === 'data');
+    const parseStorage = storageFormatToGi(dataVolume?.spec?.resources?.requests?.storage);
     cpu += parseCpu;
     memory += parseMemory;
     totalCpu += parseCpu * comp.replicas;
@@ -115,6 +116,12 @@ function calcTotalResource(obj: KubeBlockClusterSpec['componentSpecs']) {
     storage += parseStorage;
     totalStorage += parseStorage * comp.replicas;
   });
+
+  // PolarDB-X storage is edited as the sum of component data volume sizes.
+  // Keep list/detail displays on the same logical storage unit as the form.
+  if (dbType === DBTypeEnum.polardbx) {
+    totalStorage = storage;
+  }
 
   return {
     cpu,
@@ -142,7 +149,7 @@ export const adaptDBListItem = (db: KbPgClusterType): DBListItemType => {
     createTime: dayjs(db.metadata?.creationTimestamp)
       .tz('Asia/Shanghai')
       .format('YYYY/MM/DD HH:mm'),
-    ...calcTotalResource(db.spec.componentSpecs),
+    ...calcTotalResource(db.spec.componentSpecs, dbType),
     replicas: getDisplayReplicas(dbType, db.spec.componentSpecs),
     conditions: db?.status?.conditions || [],
     isDiskSpaceOverflow: false,
@@ -170,7 +177,7 @@ export const adaptDBDetail = (db: KbPgClusterType): DBDetailType => {
     dbVersion: db?.metadata?.labels['clusterversion.kubeblocks.io/name'] || '',
     dbName: db.metadata?.name || 'db name',
     replicas: getDisplayReplicas(dbType, db.spec.componentSpecs),
-    ...calcTotalResource(db.spec.componentSpecs),
+    ...calcTotalResource(db.spec.componentSpecs, dbType),
     conditions: db?.status?.conditions || [],
     isDiskSpaceOverflow: false,
     labels: db.metadata.labels || {},
@@ -453,25 +460,64 @@ const getOperationLogConfigurations = (
   }
 
   if (item.spec.type === 'VerticalScaling') {
+    const resourceChange = (() => {
+      if (dbType !== DBTypeEnum.polardbx) return undefined;
+
+      try {
+        const rawResourceChange = item.metadata.annotations?.[DBResourceChangeKey];
+        return rawResourceChange
+          ? (JSON.parse(rawResourceChange) as {
+              cpu?: { old: number; new: number };
+              memory?: { old: number; new: number };
+            })
+          : undefined;
+      } catch {
+        return undefined;
+      }
+    })();
+
+    if (resourceChange) {
+      const changedConfigs: OpsRequestConfiguration[] = [];
+      if (resourceChange.cpu && resourceChange.cpu.old !== resourceChange.cpu.new) {
+        changedConfigs.push({
+          parameterName: `${item.spec.type}CPU`,
+          oldValue: cpuFormatToC(`${resourceChange.cpu.old}m`),
+          newValue: cpuFormatToC(`${resourceChange.cpu.new}m`)
+        });
+      }
+      if (resourceChange.memory && resourceChange.memory.old !== resourceChange.memory.new) {
+        changedConfigs.push({
+          parameterName: `${item.spec.type}Memory`,
+          oldValue: memoryFormatToGi(`${resourceChange.memory.old}Mi`),
+          newValue: memoryFormatToGi(`${resourceChange.memory.new}Mi`)
+        });
+      }
+      return changedConfigs;
+    }
+
     return sortOperationLogComponents(dbType, item.spec.verticalScaling).flatMap((newConfig) => {
       const oldConfig = item.status?.lastConfiguration?.components?.[newConfig.componentName];
       const changedConfigs: OpsRequestConfiguration[] = [];
+      const oldCpu = oldConfig?.limits?.cpu;
+      const newCpu = newConfig.limits?.cpu;
+      const oldMemory = oldConfig?.limits?.memory;
+      const newMemory = newConfig.limits?.memory;
 
-      if (oldConfig?.limits?.cpu !== newConfig.limits?.cpu) {
+      if (cpuFormatToM(oldCpu || '0') !== cpuFormatToM(newCpu || '0')) {
         changedConfigs.push({
           componentName: normalizeOperationLogComponentName(dbType, newConfig.componentName),
           parameterName: `${item.spec.type}CPU`,
-          newValue: cpuFormatToC(newConfig.limits?.cpu) || '-',
-          oldValue: cpuFormatToC(oldConfig?.limits?.cpu) || '-'
+          newValue: newCpu ? cpuFormatToC(newCpu) : '-',
+          oldValue: oldCpu ? cpuFormatToC(oldCpu) : '-'
         });
       }
 
-      if (oldConfig?.limits?.memory !== newConfig.limits?.memory) {
+      if (memoryFormatToMi(oldMemory || '0') !== memoryFormatToMi(newMemory || '0')) {
         changedConfigs.push({
           componentName: normalizeOperationLogComponentName(dbType, newConfig.componentName),
           parameterName: `${item.spec.type}Memory`,
-          newValue: memoryFormatToGi(newConfig.limits?.memory) || '-',
-          oldValue: memoryFormatToGi(oldConfig?.limits?.memory) || '-'
+          newValue: newMemory ? memoryFormatToGi(newMemory) : '-',
+          oldValue: oldMemory ? memoryFormatToGi(oldMemory) : '-'
         });
       }
 
@@ -501,12 +547,14 @@ const getOperationLogConfigurations = (
 
   if (item.spec.type === 'VolumeExpansion') {
     return sortOperationLogComponents(dbType, item.spec.volumeExpansion).flatMap((newConfig) => {
-      const oldStorage =
-        item.status?.lastConfiguration?.components?.[newConfig.componentName]
-          ?.volumeClaimTemplates?.[0]?.storage;
-      const newStorage = newConfig.volumeClaimTemplates?.[0]?.storage;
+      const oldStorage = item.status?.lastConfiguration?.components?.[
+        newConfig.componentName
+      ]?.volumeClaimTemplates?.find((volume) => !volume.name || volume.name === 'data')?.storage;
+      const newStorage = newConfig.volumeClaimTemplates?.find(
+        (volume) => !volume.name || volume.name === 'data'
+      )?.storage;
 
-      if (oldStorage === newStorage) {
+      if (storageFormatToGi(oldStorage) === storageFormatToGi(newStorage)) {
         return [];
       }
 

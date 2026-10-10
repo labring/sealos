@@ -1,5 +1,5 @@
 import { json2ResourceOps } from '@/utils/json2Yaml';
-import { adaptDBDetail } from '@/utils/adapt';
+import { adaptDBDetail, getDatabaseResourceComponentSpec } from '@/utils/adapt';
 import { KbPgClusterType } from '@/types/cluster';
 import { updateDatabaseSchemas } from '@/types/apis';
 import z from 'zod';
@@ -27,29 +27,13 @@ const schema2Raw = (currentData: any, updateResource: any) => {
   };
 };
 
-const raw2Schema = (rawDbDetail: any, originalRequest: any, updateResource: any) => {
-  console.log('Update - Converting raw DB detail to schema format:', {
-    originalCpu: rawDbDetail.cpu,
-    originalMemory: rawDbDetail.memory,
-    originalStorage: rawDbDetail.storage,
-    originalReplicas: rawDbDetail.replicas,
-    updateResource
-  });
-
-  const finalCpu = updateResource.cpu !== undefined ? updateResource.cpu : rawDbDetail.cpu;
-  const finalMemory =
-    updateResource.memory !== undefined ? updateResource.memory : rawDbDetail.memory;
-  const finalStorage =
-    updateResource.storage !== undefined ? updateResource.storage : rawDbDetail.storage;
-  const finalReplicas =
-    updateResource.replicas !== undefined ? updateResource.replicas : rawDbDetail.replicas;
-
-  console.log('Update - Final calculated values:', {
-    finalCpu,
-    finalMemory,
-    finalStorage,
-    finalReplicas
-  });
+const raw2Schema = (rawDbDetail: any) => {
+  const finalCpu = rawDbDetail.cpu / 1000;
+  const finalMemory = rawDbDetail.memory / 1024;
+  const finalStorage = rawDbDetail.storage;
+  const finalReplicas = rawDbDetail.replicas;
+  const totalStorage =
+    rawDbDetail.dbType === 'polardbx' ? rawDbDetail.storage : rawDbDetail.totalStorage;
 
   const convertedData = {
     id: rawDbDetail.id,
@@ -72,23 +56,16 @@ const raw2Schema = (rawDbDetail: any, originalRequest: any, updateResource: any)
     replicas: finalReplicas,
 
     totalResource: {
-      cpu: finalCpu * finalReplicas,
-      memory: finalMemory * finalReplicas,
-      storage: finalStorage * finalReplicas
+      cpu: rawDbDetail.totalCpu / 1000,
+      memory: rawDbDetail.totalMemory / 1024,
+      storage: totalStorage
     },
-    totalCpu: finalCpu * finalReplicas,
-    totalMemory: finalMemory * finalReplicas,
-    totalStorage: finalStorage * finalReplicas,
+    totalCpu: rawDbDetail.totalCpu / 1000,
+    totalMemory: rawDbDetail.totalMemory / 1024,
+    totalStorage,
 
     terminationPolicy: rawDbDetail.terminationPolicy
   };
-
-  console.log('Update - Simplified converted data:', {
-    name: convertedData.name,
-    status: convertedData.status,
-    resource: convertedData.resource,
-    totalResource: convertedData.totalResource
-  });
 
   return convertedData;
 };
@@ -128,16 +105,12 @@ export async function updateDatabase(
     const dbDetail = adaptDBDetail(clusterData);
     console.log('Current DB detail:', dbDetail);
 
-    const currentSpec = clusterData.spec?.componentSpecs?.[0];
-    const currentCpu = currentSpec?.resources?.limits?.cpu || '1000m';
-    const currentMemory = currentSpec?.resources?.limits?.memory || '1Gi';
-    const currentStorage =
-      currentSpec?.volumeClaimTemplates?.[0]?.spec?.resources?.requests?.storage || '3Gi';
-    const currentReplicas = currentSpec?.replicas || 3;
-
-    const currentCpuNum = parseCpuToUserFormat(currentCpu);
-    const currentMemoryNum = parseMemoryToUserFormat(currentMemory);
-    const currentStorageNum = parseStorageToUserFormat(currentStorage);
+    const currentComponentSpecs = clusterData.spec?.componentSpecs || [];
+    const currentSpec = getDatabaseResourceComponentSpec(dbDetail.dbType, currentComponentSpecs);
+    const currentCpuNum = dbDetail.cpu / 1000;
+    const currentMemoryNum = dbDetail.memory / 1024;
+    const currentStorageNum = dbDetail.storage;
+    const currentReplicas = currentSpec?.replicas || dbDetail.replicas;
 
     console.log('Current resources in user format:', {
       currentCpu: currentCpuNum,
@@ -147,8 +120,8 @@ export async function updateDatabase(
     });
 
     const currentDataInternal = {
-      cpu: dbDetail.cpu * 1000,
-      memory: dbDetail.memory * 1024,
+      cpu: dbDetail.cpu,
+      memory: dbDetail.memory,
       storage: dbDetail.storage,
       replicas: dbDetail.replicas,
       dbType: dbDetail.dbType,
@@ -194,7 +167,11 @@ export async function updateDatabase(
         memory: rawDbForm.memory
       });
 
-      const verticalScalingYaml = json2ResourceOps(rawDbForm, 'VerticalScaling');
+      const verticalScalingYaml = json2ResourceOps(
+        rawDbForm,
+        'VerticalScaling',
+        currentComponentSpecs
+      );
       const opsRequest = yaml.load(verticalScalingYaml) as any;
       opsRequests.push(opsRequest);
     }
@@ -204,7 +181,11 @@ export async function updateDatabase(
         replicas: rawDbForm.replicas
       });
 
-      const horizontalScalingYaml = json2ResourceOps(rawDbForm, 'HorizontalScaling');
+      const horizontalScalingYaml = json2ResourceOps(
+        rawDbForm,
+        'HorizontalScaling',
+        currentComponentSpecs
+      );
       const opsRequest = yaml.load(horizontalScalingYaml) as any;
       opsRequests.push(opsRequest);
     }
@@ -214,13 +195,17 @@ export async function updateDatabase(
         storage: rawDbForm.storage
       });
 
-      const volumeExpansionYaml = json2ResourceOps(rawDbForm, 'VolumeExpansion');
+      const volumeExpansionYaml = json2ResourceOps(
+        rawDbForm,
+        'VolumeExpansion',
+        currentComponentSpecs
+      );
       const opsRequest = yaml.load(volumeExpansionYaml) as any;
       opsRequests.push(opsRequest);
     }
 
     if (opsRequests.length === 0) {
-      const result = raw2Schema(dbDetail, null, {});
+      const result = raw2Schema(dbDetail);
 
       return {
         code: 200,
@@ -256,7 +241,7 @@ export async function updateDatabase(
       status: adaptedDbDetail.status
     });
 
-    const result = raw2Schema(adaptedDbDetail, null, resource);
+    const result = raw2Schema(adaptedDbDetail);
 
     console.log('Database updated successfully:', {
       name: result.name,
@@ -287,38 +272,4 @@ export async function updateDatabase(
 
     throw err;
   }
-}
-
-function parseCpuToUserFormat(cpu: string): number {
-  if (cpu.endsWith('m')) {
-    return parseInt(cpu.slice(0, -1)) / 1000;
-  }
-  return parseFloat(cpu);
-}
-
-function parseMemoryToUserFormat(memory: string): number {
-  if (memory.endsWith('Gi')) {
-    return parseInt(memory.slice(0, -2));
-  }
-  if (memory.endsWith('Mi')) {
-    const miValue = parseInt(memory.slice(0, -2));
-    return miValue / 1024;
-  }
-  if (memory.endsWith('Ki')) {
-    return parseInt(memory.slice(0, -2)) / 1048576;
-  }
-  return parseFloat(memory);
-}
-
-function parseStorageToUserFormat(storage: string): number {
-  if (storage.endsWith('Gi')) {
-    return parseInt(storage.slice(0, -2));
-  }
-  if (storage.endsWith('Mi')) {
-    return parseInt(storage.slice(0, -2)) / 1024;
-  }
-  if (storage.endsWith('Ti')) {
-    return parseInt(storage.slice(0, -2)) * 1024;
-  }
-  return parseFloat(storage);
 }

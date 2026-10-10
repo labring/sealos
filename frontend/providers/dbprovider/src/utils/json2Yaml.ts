@@ -4,6 +4,7 @@ import {
   DBComponentNameMap,
   DBPreviousConfigKey,
   DBReconfigureMap,
+  DBResourceChangeKey,
   DBTypeEnum,
   MigrationRemark,
   crLabelKey,
@@ -11,9 +12,16 @@ import {
   sealafDeployKey
 } from '@/constants/db';
 import { StorageClassName } from '@/store/env';
+import type { KubeBlockClusterSpec } from '@/types/cluster';
 import type { DBDetailType, DBEditType, DBType } from '@/types/db';
 import { MigrateForm } from '@/types/migrate';
-import { encodeToHex, str2Num } from '@/utils/tools';
+import {
+  cpuFormatToM,
+  encodeToHex,
+  memoryFormatToMi,
+  storageFormatToGi,
+  str2Num
+} from '@/utils/tools';
 import dayjs from 'dayjs';
 import yaml from 'js-yaml';
 import { getUserNamespace } from './user';
@@ -854,19 +862,20 @@ export const json2Reconfigure = (
 
 export const json2ResourceOps = (
   data: DBEditType,
-  type: 'VerticalScaling' | 'HorizontalScaling' | 'VolumeExpansion'
+  type: 'VerticalScaling' | 'HorizontalScaling' | 'VolumeExpansion',
+  currentComponentSpecs?: KubeBlockClusterSpec['componentSpecs']
 ) => {
   const polardbxResources = data.dbType === DBTypeEnum.polardbx ? distributeResources(data) : null;
   const componentName =
     data.dbType === DBTypeEnum.mysql
       ? 'mysql'
       : data.dbType === DBTypeEnum.kafka
-        ? 'broker'
-        : data.dbType === DBTypeEnum.polardbx
-          ? type === 'VolumeExpansion'
-            ? 'gms'
-            : 'cn'
-          : data.dbType;
+      ? 'broker'
+      : data.dbType === DBTypeEnum.polardbx
+      ? type === 'VolumeExpansion'
+        ? 'gms'
+        : 'cn'
+      : data.dbType;
 
   const getOpsName = () => {
     const timeStr = dayjs().format('YYYYMMDDHHmm');
@@ -879,7 +888,29 @@ export const json2ResourceOps = (
     kind: 'OpsRequest',
     metadata: {
       name: getOpsName(),
-      labels: getOpsRequestLabels(data.dbName)
+      labels: getOpsRequestLabels(data.dbName),
+      ...(data.dbType === DBTypeEnum.polardbx && type === 'VerticalScaling' && currentComponentSpecs
+        ? {
+            annotations: {
+              [DBResourceChangeKey]: JSON.stringify({
+                cpu: {
+                  old: currentComponentSpecs.reduce(
+                    (sum, component) => sum + cpuFormatToM(component.resources?.limits?.cpu),
+                    0
+                  ),
+                  new: data.cpu
+                },
+                memory: {
+                  old: currentComponentSpecs.reduce(
+                    (sum, component) => sum + memoryFormatToMi(component.resources?.limits?.memory),
+                    0
+                  ),
+                  new: data.memory
+                }
+              })
+            }
+          }
+        : {})
     },
     spec: {
       clusterRef: data.dbName,
@@ -887,16 +918,123 @@ export const json2ResourceOps = (
     }
   };
 
+  const getCurrentComponentSpec = (componentName: string) =>
+    currentComponentSpecs?.find((component) => String(component.name) === componentName);
+
+  const polardbxVerticalScaling =
+    data.dbType === DBTypeEnum.polardbx && polardbxResources
+      ? Object.entries(polardbxResources)
+          .map(([key, resourceData]) => ({
+            componentName:
+              polardbxComponentNameMap[key as keyof typeof polardbxComponentNameMap] || key,
+            requests: resourceData.cpuMemory.requests,
+            limits: resourceData.cpuMemory.limits
+          }))
+          .filter(({ componentName, limits }) => {
+            if (!currentComponentSpecs) return true;
+            const currentLimits = getCurrentComponentSpec(componentName)?.resources?.limits;
+            return (
+              cpuFormatToM(currentLimits?.cpu) !== cpuFormatToM(limits.cpu) ||
+              memoryFormatToMi(currentLimits?.memory) !== memoryFormatToMi(limits.memory)
+            );
+          })
+      : null;
+
+  const polardbxHorizontalScaling =
+    data.dbType === DBTypeEnum.polardbx && polardbxResources
+      ? Object.entries(polardbxResources)
+          .map(([key, resourceData]) => ({
+            componentName:
+              polardbxComponentNameMap[key as keyof typeof polardbxComponentNameMap] || key,
+            replicas: resourceData.other?.replicas ?? data.replicas
+          }))
+          .filter(({ componentName, replicas }) => {
+            if (!currentComponentSpecs) return true;
+            return getCurrentComponentSpec(componentName)?.replicas !== replicas;
+          })
+      : null;
+
+  const getPolardbxVolumeExpansion = () => {
+    if (!currentComponentSpecs) {
+      return Object.entries(polardbxResources || {})
+        .filter(([, resourceData]) => resourceData.storage > 0)
+        .map(([key, resourceData]) => ({
+          componentName:
+            polardbxComponentNameMap[key as keyof typeof polardbxComponentNameMap] || key,
+          volumeClaimTemplates: [{ name: 'data', storage: `${resourceData.storage}Gi` }]
+        }));
+    }
+
+    const expandableComponents = currentComponentSpecs
+      .map((component) => ({
+        component,
+        dataVolume: component.volumeClaimTemplates?.find((volume) => volume.name === 'data')
+      }))
+      .filter(
+        (
+          item
+        ): item is {
+          component: KubeBlockClusterSpec['componentSpecs'][number];
+          dataVolume: NonNullable<
+            KubeBlockClusterSpec['componentSpecs'][number]['volumeClaimTemplates']
+          >[number];
+        } => Boolean(item.dataVolume)
+      );
+
+    if (expandableComponents.length === 0) {
+      throw new Error('PolarDB-X has no data volume that can be expanded');
+    }
+
+    const currentStorage = expandableComponents.reduce(
+      (sum, { dataVolume }) => sum + storageFormatToGi(dataVolume.spec.resources.requests.storage),
+      0
+    );
+    if (data.storage <= currentStorage) return [];
+
+    const desiredStorage = new Map<string, number>(
+      Object.entries(polardbxResources || {}).map(([key, resource]) => [
+        polardbxComponentNameMap[key as keyof typeof polardbxComponentNameMap] || key,
+        resource.storage
+      ])
+    );
+    const targets = expandableComponents.map(({ component, dataVolume }) => {
+      const componentName = String(component.name);
+      const componentStorage = storageFormatToGi(dataVolume.spec.resources.requests.storage);
+      return {
+        componentName,
+        currentStorage: componentStorage,
+        targetStorage: componentStorage,
+        preferredStorage: Math.max(componentStorage, desiredStorage.get(componentName) || 0)
+      };
+    });
+    let storageDelta = data.storage - currentStorage;
+
+    targets.forEach((target) => {
+      const preferredDelta = target.preferredStorage - target.currentStorage;
+      const allocatedDelta = Math.min(preferredDelta, storageDelta);
+      target.targetStorage += allocatedDelta;
+      storageDelta -= allocatedDelta;
+    });
+
+    if (storageDelta > 0) {
+      const fallbackTarget =
+        targets.find(({ componentName }) => componentName === 'gms') || targets[0];
+      fallbackTarget.targetStorage += storageDelta;
+    }
+
+    return targets
+      .filter(({ currentStorage, targetStorage }) => targetStorage > currentStorage)
+      .map(({ componentName, targetStorage }) => ({
+        componentName,
+        volumeClaimTemplates: [{ name: 'data', storage: `${targetStorage}Gi` }]
+      }));
+  };
+
   const opsConfig = {
     VerticalScaling: {
       verticalScaling:
-        data.dbType === DBTypeEnum.polardbx && polardbxResources
-          ? Object.entries(polardbxResources).map(([key, resourceData]) => ({
-              componentName:
-                polardbxComponentNameMap[key as keyof typeof polardbxComponentNameMap] || key,
-              requests: resourceData.cpuMemory.requests,
-              limits: resourceData.cpuMemory.limits
-            }))
+        data.dbType === DBTypeEnum.polardbx && polardbxVerticalScaling
+          ? polardbxVerticalScaling
           : [
               {
                 componentName,
@@ -913,12 +1051,8 @@ export const json2ResourceOps = (
     },
     HorizontalScaling: {
       horizontalScaling:
-        data.dbType === DBTypeEnum.polardbx && polardbxResources
-          ? Object.entries(polardbxResources).map(([key, resourceData]) => ({
-              componentName:
-                polardbxComponentNameMap[key as keyof typeof polardbxComponentNameMap] || key,
-              replicas: resourceData.other?.replicas ?? data.replicas
-            }))
+        data.dbType === DBTypeEnum.polardbx && polardbxHorizontalScaling
+          ? polardbxHorizontalScaling
           : [
               {
                 componentName,
@@ -929,18 +1063,9 @@ export const json2ResourceOps = (
     VolumeExpansion: {
       volumeExpansion:
         data.dbType === DBTypeEnum.polardbx && polardbxResources
-          ? Object.entries(polardbxResources)
-              .filter(([, resourceData]) => resourceData.storage > 0)
-              .map(([key, resourceData]) => ({
-                componentName:
-                  polardbxComponentNameMap[key as keyof typeof polardbxComponentNameMap] || key,
-                volumeClaimTemplates: [
-                  {
-                    name: 'data',
-                    storage: `${resourceData.storage}Gi`
-                  }
-                ]
-              }))
+          ? type === 'VolumeExpansion'
+            ? getPolardbxVolumeExpansion()
+            : []
           : [
               {
                 componentName,
@@ -970,15 +1095,16 @@ export const json2BasicOps = (data: {
   dbName: string;
   dbType?: DBType;
   type: 'Start' | 'Stop' | 'Restart';
+  componentNames?: string[];
 }) => {
   const componentName =
     data.dbType === DBTypeEnum.mysql
       ? 'mysql'
       : data.dbType === DBTypeEnum.kafka
-        ? 'broker'
-        : data.dbType === DBTypeEnum.polardbx
-          ? 'cn'
-          : data.dbType;
+      ? 'broker'
+      : data.dbType === DBTypeEnum.polardbx
+      ? 'cn'
+      : data.dbType;
 
   const template = {
     apiVersion: 'apps.kubeblocks.io/v1alpha1',
@@ -991,11 +1117,14 @@ export const json2BasicOps = (data: {
       clusterRef: data.dbName,
       type: data.type,
       ...(data.type === 'Restart'
-        ? data.dbType === DBTypeEnum.polardbx
-          ? {}
-          : {
-              restart: [{ componentName }]
-            }
+        ? {
+            restart: (data.componentNames?.length
+              ? data.componentNames
+              : data.dbType === DBTypeEnum.polardbx
+              ? ['gms', 'dn-0', 'cn', 'cdc']
+              : [componentName]
+            ).map((componentName) => ({ componentName }))
+          }
         : {})
     }
   };

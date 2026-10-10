@@ -55,17 +55,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       const opsRequests = [];
 
       if (cpu !== dbForm.cpu || memory !== dbForm.memory) {
-        const verticalScalingYaml = json2ResourceOps(dbForm, 'VerticalScaling');
+        const verticalScalingYaml = json2ResourceOps(
+          dbForm,
+          'VerticalScaling',
+          body.spec.componentSpecs
+        );
         opsRequests.push(verticalScalingYaml);
       }
 
       if (replicas !== dbForm.replicas) {
-        const horizontalScalingYaml = json2ResourceOps(dbForm, 'HorizontalScaling');
+        const horizontalScalingYaml = json2ResourceOps(
+          dbForm,
+          'HorizontalScaling',
+          body.spec.componentSpecs
+        );
         opsRequests.push(horizontalScalingYaml);
       }
 
       if (dbForm.storage > storage) {
-        const volumeExpansionYaml = json2ResourceOps(dbForm, 'VolumeExpansion');
+        const volumeExpansionYaml = json2ResourceOps(
+          dbForm,
+          'VolumeExpansion',
+          body.spec.componentSpecs
+        );
         opsRequests.push(volumeExpansionYaml);
       }
 

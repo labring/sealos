@@ -19,6 +19,7 @@ export const KBBackupNameLabel = 'dataprotection.kubeblocks.io/backup-name';
 export const SealosMigrationTaskLabel = 'datamigration.sealos.io/file-migration-task';
 export const MigrationRemark = 'migration-remark';
 export const DBPreviousConfigKey = 'cloud.sealos.io/previous-config';
+export const DBResourceChangeKey = 'cloud.sealos.io/resource-change';
 export const DBParameterHistoryLabel = 'cloud.sealos.io/parameter-history';
 export const DBParameterHistoryDataKey = 'history.json';
 export const templateDeployKey = 'cloud.sealos.io/deploy-on-sealos';

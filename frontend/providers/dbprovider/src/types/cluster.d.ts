@@ -33,8 +33,8 @@ export interface KubeBlockClusterSpec {
   clusterVersionRef: string;
   terminationPolicy: KubeBlockClusterTerminationPolicy;
   componentSpecs: {
-    componentDefRef: `${DBTypeEnum}`;
-    name: `${DBTypeEnum}`;
+    componentDefRef: string;
+    name: string;
     replicas: number;
     resources: {
       limits: {
@@ -46,8 +46,8 @@ export interface KubeBlockClusterSpec {
         memory: string;
       };
     };
-    volumeClaimTemplates: {
-      name: 'data';
+    volumeClaimTemplates?: {
+      name: string;
       spec: {
         accessModes: ['ReadWriteOnce'];
         resources: {
@@ -171,6 +171,7 @@ export type KubeBlockOpsRequestType = {
     volumeExpansion?: {
       componentName: string;
       volumeClaimTemplates: {
+        name?: string;
         storage: string;
       }[];
     }[];
@@ -189,6 +190,7 @@ export type KubeBlockOpsRequestType = {
           };
           replicas: number;
           volumeClaimTemplates: {
+            name?: string;
             storage: string;
           }[];
         };

@@ -23,7 +23,8 @@ export async function restartDatabase(
   const yaml = json2BasicOps({
     dbName: request.params.databaseName,
     dbType: dbType,
-    type: 'Restart'
+    type: 'Restart',
+    componentNames: body.spec?.componentSpecs?.map((component) => String(component.name))
   });
   await k8s.applyYamlList([yaml], 'update');
 
