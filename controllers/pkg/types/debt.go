@@ -36,6 +36,7 @@ const (
 	NormalPeriod          DebtStatusType = "NormalPeriod"
 	LowBalancePeriod      DebtStatusType = "LowBalancePeriod"
 	CriticalBalancePeriod DebtStatusType = "CriticalBalancePeriod"
+	OneDayBalancePeriod   DebtStatusType = "OneDayBalancePeriod"
 	DebtPeriod            DebtStatusType = "DebtPeriod"
 	DebtDeletionPeriod    DebtStatusType = "DebtDeletionPeriod"
 	FinalDeletionPeriod   DebtStatusType = "FinalDeletionPeriod"
@@ -50,13 +51,14 @@ var StatusMap = map[DebtStatusType]int{
 	NormalPeriod:          0,
 	LowBalancePeriod:      1,
 	CriticalBalancePeriod: 2,
-	DebtPeriod:            3,
-	DebtDeletionPeriod:    4,
-	FinalDeletionPeriod:   5,
+	OneDayBalancePeriod:   3,
+	DebtPeriod:            4,
+	DebtDeletionPeriod:    5,
+	FinalDeletionPeriod:   6,
 }
 
 var (
-	NonDebtStates = []DebtStatusType{NormalPeriod, LowBalancePeriod, CriticalBalancePeriod}
+	NonDebtStates = []DebtStatusType{NormalPeriod, LowBalancePeriod, CriticalBalancePeriod, OneDayBalancePeriod}
 	DebtStates    = []DebtStatusType{DebtPeriod, DebtDeletionPeriod, FinalDeletionPeriod}
 )
 
