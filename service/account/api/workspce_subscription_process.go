@@ -325,26 +325,14 @@ func (wsp *WorkspaceSubscriptionProcessor) handleUpgrade(
 		return fmt.Errorf("failed to get workspace subscription plan: %w", err)
 	}
 
-	if err = helper.AddTrafficPackage(
+	if err = grantSubscriptionPackages(
 		dbTx,
-		dao.K8sManager.GetClient(),
-		&sub,
+		types.SubscriptionTransactionTypeUpgraded,
 		plan,
-		sub.CurrentPeriodEndAt,
-		types.WorkspaceTrafficFromWorkspaceSubscription,
+		&sub,
 		tx.ID.String(),
 	); err != nil {
-		return fmt.Errorf("failed to add traffic package: %w", err)
-	}
-	if err = cockroach.AddWorkspaceSubscriptionAIQuotaPackage(
-		dbTx,
-		sub.ID,
-		plan.AIQuota,
-		sub.CurrentPeriodEndAt,
-		types.PKGFromWorkspaceSubscription,
-		tx.ID.String(),
-	); err != nil {
-		return fmt.Errorf("failed to create AI quota package: %w", err)
+		return err
 	}
 
 	if err := dbTx.Save(&sub).Error; err != nil {

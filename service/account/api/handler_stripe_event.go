@@ -419,6 +419,21 @@ func applyStripePaymentToWorkspaceSubscription(
 		Update("stripe", payment.Stripe).Error
 }
 
+// applyStripeSubscriptionPeriod copies the Stripe subscription's current period
+// onto the workspace subscription. Callers that use it must pass
+// subscriptionPeriodAuthoritative to finalizeWorkspaceSubscriptionSuccess so
+// the period is not recomputed there. The extra hour absorbs invoice
+// confirmation processing time.
+func applyStripeSubscriptionPeriod(
+	ws *types.WorkspaceSubscription,
+	subscription *stripe.Subscription,
+) {
+	item := subscription.Items.Data[len(subscription.Items.Data)-1]
+	ws.CurrentPeriodStartAt = time.Unix(item.CurrentPeriodStart, 0).UTC()
+	ws.CurrentPeriodEndAt = time.Unix(item.CurrentPeriodEnd, 0).UTC().Add(1 * time.Hour)
+	ws.ExpireAt = stripe.Time(ws.CurrentPeriodEndAt)
+}
+
 // handleSubscriptionUpdate
 func handleSubscriptionUpdate(
 	invoice *stripe.Invoice,
@@ -440,13 +455,7 @@ func handleSubscriptionUpdate(
 	if err != nil {
 		return err
 	}
-	sub.CurrentPeriodStartAt = time.Unix(subscription.Items.Data[len(subscription.Items.Data)-1].CurrentPeriodStart, 0).
-		UTC()
-	// Add 1 hour to account for invoice confirmation processing time
-	sub.CurrentPeriodEndAt = time.Unix(subscription.Items.Data[len(subscription.Items.Data)-1].CurrentPeriodEnd, 0).
-		UTC().
-		Add(1 * time.Hour)
-	sub.ExpireAt = stripe.Time(sub.CurrentPeriodEndAt)
+	applyStripeSubscriptionPeriod(sub, subscription)
 
 	if err := dao.DBClient.GlobalTransactionHandler(func(tx *gorm.DB) error {
 		// Check if there's a PaymentOrder to convert
@@ -468,6 +477,7 @@ func handleSubscriptionUpdate(
 			sub,
 			wsTransaction,
 			&payment,
+			subscriptionPeriodAuthoritative,
 		); err != nil {
 			return err
 		}
@@ -619,6 +629,7 @@ func handleSubscriptionCreateOrRenew(
 			)
 		}
 
+		periodSource := subscriptionPeriodUnspecified
 		if ws != nil {
 			payment.WorkspaceSubscriptionID = &ws.ID
 			if isInitial && ws.Status == types.SubscriptionStatusDeleted {
@@ -639,13 +650,8 @@ func handleSubscriptionCreateOrRenew(
 				return nil
 			}
 
-			ws.CurrentPeriodStartAt = time.Unix(subscription.Items.Data[len(subscription.Items.Data)-1].CurrentPeriodStart, 0).
-				UTC()
-			// Add 1 hour to account for invoice confirmation processing time
-			ws.CurrentPeriodEndAt = time.Unix(subscription.Items.Data[len(subscription.Items.Data)-1].CurrentPeriodEnd, 0).
-				UTC().
-				Add(1 * time.Hour)
-			ws.ExpireAt = stripe.Time(ws.CurrentPeriodEndAt)
+			applyStripeSubscriptionPeriod(ws, subscription)
+			periodSource = subscriptionPeriodAuthoritative
 		}
 
 		if err := finalizeWorkspaceSubscriptionSuccess(
@@ -653,6 +659,7 @@ func handleSubscriptionCreateOrRenew(
 			ws,
 			wsTransaction,
 			&payment,
+			periodSource,
 		); err != nil {
 			return err
 		}

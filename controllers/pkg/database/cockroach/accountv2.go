@@ -2259,6 +2259,9 @@ func (c *Cockroach) InitTables() error {
 	if err := ensureBillingQueryIndexes(c.DB); err != nil {
 		return err
 	}
+	if err := ensureWorkspacePackageFromIDIndexes(c.DB); err != nil {
+		return err
+	}
 
 	// TODO: remove this after migration
 	if err := c.migrateColumns(); err != nil {
@@ -2297,6 +2300,141 @@ func ensureBillingQueryIndexes(db *gorm.DB) error {
 		}
 	}
 	return nil
+}
+
+// ensureWorkspacePackageFromIDIndexes indexes from_id on existing traffic and
+// AI-quota tables. CreateTableIfNotExist skips AutoMigrate when the table
+// already exists, so the GORM uniqueIndex tags never reach production.
+// Unique is preferred so ON CONFLICT can fire; if historical duplicates
+// block it, a non-unique lookup index still avoids a full scan. The
+// subscription row lock remains the correctness backstop either way.
+func ensureWorkspacePackageFromIDIndexes(db *gorm.DB) error {
+	indexes := []fromIDIndexSpec{
+		{
+			model:      types.WorkspaceTraffic{},
+			uniqueName: "uniq_workspace_traffic_from_id",
+			lookupName: "idx_workspace_traffic_from_id",
+		},
+		{
+			model:      types.WorkspaceAIQuotaPackage{},
+			uniqueName: "uniq_workspace_ai_quota_package_from_id",
+			lookupName: "idx_workspace_ai_quota_package_from_id",
+		},
+	}
+	for _, index := range indexes {
+		if err := ensureFromIDIndex(db, index); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+type fromIDIndexSpec struct {
+	model                  interface{ TableName() string }
+	uniqueName, lookupName string
+}
+
+func ensureFromIDIndex(db *gorm.DB, index fromIDIndexSpec) error {
+	if db.Migrator().HasIndex(index.model, index.uniqueName) {
+		return nil
+	}
+
+	hasLookup := db.Migrator().HasIndex(index.model, index.lookupName)
+	if hasLookup {
+		// A lookup index means an earlier run already hit duplicates. Re-check
+		// instead of retrying the unique build: a failing CREATE UNIQUE INDEX
+		// backfills the whole table before erroring, and this path runs on
+		// every startup until the duplicates are removed.
+		hasDuplicatesSQL := fmt.Sprintf(
+			`SELECT EXISTS (SELECT 1 FROM %q WHERE from_id IS NOT NULL GROUP BY from_id HAVING count(*) > 1)`,
+			index.model.TableName(),
+		)
+		var hasDuplicates bool
+		if err := db.Raw(hasDuplicatesSQL).Scan(&hasDuplicates).Error; err != nil {
+			return fmt.Errorf(
+				"failed to check duplicate from_id values on %s: %w",
+				index.model.TableName(),
+				err,
+			)
+		}
+		if hasDuplicates {
+			logDuplicateFromIDs(index)
+			return nil
+		}
+	}
+
+	// Identifiers come from the compile-time specs above, not external input.
+	// nosemgrep: go.lang.security.audit.database.string-formatted-query.string-formatted-query
+	createUniqueSQL := fmt.Sprintf(
+		`CREATE UNIQUE INDEX IF NOT EXISTS %s ON %q (from_id)`,
+		index.uniqueName,
+		index.model.TableName(),
+	)
+	if err := db.Exec(createUniqueSQL).Error; err != nil {
+		if !isUniqueViolation(err) {
+			return fmt.Errorf("failed to create from_id unique index %s: %w", index.uniqueName, err)
+		}
+		logDuplicateFromIDs(index)
+		if hasLookup {
+			return nil
+		}
+		// Identifiers come from the compile-time specs above, not external input.
+		// nosemgrep: go.lang.security.audit.database.string-formatted-query.string-formatted-query
+		createLookupSQL := fmt.Sprintf(
+			`CREATE INDEX IF NOT EXISTS %s ON %q (from_id)`,
+			index.lookupName,
+			index.model.TableName(),
+		)
+		if lookupErr := db.Exec(createLookupSQL).Error; lookupErr != nil {
+			return fmt.Errorf(
+				"failed to create from_id unique index %s: %w; lookup index %s: %w",
+				index.uniqueName,
+				err,
+				index.lookupName,
+				lookupErr,
+			)
+		}
+		return nil
+	}
+
+	if hasLookup {
+		if err := db.Migrator().DropIndex(index.model, index.lookupName); err != nil {
+			return fmt.Errorf(
+				"created from_id unique index %s but failed to drop lookup index %s: %w",
+				index.uniqueName,
+				index.lookupName,
+				err,
+			)
+		}
+	}
+	return nil
+}
+
+func logDuplicateFromIDs(index fromIDIndexSpec) {
+	logrus.Errorf(
+		"table %s holds duplicate from_id values, so unique index %s could not be created; "+
+			"using lookup index %s until the duplicates are removed. Deduplicate with: "+
+			`SELECT from_id, count(*) FROM %q GROUP BY 1 HAVING count(*) > 1`,
+		index.model.TableName(),
+		index.uniqueName,
+		index.lookupName,
+		index.model.TableName(),
+	)
+}
+
+// isUniqueViolation reports a 23505. The connections built here set
+// TranslateError, which replaces the driver error with gorm.ErrDuplicatedKey and
+// drops its SQLState method, so the sentinel is the case that fires in
+// production; the SQLState check covers connections configured without it.
+func isUniqueViolation(err error) bool {
+	if errors.Is(err, gorm.ErrDuplicatedKey) {
+		return true
+	}
+	type sqlStateError interface {
+		SQLState() string
+	}
+	var stateErr sqlStateError
+	return errors.As(err, &stateErr) && stateErr.SQLState() == "23505"
 }
 
 func (c *Cockroach) migratorPaymentRefundTable() error {
