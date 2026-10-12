@@ -12,7 +12,10 @@ import { isBrowser } from './utils';
 import { getCookie } from './utils/cookieUtils';
 
 class MasterSDK {
-  private readonly eventBus = new Map<string, (e?: any) => any>();
+  private readonly eventBus = new Map<
+    string,
+    (e?: any, sender?: { source: MessageEventSource; origin: string }) => any
+  >();
   private readonly allowedOrigins: string[] = [];
   private readonly getWorkspaceQuotaApi: () => Promise<WorkspaceQuotaItem[]>;
   private readonly getHostConfigApi?: () => Promise<{
@@ -167,7 +170,10 @@ class MasterSDK {
   /**
    * Add event listener
    */
-  addEventListen(name: string, fn: (e?: any) => any) {
+  addEventListen(
+    name: string,
+    fn: (e?: any, sender?: { source: MessageEventSource; origin: string }) => any
+  ) {
     if (this.eventBus.has(name)) {
       console.error('event bus name repeat');
       return;
@@ -205,7 +211,7 @@ class MasterSDK {
         message: 'event is not register'
       });
     }
-    const res = await this.eventBus.get(eventName)?.(eventData);
+    const res = await this.eventBus.get(eventName)?.(eventData, { source, origin });
     this.replyAppMessage({
       source,
       origin,
