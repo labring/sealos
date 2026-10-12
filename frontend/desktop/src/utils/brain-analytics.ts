@@ -112,9 +112,10 @@ export function createBrainAnalyticsRelay(options: {
     if (data.config && typeof data.config === 'object') {
       const config = data.config as Record<string, unknown>;
       payload.config = Object.fromEntries(
-        ['template_name', 'template_version'].flatMap((key) =>
-          typeof config[key] === 'string' ? [[key, config[key].slice(0, 160)]] : []
-        )
+        ['template_name', 'template_version'].flatMap((key) => {
+          const value = config[key];
+          return typeof value === 'string' ? [[key, value.slice(0, 160)]] : [];
+        })
       );
       for (const [key, value] of Object.entries(payload.config as Record<string, string>)) {
         direct[key] = value;
