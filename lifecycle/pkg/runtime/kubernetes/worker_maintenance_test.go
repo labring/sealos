@@ -25,16 +25,18 @@ import (
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"
 	clienttesting "k8s.io/client-go/testing"
 )
 
 type workerSSH struct {
 	stubSSH
-	hostname string
-	fail     string
-	commands []string
-	hosts    []string
+	hostname     string
+	fail         string
+	commands     []string
+	hosts        []string
+	afterCommand func(string)
 }
 
 func (s *workerSSH) CmdToString(host, command, separator string) (string, error) {
@@ -45,11 +47,57 @@ func (s *workerSSH) CmdAsync(host string, commands ...string) error {
 	for _, command := range commands {
 		s.commands = append(s.commands, command)
 		s.hosts = append(s.hosts, host)
+		if s.afterCommand != nil {
+			s.afterCommand(command)
+		}
 		if s.fail != "" && strings.Contains(command, s.fail) {
 			return errors.New("injected worker cleanup failure")
 		}
 	}
 	return nil
+}
+
+func TestWorkerDeletionWithoutAPI(t *testing.T) {
+	for _, mode := range []string{"", v2.ControlPlaneModeRegistered, v2.ControlPlaneModeStandalone} {
+		t.Run(mode, func(t *testing.T) {
+			runtime, client, execer := workerFixture(mode)
+			client.PrependReactor(
+				"list",
+				"nodes",
+				func(clienttesting.Action) (bool, kruntime.Object, error) {
+					return true, nil, errors.New("API unavailable")
+				},
+			)
+			err := runtime.deleteNodes([]string{"192.0.2.2"})
+			if mode == v2.ControlPlaneModeStandalone {
+				if err == nil || len(execer.commands) != 0 {
+					t.Fatalf("standalone cleanup bypassed API guard: %v", err)
+				}
+			} else if err != nil || len(execer.commands) == 0 {
+				t.Fatalf("ordinary offline cleanup was blocked: %v", err)
+			}
+		})
+	}
+}
+
+func TestWorkerDeletionStopsAfterLeaseCancellation(t *testing.T) {
+	runtime, client, execer := workerFixture(v2.ControlPlaneModeStandalone)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	runtime.maintenanceContext = ctx
+	execer.afterCommand = func(command string) {
+		if command == removeKubeConfig {
+			cancel()
+		}
+	}
+	if err := runtime.deleteWorker("192.0.2.2"); !errors.Is(err, context.Canceled) {
+		t.Fatalf("worker removal ignored cancellation: %v", err)
+	}
+	for _, action := range client.Actions() {
+		if action.GetVerb() == "delete" {
+			t.Fatal("deleted Node after losing the lease")
+		}
+	}
 }
 
 func TestRegisteredResetContinuesAfterCleanupFailures(t *testing.T) {

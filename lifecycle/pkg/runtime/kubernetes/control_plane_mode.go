@@ -30,6 +30,7 @@ import (
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/runtime/kubernetes/standalone"
+	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/utils/logger"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -73,6 +74,9 @@ func (k *KubeadmRuntime) switchControlPlaneMode(
 	client clientset.Interface,
 	options standalone.ModeOptions,
 ) error {
+	execer := k.execer
+	k.execer = ssh.WithContext(ctx, execer)
+	defer func() { k.execer = execer }()
 	hosts := k.getMasterIPAndPortList()
 	if len(hosts) == 0 {
 		return errors.New("cluster has no control planes")

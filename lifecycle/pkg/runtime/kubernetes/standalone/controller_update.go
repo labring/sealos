@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"time"
 
 	cri "k8s.io/cri-api/pkg/apis/runtime/v1"
 )
@@ -128,10 +129,17 @@ func (m *modeSwitch) stopController(ctx context.Context) error {
 	return nil
 }
 
-func (m *modeSwitch) updateController(ctx context.Context) error {
+func (m *modeSwitch) updateController(ctx context.Context) (err error) {
 	if err := m.command(ctx, "stop", "kubelet"); err != nil {
 		return err
 	}
+	defer func() {
+		if err != nil {
+			recovery, cancel := context.WithTimeout(context.Background(), time.Minute)
+			defer cancel()
+			err = errors.Join(err, m.command(recovery, "start", "kubelet"))
+		}
+	}()
 	if err := m.stopController(ctx); err != nil {
 		return err
 	}

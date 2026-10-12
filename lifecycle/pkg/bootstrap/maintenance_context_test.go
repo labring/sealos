@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/labring/sealos/pkg/exec"
+	"github.com/labring/sealos/pkg/ssh"
 )
 
 type contextExecer struct {
@@ -37,11 +38,13 @@ func TestBootstrapCommandUsesMaintenanceDeadline(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Minute)
 	defer cancel()
 	inner := &contextExecer{}
-	execer := &maintenanceExecer{Interface: inner, context: ctx}
+	execer := ssh.WithContext(ctx, inner)
 	if err := execer.CmdAsync("worker", "cleanup"); err != nil {
 		t.Fatal(err)
 	}
-	if inner.seen != ctx {
+	wantDeadline, _ := ctx.Deadline()
+	gotDeadline, ok := inner.seen.Deadline()
+	if !ok || gotDeadline != wantDeadline {
 		t.Fatal("bootstrap discarded the lifecycle context")
 	}
 	inner.seen = nil

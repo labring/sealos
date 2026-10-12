@@ -108,7 +108,14 @@ func (k *KubeadmRuntime) deleteNodes(nodes []string) error {
 	}
 	// Initialize the cached client before concurrent worker removal.
 	if _, err := k.getKubeInterface(); err != nil {
-		return err
+		// Without a cached client, keep offline cleanup sequential to avoid
+		// racing client initialization on ordinary clusters.
+		for _, node := range nodes {
+			if err := k.deleteWorkerWithoutAPI(node, err); err != nil {
+				return err
+			}
+		}
+		return nil
 	}
 	eg, _ := errgroup.WithContext(context.Background())
 	for _, node := range nodes {

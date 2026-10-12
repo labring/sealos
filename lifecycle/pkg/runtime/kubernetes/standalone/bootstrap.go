@@ -205,7 +205,7 @@ func bootstrapStandalone(ctx context.Context, options BootstrapOptions) error {
 	if err := validateBootstrapLayout(cluster); err != nil {
 		return err
 	}
-	if state.Plan.Join {
+	if state.Plan.Join && !state.Complete {
 		client, err := bootstrapAPIClientFrom(modeRoot + "/shared/admin.conf")
 		if err != nil {
 			return err
@@ -228,7 +228,10 @@ func bootstrapStandalone(ctx context.Context, options BootstrapOptions) error {
 		return nil
 	}
 	if state.Complete {
-		return verifyBootstrap(ctx, options, state)
+		if err := verifyBootstrap(ctx, options, state); err != nil {
+			return err
+		}
+		return os.RemoveAll(filepath.Join(modeRoot, "shared"))
 	}
 	if err := saveBootstrapState(state); err != nil {
 		return err
@@ -432,7 +435,10 @@ func (b *preparedBootstrap) execute(ctx context.Context, options BootstrapOption
 		return err
 	}
 	state.Complete = true
-	return saveBootstrapState(state)
+	if err := saveBootstrapState(state); err != nil {
+		return err
+	}
+	return os.RemoveAll(filepath.Join(modeRoot, "shared"))
 }
 
 func bootstrapNode(registration map[string]any, args []string) (*v1.Node, error) {
@@ -477,10 +483,20 @@ func bootstrapNode(registration map[string]any, args []string) (*v1.Node, error)
 }
 
 func verifyBootstrap(ctx context.Context, options BootstrapOptions, state *bootstrapState) error {
-	if state.Baseline == nil {
+	if state.Baseline == nil || state.Baseline.Node == nil {
 		return errors.New("bootstrap baseline is missing")
 	}
-	pod, err := routeControllerPod(state.Plan.Controller)
+	controller := state.Plan.Controller
+	if state.Complete {
+		// A completed host may have updated its controller since joining.
+		// Verify the committed deployment without reverting the bootstrap plan.
+		var err error
+		controller, err = SavedRouteControllerOptions()
+		if err != nil {
+			return err
+		}
+	}
+	pod, err := routeControllerPod(controller)
 	if err != nil {
 		return err
 	}

@@ -43,6 +43,10 @@ func shellArgument(value string) string {
 }
 
 func (k *KubeadmRuntime) upgradeStandaloneCluster(version string) error {
+	ctx := k.lifecycleContext()
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	if err := standalone.ValidateVersionChange(k.getKubeVersionFromImage(), version); err != nil {
 		return err
 	}
@@ -50,11 +54,11 @@ func (k *KubeadmRuntime) upgradeStandaloneCluster(version string) error {
 	if err != nil {
 		return err
 	}
-	config, err := exp.FetchKubeadmConfig(context.Background())
+	config, err := exp.FetchKubeadmConfig(ctx)
 	if err != nil {
 		return err
 	}
-	workerConfig, err := exp.FetchKubeletConfig(context.Background())
+	workerConfig, err := exp.FetchKubeletConfig(ctx)
 	if err != nil {
 		return err
 	}
@@ -65,14 +69,14 @@ func (k *KubeadmRuntime) upgradeStandaloneCluster(version string) error {
 	}
 	workerNames := make(map[string]string)
 	for _, host := range k.getNodeIPAndPortList() {
-		name, err := exp.FetchHostNameFromInternalIP(context.Background(), host)
+		name, err := exp.FetchHostNameFromInternalIP(ctx, host)
 		if err != nil {
 			return err
 		}
 		node, err := client.Kubernetes().
 			CoreV1().
 			Nodes().
-			Get(context.Background(), name, metav1.GetOptions{})
+			Get(ctx, name, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
@@ -87,7 +91,7 @@ func (k *KubeadmRuntime) upgradeStandaloneCluster(version string) error {
 	proxy, err := client.Kubernetes().
 		CoreV1().
 		ConfigMaps("kube-system").
-		Get(context.Background(), "kube-proxy", metav1.GetOptions{})
+		Get(ctx, "kube-proxy", metav1.GetOptions{})
 	if err == nil {
 		if data := proxy.Data["config.conf"]; data != "" {
 			config += "\n---\n" + data
@@ -161,12 +165,12 @@ func (k *KubeadmRuntime) upgradeStandaloneCluster(version string) error {
 		node, err := client.Kubernetes().
 			CoreV1().
 			Nodes().
-			Get(context.Background(), name, metav1.GetOptions{})
+			Get(ctx, name, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
 		if err := setWorkerUpgradeCordon(
-			context.Background(), client.Kubernetes(), node, version, true,
+			ctx, client.Kubernetes(), node, version, true,
 		); err != nil {
 			return err
 		}
@@ -196,7 +200,7 @@ func (k *KubeadmRuntime) upgradeStandaloneCluster(version string) error {
 			return err
 		}
 		if err := wait.PollUntilContextTimeout(
-			context.Background(),
+			ctx,
 			5*time.Second,
 			5*time.Minute,
 			true,
@@ -214,7 +218,7 @@ func (k *KubeadmRuntime) upgradeStandaloneCluster(version string) error {
 			return fmt.Errorf("worker %s has not become Ready at %s: %w", name, version, err)
 		}
 		if err := setWorkerUpgradeCordon(
-			context.Background(), client.Kubernetes(), node, version, false,
+			ctx, client.Kubernetes(), node, version, false,
 		); err != nil {
 			return err
 		}
@@ -222,11 +226,11 @@ func (k *KubeadmRuntime) upgradeStandaloneCluster(version string) error {
 	_, dnsErr := client.Kubernetes().
 		AppsV1().
 		Deployments("kube-system").
-		Get(context.Background(), "coredns", metav1.GetOptions{})
+		Get(ctx, "coredns", metav1.GetOptions{})
 	_, proxyErr := client.Kubernetes().
 		AppsV1().
 		DaemonSets("kube-system").
-		Get(context.Background(), "kube-proxy", metav1.GetOptions{})
+		Get(ctx, "kube-proxy", metav1.GetOptions{})
 	for _, addon := range []struct {
 		name string
 		err  error
@@ -253,7 +257,7 @@ func (k *KubeadmRuntime) upgradeStandaloneCluster(version string) error {
 			return err
 		}
 		if err := wait.PollUntilContextTimeout(
-			context.Background(),
+			ctx,
 			5*time.Second,
 			5*time.Minute,
 			true,
@@ -278,6 +282,9 @@ func setWorkerUpgradeCordon(
 	cordon bool,
 ) error {
 	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 		current, err := client.CoreV1().Nodes().Get(ctx, node.Name, metav1.GetOptions{})
 		if err != nil {
 			return err

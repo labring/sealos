@@ -17,22 +17,29 @@ package kubernetes
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/labring/sealos/pkg/utils/iputils"
+	"github.com/labring/sealos/pkg/utils/logger"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func (k *KubeadmRuntime) deleteWorker(host string) error {
-	client, err := k.getKubeInterface()
-	if err != nil {
+	ctx := k.lifecycleContext()
+	if err := ctx.Err(); err != nil {
 		return err
 	}
-	ctx := context.Background()
-	nodes, err := client.Kubernetes().CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+	client, err := k.getKubeInterface()
 	if err != nil {
-		return err
+		return k.deleteWorkerWithoutAPI(host, err)
+	}
+	listCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	nodes, err := client.Kubernetes().CoreV1().Nodes().List(listCtx, metav1.ListOptions{})
+	if err != nil {
+		return k.deleteWorkerWithoutAPI(host, err)
 	}
 	node, err := nodeByHostIP(nodes.Items, host)
 	if err != nil {
@@ -51,6 +58,9 @@ func (k *KubeadmRuntime) deleteWorker(host string) error {
 	if node == nil {
 		return nil
 	}
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	err = client.Kubernetes().CoreV1().Nodes().Delete(ctx, node.Name, metav1.DeleteOptions{
 		Preconditions: &metav1.Preconditions{UID: &node.UID},
 	})
@@ -58,6 +68,17 @@ func (k *KubeadmRuntime) deleteWorker(host string) error {
 		return nil
 	}
 	return err
+}
+
+func (k *KubeadmRuntime) deleteWorkerWithoutAPI(host string, apiErr error) error {
+	if err := k.lifecycleContext().Err(); err != nil {
+		return err
+	}
+	if k.cluster.IsStandaloneControlPlane() {
+		return apiErr
+	}
+	logger.Warn("cannot check worker Node in the API; cleaning host %s only: %v", host, apiErr)
+	return k.resetNode(host, nil)
 }
 
 func (k *KubeadmRuntime) pendingWorkerJoins(hosts []string) ([]string, error) {
@@ -68,7 +89,7 @@ func (k *KubeadmRuntime) pendingWorkerJoins(hosts []string) ([]string, error) {
 	nodes, err := client.Kubernetes().
 		CoreV1().
 		Nodes().
-		List(context.Background(), metav1.ListOptions{})
+		List(k.lifecycleContext(), metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}

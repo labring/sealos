@@ -16,6 +16,7 @@ package file
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -157,11 +158,18 @@ func WriteFile(fileName string, content []byte) error {
 
 // RecursionCopy equals to `cp -r`
 func RecursionCopy(src, dst string) error {
+	return RecursionCopyWithContext(context.Background(), src, dst)
+}
+
+func RecursionCopyWithContext(ctx context.Context, src, dst string) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	if src == dst {
 		return nil
 	}
 	if IsDir(src) {
-		return CopyDirV3(src, dst)
+		return copyDirWithContext(ctx, src, dst)
 	}
 
 	err := os.MkdirAll(filepath.Dir(dst), 0700|0055)
@@ -169,7 +177,7 @@ func RecursionCopy(src, dst string) error {
 		return fmt.Errorf("failed to mkdir for recursion copy, err: %v", err)
 	}
 
-	return Copy(src, dst)
+	return copyWithContext(ctx, src, dst)
 }
 
 // CleanFile removes the file.

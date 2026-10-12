@@ -15,7 +15,6 @@
 package kubernetes
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"net"
@@ -34,7 +33,7 @@ func (k *KubeadmRuntime) removeStandaloneMaster(host, command string) error {
 	if err != nil {
 		return err
 	}
-	ctx := context.Background()
+	ctx := k.lifecycleContext()
 	nodes := client.Kubernetes().CoreV1().Nodes()
 	list, err := nodes.List(ctx, metav1.ListOptions{})
 	if err != nil {
@@ -64,6 +63,9 @@ func (k *KubeadmRuntime) removeStandaloneMaster(host, command string) error {
 	// must also remove a converted host's old Node so its name can be reused.
 	if node == nil {
 		return nil
+	}
+	if err := ctx.Err(); err != nil {
+		return err
 	}
 	err = nodes.Delete(ctx, node.Name, metav1.DeleteOptions{
 		Preconditions: &metav1.Preconditions{UID: &node.UID},

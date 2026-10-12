@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -142,6 +143,16 @@ func leaseActive(lease *coordinationv1.Lease) bool {
 }
 
 func CheckRemoteModeTransition(ctx context.Context, name string, required bool) error {
+	for _, filename := range []string{ModeTransitionFilename, LifecycleFilename} {
+		if _, err := os.Stat(filepath.Join(constants.ClusterDir(name), filename)); err == nil {
+			return fmt.Errorf(
+				"%w; resume the pending lifecycle operation",
+				ErrModeTransitionPending,
+			)
+		} else if !os.IsNotExist(err) {
+			return err
+		}
+	}
 	path := constants.NewPathResolver(name).AdminFile()
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		if required {
@@ -171,7 +182,16 @@ func checkOptionalModeTransition(
 	client clientset.Interface,
 	required bool,
 ) error {
+	caller := ctx
+	if !required {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, 3*time.Second)
+		defer cancel()
+	}
 	err := CheckModeTransition(ctx, client)
+	if err := caller.Err(); err != nil {
+		return err
+	}
 	// Existing inventories that have never enabled mode management must retain
 	// their offline reset behavior. Managed inventories fail closed on API errors.
 	if !required && !errors.Is(err, ErrModeTransitionPending) {

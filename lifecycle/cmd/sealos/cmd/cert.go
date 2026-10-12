@@ -97,10 +97,12 @@ func newCertCmd() *cobra.Command {
 			if err := cf.Process(); err != nil {
 				return err
 			}
+			// Renewal must remain available when expired certificates prevent API
+			// access. Still reject any pending operation visible locally or remotely.
 			if err := clusterfile.CheckRemoteModeTransition(
 				cmd.Context(),
 				clusterName,
-				cf.GetCluster().Spec.ControlPlaneMode != "",
+				cf.GetCluster().Spec.ControlPlaneMode != "" && len(renewTargets) == 0,
 			); err != nil {
 				return err
 			}

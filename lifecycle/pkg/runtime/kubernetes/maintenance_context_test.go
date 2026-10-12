@@ -25,7 +25,7 @@ import (
 func TestMaintenanceCancellationPreventsSSHDispatch(t *testing.T) {
 	canceled, cancel := context.WithCancel(context.Background())
 	cancel()
-	client := &maintenanceSSH{ctx: canceled}
+	client := ssh.WithContext(canceled, nil)
 	if err := ssh.WaitReady(client, 6, "unused"); !errors.Is(err, context.Canceled) {
 		t.Fatalf("SSH probe after maintenance cancellation: %v", err)
 	}
@@ -42,7 +42,7 @@ func TestMaintenanceCancellationPreventsSSHDispatch(t *testing.T) {
 	) {
 		t.Fatalf("explicit context bypassed maintenance cancellation: %v", err)
 	}
-	client.ctx = context.Background()
+	client = ssh.WithContext(context.Background(), nil)
 	if err := client.CmdAsyncWithContext(
 		canceled,
 		"unused",
@@ -69,7 +69,7 @@ func (s *maintenancePingSSH) Ping(host string) error {
 func TestMaintenancePingPreservesActiveProbe(t *testing.T) {
 	failure := errors.New("SSH host unavailable")
 	inner := &maintenancePingSSH{err: failure}
-	client := &maintenanceSSH{Interface: inner, ctx: context.Background()}
+	client := ssh.WithContext(context.Background(), inner)
 	if err := client.Ping("worker"); !errors.Is(err, failure) {
 		t.Fatalf("lost SSH probe error: %v", err)
 	}

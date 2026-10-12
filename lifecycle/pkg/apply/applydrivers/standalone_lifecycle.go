@@ -174,6 +174,9 @@ func standaloneRecoveryCluster(current, desired *v2.Cluster) *v2.Cluster {
 }
 
 func (c *Applier) commitStandaloneInventory() error {
+	if err := c.Err(); err != nil {
+		return err
+	}
 	localAddresses, err := net.InterfaceAddrs()
 	if err != nil {
 		return err
@@ -191,12 +194,13 @@ func (c *Applier) commitStandaloneInventory() error {
 		return err
 	}
 	group, ctx := errgroup.WithContext(c.Context)
+	copyExecer := ssh.WithContext(ctx, execer)
 	for _, host := range c.ClusterDesired.GetMasterIPAndPortList() {
 		group.Go(func() error {
 			if err := ctx.Err(); err != nil {
 				return err
 			}
-			return execer.Copy(
+			return copyExecer.Copy(
 				host,
 				constants.ClusterDir(c.ClusterDesired.Name),
 				constants.ClusterDir(c.ClusterDesired.Name),
@@ -215,6 +219,7 @@ func (c *Applier) commitStandaloneInventory() error {
 		constants.ClusterDir(c.ClusterDesired.Name),
 		clusterfile.LifecycleFilename,
 	)
+	execer = ssh.WithContext(c.Context, execer)
 	for _, host := range c.ClusterDesired.GetMasterIPAndPortList() {
 		if isLocalLifecycleHost(host, localAddresses) {
 			continue

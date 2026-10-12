@@ -33,8 +33,9 @@ import (
 )
 
 type KubeadmRuntime struct {
-	config  *types.Config // from argument
-	cluster *v2.Cluster
+	maintenanceContext context.Context
+	config             *types.Config // from argument
+	cluster            *v2.Cluster
 
 	token         *types.Token
 	kubeadmConfig *types.KubeadmConfig // a deep copy from config.KubeadmConfig or a new one

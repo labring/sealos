@@ -58,6 +58,26 @@ func TestValidateVersionChange(t *testing.T) {
 	}
 }
 
+func TestUpgradePreflightCommandTimeout(t *testing.T) {
+	u := &upgrade{Options: Options{Timeout: 50 * time.Millisecond}}
+	started := time.Now()
+	if _, err := u.output(context.Background(), "sleep", "30"); err == nil {
+		t.Fatal("preflight command ignored its timeout")
+	}
+	if time.Since(started) > 5*time.Second {
+		t.Fatal("preflight command was not interrupted promptly")
+	}
+}
+
+func TestBootstrapRejectsMissingNodeBaseline(t *testing.T) {
+	for _, baseline := range []*modeState{nil, {}} {
+		state := &bootstrapState{Baseline: baseline}
+		if err := verifyBootstrap(context.Background(), BootstrapOptions{}, state); err == nil {
+			t.Fatal("accepted a bootstrap baseline without a Node")
+		}
+	}
+}
+
 func TestRejectRegisteredKubelet(t *testing.T) {
 	for _, args := range [][]string{
 		{"--config=/var/lib/kubelet/config.yaml", "--kubeconfig=/etc/kubernetes/kubelet.conf"},

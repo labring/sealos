@@ -27,6 +27,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/uuid"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -40,6 +41,7 @@ type LifecycleOperation struct {
 	Action            string   `json:"Action"`
 	Request           string   `json:"Request"`
 	Approved          bool     `json:"Approved"`
+	ResetOwner        string   `json:"ResetOwner,omitempty"`
 	APIServer         string   `json:"-"`
 	Hosts             []string `json:"Hosts"`
 	RecoveryInventory []byte   `json:"-"`
@@ -105,6 +107,16 @@ func WithLifecycle(
 			return err
 		}
 		return removeLifecycleFile(path)
+	}
+	if operation.Action == "reset" {
+		if operation.ResetOwner == "" {
+			operation.ResetOwner = string(uuid.NewUUID())
+		}
+		// Persist before claiming the API tombstone so a failed approval write
+		// can retry with the same owner. Other inventories must not resume reset.
+		if err := persist(operation); err != nil {
+			return err
+		}
 	}
 	if !requireAPI {
 		if err := persist(operation); err != nil {
@@ -238,6 +250,12 @@ func withLifecycleAPI(
 			var previous LifecycleOperation
 			if err := json.Unmarshal([]byte(cm.Data["operation"]), &previous); err != nil {
 				return err
+			}
+			if previous.Action == "reset" &&
+				(previous.ResetOwner == "" || previous.ResetOwner != operation.ResetOwner) {
+				return errors.New(
+					"reset is owned by another inventory; resume from the original inventory",
+				)
 			}
 			if !sameLifecycle(previous, operation) {
 				if !resetSupersedes(previous, operation) {

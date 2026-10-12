@@ -62,7 +62,7 @@ func TestResetKeepsAPITombstone(t *testing.T) {
 	err := withLifecycleAPI(
 		context.Background(),
 		client,
-		LifecycleOperation{Action: "reset", Request: "request"},
+		LifecycleOperation{Action: "reset", Request: "request", ResetOwner: "original-inventory"},
 		func(_ context.Context, operation LifecycleOperation) error {
 			if !operation.Approved {
 				t.Fatal("reset did not persist offline recovery authorization")
@@ -84,6 +84,22 @@ func TestResetKeepsAPITombstone(t *testing.T) {
 		err,
 	) {
 		t.Fatalf("reset retained the lease after persisting its tombstone: %v", err)
+	}
+	for _, owner := range []string{"", "other-inventory", "original-inventory"} {
+		called := false
+		err := withLifecycleAPI(
+			context.Background(),
+			client,
+			LifecycleOperation{Action: "reset", Request: "request", ResetOwner: owner},
+			func(context.Context, LifecycleOperation) error {
+				called = true
+				return nil
+			},
+		)
+		wantResume := owner == "original-inventory"
+		if called != wantResume || (err == nil) != wantResume {
+			t.Fatalf("reset owner %q: resumed=%t, error=%v", owner, called, err)
+		}
 	}
 }
 

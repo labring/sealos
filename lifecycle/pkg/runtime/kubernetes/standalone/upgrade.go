@@ -163,9 +163,14 @@ func (u *upgrade) command(ctx context.Context, name string, args ...string) erro
 	return maintenanceCommand(ctx, u.Output, name, args...)
 }
 
+func (u *upgrade) output(ctx context.Context, name string, args ...string) ([]byte, error) {
+	ctx, cancel := context.WithTimeout(ctx, u.Timeout)
+	defer cancel()
+	return exec.CommandContext(ctx, name, args...).Output()
+}
+
 func (u *upgrade) prepare(ctx context.Context) error {
-	pidBytes, err := exec.CommandContext(ctx, "systemctl", "show", "--property=MainPID", "--value", "kubelet").
-		Output()
+	pidBytes, err := u.output(ctx, "systemctl", "show", "--property=MainPID", "--value", "kubelet")
 	if err != nil {
 		return err
 	}
@@ -239,7 +244,7 @@ func (u *upgrade) prepare(ctx context.Context) error {
 	u.name = strings.ToLower(strings.TrimSpace(u.name))
 	// #nosec G204 -- The validated PID identifies the running kubelet executable.
 	// nosemgrep: go.lang.security.audit.dangerous-exec-command.dangerous-exec-command
-	current, err := exec.CommandContext(ctx, fmt.Sprintf("/proc/%d/exe", pid), "--version").Output()
+	current, err := u.output(ctx, fmt.Sprintf("/proc/%d/exe", pid), "--version")
 	if err != nil {
 		return err
 	}
@@ -259,7 +264,7 @@ func (u *upgrade) prepare(ctx context.Context) error {
 		}
 		// #nosec G204 -- The administrator selects the binary directory; names and arguments are fixed.
 		// nosemgrep: go.lang.security.audit.dangerous-exec-command.dangerous-exec-command
-		out, err := exec.CommandContext(ctx, filepath.Join(u.BinaryDir, binary), args...).Output()
+		out, err := u.output(ctx, filepath.Join(u.BinaryDir, binary), args...)
 		if err != nil {
 			return err
 		}
@@ -288,8 +293,11 @@ func (u *upgrade) prepare(ctx context.Context) error {
 	// pflag validates that all preserved command-line options exist in the target kubelet.
 	// #nosec G204 -- Arguments are read from the running kubelet and executed without a shell.
 	// nosemgrep: go.lang.security.audit.dangerous-exec-command.dangerous-exec-command
-	if out, err := exec.CommandContext(ctx, filepath.Join(u.BinaryDir, "kubelet"), append(append([]string{}, u.args...), "--help")...).
-		CombinedOutput(); err != nil {
+	if out, err := u.output(
+		ctx,
+		filepath.Join(u.BinaryDir, "kubelet"),
+		append(append([]string{}, u.args...), "--help")...,
+	); err != nil {
 		return fmt.Errorf("target kubelet rejects preserved flags: %w: %s", err, out)
 	}
 	return u.prepareManifests(ctx)
@@ -781,7 +789,7 @@ func (u *upgrade) prepareV2StoreCheck(ctx context.Context, current *semver.Versi
 	}
 	// #nosec G204 -- The administrator selects the binary directory; the executable and argument are fixed.
 	// nosemgrep: go.lang.security.audit.dangerous-exec-command.dangerous-exec-command
-	out, err := exec.CommandContext(ctx, filepath.Join(u.BinaryDir, "etcdutl"), "version").Output()
+	out, err := u.output(ctx, filepath.Join(u.BinaryDir, "etcdutl"), "version")
 	if err != nil {
 		return fmt.Errorf(
 			"etcd 3.6 upgrade requires etcdutl 3.5.32 or later in the target binary directory: %w",

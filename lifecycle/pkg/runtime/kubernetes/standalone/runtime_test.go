@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"path/filepath"
 	"strconv"
 	"testing"
@@ -225,9 +226,16 @@ func (s *imageServiceFixture) ImageStatus(
 }
 
 func TestSeparateKubeletImageService(t *testing.T) {
+	// Keep Unix socket paths below macOS's limit; t.TempDir includes the test name.
+	//nolint:usetesting // The shorter temporary directory is required for Unix sockets.
+	directory, err := os.MkdirTemp("", "cri-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(directory) })
 	start := func(name string, images bool) string {
 		t.Helper()
-		path := filepath.Join(t.TempDir(), name)
+		path := filepath.Join(directory, name)
 		listener, err := (&net.ListenConfig{}).Listen(context.Background(), "unix", path)
 		if err != nil {
 			t.Fatal(err)

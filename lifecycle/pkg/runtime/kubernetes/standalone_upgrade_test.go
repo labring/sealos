@@ -365,6 +365,16 @@ func TestWorkerUpgradeCordonRejectsReplacedNode(t *testing.T) {
 	}
 }
 
+func TestWorkerUpgradeCannotUncordonAfterLeaseCancellation(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	client := fake.NewSimpleClientset()
+	err := setWorkerUpgradeCordon(ctx, client, &v1.Node{}, "v1.30.14", false)
+	if !errors.Is(err, context.Canceled) || len(client.Actions()) != 0 {
+		t.Fatalf("uncordon ignored cancellation: %v, actions=%v", err, client.Actions())
+	}
+}
+
 func TestWorkerUpgradeCordonPreservesConcurrentAdministratorCordon(t *testing.T) {
 	_, client, _ := workerFixture(v2.ControlPlaneModeStandalone)
 	ctx := context.Background()

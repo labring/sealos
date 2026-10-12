@@ -179,6 +179,17 @@ func kubeletArgv(ctx context.Context) ([]string, error) {
 	if len(argv) < 2 {
 		return nil, errors.New("cannot identify kubelet arguments")
 	}
+	//nolint:gosec // Read-only comparison of the running kubelet's executable with the managed binary.
+	running, err := os.Stat(argv[0])
+	if err != nil {
+		return nil, fmt.Errorf("inspect kubelet executable: %w", err)
+	}
+	expected, err := os.Stat("/usr/bin/kubelet")
+	if err != nil || !os.SameFile(running, expected) {
+		return nil, errors.New(
+			"mode conversion requires the active kubelet executable at /usr/bin/kubelet",
+		)
+	}
 	return argv[1:], nil
 }
 
