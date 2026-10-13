@@ -242,7 +242,7 @@ func (u *upgrade) prepare(ctx context.Context) error {
 		}
 	}
 	u.name = strings.ToLower(strings.TrimSpace(u.name))
-	// #nosec G204 -- The validated PID identifies the running kubelet executable.
+	// The validated PID identifies the running kubelet executable.
 	// nosemgrep: go.lang.security.audit.dangerous-exec-command.dangerous-exec-command
 	current, err := u.output(ctx, fmt.Sprintf("/proc/%d/exe", pid), "--version")
 	if err != nil {
@@ -262,7 +262,7 @@ func (u *upgrade) prepare(ctx context.Context) error {
 		if binary == "kubectl" {
 			args = []string{"version", "--client=true", "-o", "json"}
 		}
-		// #nosec G204 -- The administrator selects the binary directory; names and arguments are fixed.
+		// The administrator selects the binary directory; names and arguments are fixed.
 		// nosemgrep: go.lang.security.audit.dangerous-exec-command.dangerous-exec-command
 		out, err := u.output(ctx, filepath.Join(u.BinaryDir, binary), args...)
 		if err != nil {
@@ -291,7 +291,7 @@ func (u *upgrade) prepare(ctx context.Context) error {
 		}
 	}
 	// pflag validates that all preserved command-line options exist in the target kubelet.
-	// #nosec G204 -- Arguments are read from the running kubelet and executed without a shell.
+	// Arguments are read from the running kubelet and executed without a shell.
 	// nosemgrep: go.lang.security.audit.dangerous-exec-command.dangerous-exec-command
 	if out, err := u.output(
 		ctx,
@@ -337,7 +337,7 @@ func (u *upgrade) prepareManifests(ctx context.Context) error {
 		return err
 	}
 	draft := filepath.Join(u.dir, "input.yaml")
-	// #nosec G703 -- u.dir is a private directory created by os.MkdirTemp.
+	//nolint:gosec // u.dir is a private directory created by os.MkdirTemp.
 	if err := os.WriteFile(draft, data, 0o600); err != nil {
 		return err
 	}
@@ -373,7 +373,7 @@ func (u *upgrade) prepareManifests(ctx context.Context) error {
 		return err
 	}
 	validationPath := filepath.Join(u.dir, "kubelet-validation.yaml")
-	// #nosec G703 -- u.dir is a private directory created by os.MkdirTemp.
+	//nolint:gosec // u.dir is a private directory created by os.MkdirTemp.
 	if err := os.WriteFile(validationPath, validation, 0o600); err != nil {
 		return err
 	}
@@ -787,7 +787,7 @@ func (u *upgrade) prepareV2StoreCheck(ctx context.Context, current *semver.Versi
 			}
 		}
 	}
-	// #nosec G204 -- The administrator selects the binary directory; the executable and argument are fixed.
+	// The administrator selects the binary directory; the executable and argument are fixed.
 	// nosemgrep: go.lang.security.audit.dangerous-exec-command.dangerous-exec-command
 	out, err := u.output(ctx, filepath.Join(u.BinaryDir, "etcdutl"), "version")
 	if err != nil {

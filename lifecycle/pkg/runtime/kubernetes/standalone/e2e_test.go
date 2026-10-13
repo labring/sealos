@@ -55,7 +55,7 @@ func TestActivateStandaloneE2E(t *testing.T) {
 		},
 	}
 	for _, component := range components {
-		// #nosec G204 -- Component names and JSONPath keys are fixture constants.
+		//nolint:gosec // Component names and JSONPath keys are fixture constants.
 		data, err := exec.CommandContext(context.Background(),
 			"kubectl", "--kubeconfig=/etc/kubernetes/admin.conf",
 			"-n", "kube-system", "get", "configmap", component.name,
@@ -67,7 +67,7 @@ func TestActivateStandaloneE2E(t *testing.T) {
 		config = append(config, []byte("\n---\n")...)
 		config = append(config, data...)
 	}
-	// #nosec G703 -- The operator explicitly selects this disposable fixture's output.
+	//nolint:gosec // The operator explicitly selects this disposable fixture's output.
 	if err := os.WriteFile(os.Getenv("SEALOS_STANDALONE_CONFIG"), config, 0o600); err != nil {
 		t.Fatal(err)
 	}
