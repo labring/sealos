@@ -166,6 +166,8 @@ func (u *upgrade) command(ctx context.Context, name string, args ...string) erro
 func (u *upgrade) output(ctx context.Context, name string, args ...string) ([]byte, error) {
 	ctx, cancel := context.WithTimeout(ctx, u.Timeout)
 	defer cancel()
+	// Callers select fixed commands or administrator-provided binaries; arguments bypass a shell.
+	// nosemgrep: go.lang.security.audit.dangerous-exec-command.dangerous-exec-command
 	return exec.CommandContext(ctx, name, args...).Output()
 }
 
