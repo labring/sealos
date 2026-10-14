@@ -37,7 +37,6 @@ pnpm dev-desktop
 
 # Run specific provider app
 pnpm dev-app        # applaunchpad
-pnpm dev-db         # dbprovider
 pnpm dev-cost       # costcenter
 pnpm dev-template   # template
 
