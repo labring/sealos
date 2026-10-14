@@ -84,12 +84,32 @@ Unit tests additionally cover UID deletion preconditions, an absent-Node retry,
 and preserving the Node on host identity mismatch or reset failure. Mode
 switching still leaves Node cleanup to the administrator.
 
+## Sequential upgrade validation
+
+The standalone lifecycle completed this sequence on an existing cluster:
+
+`v1.28.15 → v1.29.15 → v1.30.14 → v1.31.14 → v1.32.10 → v1.33.6`.
+
+Every stage used `sealos run` with target Kubernetes images containing the
+updated sealctl. Checks covered running component and kubelet versions,
+standalone arguments, etcd health and member identity, registered-worker
+readiness, CoreDNS and Cilium agent readiness, Service and Pod DNS connectivity,
+logs, exec and port-forward. Node and storage identities were preserved.
+Final checks confirmed matching inventories, cleared maintenance records and
+recovery of workloads that were ready before the upgrade.
+
+The v1.30 target recommended an older etcd patch release. The compatibility fix
+preserved the existing etcd manifest; a later target upgraded etcd normally.
+A controller listener collided with an outgoing connection because the host's
+ephemeral range included that port. Administrator port reservations resolved
+the collision. This validation does not certify every CNI/version combination.
+
 ## Coverage limits
 
 External etcd, etcd 3.5-to-3.6 migration, rootless control planes, non-default
 patch layouts, fresh-cluster SSH installation and larger failure scenarios still
-need dedicated integration validation. Cross-minor upgrades and whole-cluster
-destruction were exercised in disposable fixtures, not the shared cluster.
+need dedicated integration validation. Whole-cluster destruction was exercised
+only in disposable fixtures.
 Application availability depends on replication and storage placement.
 Host mount timeouts encountered during reboot were resolved administratively;
 Sealos does not change storage or CNI configuration.

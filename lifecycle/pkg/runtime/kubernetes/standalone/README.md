@@ -107,6 +107,11 @@ An omitted image does not replace an existing host's saved controller image.
 - Administrators configure CNI exclusions, forwarding, API endpoint availability,
   API-to-Pod/Service connectivity, stale kernel state and any egress selector.
   Sealos does not identify or reconfigure CNI components.
+- Reserve the controller's listener ports from ephemeral allocation when they
+  overlap `net.ipv4.ip_local_port_range`. Merge the health port `9919` and the
+  default metrics port `9918` into `net.ipv4.ip_local_reserved_ports`, preserving
+  existing reservations and accounting for custom controller metrics settings.
+  Persist this host configuration before starting or upgrading the controller.
 - The table/protocol pair is exclusively reserved for route-controller.
   Reverse conversion removes its IPv4/IPv6 routes through netlink after stopping
   the controller. Other route protocols and administrator policy rules remain.
@@ -174,8 +179,11 @@ Target kubeadm/kubelet/kubectl binaries must report the requested version.
 Downgrades and skipped Kubernetes minors are rejected. Desired manifest edits
 must be represented in public configuration or the optional patch directory.
 
-Stacked etcd keeps member identity and data/WAL hostPath mappings. Downgrades,
-skipped minors, subPath mappings and digest-only etcd images are rejected.
+Stacked etcd keeps member identity and data/WAL hostPath mappings. If the target
+manifest requests an older etcd version, Sealos preserves the existing etcd
+manifest, matching kubeadm upgrade behavior. The selected manifest must still
+pass live-version and identity checks; actual downgrades, skipped minors,
+subPath mappings and digest-only etcd images are rejected.
 The supported etcd minor transition is 3.5 to 3.6: every 3.5 member must be at
 least 3.5.32, with `--enable-v2`/`ETCD_ENABLE_V2` removed. Supply etcdutl 3.5.32
 or later from the 3.5 series in the target binary directory for the offline
