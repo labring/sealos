@@ -1,4 +1,4 @@
-# sealos app launchpad
+# Sealos License
 
 ## project tree
 
