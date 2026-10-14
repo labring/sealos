@@ -447,7 +447,10 @@ func (u *upgrade) prepareManifests(ctx context.Context) error {
 			return err
 		}
 		if preserved {
-			fmt.Fprintln(u.Output, "Keeping the existing etcd manifest: the requested etcd version is older than the running version")
+			fmt.Fprintln(
+				u.Output,
+				"Keeping the existing etcd manifest: the requested etcd version is older than the running version",
+			)
 		}
 	}
 	for _, component := range u.components {
