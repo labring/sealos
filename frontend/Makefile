@@ -16,7 +16,6 @@ endif
 buildTargets := \
 	desktop \
 	providers/costcenter \
-	providers/dbprovider \
 	providers/imagehub \
 	providers/license
 
