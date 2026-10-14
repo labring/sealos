@@ -28,6 +28,68 @@ import (
 	utilyaml "k8s.io/apimachinery/pkg/util/yaml"
 )
 
+func TestPreserveNewerEtcd(t *testing.T) {
+	for _, test := range []struct {
+		name      string
+		target    string
+		preserved bool
+	}{
+		{name: "older kubeadm default", target: "3.5.15-0", preserved: true},
+		{name: "same version", target: "3.5.16-0"},
+		{name: "newer patch", target: "3.5.21-0"},
+		{name: "newer minor", target: "3.6.0-0"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			dir := t.TempDir()
+			currentPath := filepath.Join(dir, "current.yaml")
+			nextPath := filepath.Join(dir, "next.yaml")
+			current := []byte(`# Preserve the complete existing manifest, including custom settings.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: etcd
+  namespace: kube-system
+spec:
+  hostNetwork: true
+  containers:
+  - name: etcd
+    image: registry.k8s.io/etcd:3.5.16-0
+    args: [--quota-backend-bytes=10737418240]
+`)
+			next := []byte(`apiVersion: v1
+kind: Pod
+metadata:
+  name: etcd
+  namespace: kube-system
+spec:
+  hostNetwork: true
+  containers:
+  - name: etcd
+    image: registry.k8s.io/etcd:` + test.target + "\n")
+			for path, data := range map[string][]byte{currentPath: current, nextPath: next} {
+				if err := os.WriteFile(path, data, 0o600); err != nil {
+					t.Fatal(err)
+				}
+			}
+			preserved, err := preserveNewerEtcd("3.5.16", currentPath, nextPath)
+			if err != nil || preserved != test.preserved {
+				t.Fatalf("preserved=%v, err=%v", preserved, err)
+			}
+			actual, err := os.ReadFile(nextPath)
+			if err != nil {
+				t.Fatal(err)
+			}
+			expected := next
+			if test.preserved {
+				expected = current
+			}
+			if !bytes.Equal(actual, expected) {
+				t.Fatal("unexpected etcd manifest")
+			}
+		})
+	}
+}
+
 func TestValidateVersionChange(t *testing.T) {
 	tests := []struct {
 		current string

@@ -423,6 +423,33 @@ func (u *upgrade) prepareManifests(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	u.etcdCfg, err = etcdConfig(u.old["kube-apiserver"])
+	if err != nil {
+		return err
+	}
+	u.etcd, err = clientv3.New(u.etcdCfg)
+	if err != nil {
+		return err
+	}
+	if u.localEtcd {
+		check, cancel := context.WithTimeout(ctx, 15*time.Second)
+		status, err := u.etcd.Status(check, u.etcdCfg.Endpoints[0])
+		cancel()
+		if err != nil {
+			return err
+		}
+		preserved, err := preserveNewerEtcd(
+			status.Version,
+			filepath.Join(manifestDir, "etcd.yaml"),
+			filepath.Join(newDir, "etcd.yaml"),
+		)
+		if err != nil {
+			return err
+		}
+		if preserved {
+			fmt.Fprintln(u.Output, "Keeping the existing etcd manifest: the requested etcd version is older than the running version")
+		}
+	}
 	for _, component := range u.components {
 		pod, err := readPod(filepath.Join(newDir, component+".yaml"))
 		if err != nil {
@@ -457,14 +484,6 @@ func (u *upgrade) prepareManifests(ctx context.Context) error {
 		}
 		u.images[component] = image.ImageRef
 	}
-	u.etcdCfg, err = etcdConfig(u.old["kube-apiserver"])
-	if err != nil {
-		return err
-	}
-	u.etcd, err = clientv3.New(u.etcdCfg)
-	if err != nil {
-		return err
-	}
 	check, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 	if err := etcdHealthy(check, u.etcd); err != nil {
@@ -497,6 +516,31 @@ func (u *upgrade) prepareManifests(ctx context.Context) error {
 		u.fingerprints[file] = sha256.Sum256(data)
 	}
 	return nil
+}
+
+// Like kubeadm upgrade, keep the existing etcd manifest when the target
+// Kubernetes release recommends an older etcd version. checkEtcd still validates
+// the selected manifest against the live member before any files are activated.
+func preserveNewerEtcd(currentVersion, currentPath, nextPath string) (bool, error) {
+	current, err := semver.NewVersion(currentVersion)
+	if err != nil {
+		return false, err
+	}
+	pod, err := readPod(nextPath)
+	if err != nil {
+		return false, err
+	}
+	next, err := etcdImageVersion(pod.Spec.Containers[0].Image)
+	if err != nil {
+		return false, err
+	}
+	if !next.LessThan(current) {
+		return false, nil
+	}
+	if err := copyAtomic(currentPath, nextPath, 0o600); err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 func (u *upgrade) checkEtcd(ctx context.Context) error {
