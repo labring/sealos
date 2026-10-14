@@ -12,7 +12,12 @@ vi.mock('@/services/backend/db/init', () => ({
     user: { findUnique: vi.fn() },
     giftCode: { findUnique: vi.fn(), create: vi.fn() },
     giftCodeCreation: { create: vi.fn() },
-    activityRewardGrant: { findUnique: vi.fn(), create: vi.fn(), updateMany: vi.fn() },
+    activityRewardGrant: {
+      findUnique: vi.fn(),
+      create: vi.fn(),
+      updateMany: vi.fn(),
+      findMany: vi.fn()
+    },
     $transaction: vi.fn()
   }
 }));
@@ -31,6 +36,7 @@ import {
   checkAndGrantUserRewards,
   readEligibilityFacts
 } from '@/services/backend/activity/rewards';
+import { getActivityStatusData } from '@/services/backend/activity/status';
 import {
   attachRegistrationInTransaction,
   ensureInviteCode
@@ -168,6 +174,30 @@ describe('activity rewards eligibility', () => {
 
     expect(globalPrisma.$transaction).not.toHaveBeenCalled();
     expect(globalPrisma.registrationReferral.findMany).not.toHaveBeenCalled();
+  });
+});
+
+describe('activity status presentation', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('hides the invite share entry for API-registered accounts', async () => {
+    (globalPrisma.registrationSource.findUnique as any).mockResolvedValue({ source: 'API' });
+    (globalPrisma.userRealNameInfo.findUnique as any).mockResolvedValue({ isVerified: true });
+    (globalPrisma.enterpriseRealNameInfo.findUnique as any).mockResolvedValue(null);
+    (globalPrisma.desktopLoginRecord.findUnique as any).mockResolvedValue({ userUid: USER_UID });
+    // 即使历史数据里已有邀请码，API 账号也不得返回可分享链接：
+    // 发奖逻辑对 API 邀请人永久跳过，页面不能承诺双方奖励。
+    (globalPrisma.registrationInviteCode.findUnique as any).mockResolvedValue({ code: 'ABCDEFGH' });
+    (globalPrisma.registrationReferral.findMany as any).mockResolvedValue([]);
+    (globalPrisma.activityRewardGrant.findMany as any).mockResolvedValue([]);
+
+    const data = await getActivityStatusData(USER_UID);
+
+    expect(data.invite.code).toBeNull();
+    expect(data.invite.inviteUrl).toBeNull();
+    expect(data.firstLoginGift.status).toBe('ineligible');
   });
 });
 

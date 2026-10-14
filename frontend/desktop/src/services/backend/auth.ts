@@ -307,6 +307,13 @@ export const generateOnceToken = (props: OnceTokenPayload) =>
 export const generateCronJobToken = (props: CronJobTokenPayload) =>
   sign(props, internalJwtSecret(), { expiresIn: '60000' });
 
+// 挂起的账务调用会卡住触发链路（实名回调/登录上报/补偿 worker），必须有界
+const BILLING_CALL_TIMEOUT_MS = 30_000;
+
+// 失败重试期间的错误日志可能被更多人看到：尚未核销的活动兑换码绝不能明文落日志
+const redactBillingBodyForLog = (body: Record<string, any>): Record<string, any> =>
+  body.code === undefined ? body : { ...body, code: '[redacted]' };
+
 export const callBillingService = async (
   endpoint: string,
   payload: { userUid: string; userId: string },
@@ -330,7 +337,8 @@ export const callBillingService = async (
       Authorization: `Bearer ${billingToken}`,
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify(requestBody)
+    body: JSON.stringify(requestBody),
+    signal: AbortSignal.timeout(BILLING_CALL_TIMEOUT_MS)
   });
 
   const responseText = await response.text();
@@ -346,7 +354,7 @@ export const callBillingService = async (
     console.error('[billing] request:error', {
       endpoint,
       status: response.status,
-      body: requestBody,
+      body: redactBillingBodyForLog(requestBody),
       response: responseData
     });
     throw new Error(`Failed to call billing service: ${endpoint} (${response.status})`);

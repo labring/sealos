@@ -1,5 +1,5 @@
 import { verifyGlobalToken } from '@/services/backend/auth';
-import { checkAndGrantUserRewards } from '@/services/backend/activity/rewards';
+import { checkAndGrantUserRewardsBounded } from '@/services/backend/activity/rewards';
 import { jsonRes } from '@/services/backend/response';
 import { enableRealNameAuth } from '@/services/enable';
 import * as tcsdk from 'tencentcloud-sdk-nodejs';
@@ -276,9 +276,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return;
     });
 
-    // 实名成功后触发拉新奖励资格检查：不进实名事务本身，失败仅记日志，不影响实名结果与页面
+    // 实名成功后触发拉新奖励资格检查：不进实名事务本身，失败仅记日志，不影响实名结果与页面。
+    // 有界等待——账务迟迟不响应不能拖住实名结果页，超时后交给补偿 worker 对账补发。
     try {
-      await checkAndGrantUserRewards(userUid);
+      await checkAndGrantUserRewardsBounded(userUid);
     } catch (error) {
       console.error('faceIdRealNameAuthCallback: checkAndGrantUserRewards failed', {
         userUid,

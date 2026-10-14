@@ -1,6 +1,6 @@
 import { jsonRes } from '@/services/backend/response';
 import { enableEnterpriseRealNameAuth } from '@/services/enable';
-import { checkAndGrantUserRewards } from '@/services/backend/activity/rewards';
+import { checkAndGrantUserRewardsBounded } from '@/services/backend/activity/rewards';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { verifyAccessToken } from '@/services/backend/auth';
 import { globalPrisma } from '@/services/backend/db/init';
@@ -149,9 +149,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return;
     });
 
-    // 企业实名成功后触发拉新奖励资格检查：不进实名事务本身，失败仅记日志，不影响实名结果
+    // 企业实名成功后触发拉新奖励资格检查：不进实名事务本身，失败仅记日志，不影响实名结果。
+    // 有界等待——账务迟迟不响应不能拖住实名成功响应，超时后交给补偿 worker 对账补发。
     try {
-      await checkAndGrantUserRewards(userUid);
+      await checkAndGrantUserRewardsBounded(userUid);
     } catch (error) {
       console.error('enterpriseRealNameVerify: checkAndGrantUserRewards failed', {
         userUid,

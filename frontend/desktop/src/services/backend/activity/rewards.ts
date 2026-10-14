@@ -280,8 +280,9 @@ export const checkAndGrantUserRewards = async (userUid: string): Promise<void> =
         });
         if (inviteeGrant.created) await redeemGrant(inviteeGrant.grant);
         // 邀请人侧检查不依赖 inviteeGrant.created：即使本次是命中既有行（上次
-        // 递归中断或并发竞争），也要重跑，保证「邀请人不在线也能到账」有多条
-        // 自愈路径。递归只往 inviter 方向一层，不会回环。
+        // 递归中断或并发竞争），也要重跑。若本次仍失败（进程崩溃/递归抛错），
+        // 由补偿 worker 的缺失奖励扫描兜底（见 worker.ts），离线邀请人也能到账。
+        // 递归只往 inviter 方向一层，不会回环。
         await checkAndGrantUserRewards(referral.inviterUid);
       }
     }
@@ -311,5 +312,28 @@ export const checkAndGrantUserRewards = async (userUid: string): Promise<void> =
   } catch (error) {
     // 触发点（登录上报/实名回调/状态查询）都不允许被发奖失败阻断
     console.error('checkAndGrantUserRewards: failed', { userUid, error });
+  }
+};
+
+// 请求-响应链路（实名回调等）等待发奖的有界超时：到点即放行响应。
+// 已创建的 grant 不回滚——核销挂起的由补偿 worker 按 REDEEMING 滞留对账，
+// 未创建的由缺失奖励扫描补建，因此超时不会丢奖励。
+const TRIGGER_GRANT_DEADLINE_MS = 5_000;
+
+export const checkAndGrantUserRewardsBounded = async (userUid: string): Promise<void> => {
+  let timedOut = false;
+  await Promise.race([
+    checkAndGrantUserRewards(userUid),
+    new Promise<void>((resolve) => {
+      setTimeout(() => {
+        timedOut = true;
+        resolve();
+      }, TRIGGER_GRANT_DEADLINE_MS);
+    })
+  ]);
+  if (timedOut) {
+    console.warn('checkAndGrantUserRewardsBounded: deadline exceeded, worker will reconcile', {
+      userUid
+    });
   }
 };

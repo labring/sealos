@@ -154,9 +154,12 @@ export const getActivityStatusData = async (userUid: string): Promise<ActivitySt
 
   const creditedAmount = creditedGrants.reduce((sum, grant) => sum + grant.amount, 0n);
 
+  // API 注册账号与发奖/建码资格检查同一判定：邀请区不返回 code/inviteUrl，
+  // 客户端整块隐藏分享入口，避免「页面承诺双方奖励、发奖永久跳过」的状态错位。
+  const inviteIneligible = !available || facts.source === RegistrationSourceType.API;
   const invite: InviteSummary = {
-    code: inviteCode?.code ?? null,
-    inviteUrl: inviteCode ? buildInviteUrl(inviteCode.code) : null,
+    code: inviteIneligible ? null : inviteCode?.code ?? null,
+    inviteUrl: inviteIneligible ? null : inviteCode ? buildInviteUrl(inviteCode.code) : null,
     registeredCount: referrals.length,
     validCount,
     creditedAmount: creditedAmount.toString()

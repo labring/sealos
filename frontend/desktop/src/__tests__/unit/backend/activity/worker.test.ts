@@ -1,15 +1,23 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ActivityRewardStatus, Prisma } from 'prisma/global/generated/client';
 
-const { findGrants } = vi.hoisted(() => ({ findGrants: vi.fn() }));
+const { findGrants, queryRaw, grantUserRewards } = vi.hoisted(() => ({
+  findGrants: vi.fn(),
+  queryRaw: vi.fn(),
+  grantUserRewards: vi.fn()
+}));
 
 vi.mock('@/services/backend/db/init', () => ({
-  globalPrisma: { activityRewardGrant: { findMany: findGrants } }
+  globalPrisma: {
+    activityRewardGrant: { findMany: findGrants },
+    $queryRaw: queryRaw
+  }
 }));
 vi.mock('@/services/backend/activity/rewards', () => ({
   isActivityAvailable: vi.fn(() => true),
   reconcileGrant: vi.fn(),
-  redeemGrant: vi.fn()
+  redeemGrant: vi.fn(),
+  checkAndGrantUserRewards: grantUserRewards
 }));
 
 import { redeemGrant } from '@/services/backend/activity/rewards';
@@ -24,7 +32,8 @@ type RetryGrant = {
   attemptCount: number;
 };
 
-// 模拟这组 nullable string 查询的数据库筛选，再执行 LIMIT，复现批次饥饿。
+// 模拟这组 nullable 字段查询的数据库筛选（failureReason / lastAttemptAt）与
+// LIMIT，复现批次饥饿；lastAttemptAt 排序按 PostgreSQL ASC NULLS LAST 语义。
 const failureMatches = (
   reason: string | null,
   filter: Prisma.ActivityRewardGrantWhereInput
@@ -43,12 +52,29 @@ const failureMatches = (
   throw new Error('Unsupported failureReason filter in worker test');
 };
 
+const lastAttemptMatches = (
+  value: Date | null,
+  filter: Prisma.ActivityRewardGrantWhereInput
+): boolean => {
+  const condition = filter.lastAttemptAt;
+  if (condition === undefined) return true;
+  if (condition === null) return value === null;
+  if (typeof condition === 'object' && 'not' in condition && condition.not === null) {
+    return value !== null;
+  }
+  throw new Error('Unsupported lastAttemptAt filter in worker test');
+};
+
 const seedRetryQueue = (rows: RetryGrant[]) => {
   findGrants.mockImplementation(
     async (query: { where: Prisma.ActivityRewardGrantWhereInput; take: number }) => {
       if (query.where.status === ActivityRewardStatus.REDEEMING) return [];
       return rows
-        .filter((row) => failureMatches(row.failureReason, query.where))
+        .filter(
+          (row) =>
+            failureMatches(row.failureReason, query.where) &&
+            lastAttemptMatches(row.lastAttemptAt, query.where)
+        )
         .sort(
           (a, b) =>
             (a.lastAttemptAt?.getTime() ?? Infinity) - (b.lastAttemptAt?.getTime() ?? Infinity)
@@ -64,7 +90,9 @@ describe('activity reward compensation worker', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(Date, 'now').mockReturnValue(NOW);
-    vi.mocked(redeemGrant).mockResolvedValue();
+    vi.mocked(redeemGrant).mockResolvedValue(undefined);
+    queryRaw.mockResolvedValue([]);
+    grantUserRewards.mockResolvedValue(undefined);
   });
 
   it('retries eligible rewards behind a full batch of permanent conflicts', async () => {
@@ -98,6 +126,30 @@ describe('activity reward compensation worker', () => {
     expect(redeemGrant).toHaveBeenCalledWith(ready);
   });
 
+  it('redeems never-attempted READY rewards behind a full batch of stale failures', async () => {
+    // 复现 PostgreSQL NULLS LAST 饥饿：50 条退避中的旧失败占满 LIMIT，
+    // 新 READY（lastAttemptAt=NULL）必须仍有独立批次被核销。
+    const staleFailures: RetryGrant[] = Array.from({ length: 50 }, (_, index) => ({
+      id: `stale-${index}`,
+      status: ActivityRewardStatus.RETRYABLE_FAILURE,
+      failureReason: 'network_error',
+      lastAttemptAt: new Date(NOW - 2 * 60 * 60 * 1000),
+      attemptCount: 1
+    }));
+    const fresh: RetryGrant = {
+      id: 'fresh-ready',
+      status: ActivityRewardStatus.READY,
+      failureReason: null,
+      lastAttemptAt: null,
+      attemptCount: 0
+    };
+    seedRetryQueue([...staleFailures, fresh]);
+
+    await activityRewardJob();
+
+    expect(redeemGrant).toHaveBeenCalledWith(fresh);
+  });
+
   it('still respects retry backoff after excluding permanent conflicts', async () => {
     seedRetryQueue([
       {
@@ -112,5 +164,25 @@ describe('activity reward compensation worker', () => {
     await activityRewardJob();
 
     expect(redeemGrant).not.toHaveBeenCalled();
+  });
+
+  it('rebuilds missing referral rewards found by the scan', async () => {
+    seedRetryQueue([]);
+    queryRaw.mockResolvedValue([
+      { id: 'referral-1', inviteeUid: '00000000-0000-4000-8000-00000000000a' }
+    ]);
+
+    await activityRewardJob();
+
+    expect(grantUserRewards).toHaveBeenCalledTimes(1);
+    expect(grantUserRewards).toHaveBeenCalledWith('00000000-0000-4000-8000-00000000000a');
+  });
+
+  it('keeps the cron cycle alive when the scan query fails', async () => {
+    seedRetryQueue([]);
+    queryRaw.mockRejectedValue(new Error('db down'));
+
+    await expect(activityRewardJob()).resolves.toBeUndefined();
+    expect(grantUserRewards).not.toHaveBeenCalled();
   });
 });

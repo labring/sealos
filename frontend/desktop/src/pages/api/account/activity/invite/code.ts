@@ -1,8 +1,9 @@
 import { buildInviteUrl } from '@/services/backend/activity/constants';
 import { ensureInviteCode } from '@/services/backend/activity/registration';
-import { isActivityAvailable } from '@/services/backend/activity/rewards';
+import { isActivityAvailable, readEligibilityFacts } from '@/services/backend/activity/rewards';
 import { verifyAccessToken, verifyGlobalToken } from '@/services/backend/auth';
 import { jsonRes } from '@/services/backend/response';
+import { RegistrationSourceType } from 'prisma/global/generated/client';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 /**
@@ -21,6 +22,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const payload =
       (await verifyAccessToken(req.headers)) || (await verifyGlobalToken(req.headers));
     if (!payload) return jsonRes(res, { code: 401, message: 'invalid token' });
+
+    // API 注册账号不参与任何奖励（含作为邀请人），与其发奖资格检查保持同一判定；
+    // 不发码就不会出现「页面承诺双方奖励、邀请人却永不到账」的邀请链接。
+    const facts = await readEligibilityFacts(payload.userUid);
+    if (facts.source === RegistrationSourceType.API) {
+      return jsonRes(res, { code: 403, message: 'Ineligible for invite activity' });
+    }
 
     const inviteCode = await ensureInviteCode(payload.userUid);
     return jsonRes(res, {
