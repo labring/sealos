@@ -1,8 +1,11 @@
 import { globalPrisma } from '@/services/backend/db/init';
+import { getCloudConfig } from '@/pages/api/platform/getCloudConfig';
+import { getVersion } from '@/services/enable';
+import type { ServerResponse } from 'http';
 import type { NextApiRequest } from 'next';
-import { Prisma, PrismaClient } from 'prisma/global/generated/client';
+import type { PrismaClient } from 'prisma/global/generated/client';
 import { generateInviteCode } from './codes';
-import { INVITE_COOKIE_NAME } from './constants';
+import { INVITE_COOKIE_MAX_AGE, INVITE_COOKIE_NAME } from './constants';
 
 export type TransactionClient = Omit<
   PrismaClient,
@@ -27,6 +30,61 @@ export const webRegistrationFromRequest = (req: NextApiRequest): RegistrationCon
   source: 'WEB',
   inviteCode: readInviteCodeFromRequest(req)
 });
+
+export type SigninInviteIssue = 'not_found' | 'disabled' | 'unavailable' | 'error';
+
+/** 注册页响应前接收邀请，保证用户立即发起 OAuth 时 cookie 已存在。 */
+export const prepareInviteForSignin = async ({
+  req,
+  res,
+  invite
+}: {
+  req: Pick<NextApiRequest, 'cookies' | 'headers'>;
+  res: Pick<ServerResponse, 'getHeader' | 'setHeader'>;
+  invite: string | string[] | undefined;
+}): Promise<SigninInviteIssue | null> => {
+  // 不覆盖先前接收的邀请；普通登录页不为活动查询数据库。
+  if (invite === undefined || req.cookies[INVITE_COOKIE_NAME]) return null;
+  if (typeof invite !== 'string' || !invite.trim()) return 'not_found';
+
+  try {
+    // SSR 可能是进程首次请求，不能依赖浏览器稍后才加载的 AppConfig。
+    await getCloudConfig();
+    if (getVersion() === 'en') return 'unavailable';
+
+    const code = invite.trim();
+    const inviteCode = await globalPrisma.registrationInviteCode.findUnique({
+      where: { code },
+      select: { enabled: true, inviterUid: true }
+    });
+    if (!inviteCode) return 'not_found';
+    if (!inviteCode.enabled) return 'disabled';
+    const inviter = await globalPrisma.user.findUnique({
+      where: { uid: inviteCode.inviterUid },
+      select: { uid: true }
+    });
+    if (!inviter) return 'not_found';
+
+    const cookie = [
+      `${INVITE_COOKIE_NAME}=${encodeURIComponent(code)}`,
+      'Path=/',
+      'HttpOnly',
+      'SameSite=Lax',
+      `Max-Age=${INVITE_COOKIE_MAX_AGE}`,
+      ...(req.headers['x-forwarded-proto'] === 'https' ? ['Secure'] : [])
+    ].join('; ');
+    const existing = res.getHeader('Set-Cookie');
+    // 语言 cookie 先写入；必须追加，不能用邀请 cookie 把它覆盖。
+    res.setHeader('Set-Cookie', [
+      ...(Array.isArray(existing) ? existing : existing ? [String(existing)] : []),
+      cookie
+    ]);
+    return null;
+  } catch (error) {
+    console.error('prepareInviteForSignin: failed to receive invitation', error);
+    return 'error';
+  }
+};
 
 /**
  * 在创建 User 的同一事务内落注册归因：
@@ -90,9 +148,9 @@ export const attachRegistrationInTransaction = async (
   }
 };
 
-// Prisma 唯一约束冲突（P2002）：registration 与 rewards 共用同一判断
+// 两种生成客户端的错误构造器不同，按稳定错误码识别唯一冲突。
 export const isUniqueConstraintError = (error: unknown) =>
-  error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002';
+  typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002';
 
 /**
  * 幂等 get-or-create 邀请码：

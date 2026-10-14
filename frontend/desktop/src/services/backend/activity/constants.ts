@@ -41,7 +41,7 @@ export const rewardAmount = (type: ActivityRewardType): bigint => {
 export const activityGiftCodeComment = (type: ActivityRewardType, businessKey: string) =>
   `activity:${type}:${businessKey}`;
 
-// inviteUrl = https://<当前部署域名>/invite/<code>，域名取部署配置而非请求头（防伪造）；
-// status 汇总与 invite/code 路由共用这一处，避免两处拼装口径漂移
+// 官网 #299 的邀请页上线前，统一返回可独立使用的控制台注册链接。
+// 官网部署验收后再切换此处；客户端始终透传服务端 URL。
 export const buildInviteUrl = (code: string) =>
-  `https://${global.AppConfig.cloud.domain}/invite/${code}`;
+  `https://${global.AppConfig.cloud.domain}/signin?invite=${encodeURIComponent(code)}`;

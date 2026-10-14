@@ -39,7 +39,9 @@ export const activityRewardJob = async () => {
 
     const retryCandidates = await globalPrisma.activityRewardGrant.findMany({
       where: {
-        status: { in: [ActivityRewardStatus.READY, ActivityRewardStatus.RETRYABLE_FAILURE] }
+        status: { in: [ActivityRewardStatus.READY, ActivityRewardStatus.RETRYABLE_FAILURE] },
+        // 先排除永久冲突再限量，避免停试记录长期占满补偿批次；保留 NULL 原因的 READY。
+        OR: [{ failureReason: null }, { failureReason: { not: { startsWith: 'conflict:' } } }]
       },
       orderBy: { lastAttemptAt: 'asc' },
       take: BATCH_LIMIT

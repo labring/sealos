@@ -24,6 +24,7 @@ vi.mock('@/services/enable', () => ({ getVersion: vi.fn(() => 'cn') }));
 vi.mock('@/services/backend/auth', () => ({ callBillingService: vi.fn() }));
 
 import { Prisma } from 'prisma/global/generated/client';
+import { Prisma as PostgresqlPrisma } from 'prisma/providers/postgresql/global/generated/client';
 import { globalPrisma } from '@/services/backend/db/init';
 import { callBillingService } from '@/services/backend/auth';
 import {
@@ -35,16 +36,21 @@ import {
   ensureInviteCode
 } from '@/services/backend/activity/registration';
 import { maskNickname } from '@/services/backend/activity/codes';
-import { firstLoginBusinessKey } from '@/services/backend/activity/constants';
+import {
+  firstLoginBusinessKey,
+  referralInviterBusinessKey
+} from '@/services/backend/activity/constants';
 
-const p2002 = () =>
-  new Prisma.PrismaClientKnownRequestError(
-    'Unique constraint failed on the fields: (`businessKey`)',
-    {
-      code: 'P2002',
-      clientVersion: '5.10.2'
-    }
-  );
+const p2002 = (ErrorClass = Prisma.PrismaClientKnownRequestError) =>
+  new ErrorClass('Unique constraint failed on the fields: (`businessKey`)', {
+    code: 'P2002',
+    clientVersion: '5.10.2'
+  });
+
+const prismaProviders = [
+  ['CockroachDB', Prisma.PrismaClientKnownRequestError],
+  ['PostgreSQL', PostgresqlPrisma.PrismaClientKnownRequestError]
+] as const;
 
 const USER_UID = '00000000-0000-4000-8000-000000000001';
 const REFERRAL_ID = '00000000-0000-4000-8000-000000000002';
@@ -80,29 +86,77 @@ describe('activity rewards eligibility', () => {
     expect(facts.hasClientLogin).toBe(false);
   });
 
-  it('treats businessKey conflicts as already granted and does not redeem again (幂等)', async () => {
-    (globalPrisma.registrationSource.findUnique as any).mockResolvedValue(null);
+  it.each(prismaProviders)(
+    '%s: treats businessKey conflicts as already granted without redeeming again',
+    async (_provider, ErrorClass) => {
+      (globalPrisma.registrationSource.findUnique as any).mockResolvedValue(null);
+      (globalPrisma.userRealNameInfo.findUnique as any).mockResolvedValue({ isVerified: true });
+      (globalPrisma.enterpriseRealNameInfo.findUnique as any).mockResolvedValue(null);
+      (globalPrisma.desktopLoginRecord.findUnique as any).mockResolvedValue({ userUid: USER_UID });
+      // 首登礼事务撞 businessKey 唯一约束 → 视为已发放
+      (globalPrisma.$transaction as any).mockRejectedValue(p2002(ErrorClass));
+      (globalPrisma.activityRewardGrant.findUnique as any).mockResolvedValue({
+        id: 'existing-grant',
+        businessKey: firstLoginBusinessKey(USER_UID),
+        status: 'REDEEMED'
+      });
+      (globalPrisma.registrationReferral.findUnique as any).mockResolvedValue(null);
+      (globalPrisma.registrationReferral.findMany as any).mockResolvedValue([]);
+
+      await checkAndGrantUserRewards(USER_UID);
+
+      expect(globalPrisma.activityRewardGrant.findUnique).toHaveBeenCalledWith({
+        where: { businessKey: firstLoginBusinessKey(USER_UID) }
+      });
+      // 既有行不再抢占核销（重试交给补偿 worker 的退避逻辑）
+      expect(globalPrisma.activityRewardGrant.updateMany).not.toHaveBeenCalled();
+      expect(callBillingService).not.toHaveBeenCalled();
+    }
+  );
+
+  it('grants the inviter reward on PostgreSQL after the first-login gift was already granted', async () => {
+    (globalPrisma.registrationSource.findUnique as any).mockResolvedValue({ source: 'WEB' });
     (globalPrisma.userRealNameInfo.findUnique as any).mockResolvedValue({ isVerified: true });
     (globalPrisma.enterpriseRealNameInfo.findUnique as any).mockResolvedValue(null);
     (globalPrisma.desktopLoginRecord.findUnique as any).mockResolvedValue({ userUid: USER_UID });
-    // 首登礼事务撞 businessKey 唯一约束 → 视为已发放
-    (globalPrisma.$transaction as any).mockRejectedValue(p2002());
+    (globalPrisma.registrationReferral.findUnique as any).mockResolvedValue(null);
+    (globalPrisma.registrationReferral.findMany as any).mockResolvedValue([
+      { id: REFERRAL_ID, inviteeUid: '00000000-0000-4000-8000-000000000003' }
+    ]);
+    (globalPrisma.$transaction as any)
+      .mockReset()
+      .mockRejectedValueOnce(p2002(PostgresqlPrisma.PrismaClientKnownRequestError))
+      .mockImplementationOnce(async (callback: any) => callback(globalPrisma));
     (globalPrisma.activityRewardGrant.findUnique as any).mockResolvedValue({
-      id: 'existing-grant',
+      id: 'first-login-grant',
       businessKey: firstLoginBusinessKey(USER_UID),
       status: 'REDEEMED'
     });
-    (globalPrisma.registrationReferral.findUnique as any).mockResolvedValue(null);
-    (globalPrisma.registrationReferral.findMany as any).mockResolvedValue([]);
+    (globalPrisma.giftCode.create as any).mockResolvedValue({ id: 'inviter-gift-code' });
+    (globalPrisma.activityRewardGrant.create as any).mockImplementation(async ({ data }: any) => ({
+      ...data,
+      id: 'inviter-grant'
+    }));
+    (globalPrisma.activityRewardGrant.updateMany as any).mockResolvedValue({ count: 1 });
+    (globalPrisma.giftCode.findUnique as any).mockResolvedValue({ code: 'private-gift-code' });
+    (globalPrisma.user.findUnique as any).mockResolvedValue({ name: 'inviter' });
 
     await checkAndGrantUserRewards(USER_UID);
 
-    expect(globalPrisma.activityRewardGrant.findUnique).toHaveBeenCalledWith({
-      where: { businessKey: firstLoginBusinessKey(USER_UID) }
+    expect(globalPrisma.activityRewardGrant.create).toHaveBeenCalledExactlyOnceWith({
+      data: expect.objectContaining({
+        recipientUid: USER_UID,
+        type: 'REFERRAL_INVITER',
+        referralId: REFERRAL_ID,
+        businessKey: referralInviterBusinessKey(REFERRAL_ID),
+        amount: 5_000_000n
+      })
     });
-    // 既有行不再抢占核销（重试交给补偿 worker 的退避逻辑）
-    expect(globalPrisma.activityRewardGrant.updateMany).not.toHaveBeenCalled();
-    expect(callBillingService).not.toHaveBeenCalled();
+    expect(callBillingService).toHaveBeenCalledExactlyOnceWith(
+      '/account/v1alpha1/gift-code/use',
+      { userUid: USER_UID, userId: 'inviter' },
+      { code: 'private-gift-code' }
+    );
   });
 
   it('does not grant anything for API-registered users', async () => {
@@ -187,17 +241,20 @@ describe('registration attribution', () => {
     });
   });
 
-  it('ensureInviteCode reuses the existing row on unique conflict (幂等 get-or-create)', async () => {
-    const existing = { id: 'row', inviterUid: USER_UID, code: 'ABC23456' };
-    (globalPrisma.registrationInviteCode.findUnique as any)
-      .mockResolvedValueOnce(null) // 预检：没有码
-      .mockResolvedValueOnce(existing); // 冲突后重读：并发已创建
-    (globalPrisma.registrationInviteCode.create as any).mockRejectedValue(p2002());
+  it.each(prismaProviders)(
+    '%s: ensureInviteCode reuses the existing row on unique conflict',
+    async (_provider, ErrorClass) => {
+      const existing = { id: 'row', inviterUid: USER_UID, code: 'ABC23456' };
+      (globalPrisma.registrationInviteCode.findUnique as any)
+        .mockResolvedValueOnce(null) // 预检：没有码
+        .mockResolvedValueOnce(existing); // 冲突后重读：并发已创建
+      (globalPrisma.registrationInviteCode.create as any).mockRejectedValue(p2002(ErrorClass));
 
-    const code = await ensureInviteCode(USER_UID);
+      const code = await ensureInviteCode(USER_UID);
 
-    expect(code).toBe(existing);
-  });
+      expect(code).toBe(existing);
+    }
+  );
 });
 
 describe('presentation helpers', () => {

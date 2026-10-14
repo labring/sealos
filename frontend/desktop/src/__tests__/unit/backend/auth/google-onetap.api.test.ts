@@ -151,6 +151,7 @@ describe('google onetap api handler', () => {
   it('signs in with verified Google payload and sets shared auth cookie', async () => {
     const req: any = {
       method: 'POST',
+      cookies: { sealos_invite: 'ABCD2345' },
       headers: {
         origin: 'https://www.example.com',
         'x-forwarded-proto': 'https'
@@ -177,8 +178,8 @@ describe('google onetap api handler', () => {
       name: 'Ada Lovelace',
       avatar_url: 'persisted-avatar',
       email: 'ada@example.com',
-      // 网页注册统一携带邀请归因上下文（cookie 缺省时无邀请码）
-      registration: { source: 'WEB', inviteCode: undefined }
+      // 注册页响应写入的邀请 cookie 会继续传入 OAuth 注册事务。
+      registration: { source: 'WEB', inviteCode: 'ABCD2345' }
     });
     expect(res.body).toMatchObject({
       code: 200,

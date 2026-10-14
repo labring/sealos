@@ -29,6 +29,8 @@ export default defineConfig({
       },
       {
         extends: true,
+        // 浏览器测试不能沿用 Node 条件，否则 Chakra/tslib 会解析到不兼容的入口。
+        resolve: { conditions: ['module', 'browser', 'import', 'default'] },
         test: {
           name: 'components',
           globals: true,
