@@ -29,6 +29,10 @@ import (
 	sealoskube "github.com/labring/sealos/pkg/client-go/kubernetes"
 	"github.com/labring/sealos/pkg/runtime/kubernetes/standalone"
 	"github.com/labring/sealos/pkg/utils/iputils"
+	v1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kubeletconfig "k8s.io/kubelet/config/v1beta1"
 	"sigs.k8s.io/yaml"
 )
 
@@ -73,17 +77,7 @@ func (k *KubeadmRuntime) initStandaloneMaster() error {
 	if err := k.sshCmdAsync(host, command); err != nil {
 		return err
 	}
-	// These phases operate through the API and do not require a control-plane
-	// Node. Keep the uploaded kubelet configuration suitable for workers.
-	configArg := " --config " + shellArgument(k.getInitMasterKubeadmConfigFilePath())
-	if err := k.InitKubeadmConfigToMaster0(); err != nil {
-		return err
-	}
-	for _, phase := range []string{"upload-config all", "bootstrap-token", "addon all"} {
-		if err := k.sshCmdAsync(host, "kubeadm init phase "+phase+configArg); err != nil {
-			return err
-		}
-	}
+	// Fetch credentials before publishing the worker configuration through the API.
 	if err := k.sshFetch(
 		host,
 		"/etc/kubernetes/admin.conf",
@@ -91,7 +85,83 @@ func (k *KubeadmRuntime) initStandaloneMaster() error {
 	); err != nil {
 		return err
 	}
+	if err := k.uploadStandaloneKubeletConfig(); err != nil {
+		return err
+	}
+	configArg := " --config " + shellArgument(k.getInitMasterKubeadmConfigFilePath())
+	if err := k.InitKubeadmConfigToMaster0(); err != nil {
+		return err
+	}
+	for _, phase := range []string{"upload-config kubeadm", "bootstrap-token", "addon all"} {
+		if err := k.sshCmdAsync(host, "kubeadm init phase "+phase+configArg); err != nil {
+			return err
+		}
+	}
 	return k.copyMasterKubeConfig(host)
+}
+
+// kubeadm's upload-config kubelet phase also patches the local Node's CRI
+// annotation. Publish the worker configuration and its read permissions through
+// client-go so fresh standalone clusters never need that Node to exist. Workers
+// apply their kubeadm version's defaults when loading this component config.
+func (k *KubeadmRuntime) uploadStandaloneKubeletConfig() error {
+	client, err := k.getKubeInterface()
+	if err != nil {
+		return err
+	}
+	config := k.kubeadmConfig.KubeletConfiguration.DeepCopy()
+	config.APIVersion = kubeletconfig.SchemeGroupVersion.String()
+	config.Kind = "KubeletConfiguration"
+	data, err := yaml.Marshal(config)
+	if err != nil {
+		return err
+	}
+	resources := sealoskube.NewKubeIdempotency(client.Kubernetes())
+	if err := resources.CreateOrUpdateConfigMap(&v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kubelet-config",
+			Namespace: metav1.NamespaceSystem,
+		},
+		Data: map[string]string{"kubelet": string(data)},
+	}); err != nil {
+		return err
+	}
+	const roleName = "kubeadm:kubelet-config"
+	if err := resources.CreateOrUpdateRole(&rbacv1.Role{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      roleName,
+			Namespace: metav1.NamespaceSystem,
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				Verbs:         []string{"get"},
+				APIGroups:     []string{""},
+				Resources:     []string{"configmaps"},
+				ResourceNames: []string{"kubelet-config"},
+			},
+		},
+	}); err != nil {
+		return err
+	}
+	return resources.CreateOrUpdateRoleBinding(&rbacv1.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      roleName,
+			Namespace: metav1.NamespaceSystem,
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: rbacv1.GroupName,
+			Kind:     "Role",
+			Name:     roleName,
+		},
+		Subjects: []rbacv1.Subject{
+			{Kind: rbacv1.GroupKind, Name: "system:nodes", APIGroup: rbacv1.GroupName},
+			{
+				Kind:     rbacv1.GroupKind,
+				Name:     "system:bootstrappers:kubeadm:default-node-token",
+				APIGroup: rbacv1.GroupName,
+			},
+		},
+	})
 }
 
 func (k *KubeadmRuntime) joinStandaloneMasters(hosts []string) error {

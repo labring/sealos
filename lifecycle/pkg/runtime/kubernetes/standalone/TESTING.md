@@ -104,6 +104,27 @@ A controller listener collided with an outgoing connection because the host's
 ephemeral range included that port. Administrator port reservations resolved
 the collision. This validation does not certify every CNI/version combination.
 
+## Worker configuration publication regression
+
+A disposable Kubernetes v1.33.1 API reproduced the native
+`init phase upload-config kubelet` failure with NodeLocalCRISocket disabled:
+the ConfigMap was created, then the phase failed because the control-plane Node
+did not exist. The replacement publisher succeeded on first execution and
+retry with no Nodes present. SubjectAccessReviews verified that the kubeadm
+bootstrap group and registered-node group could read `kubelet-config` but not
+an unrelated ConfigMap.
+
+A worker consumed that configuration through native kubeadm join, completed TLS
+bootstrap and became Ready. A subsequent native kubelet-config upgrade and
+kubelet restart also succeeded. Custom `maxPods`, webhook authentication and
+certificate rotation were preserved; kubeadm supplied the cluster DNS defaults.
+The API contained only the worker Node. This is a targeted phase integration
+test, not a full fresh-cluster Sealos SSH installation test.
+
+The opt-in test is `TestStandaloneKubeletPublicationE2E` in the Kubernetes runtime
+package. Set `SEALOS_STANDALONE_INIT_CONFIG_E2E_KUBECONFIG` only to a disposable
+API's admin kubeconfig; the test refuses to publish if any Node exists.
+
 ## Coverage limits
 
 External etcd, etcd 3.5-to-3.6 migration, rootless control planes, non-default

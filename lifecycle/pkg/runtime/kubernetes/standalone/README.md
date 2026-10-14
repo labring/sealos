@@ -172,6 +172,13 @@ and snapshots; client-go supplies API access. This package does not import
 kubeadm internals. The composed workflow is maintained by Sealos; it does not
 claim upstream kubeadm standalone lifecycle support.
 
+Fresh initialization publishes the worker KubeletConfiguration and kubeadm's
+scoped ConfigMap read permissions through client-go. The native
+`init phase upload-config kubelet` also patches a control-plane Node's CRI
+annotation on versions without NodeLocalCRISocket, so it cannot initialize a
+standalone cluster. Workers still load and default that configuration through
+native kubeadm join and upgrade phases.
+
 All masters pass preflight before the first upgrade. Masters then upgrade
 sequentially; failure stops later hosts and configuration publication. Local
 components restart together, causing an API outage on a single-master cluster.
