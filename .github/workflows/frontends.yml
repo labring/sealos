@@ -84,8 +84,6 @@ jobs:
               - '.github/workflows/frontends.yml'
             license:
               - 'frontend/providers/license/**'
-            dbprovider:
-              - 'frontend/providers/dbprovider/**'
             costcenter:
               - 'frontend/providers/costcenter/**'
             desktop:
@@ -98,7 +96,6 @@ jobs:
           FORCE_ALL: ${{ inputs.force_all }}
           EVENT_NAME: ${{ github.event_name }}
           LICENSE_CHANGED: ${{ steps.filter.outputs.license }}
-          DBPROVIDER_CHANGED: ${{ steps.filter.outputs.dbprovider }}
           COSTCENTER_CHANGED: ${{ steps.filter.outputs.costcenter }}
           DESKTOP_CHANGED: ${{ steps.filter.outputs.desktop }}
         run: |
@@ -111,14 +108,12 @@ jobs:
                 "$EVENT_NAME" == "workflow_dispatch" ]]; then
             modules=(
               "providers/license"
-              "providers/dbprovider"
               "providers/costcenter"
               "desktop"
             )
           else
             # Only build changed modules
             [[ "$LICENSE_CHANGED" == "true" ]] && modules+=("providers/license")
-            [[ "$DBPROVIDER_CHANGED" == "true" ]] && modules+=("providers/dbprovider")
             [[ "$COSTCENTER_CHANGED" == "true" ]] && modules+=("providers/costcenter")
             [[ "$DESKTOP_CHANGED" == "true" ]] && modules+=("desktop")
           fi

@@ -26,6 +26,11 @@ import { useAppDisplayConfigStore } from '@/stores/appDisplayConfig';
 import { useGuideModalStore } from '@/stores/guideModal';
 import GuideModal from '../account/GuideModal';
 import { GlobalNotification } from './GlobalNotification';
+import {
+  brainAnalyticsAttribution,
+  createBrainAnalyticsRelay,
+  isBrainAnalyticsSender
+} from '@/utils/brain-analytics';
 
 const AppDock = dynamic(() => import('../AppDock'), { ssr: false });
 const FloatButton = dynamic(() => import('@/components/floating_button'), { ssr: false });
@@ -212,12 +217,58 @@ export default function Desktop({ initialAppLaunch, onInitialAppLoaded }: Deskto
             regionUid: config.cloudConfig?.regionUID || ''
           },
           features: {
-            subscription: config.layoutConfig?.common?.subscriptionEnabled || false
+            subscription: config.layoutConfig?.common?.subscriptionEnabled || false,
+            analytics: Boolean(
+              config.layoutConfig?.gtmId ||
+                (config.layoutConfig?.rybbitHost && config.layoutConfig?.rybbitSiteId)
+            )
           }
         };
       }
     });
+    const relayBrainAnalytics = createBrainAnalyticsRelay({
+      gtmEnabled: () => Boolean(useConfigStore.getState().layoutConfig?.gtmId),
+      userId: () => useSessionStore.getState().session?.user?.userUid,
+      properties: () => {
+        const activeSession = useSessionStore.getState().session;
+        return {
+          ...brainAnalyticsAttribution(window.localStorage),
+          product_user_id: activeSession?.user?.userUid || '',
+          product_user_numeric_id: activeSession?.user?.userId || '',
+          workspace: activeSession?.user?.nsid || '',
+          workspace_plan: activeSession?.subscription?.PlanName || ''
+        };
+      },
+      rybbit: () => {
+        const analyticsWindow = window as typeof window & {
+          sealos_product?: {
+            event: (name: string, properties: Record<string, string | number>) => void;
+            identify: (id: string) => void;
+            getUserId?: () => string | null;
+          };
+        };
+        return analyticsWindow.sealos_product || window.rybbit;
+      },
+      pushGtm: (event) => {
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push(event);
+      }
+    });
+    const trackAnalyticsEvent = (
+      payload: unknown,
+      sender?: { source: MessageEventSource; origin: string }
+    ) => {
+      const brainApp = useAppStore.getState().runningInfo.find((app) => app.key === BRAIN_APP_KEY);
+      const iframe = document.getElementById(
+        `app-window-${BRAIN_APP_KEY}`
+      ) as HTMLIFrameElement | null;
+      if (!isBrainAnalyticsSender(sender, iframe?.contentWindow, brainApp?.data.url)) {
+        return { accepted: false };
+      }
+      return relayBrainAnalytics(payload);
+    };
     const cleanups = [
+      masterApp?.addEventListen('trackAnalyticsEvent', trackAnalyticsEvent),
       masterApp?.addEventListen('openDesktopApp', openDesktopApp),
       masterApp?.addEventListen('closeDesktopApp', closeDesktopApp),
       masterApp?.addEventListen('requestLogin', handleRequestLogin),
