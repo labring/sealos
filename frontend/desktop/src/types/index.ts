@@ -26,6 +26,8 @@ declare global {
   var commitCroner: Cron | undefined;
   var finishCroner: Cron | undefined;
   var runCroner: Cron | undefined;
+  // 拉新奖励补偿 worker 的 croner（getAppConfig 惰性注册）
+  var activityRewardCroner: Cron | undefined;
   var WechatAccessToken: string | undefined;
   var WechatExpiresIn: number | undefined;
   var nodemailer: Transporter<SMTPPool.SentMessageInfo> | undefined;

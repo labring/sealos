@@ -6,6 +6,7 @@ import {
   finishTransactionJob,
   runTransactionjob
 } from '@/services/backend/cronjob';
+import { activityRewardJob } from '@/services/backend/activity/worker';
 import { jsonRes } from '@/services/backend/response';
 import {
   AppClientConfigType,
@@ -82,6 +83,15 @@ export async function getAppConfig(): Promise<AppClientConfigType> {
         name: 'finishTransactionJob',
         catch: (err) => {
           console.error('[finishTransactionJob Cron] Error:', err);
+        }
+      });
+    }
+    // 拉新奖励补偿 worker：重试未完成核销 + 对账滞留 REDEEMING（沿用惰性注册模式）
+    if (!global.activityRewardCroner) {
+      global.activityRewardCroner = new Cron('*/60 * * * * *', activityRewardJob, {
+        name: 'activityRewardJob',
+        catch: (err) => {
+          console.error('[activityRewardJob Cron] Error:', err);
         }
       });
     }

@@ -1,4 +1,5 @@
 import { getGlobalToken } from '@/services/backend/globalAuth';
+import { webRegistrationFromRequest } from '@/services/backend/activity/registration';
 import { ErrorHandler } from '@/services/backend/middleware/error';
 import { jsonRes } from '@/services/backend/response';
 import { enableOAuth2 } from '@/services/enable';
@@ -77,7 +78,9 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
     avatar_url,
     name,
     semData,
-    adClickData
+    adClickData,
+    // 网页 OAuth2 注册从 cookie 读邀请上下文；服务端校验，失败不阻断注册
+    registration: webRegistrationFromRequest(req)
   });
 
   if (data?.isRestricted) {

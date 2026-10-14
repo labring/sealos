@@ -2,6 +2,10 @@ import { uploadConvertData } from '@/api/platform';
 import { generateGlobalAccessToken } from '@/services/backend/auth';
 import { globalPrisma } from '@/services/backend/db/init';
 import { AuthError } from '@/services/backend/errors';
+import {
+  attachRegistrationInTransaction,
+  RegistrationContext
+} from '@/services/backend/activity/registration';
 import { SemData } from '@/types/sem';
 import { hashPassword } from '@/utils/crypto';
 import { nanoid } from 'nanoid';
@@ -121,13 +125,16 @@ async function signUp({
   id,
   name: nickname,
   avatar_url,
-  semData
+  semData,
+  registration
 }: {
   provider: ProviderType;
   id: string;
   name: string;
   avatar_url: string;
   semData?: SemData;
+  // 注册来源与邀请归因：与 User 同事务落库，保证归因与账号创建原子一致
+  registration?: RegistrationContext;
 }) {
   const name = nanoid(10);
   const displayName = nickname?.trim() ? nickname : nanoid(8);
@@ -153,6 +160,9 @@ async function signUp({
           }
         }
       });
+
+      // 同一事务内写注册来源与邀请关系，保证归因与账号创建原子一致
+      await attachRegistrationInTransaction(tx, user.uid, registration);
 
       if (semData?.channel) {
         await tx.userSemChannel.create({
@@ -181,7 +191,8 @@ async function signUpWithEmail({
   name: nickname,
   avatar_url,
   semData,
-  email
+  email,
+  registration
 }: {
   provider: ProviderType;
   id: string;
@@ -189,6 +200,7 @@ async function signUpWithEmail({
   avatar_url: string;
   semData?: SemData;
   email: string;
+  registration?: RegistrationContext;
 }) {
   const name = nanoid(10);
   const displayName = nickname?.trim() ? nickname : nanoid(8);
@@ -221,6 +233,8 @@ async function signUpWithEmail({
           userUid: user.uid
         }
       });
+      // 同一事务内写注册来源与邀请关系，保证归因与账号创建原子一致
+      await attachRegistrationInTransaction(tx, user.uid, registration);
       if (semData?.channel) {
         await tx.userSemChannel.create({
           data: {
@@ -247,13 +261,15 @@ export async function signUpByPassword({
   name: nickname,
   avatar_url,
   password,
-  semData
+  semData,
+  registration
 }: {
   id: string;
   name: string;
   avatar_url: string;
   password: string;
   semData?: SemData;
+  registration?: RegistrationContext;
 }) {
   const name = nanoid(10);
   const displayName = nickname?.trim() ? nickname : nanoid(8);
@@ -281,6 +297,9 @@ export async function signUpByPassword({
           }
         }
       });
+
+      // 同一事务内写注册来源与邀请关系，保证归因与账号创建原子一致
+      await attachRegistrationInTransaction(tx, user.uid, registration);
 
       if (semData?.channel) {
         await tx.userSemChannel.create({
@@ -336,7 +355,8 @@ export const getGlobalToken = async ({
   avatar_url,
   password,
   semData,
-  adClickData
+  adClickData,
+  registration
 }: {
   provider: ProviderType;
   providerId: string;
@@ -346,6 +366,8 @@ export const getGlobalToken = async ({
   password?: string;
   semData?: SemData;
   adClickData?: AdClickData;
+  // 注册来源与邀请归因：仅新用户创建时生效，默认 WEB；API 入口显式传 API 且不带邀请上下文
+  registration?: RegistrationContext;
 }) => {
   let user: User | null = null;
 
@@ -419,7 +441,8 @@ export const getGlobalToken = async ({
           name,
           avatar_url,
           semData,
-          email
+          email,
+          registration
         });
       } else {
         signUpResult = await signUp({
@@ -427,7 +450,8 @@ export const getGlobalToken = async ({
           id: providerId,
           name,
           avatar_url,
-          semData
+          semData,
+          registration
         });
       }
 

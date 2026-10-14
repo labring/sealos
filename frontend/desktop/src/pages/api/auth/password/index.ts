@@ -4,6 +4,7 @@ import { strongPassword } from '@/utils/crypto';
 import { enablePassword } from '@/services/enable';
 import { getGlobalToken } from '@/services/backend/globalAuth';
 import { AuthError } from '@/services/backend/errors';
+import { webRegistrationFromRequest } from '@/services/backend/activity/registration';
 import { ProviderType } from 'prisma/global/generated/client';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -25,7 +26,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       password,
       name,
       semData,
-      adClickData
+      adClickData,
+      // 网页密码注册从 cookie 读邀请上下文；服务端校验，失败不阻断注册
+      registration: webRegistrationFromRequest(req)
     });
 
     if (data?.isRestricted) {

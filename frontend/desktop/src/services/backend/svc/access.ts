@@ -6,6 +6,7 @@ import { getGlobalToken } from '../globalAuth';
 import { jsonRes } from '../response';
 import { createMiddleware } from '@/utils/factory';
 import { AdClickData } from '@/types/adClick';
+import { webRegistrationFromRequest } from '@/services/backend/activity/registration';
 type AuthContext = {
   avatar_url: string;
   providerId: string;
@@ -26,7 +27,9 @@ export const getGlobalTokenSvc = createMiddleware<AuthContext, unknown>(
       email: ctx.email,
       password: ctx.password,
       semData: ctx.semData,
-      adClickData: ctx.adClickData
+      adClickData: ctx.adClickData,
+      // 网页注册（OAuth/手机等）统一从 cookie 读邀请上下文；服务端校验，失败不阻断注册
+      registration: webRegistrationFromRequest(req)
     });
 
     if (data?.isRestricted) {

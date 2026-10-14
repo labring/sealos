@@ -176,7 +176,9 @@ describe('google onetap api handler', () => {
       providerId: 'google-sub',
       name: 'Ada Lovelace',
       avatar_url: 'persisted-avatar',
-      email: 'ada@example.com'
+      email: 'ada@example.com',
+      // 网页注册统一携带邀请归因上下文（cookie 缺省时无邀请码）
+      registration: { source: 'WEB', inviteCode: undefined }
     });
     expect(res.body).toMatchObject({
       code: 200,
@@ -216,7 +218,8 @@ describe('google onetap api handler', () => {
       providerId: 'google-sub',
       name: 'Ada Lovelace',
       avatar_url: '',
-      email: undefined
+      email: undefined,
+      registration: { source: 'WEB', inviteCode: undefined }
     });
   });
 

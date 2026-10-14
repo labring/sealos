@@ -45,7 +45,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       id: username,
       password,
       avatar_url: '',
-      name: username
+      name: username,
+      // API 注册：显式标记来源，且不读任何邀请上下文（API 账号不参与拉新奖励）
+      registration: { source: 'API' }
     });
     if (!globalData) throw new Error('Failed to edit db');
     const realUser = globalData.user;

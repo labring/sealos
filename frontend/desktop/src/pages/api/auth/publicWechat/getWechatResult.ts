@@ -6,6 +6,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { getGlobalToken } from '@/services/backend/globalAuth';
 import { ProviderType } from 'prisma/global/generated/client';
 import { getRegionToken } from '@/services/backend/regionAuth';
+import { webRegistrationFromRequest } from '@/services/backend/activity/registration';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -42,7 +43,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       provider: ProviderType.WECHAT,
       providerId: userInfo.openid,
       avatar_url,
-      name: userInfo?.nickname
+      name: userInfo?.nickname,
+      // 公众号注册同样从 cookie 读邀请上下文；服务端校验，失败不阻断注册
+      registration: webRegistrationFromRequest(req)
     });
 
     if (_data?.isRestricted) {

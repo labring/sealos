@@ -1,6 +1,7 @@
 // import SigninComponent from '@/components/signin';
 import { useConfigStore } from '@/stores/config';
 import { ensureLocaleCookie } from '@/utils/ssrLocale';
+import { acceptInviteCode } from '@/utils/invite';
 import { Box } from '@chakra-ui/react';
 import { QueryClient, dehydrate } from '@tanstack/react-query';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
@@ -46,6 +47,17 @@ export default function SigninPage() {
       setPendingCodeRequestId(router.query.oauth_code_request_id);
     }
   }, [router.isReady, router.query.oauth_code_request_id]);
+
+  // 邀请上下文兜底：带 ?invite= 时走 accept 接口（服务端保证 cookie 只写一次），
+  // 兜底客户端浏览器授权注册链路；失败静默忽略，不影响登录
+  useEffect(() => {
+    if (!router.isReady) return;
+    const invite = typeof router.query.invite === 'string' ? router.query.invite.trim() : '';
+    if (!invite) return;
+    acceptInviteCode(invite).catch(() => {
+      // 容错：邀请写不上只损失奖励归因，登录流程照常
+    });
+  }, [router.isReady, router.query.invite]);
 
   return (
     <Box>

@@ -582,3 +582,91 @@ model OAuthCodeRateLimit {
 
   @@index([expiresAt])
 }
+
+// ==== Desktop 拉新奖励（邀请好友 + 首次登录礼），与 CRDB schema 保持一致 ====
+
+enum RegistrationSourceType {
+  WEB
+  API
+}
+
+enum ActivityRewardType {
+  DESKTOP_FIRST_LOGIN
+  REFERRAL_INVITER
+  REFERRAL_INVITEE
+}
+
+enum ActivityRewardStatus {
+  READY
+  REDEEMING
+  REDEEMED
+  RETRYABLE_FAILURE
+}
+
+enum ReferralStatus {
+  PENDING
+  COMPLETED
+  INELIGIBLE
+}
+
+// 每个邀请人一个专属邀请码；enabled=false 即停用
+model RegistrationInviteCode {
+  id         String   @id @default(uuid()) @db.Uuid
+  inviterUid String   @unique @db.Uuid
+  code       String   @unique
+  enabled    Boolean  @default(true)
+  createdAt  DateTime @default(now())
+}
+
+// 邀请关系：每个受邀人最多一条（inviteeUid 唯一即幂等），注册事务内创建；
+// status/ineligibleReason 预留给后续停用场景，写入路径本期不落这两个字段
+model RegistrationReferral {
+  id               String         @id @default(uuid()) @db.Uuid
+  inviteeUid       String         @unique @db.Uuid
+  inviterUid       String         @db.Uuid
+  codeId           String         @db.Uuid
+  registeredAt     DateTime       @default(now())
+  status           ReferralStatus @default(PENDING)
+  ineligibleReason String?
+  createdAt        DateTime       @default(now())
+
+  @@index([inviterUid])
+}
+
+// 客户端登录事实：userUid 主键天然幂等，重复上报只刷新 lastSeenAt
+model DesktopLoginRecord {
+  userUid       String   @id @db.Uuid
+  firstSeenAt   DateTime @default(now())
+  lastSeenAt    DateTime @default(now())
+  clientVersion String?
+  authSource    String?
+  updatedAt     DateTime @updatedAt
+}
+
+// 注册来源：无该行按 WEB（可领）处理；API 来源不发任何奖励
+model RegistrationSource {
+  userUid   String                 @id @db.Uuid
+  source    RegistrationSourceType @default(WEB)
+  createdAt DateTime               @default(now())
+}
+
+// 奖励行 ⟺ 条件曾满足；businessKey 唯一约束即幂等
+model ActivityRewardGrant {
+  id            String               @id @default(uuid()) @db.Uuid
+  recipientUid  String               @db.Uuid
+  type          ActivityRewardType
+  referralId    String?              @db.Uuid
+  businessKey   String               @unique
+  amount        BigInt
+  giftCodeId    String               @unique @db.Uuid
+  status        ActivityRewardStatus @default(READY)
+  failureReason String?
+  attemptCount  Int                  @default(0)
+  lastAttemptAt DateTime?
+  createdAt     DateTime             @default(now())
+  redeemedAt    DateTime?
+  ruleVersion   String               @default("2026-10-14.1")
+
+  @@index([recipientUid, status])
+  @@index([status, lastAttemptAt])
+}
