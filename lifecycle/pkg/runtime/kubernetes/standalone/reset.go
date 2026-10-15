@@ -194,15 +194,21 @@ func resetStandalone(ctx context.Context, options ResetOptions) error {
 			return err
 		}
 	}
-	for _, path := range []string{modeDropin, registeredDropin, bootstrapStatePath, filepath.Join(modeRoot, "state.json"), CompletedConfigPath, modeRoot + "/input.json", modeRoot + "/bootstrap-kubeadm.yaml"} {
+	for _, path := range []string{
+		modeDropin,
+		registeredDropin,
+		bootstrapStatePath,
+		filepath.Join(modeRoot, "state.json"),
+		CompletedConfigPath,
+		modeRoot + "/input.json",
+		modeRoot + "/bootstrap-kubeadm.yaml",
+		DefaultRouteControllerKubeconfig,
+	} {
 		if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
 			return err
 		}
 	}
 	if err := os.RemoveAll(filepath.Join(modeRoot, "shared")); err != nil {
-		return err
-	}
-	if err := os.Remove(DefaultRouteControllerKubeconfig); err != nil && !os.IsNotExist(err) {
 		return err
 	}
 	if err := maintenanceCommand(ctx, options.Output, "systemctl", "daemon-reload"); err != nil {
