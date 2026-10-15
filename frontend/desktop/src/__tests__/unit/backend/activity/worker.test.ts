@@ -10,6 +10,7 @@ const { findGrants, queryRaw, grantUserRewards } = vi.hoisted(() => ({
 vi.mock('@/services/backend/db/init', () => ({
   globalPrisma: {
     activityRewardGrant: { findMany: findGrants },
+    desktopLoginRecord: { updateMany: vi.fn() },
     $queryRaw: queryRaw
   }
 }));
@@ -88,7 +89,7 @@ describe('activity reward compensation worker', () => {
   afterEach(() => vi.restoreAllMocks());
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
     vi.spyOn(Date, 'now').mockReturnValue(NOW);
     vi.mocked(redeemGrant).mockResolvedValue(undefined);
     queryRaw.mockResolvedValue([]);
@@ -168,14 +169,39 @@ describe('activity reward compensation worker', () => {
 
   it('rebuilds missing referral rewards found by the scan', async () => {
     seedRetryQueue([]);
-    queryRaw.mockResolvedValue([
-      { id: 'referral-1', inviteeUid: '00000000-0000-4000-8000-00000000000a' }
-    ]);
+    queryRaw
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        { id: 'referral-1', inviteeUid: '00000000-0000-4000-8000-00000000000a' }
+      ]);
 
     await activityRewardJob();
 
     expect(grantUserRewards).toHaveBeenCalledTimes(1);
     expect(grantUserRewards).toHaveBeenCalledWith('00000000-0000-4000-8000-00000000000a');
+  });
+
+  it('rebuilds the first-login gift without an invitation or an existing grant', async () => {
+    // 首次创建事务失败后只剩登录事实：不依赖邀请关系或用户再次登录，cron 必须补建。
+    seedRetryQueue([]);
+    const userUid = '00000000-0000-4000-8000-00000000000b';
+    queryRaw.mockResolvedValueOnce([{ userUid }]).mockResolvedValueOnce([]);
+
+    await activityRewardJob();
+
+    expect(grantUserRewards).toHaveBeenCalledExactlyOnceWith(userUid);
+  });
+
+  it('still rebuilds referral rewards when the first-login scan fails', async () => {
+    seedRetryQueue([]);
+    const inviteeUid = '00000000-0000-4000-8000-00000000000a';
+    queryRaw
+      .mockRejectedValueOnce(new Error('first-login scan failed'))
+      .mockResolvedValueOnce([{ id: 'referral-1', inviteeUid }]);
+
+    await activityRewardJob();
+
+    expect(grantUserRewards).toHaveBeenCalledExactlyOnceWith(inviteeUid);
   });
 
   it('keeps the cron cycle alive when the scan query fails', async () => {

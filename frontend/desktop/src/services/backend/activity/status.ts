@@ -13,7 +13,7 @@ import {
   referralInviterBusinessKey,
   REFERRAL_REWARD_AMOUNT
 } from './constants';
-import { isActivityAvailable, readEligibilityFacts } from './rewards';
+import { isActivityAvailable, readEligibilityFacts, hasIdentityConflict } from './rewards';
 
 // 首登礼展示状态（金额为 credit 单位字符串，客户端按 1¥=1e6 展示）
 export type FirstLoginGiftStatus = {
@@ -24,7 +24,7 @@ export type FirstLoginGiftStatus = {
 
 // 受邀礼展示状态：本人经邀请链接注册才有（无邀请关系返回 null，客户端整行隐藏）
 export type InviteeGiftStatus = {
-  status: 'pending_realname' | 'processing' | 'credited';
+  status: 'ineligible' | 'pending_realname' | 'processing' | 'credited';
   amount: string;
   creditedAt?: string;
 };
@@ -65,9 +65,11 @@ const INVITEE_AMOUNT_STRING = REFERRAL_REWARD_AMOUNT.toString(); // ¥5，credit
  * 调用前应已先跑 checkAndGrantUserRewards（老用户补领），这里只读不写。
  */
 export const getActivityStatusData = async (userUid: string): Promise<ActivityStatusData> => {
-  const available = isActivityAvailable();
   const facts = await readEligibilityFacts(userUid);
+  // 空邀请链接在客户端表示「尚未生成」，不能表达无资格；统一关闭整个活动入口。
+  const available = isActivityAvailable() && facts.source !== RegistrationSourceType.API;
 
+  const identityConflict = available && (await hasIdentityConflict(userUid, facts));
   let firstLoginGift: FirstLoginGiftStatus;
   if (!available || facts.source === RegistrationSourceType.API) {
     // 国际部署 / API 注册账号不参与
@@ -82,6 +84,8 @@ export const getActivityStatusData = async (userUid: string): Promise<ActivitySt
         amount: grant.amount.toString(),
         creditedAt: grant.redeemedAt?.toISOString()
       };
+    } else if (identityConflict) {
+      firstLoginGift = { status: 'ineligible', amount: FIRST_LOGIN_AMOUNT_STRING };
     } else if (grant) {
       // 条件曾满足、发放中（含暂态失败重试）
       firstLoginGift = { status: 'processing', amount: grant.amount.toString() };
@@ -100,7 +104,7 @@ export const getActivityStatusData = async (userUid: string): Promise<ActivitySt
   if (available && facts.source !== RegistrationSourceType.API) {
     const referral = await globalPrisma.registrationReferral.findUnique({
       where: { inviteeUid: userUid },
-      select: { id: true }
+      select: { id: true, status: true }
     });
     if (referral) {
       const grant = await globalPrisma.activityRewardGrant.findUnique({
@@ -112,6 +116,8 @@ export const getActivityStatusData = async (userUid: string): Promise<ActivitySt
           amount: grant.amount.toString(),
           creditedAt: grant.redeemedAt?.toISOString()
         };
+      } else if (identityConflict || referral.status === 'INELIGIBLE') {
+        inviteeGift = { status: 'ineligible', amount: INVITEE_AMOUNT_STRING };
       } else if (grant) {
         inviteeGift = { status: 'processing', amount: grant.amount.toString() };
       } else if (!facts.isRealnameVerified && facts.hasClientLogin) {
@@ -130,7 +136,7 @@ export const getActivityStatusData = async (userUid: string): Promise<ActivitySt
       : Promise.resolve(null),
     globalPrisma.registrationReferral.findMany({
       where: { inviterUid: userUid },
-      select: { id: true, inviteeUid: true }
+      select: { id: true, inviteeUid: true, status: true }
     }),
     globalPrisma.activityRewardGrant.findMany({
       where: {
@@ -149,17 +155,16 @@ export const getActivityStatusData = async (userUid: string): Promise<ActivitySt
       where: { businessKey: referralInviteeBusinessKey(referral.id) },
       select: { id: true }
     });
-    if (inviteeGrant) validCount += 1;
+    if (inviteeGrant && referral.status !== 'INELIGIBLE') validCount += 1;
   }
 
   const creditedAmount = creditedGrants.reduce((sum, grant) => sum + grant.amount, 0n);
 
   // API 注册账号与发奖/建码资格检查同一判定：邀请区不返回 code/inviteUrl，
   // 客户端整块隐藏分享入口，避免「页面承诺双方奖励、发奖永久跳过」的状态错位。
-  const inviteIneligible = !available || facts.source === RegistrationSourceType.API;
   const invite: InviteSummary = {
-    code: inviteIneligible ? null : inviteCode?.code ?? null,
-    inviteUrl: inviteIneligible ? null : inviteCode ? buildInviteUrl(inviteCode.code) : null,
+    code: available ? inviteCode?.code ?? null : null,
+    inviteUrl: available && inviteCode ? buildInviteUrl(inviteCode.code) : null,
     registeredCount: referrals.length,
     validCount,
     creditedAmount: creditedAmount.toString()
@@ -200,7 +205,11 @@ export const getInviteRecordList = async (userUid: string, page: number, pageSiz
     // 状态推导：无登录→pending_client_login；有登录无实名→pending_realname；
     // 条件齐未到账→processing；到账→credited；API 来源（本期不会出现）→ineligible
     let status: InviteRecordStatus;
-    if (inviteeFacts.source === RegistrationSourceType.API) {
+    if (
+      inviteeFacts.source === RegistrationSourceType.API ||
+      referral.status === 'INELIGIBLE' ||
+      (await hasIdentityConflict(referral.inviteeUid, inviteeFacts))
+    ) {
       status = 'ineligible';
     } else if (!inviteeFacts.hasClientLogin) {
       status = 'pending_client_login';

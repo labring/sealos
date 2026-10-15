@@ -621,7 +621,7 @@ model RegistrationInviteCode {
 }
 
 // 邀请关系：每个受邀人最多一条（inviteeUid 唯一即幂等），注册事务内创建；
-// status/ineligibleReason 预留给后续停用场景，写入路径本期不落这两个字段
+// 重复实名主体或同主体自邀写入 INELIGIBLE，补偿扫描永久跳过
 model RegistrationReferral {
   id               String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   inviteeUid       String         @unique @db.Uuid
@@ -637,12 +637,15 @@ model RegistrationReferral {
 
 // 客户端登录事实：userUid 主键天然幂等，重复上报只刷新 lastSeenAt
 model DesktopLoginRecord {
-  userUid       String   @id @db.Uuid
-  firstSeenAt   DateTime @default(now())
-  lastSeenAt    DateTime @default(now())
-  clientVersion String?
-  authSource    String?
-  updatedAt     DateTime @updatedAt
+  userUid         String    @id @db.Uuid
+  firstSeenAt     DateTime  @default(now())
+  lastSeenAt      DateTime  @default(now())
+  clientVersion   String?
+  authSource      String?
+  updatedAt       DateTime  @updatedAt
+  rewardCheckedAt DateTime?
+
+  @@index([rewardCheckedAt, userUid])
 }
 
 // 注册来源：无该行按 WEB（可领）处理；API 来源不发任何奖励
@@ -659,6 +662,7 @@ model ActivityRewardGrant {
   type          ActivityRewardType
   referralId    String?              @db.Uuid
   businessKey   String               @unique
+  identityKey   String?              @unique // 仅首登奖励；永久占用主体，不随账号删除
   amount        BigInt
   giftCodeId    String               @unique @db.Uuid
   status        ActivityRewardStatus @default(READY)
@@ -671,4 +675,11 @@ model ActivityRewardGrant {
 
   @@index([recipientUid, status])
   @@index([status, lastAttemptAt])
+  @@index([referralId, type])
+}
+
+// 全局唯一、永久保留。密钥由数据库迁移生成。
+model ActivityRewardIdentityConfig {
+  id     String @id
+  pepper String
 }

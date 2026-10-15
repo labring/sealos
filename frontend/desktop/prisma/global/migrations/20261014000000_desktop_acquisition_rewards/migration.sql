@@ -39,6 +39,7 @@ CREATE TABLE "DesktopLoginRecord" (
     "lastSeenAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "clientVersion" STRING,
     "authSource" STRING,
+    "rewardCheckedAt" TIMESTAMP(3),
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "DesktopLoginRecord_pkey" PRIMARY KEY ("userUid")
@@ -60,6 +61,7 @@ CREATE TABLE "ActivityRewardGrant" (
     "type" "ActivityRewardType" NOT NULL,
     "referralId" UUID,
     "businessKey" STRING NOT NULL,
+    "identityKey" STRING,
     "amount" INT8 NOT NULL,
     "giftCodeId" UUID NOT NULL,
     "status" "ActivityRewardStatus" NOT NULL DEFAULT 'READY',
@@ -96,3 +98,14 @@ CREATE INDEX "ActivityRewardGrant_recipientUid_status_idx" ON "ActivityRewardGra
 
 -- CreateIndex
 CREATE INDEX "ActivityRewardGrant_status_lastAttemptAt_idx" ON "ActivityRewardGrant"("status", "lastAttemptAt");
+
+CREATE UNIQUE INDEX "ActivityRewardGrant_identityKey_key" ON "ActivityRewardGrant"("identityKey");
+CREATE INDEX "ActivityRewardGrant_referralId_type_idx" ON "ActivityRewardGrant"("referralId", "type");
+CREATE INDEX "DesktopLoginRecord_rewardCheckedAt_userUid_idx" ON "DesktopLoginRecord"("rewardCheckedAt", "userUid");
+CREATE TABLE "ActivityRewardIdentityConfig" (
+  "id" STRING PRIMARY KEY,
+  "pepper" STRING NOT NULL
+);
+-- Both supported databases provide gen_random_uuid(). No application-config fallback.
+INSERT INTO "ActivityRewardIdentityConfig" ("id", "pepper")
+VALUES ('v1', replace(gen_random_uuid()::TEXT, '-', '') || replace(gen_random_uuid()::TEXT, '-', ''));

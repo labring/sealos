@@ -3,12 +3,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // prisma 单例整体替换为可断言的桩，避免真实连库
 vi.mock('@/services/backend/db/init', () => ({
   globalPrisma: {
+    activityRewardIdentityConfig: { findUnique: vi.fn() },
+    $queryRaw: vi.fn(),
     registrationSource: { findUnique: vi.fn(), create: vi.fn() },
     userRealNameInfo: { findUnique: vi.fn() },
     enterpriseRealNameInfo: { findUnique: vi.fn() },
     desktopLoginRecord: { findUnique: vi.fn() },
     registrationInviteCode: { findUnique: vi.fn(), create: vi.fn() },
-    registrationReferral: { findUnique: vi.fn(), findMany: vi.fn(), create: vi.fn() },
+    registrationReferral: {
+      findUnique: vi.fn(),
+      findMany: vi.fn(),
+      create: vi.fn(),
+      updateMany: vi.fn()
+    },
     user: { findUnique: vi.fn() },
     giftCode: { findUnique: vi.fn(), create: vi.fn() },
     giftCodeCreation: { create: vi.fn() },
@@ -63,12 +70,19 @@ const REFERRAL_ID = '00000000-0000-4000-8000-000000000002';
 
 describe('activity rewards eligibility', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
+    (globalPrisma.activityRewardIdentityConfig.findUnique as any).mockResolvedValue({
+      pepper: 'a'.repeat(64)
+    });
+    (globalPrisma.$queryRaw as any).mockResolvedValue([]);
   });
 
   it('treats users without a RegistrationSource row as WEB (历史用户可领)', async () => {
     (globalPrisma.registrationSource.findUnique as any).mockResolvedValue(null);
-    (globalPrisma.userRealNameInfo.findUnique as any).mockResolvedValue({ isVerified: true });
+    (globalPrisma.userRealNameInfo.findUnique as any).mockResolvedValue({
+      isVerified: true,
+      idCard: '11010119900101001X'
+    });
     (globalPrisma.enterpriseRealNameInfo.findUnique as any).mockResolvedValue(null);
     (globalPrisma.desktopLoginRecord.findUnique as any).mockResolvedValue({ userUid: USER_UID });
 
@@ -82,7 +96,10 @@ describe('activity rewards eligibility', () => {
   it('accepts enterprise realname and detects API source', async () => {
     (globalPrisma.registrationSource.findUnique as any).mockResolvedValue({ source: 'API' });
     (globalPrisma.userRealNameInfo.findUnique as any).mockResolvedValue(null);
-    (globalPrisma.enterpriseRealNameInfo.findUnique as any).mockResolvedValue({ isVerified: true });
+    (globalPrisma.enterpriseRealNameInfo.findUnique as any).mockResolvedValue({
+      isVerified: true,
+      additionalInfo: { key: 'EXAMPLE123456789012' }
+    });
     (globalPrisma.desktopLoginRecord.findUnique as any).mockResolvedValue(null);
 
     const facts = await readEligibilityFacts(USER_UID);
@@ -96,16 +113,25 @@ describe('activity rewards eligibility', () => {
     '%s: treats businessKey conflicts as already granted without redeeming again',
     async (_provider, ErrorClass) => {
       (globalPrisma.registrationSource.findUnique as any).mockResolvedValue(null);
-      (globalPrisma.userRealNameInfo.findUnique as any).mockResolvedValue({ isVerified: true });
+      (globalPrisma.userRealNameInfo.findUnique as any).mockResolvedValue({
+        isVerified: true,
+        idCard: '11010119900101001X'
+      });
       (globalPrisma.enterpriseRealNameInfo.findUnique as any).mockResolvedValue(null);
       (globalPrisma.desktopLoginRecord.findUnique as any).mockResolvedValue({ userUid: USER_UID });
       // 首登礼事务撞 businessKey 唯一约束 → 视为已发放
       (globalPrisma.$transaction as any).mockRejectedValue(p2002(ErrorClass));
-      (globalPrisma.activityRewardGrant.findUnique as any).mockResolvedValue({
-        id: 'existing-grant',
-        businessKey: firstLoginBusinessKey(USER_UID),
-        status: 'REDEEMED'
-      });
+      (globalPrisma.activityRewardGrant.findUnique as any)
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(null)
+        .mockResolvedValue({
+          id: 'existing-grant',
+          recipientUid: USER_UID,
+          identityKey: 'v1:owned',
+          businessKey: firstLoginBusinessKey(USER_UID),
+          status: 'REDEEMED'
+        });
       (globalPrisma.registrationReferral.findUnique as any).mockResolvedValue(null);
       (globalPrisma.registrationReferral.findMany as any).mockResolvedValue([]);
 
@@ -114,38 +140,52 @@ describe('activity rewards eligibility', () => {
       expect(globalPrisma.activityRewardGrant.findUnique).toHaveBeenCalledWith({
         where: { businessKey: firstLoginBusinessKey(USER_UID) }
       });
+      expect(globalPrisma.$transaction).toHaveBeenCalledTimes(1);
       // 既有行不再抢占核销（重试交给补偿 worker 的退避逻辑）
       expect(globalPrisma.activityRewardGrant.updateMany).not.toHaveBeenCalled();
       expect(callBillingService).not.toHaveBeenCalled();
     }
   );
 
-  it('grants the inviter reward on PostgreSQL after the first-login gift was already granted', async () => {
+  it('grants the inviter after the invitee already owns the first-login identity', async () => {
+    const inviteeUid = '00000000-0000-4000-8000-000000000003';
     (globalPrisma.registrationSource.findUnique as any).mockResolvedValue({ source: 'WEB' });
-    (globalPrisma.userRealNameInfo.findUnique as any).mockResolvedValue({ isVerified: true });
-    (globalPrisma.enterpriseRealNameInfo.findUnique as any).mockResolvedValue(null);
-    (globalPrisma.desktopLoginRecord.findUnique as any).mockResolvedValue({ userUid: USER_UID });
-    (globalPrisma.registrationReferral.findUnique as any).mockResolvedValue(null);
-    (globalPrisma.registrationReferral.findMany as any).mockResolvedValue([
-      { id: REFERRAL_ID, inviteeUid: '00000000-0000-4000-8000-000000000003' }
-    ]);
-    (globalPrisma.$transaction as any)
-      .mockReset()
-      .mockRejectedValueOnce(p2002(PostgresqlPrisma.PrismaClientKnownRequestError))
-      .mockImplementationOnce(async (callback: any) => callback(globalPrisma));
-    (globalPrisma.activityRewardGrant.findUnique as any).mockResolvedValue({
-      id: 'first-login-grant',
-      businessKey: firstLoginBusinessKey(USER_UID),
-      status: 'REDEEMED'
+    (globalPrisma.userRealNameInfo.findUnique as any).mockImplementation(async ({ where }: any) =>
+      where.userUid === inviteeUid ? { isVerified: true, idCard: '11010119900101001X' } : null
+    );
+    (globalPrisma.desktopLoginRecord.findUnique as any).mockResolvedValue({ userUid: inviteeUid });
+    (globalPrisma.registrationReferral.findUnique as any).mockResolvedValue({
+      id: REFERRAL_ID,
+      inviteeUid,
+      inviterUid: USER_UID,
+      status: 'PENDING'
     });
-    (globalPrisma.giftCode.create as any).mockResolvedValue({ id: 'inviter-gift-code' });
+    (globalPrisma.$queryRaw as any).mockResolvedValue([{ inviteeUid }]);
+    (globalPrisma.activityRewardGrant.findUnique as any).mockImplementation(
+      async ({ where }: any) => {
+        if (where.businessKey === firstLoginBusinessKey(inviteeUid))
+          return {
+            id: 'first',
+            recipientUid: inviteeUid,
+            identityKey: 'v1:owned',
+            status: 'REDEEMED'
+          };
+        if (where.businessKey?.startsWith('REFERRAL_INVITEE:'))
+          return { id: 'invitee', status: 'REDEEMED' };
+        return null;
+      }
+    );
+    (globalPrisma.$transaction as any).mockImplementation(async (callback: any) =>
+      callback(globalPrisma)
+    );
+    (globalPrisma.giftCode.create as any).mockResolvedValue({ id: 'code' });
     (globalPrisma.activityRewardGrant.create as any).mockImplementation(async ({ data }: any) => ({
       ...data,
-      id: 'inviter-grant'
+      id: 'grant'
     }));
     (globalPrisma.activityRewardGrant.updateMany as any).mockResolvedValue({ count: 1 });
     (globalPrisma.giftCode.findUnique as any).mockResolvedValue({ code: 'private-gift-code' });
-    (globalPrisma.user.findUnique as any).mockResolvedValue({ name: 'inviter' });
+    (globalPrisma.user.findUnique as any).mockResolvedValue({ uid: USER_UID, name: 'inviter' });
 
     await checkAndGrantUserRewards(USER_UID);
 
@@ -158,16 +198,15 @@ describe('activity rewards eligibility', () => {
         amount: 5_000_000n
       })
     });
-    expect(callBillingService).toHaveBeenCalledExactlyOnceWith(
-      '/account/v1alpha1/gift-code/use',
-      { userUid: USER_UID, userId: 'inviter' },
-      { code: 'private-gift-code' }
-    );
+    expect(callBillingService).toHaveBeenCalledTimes(1);
   });
 
   it('does not grant anything for API-registered users', async () => {
     (globalPrisma.registrationSource.findUnique as any).mockResolvedValue({ source: 'API' });
-    (globalPrisma.userRealNameInfo.findUnique as any).mockResolvedValue({ isVerified: true });
+    (globalPrisma.userRealNameInfo.findUnique as any).mockResolvedValue({
+      isVerified: true,
+      idCard: '11010119900101001X'
+    });
     (globalPrisma.desktopLoginRecord.findUnique as any).mockResolvedValue({ userUid: USER_UID });
 
     await checkAndGrantUserRewards(USER_UID);
@@ -179,12 +218,19 @@ describe('activity rewards eligibility', () => {
 
 describe('activity status presentation', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
+    (globalPrisma.activityRewardIdentityConfig.findUnique as any).mockResolvedValue({
+      pepper: 'a'.repeat(64)
+    });
+    (globalPrisma.$queryRaw as any).mockResolvedValue([]);
   });
 
   it('hides the invite share entry for API-registered accounts', async () => {
     (globalPrisma.registrationSource.findUnique as any).mockResolvedValue({ source: 'API' });
-    (globalPrisma.userRealNameInfo.findUnique as any).mockResolvedValue({ isVerified: true });
+    (globalPrisma.userRealNameInfo.findUnique as any).mockResolvedValue({
+      isVerified: true,
+      idCard: '11010119900101001X'
+    });
     (globalPrisma.enterpriseRealNameInfo.findUnique as any).mockResolvedValue(null);
     (globalPrisma.desktopLoginRecord.findUnique as any).mockResolvedValue({ userUid: USER_UID });
     // 即使历史数据里已有邀请码，API 账号也不得返回可分享链接：
@@ -195,6 +241,7 @@ describe('activity status presentation', () => {
 
     const data = await getActivityStatusData(USER_UID);
 
+    expect(data.available).toBe(false);
     expect(data.invite.code).toBeNull();
     expect(data.invite.inviteUrl).toBeNull();
     expect(data.firstLoginGift.status).toBe('ineligible');

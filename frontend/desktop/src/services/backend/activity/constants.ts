@@ -10,7 +10,7 @@ export const FIRST_LOGIN_REWARD_AMOUNT = 10_000_000n; // ¥10
 export const REFERRAL_REWARD_AMOUNT = 5_000_000n; // ¥5
 
 // 规则版本仅审计用，不参与资格判定
-export const ACTIVITY_RULE_VERSION = '2026-10-14.1';
+export const ACTIVITY_RULE_VERSION = '2026-10-15.1';
 
 // 邀请码 8 位，去混淆字母表（无 0/O/1/I/L），冲突靠唯一约束重试
 export const INVITE_CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
