@@ -63,6 +63,22 @@ def main():
     def endpoints(host):
         return json.loads(sealctl(host, "standalone", "etcd-endpoints", capture=True))
 
+    def remove_retained_node(host, original_uid):
+        node = json.loads(kubectl("get", "node", host, "-o", "json"))
+        assert node["metadata"]["uid"] == original_uid, "conversion replaced the administrator-owned Node"
+        pods = json.loads(kubectl(
+            "get", "pods", "-A", "--field-selector", "spec.nodeName=" + host,
+            "-o", "json",
+        ))
+        # Standalone conversion leaves Node cleanup to the administrator.
+        kubectl("delete", "node", host, "--wait=true")
+        for pod in pods["items"]:
+            if "kubernetes.io/config.mirror" in pod["metadata"].get("annotations", {}):
+                kubectl(
+                    "wait", "--for=delete", "pod/" + pod["metadata"]["name"],
+                    "-n", pod["metadata"]["namespace"], "--timeout=60s",
+                )
+
     with tempfile.TemporaryDirectory(prefix="sealos-membership-") as temporary:
         root = pathlib.Path(temporary)
         kind_config = root / "kind.yaml"
@@ -88,8 +104,10 @@ def main():
                 "--route-controller-image", options.controller_image,
                 "--route-controller-config", "/etc/kubernetes/route-controller/config",
             )
+            seed_uid = json.loads(kubectl("get", "node", seed, "-o", "json"))["metadata"]["uid"]
             sealctl(seed, "switch", "standalone", *controller_args, "--check-only")
             sealctl(seed, "switch", "standalone", *controller_args)
+            remove_retained_node(seed, seed_uid)
             cluster_config = json.loads(kubectl("get", "cm", "kubeadm-config", "-n", "kube-system", "-o", "json"))["data"]["ClusterConfiguration"]
             kubelet_config = json.loads(kubectl("get", "cm", "kubelet-config", "-n", "kube-system", "-o", "json"))["data"]["kubelet"]
             execute(joining, "kubeadm", "reset", "-f")
@@ -158,7 +176,9 @@ def main():
             foreign_routes = execute(joining, "ip", "-j", "route", "show", "table", "200", "proto", "112", capture=True)
             assert json.loads(owned_routes) == [], "reverse conversion left updated controller routes"
             assert len(json.loads(foreign_routes)) == 1, "reverse conversion removed another route owner's rules"
+            joining_uid = json.loads(kubectl("get", "node", joining, "-o", "json"))["metadata"]["uid"]
             sealctl(joining, "switch", "standalone", *controller_args)
+            remove_retained_node(joining, joining_uid)
             assert_unregistered()
 
             sealctl(joining, "standalone", "reset", "--check-only")
