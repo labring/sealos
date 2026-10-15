@@ -22,19 +22,24 @@ export type Method =
   | 'unlink'
   | 'UNLINK';
 
+export type HostConfig = {
+  cloud: {
+    domain: string;
+    port: string;
+    regionUid: string;
+  };
+  features: {
+    subscription: boolean;
+    analytics?: boolean;
+  };
+  /** Absent on older Desktop hosts. */
+  currencySymbol?: 'shellCoin' | 'cny' | 'usd';
+};
+
 export type MasterOptions = {
   allowedOrigins: string[];
   getWorkspaceQuotaApi: () => Promise<WorkspaceQuotaItem[]>;
-  getHostConfigApi?: () => Promise<{
-    cloud: {
-      domain: string;
-      port: string;
-      regionUid: string;
-    };
-    features: {
-      subscription: boolean;
-    };
-  }>;
+  getHostConfigApi?: () => Promise<HostConfig>;
 };
 
 export type WindowSize = 'maximized' | 'windowed' | 'minimized';

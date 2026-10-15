@@ -187,3 +187,29 @@ Issues and Pull Requests are welcome!
 ## 📄 License
 
 [Sealos Sustainable Use License 1.0](https://github.com/labring/sealos/blob/main/LICENSE.md)
+
+### Host configuration
+
+`sealosApp.getHostConfig()` returns the shared `HostConfig` type (exported from
+`sealos-desktop-sdk`):
+
+```ts
+interface HostConfig {
+  cloud: { domain: string; port: string; regionUid: string };
+  features: { subscription: boolean; analytics?: boolean };
+  currencySymbol?: 'shellCoin' | 'cny' | 'usd';
+}
+```
+
+Starting with SDK 0.1.24, the currency field is typed. Updated Desktop hosts read
+`desktop.layout.currencySymbol` and always return a symbol, defaulting to
+`shellCoin` only after configuration has loaded. Requests made during loading wait
+for initialization; if configuration is still unavailable after 8 seconds, the
+request rejects. Consumers should retry failed requests instead of caching a
+fallback for a loading error. The SDK does not cache host configuration.
+
+Older Desktop hosts may omit `currencySymbol`; consumers can use
+`config.currencySymbol ?? 'shellCoin'`. This is a display choice, not currency
+conversion. The message API remains `getHostConfig`.
+
+See [RELEASING.md](./RELEASING.md) for release preparation and package naming.

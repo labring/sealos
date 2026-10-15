@@ -1,6 +1,7 @@
 import { v4 } from 'uuid';
 import { API_NAME } from './constants';
 import type {
+  HostConfig,
   AppMessageType,
   AppSendMessageType,
   MasterReplyMessageType,
@@ -124,16 +125,7 @@ class ClientSDK {
     return this.sendMessageToMaster(API_NAME.GET_WORKSPACE_QUOTA);
   }
 
-  getHostConfig(): Promise<{
-    cloud: {
-      domain: string;
-      port: string;
-      regionUid: string;
-    };
-    features: {
-      subscription: boolean;
-    };
-  }> {
+  getHostConfig(): Promise<HostConfig> {
     return this.sendMessageToMaster(API_NAME.GET_HOST_CONFIG);
   }
 
