@@ -29,6 +29,7 @@ import (
 
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/filesystem/rootfs"
 	"github.com/labring/sealos/pkg/runtime/kubernetes/standalone"
 	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -158,6 +159,9 @@ func (k *KubeadmRuntime) switchControlPlaneMode(
 	for _, host := range hosts {
 		if err := ctx.Err(); err != nil {
 			return err
+		}
+		if err := rootfs.SyncLocalSealctl(k.execer, host, k.pathResolver.RootFSSealctlPath()); err != nil {
+			logger.Warn("failed to sync sealctl to %s: %v", host, err)
 		}
 		if err := runConversion(host, command.String()+" --check-only"); err != nil {
 			return fmt.Errorf("mode preflight on %s: %w", host, err)

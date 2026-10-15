@@ -19,6 +19,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -34,10 +35,28 @@ import (
 
 type modeSSH struct {
 	stubSSH
-	commands  []string
-	failHost  string
-	checkOnly bool
-	deadlines []time.Duration
+	commands   []string
+	failHost   string
+	checkOnly  bool
+	deadlines  []time.Duration
+	syncSource string
+}
+
+func (s *modeSSH) Cmd(host, command string) ([]byte, error) {
+	if s.syncSource != "" && command == "uname -m" {
+		return []byte(runtime.GOARCH), nil
+	}
+	return s.stubSSH.Cmd(host, command)
+}
+
+func (s *modeSSH) Copy(host, source, target string) error {
+	if err := s.stubSSH.Copy(host, source, target); err != nil {
+		return err
+	}
+	if source == s.syncSource {
+		return errors.New("injected sealctl sync failure")
+	}
+	return nil
 }
 
 func (s *modeSSH) CmdAsyncWithContext(ctx context.Context, host string, commands ...string) error {
@@ -63,19 +82,25 @@ func (s *modeSSH) CmdAsync(host string, commands ...string) error {
 
 func TestControlPlaneConversionCommitAndFailure(t *testing.T) {
 	for _, scenario := range []struct {
-		failure string
-		recover string
-		image   string
-		flag    string
+		failure     string
+		recover     string
+		image       string
+		flag        string
+		syncFailure bool
 	}{
 		{failure: "preflight"},
 		{failure: "host", recover: standalone.ModeStandalone},
 		{failure: "host", recover: standalone.ModeRegistered},
 		{failure: "none"},
+		{failure: "none", syncFailure: true},
+		{failure: "preflight", syncFailure: true},
 		{failure: "none", image: "registry.example/controller:custom"},
 		{failure: "none", image: "registry.example/controller:custom", flag: "registry.example/controller:override"},
 	} {
 		t.Run(scenario.failure+"/"+scenario.recover, func(t *testing.T) {
+			if scenario.syncFailure && runtime.GOOS != "linux" {
+				t.Skip("local sealctl discovery requires Linux")
+			}
 			failure := scenario.failure
 			previousRoot := constants.DefaultRuntimeRootDir
 			constants.DefaultRuntimeRootDir = t.TempDir()
@@ -97,6 +122,13 @@ func TestControlPlaneConversionCommitAndFailure(t *testing.T) {
 			client := fake.NewSimpleClientset()
 			ssh := &modeSSH{
 				checkOnly: failure == "preflight",
+			}
+			if scenario.syncFailure {
+				ssh.syncSource = filepath.Join(t.TempDir(), "sealctl")
+				if err := os.WriteFile(ssh.syncSource, []byte("test binary"), 0o700); err != nil {
+					t.Fatal(err)
+				}
+				t.Setenv("SEALOS_SEALCTL_PATH", ssh.syncSource)
 			}
 			if failure != "none" {
 				ssh.failHost = "master1"
@@ -125,6 +157,24 @@ func TestControlPlaneConversionCommitAndFailure(t *testing.T) {
 			err := rt.SwitchControlPlaneMode(context.Background(), options)
 			if (err != nil) != (failure != "none") {
 				t.Fatalf("unexpected conversion result: %v", err)
+			}
+			if scenario.syncFailure {
+				attempted := false
+				for _, call := range ssh.copyCalls {
+					if strings.Contains(call, "|"+ssh.syncSource+"|") {
+						attempted = true
+					}
+				}
+				if !attempted {
+					t.Fatal("sealctl synchronization was not attempted")
+				}
+			}
+			if failure == "preflight" {
+				for _, command := range ssh.commands {
+					if strings.Contains(command, "switch '") && !strings.Contains(command, "--check-only") {
+						t.Fatal("started conversion after a failed preflight")
+					}
+				}
 			}
 			if len(ssh.deadlines) == 0 {
 				t.Fatal("conversion did not pass its context to the transport")
