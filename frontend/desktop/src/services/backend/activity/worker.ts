@@ -7,22 +7,29 @@ import {
   redeemGrant
 } from './rewards';
 
-// 每轮限量，防止大表拖垮 cron 周期
+// Per-run cap so large tables cannot stall the cron cycle
 const BATCH_LIMIT = 50;
-// 滞留 REDEEMING 超过该时长视为本次核销中断，先对账再决定补记/退回
+// A grant stuck in REDEEMING past this window is treated as an interrupted
+// redemption: reconcile first, then record success or roll back
 const REDEEMING_STUCK_MS = 5 * 60 * 1000;
-// 重试退避：min(2^attempt × 60s, 30min)
 const retryBackoffMs = (attemptCount: number) =>
   Math.min(2 ** attemptCount * 60 * 1000, 30 * 60 * 1000);
 
 /**
- * 活动奖励补偿 worker（croner 每 60s 调一次，挂载点沿用 getAppConfig 的惰性注册）：
- * 1. 滞留 REDEEMING > 5min 的 grant 先对账（补记成功 / 冲突停试 / 退回 READY）；
- * 2. READY / RETRYABLE_FAILURE 的 grant 到期后重试核销（conflict:* 永久跳过）；
- * 3. 从登录事实补建缺失的首登礼，覆盖没有邀请关系的直接注册和历史用户；
- * 4. 扫描条件已齐但奖励行缺失的邀请关系并补建（受邀人触发链路中断时的兜底，
- *    保证邀请人不在线、进程崩溃也能到账）。checkAndGrantUserRewards 自身幂等。
- * 多副本靠 redeemGrant 的条件更新抢占，安全；任何错误只记日志，绝不让 cron 抛出。
+ * Activity reward compensation worker (invoked by croner every 60s; lazily
+ * registered from getAppConfig):
+ * 1. Reconcile grants stuck in REDEEMING for over 5 minutes (record success /
+ *    stop retrying on conflict / roll back to READY);
+ * 2. Retry redemption of READY / RETRYABLE_FAILURE grants once backoff elapses
+ *    (conflict:* is skipped permanently);
+ * 3. Rebuild missing first-login rewards from persisted login facts, covering
+ *    direct sign-ups without a referral and legacy users;
+ * 4. Scan referrals whose conditions are met but whose reward rows are missing
+ *    (fallback for a broken invitee-side trigger chain, so rewards still land
+ *    when the inviter is offline or the process crashed). checkAndGrantUserRewards
+ *    is itself idempotent.
+ * Multi-replica safety relies on redeemGrant's conditional-update claim; errors
+ * are logged only and never rethrown to the cron.
  */
 export const activityRewardJob = async () => {
   try {
@@ -45,12 +52,14 @@ export const activityRewardJob = async () => {
       });
     }
 
-    // PostgreSQL ASC 默认 NULLS LAST：一批持续失败的旧记录（lastAttemptAt 非空）会
-    // 占满限量，饿死从未尝试过的新 READY 奖励（lastAttemptAt = NULL）。拆两段查询，
-    // 从未尝试的先行，失败退避的另占一批，互不挤占。
+    // PostgreSQL ASC defaults to NULLS LAST: a batch of old, repeatedly failed
+    // rows (lastAttemptAt set) would consume the whole cap and starve
+    // never-attempted READY grants (lastAttemptAt NULL). Split into two queries:
+    // never-attempted grants go first, backoff retries get their own batch.
     const retryFilter: Prisma.ActivityRewardGrantWhereInput = {
       status: { in: [ActivityRewardStatus.READY, ActivityRewardStatus.RETRYABLE_FAILURE] },
-      // 先排除永久冲突再限量，避免停试记录长期占满补偿批次；保留 NULL 原因的 READY。
+      // Exclude permanent conflicts before limiting so stopped grants cannot
+      // monopolize the batch; READY grants with a NULL reason are kept.
       OR: [{ failureReason: null }, { failureReason: { not: { startsWith: 'conflict:' } } }]
     };
     const [neverAttempted, backoffRetries] = await Promise.all([
@@ -66,9 +75,9 @@ export const activityRewardJob = async () => {
     ]);
     const now = Date.now();
     for (const grant of [...neverAttempted, ...backoffRetries]) {
-      // 冲突类失败停止重试、禁止补发新码
+      // conflict:* failures are permanent: never retried, never issued a new code
       if (grant.failureReason?.startsWith('conflict:')) continue;
-      // 退避未到期的本轮跳过（attemptCount 在抢占核销时递增）
+      // Skip until the backoff elapses (attemptCount is incremented on claim in redeemGrant)
       if (
         grant.lastAttemptAt &&
         now - grant.lastAttemptAt.getTime() < retryBackoffMs(grant.attemptCount)
@@ -80,7 +89,8 @@ export const activityRewardJob = async () => {
       });
     }
 
-    // 两类扫描独立补偿，任一查询失败不阻止另一类用户本轮补领。
+    // The two scans compensate independently: either query failing must not
+    // block the other class of users this round.
     await scanMissingFirstLoginRewards().catch((error) => {
       console.error('[activityRewardJob] scan missing first-login rewards failed', { error });
     });
@@ -95,8 +105,10 @@ type MissingGrantReferral = {
   inviteeUid: string;
 };
 
-// 首登奖励创建事务失败时还没有 grant；必须从持久化登录事实查找，而不能只扫描邀请关系。
-// 同样先筛除 API 来源、未实名和已删除账号，避免无资格记录占满补偿批次。
+// If the first-login reward transaction failed there is no grant row yet, so
+// recovery must scan persisted login facts rather than referrals alone.
+// Filter out API-sourced, unverified and deleted accounts first so ineligible
+// records cannot fill the compensation batch.
 const MISSING_FIRST_LOGIN_REWARDS_SQL = Prisma.sql`
   SELECT d."userUid"
   FROM "DesktopLoginRecord" d
@@ -122,7 +134,8 @@ const scanMissingFirstLoginRewards = async () => {
     MISSING_FIRST_LOGIN_REWARDS_SQL
   );
   for (const { userUid } of users) {
-    // 未拿到主体编号或被其他账号占用也推进轮转，避免永久占满 LIMIT。
+    // Advance the rotation even when no identity key was obtained or it is held
+    // by another account, so records cannot pin the LIMIT forever.
     await globalPrisma.desktopLoginRecord.updateMany({
       where: { userUid },
       data: { rewardCheckedAt: new Date() }
@@ -136,8 +149,10 @@ const scanMissingFirstLoginRewards = async () => {
   }
 };
 
-// 首登主体所有权证明条件曾满足。无主体编号的记录由首登扫描轮转，不能占满邀请批次。
-// API / 已删除邀请人不需要补建邀请人礼；仍可以补建合格受邀人的礼。
+// The invitee's first-login ownership proof (identityKey) once succeeded.
+// Records without one rotate through the first-login scan and must not fill
+// the referral batch. API-sourced or deleted inviters get no inviter reward
+// rebuilt, but an eligible invitee reward still can be.
 const MISSING_REFERRAL_REWARDS_SQL = Prisma.sql`
   SELECT r."id", r."inviteeUid"
   FROM "RegistrationReferral" r
@@ -159,9 +174,11 @@ const MISSING_REFERRAL_REWARDS_SQL = Prisma.sql`
 `;
 
 /**
- * 缺失奖励扫描：以受邀人身份跑一遍 checkAndGrantUserRewards（幂等），一次覆盖
- * 受邀人的首登礼/受邀礼并直接补建邀请人奖励。命中即治愈——补建成功后关系不再
- * 匹配扫描条件；账务故障期会持续命中，由上面的重试路径按退避消化。
+ * Missing-reward scan: run checkAndGrantUserRewards (idempotent) once as the
+ * invitee, covering the invitee's first-login and invitee rewards and directly
+ * rebuilding the inviter's. Every hit is self-healing — once rebuilt the
+ * referral no longer matches the scan; during payment outages it keeps
+ * matching and is drained by the backoff of the retry path above.
  */
 const scanMissingReferralRewards = async () => {
   const referrals: MissingGrantReferral[] = await globalPrisma.$queryRaw(
