@@ -16,9 +16,12 @@ package kubernetes
 
 import (
 	"context"
+	"errors"
 	"os"
+	"path/filepath"
 	"testing"
 
+	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/runtime/kubernetes/types"
 	authorizationv1 "k8s.io/api/authorization/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,6 +31,97 @@ import (
 	kubeletconfig "k8s.io/kubelet/config/v1beta1"
 	"sigs.k8s.io/yaml"
 )
+
+type signingMaterialSSH struct {
+	stubSSH
+	failFile string
+	fetched  []string
+}
+
+func (s *signingMaterialSSH) Fetch(host, source, target string) error {
+	name, err := filepath.Rel(kubernetesEtcPKI, source)
+	if err != nil {
+		return err
+	}
+	s.fetched = append(s.fetched, name)
+	if name == s.failFile {
+		return errors.New("signing material unavailable")
+	}
+	return os.WriteFile(target, []byte("cluster-"+name), 0o644)
+}
+
+func TestStandaloneSigningMaterialCache(t *testing.T) {
+	for _, scenario := range []struct {
+		name     string
+		external bool
+		failFile string
+	}{
+		{name: "stacked"},
+		{name: "external", external: true},
+		{name: "incomplete", failFile: "etcd/ca.key"},
+	} {
+		t.Run(scenario.name, func(t *testing.T) {
+			previousRoot := constants.DefaultRuntimeRootDir
+			constants.DefaultRuntimeRootDir = t.TempDir()
+			t.Cleanup(func() { constants.DefaultRuntimeRootDir = previousRoot })
+			transport := &signingMaterialSSH{failFile: scenario.failFile}
+			rt := &KubeadmRuntime{
+				cluster: testCluster([]string{"master0"}), execer: transport,
+				pathResolver: constants.NewPathResolver("test"),
+			}
+			cache := rt.pathResolver.PkiPath()
+			if err := os.MkdirAll(cache, 0o700); err != nil {
+				t.Fatal(err)
+			}
+			cachedCA := filepath.Join(cache, "ca.crt")
+			if err := os.WriteFile(cachedCA, []byte("previous"), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			err := rt.cacheStandalonePKI(scenario.external)
+			if scenario.failFile != "" {
+				if err == nil {
+					t.Fatal("expected failed fetch to stop cache publication")
+				}
+				data, readErr := os.ReadFile(filepath.Join(cache, "ca.crt"))
+				if readErr != nil || string(data) != "previous" {
+					t.Fatalf(
+						"failed fetch replaced existing signing material: %q, %v",
+						data,
+						readErr,
+					)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			wantCount := 8
+			if scenario.external {
+				wantCount = 6
+				if _, err := os.Stat(filepath.Join(cache, "etcd")); !os.IsNotExist(err) {
+					t.Fatalf("external etcd acquired local signing material: %v", err)
+				}
+			}
+			if len(transport.fetched) != wantCount {
+				t.Fatalf("fetched %d files, want %d", len(transport.fetched), wantCount)
+			}
+			for _, name := range transport.fetched {
+				path := filepath.Join(cache, name)
+				data, err := os.ReadFile(path)
+				if err != nil || string(data) != "cluster-"+name {
+					t.Fatalf("cache lost cluster signing material %s: %v", name, err)
+				}
+				info, err := os.Stat(path)
+				if err != nil || info.Mode().Perm() != 0o600 {
+					t.Fatalf("signing material permissions for %s: %v", name, err)
+				}
+			}
+			if err := rt.cacheStandalonePKI(scenario.external); err != nil {
+				t.Fatalf("cache refresh is not repeatable: %v", err)
+			}
+		})
+	}
+}
 
 func checkStandaloneKubeletPublication(t *testing.T, client clientset.Interface) {
 	t.Helper()

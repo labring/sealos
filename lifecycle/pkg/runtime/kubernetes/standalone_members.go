@@ -85,6 +85,10 @@ func (k *KubeadmRuntime) initStandaloneMaster() error {
 	); err != nil {
 		return err
 	}
+	externalEtcd := k.kubeadmConfig.Etcd.External != nil
+	if err := k.cacheStandalonePKI(externalEtcd); err != nil {
+		return err
+	}
 	if err := k.uploadStandaloneKubeletConfig(); err != nil {
 		return err
 	}
@@ -341,15 +345,7 @@ func (k *KubeadmRuntime) prepareStandaloneBootstrap(
 	), nil
 }
 
-func (k *KubeadmRuntime) copyStandaloneSharedCredentials(
-	seed, host string,
-	externalEtcd bool,
-) error {
-	dir, err := os.MkdirTemp("", "sealos-shared-pki-")
-	if err != nil {
-		return err
-	}
-	defer os.RemoveAll(dir)
+func standaloneSharedPKIFiles(externalEtcd bool) []string {
 	files := []string{
 		"ca.crt",
 		"ca.key",
@@ -361,7 +357,58 @@ func (k *KubeadmRuntime) copyStandaloneSharedCredentials(
 	if !externalEtcd {
 		files = append(files, "etcd/ca.crt", "etcd/ca.key")
 	}
-	for _, file := range files {
+	return files
+}
+
+// Native kubeadm bootstrap creates PKI on the host. Ordinary certificate and
+// upgrade commands also need its signing material in the local Sealos cache.
+func (k *KubeadmRuntime) cacheStandalonePKI(externalEtcd bool) error {
+	destination := k.pathResolver.PkiPath()
+	if err := os.MkdirAll(destination, 0o700); err != nil {
+		return err
+	}
+	dir, err := os.MkdirTemp(filepath.Dir(destination), ".standalone-pki-")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(dir)
+	files := standaloneSharedPKIFiles(externalEtcd)
+	for _, name := range files {
+		local := filepath.Join(dir, name)
+		if err := os.MkdirAll(filepath.Dir(local), 0o700); err != nil {
+			return err
+		}
+		remote := filepath.Join(kubernetesEtcPKI, name)
+		if err := k.sshFetch(k.getMaster0IPAndPort(), remote, local); err != nil {
+			return fmt.Errorf("cache control-plane signing material %s: %w", name, err)
+		}
+		if err := os.Chmod(local, 0o600); err != nil {
+			return err
+		}
+	}
+	// Fetch every file before replacing a previously usable cache.
+	for _, name := range files {
+		target := filepath.Join(destination, name)
+		if err := os.MkdirAll(filepath.Dir(target), 0o700); err != nil {
+			return err
+		}
+		if err := os.Rename(filepath.Join(dir, name), target); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (k *KubeadmRuntime) copyStandaloneSharedCredentials(
+	seed, host string,
+	externalEtcd bool,
+) error {
+	dir, err := os.MkdirTemp("", "sealos-shared-pki-")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(dir)
+	for _, file := range standaloneSharedPKIFiles(externalEtcd) {
 		local := filepath.Join(dir, file)
 		remote := filepath.Join("/etc/kubernetes/pki", file)
 		target := filepath.Join("/var/lib/sealos/control-plane-mode/shared/pki", file)

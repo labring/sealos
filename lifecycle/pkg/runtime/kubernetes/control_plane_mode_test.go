@@ -28,6 +28,7 @@ import (
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/runtime/kubernetes/standalone"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
@@ -57,6 +58,10 @@ func (s *modeSSH) Copy(host, source, target string) error {
 		return errors.New("injected sealctl sync failure")
 	}
 	return nil
+}
+
+func (s *modeSSH) Fetch(host, source, target string) error {
+	return os.WriteFile(target, []byte(source), 0o600)
 }
 
 func (s *modeSSH) CmdAsyncWithContext(ctx context.Context, host string, commands ...string) error {
@@ -119,7 +124,10 @@ func TestControlPlaneConversionCommitAndFailure(t *testing.T) {
 			if err := os.WriteFile(path, data, 0o600); err != nil {
 				t.Fatal(err)
 			}
-			client := fake.NewSimpleClientset()
+			client := fake.NewSimpleClientset(&v1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{Name: "kubeadm-config", Namespace: "kube-system"},
+				Data:       map[string]string{"ClusterConfiguration": "etcd:\n  local: {}\n"},
+			})
 			ssh := &modeSSH{
 				checkOnly: failure == "preflight",
 			}

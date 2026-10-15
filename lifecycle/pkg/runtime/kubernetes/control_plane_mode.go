@@ -37,6 +37,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientset "k8s.io/client-go/kubernetes"
+	"sigs.k8s.io/yaml"
 )
 
 type modeTransition struct {
@@ -173,6 +174,24 @@ func (k *KubeadmRuntime) switchControlPlaneMode(
 	}
 	if options.CheckOnly {
 		return nil
+	}
+	if options.Mode == standalone.ModeRegistered {
+		configuration, err := configMaps.Get(ctx, "kubeadm-config", metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		var layout struct {
+			Etcd struct {
+				External any
+			}
+		}
+		data := []byte(configuration.Data["ClusterConfiguration"])
+		if err := yaml.Unmarshal(data, &layout); err != nil {
+			return err
+		}
+		if err := k.cacheStandalonePKI(layout.Etcd.External != nil); err != nil {
+			return err
+		}
 	}
 	localMarker := filepath.Join(
 		constants.ClusterDir(k.cluster.Name),

@@ -41,6 +41,7 @@ The fixture controller tests static Pod readiness and route ownership, not CNI r
 - Kubernetes v1.28.15 through v1.33.6, upgrading one minor at a time; same-version retry and preservation of newer etcd versions.
 - Repeated mode switching, registered and standalone member addition/removal, route cleanup and controller updates.
 - Registered master addition after standalone upgrade, certificate-upload failure, and temporary-registry cancellation before PID publication.
+- Reverse conversion followed by certificate SAN updates and local admin credential renewal, preserving cluster CAs and ServiceAccount signing keys.
 - Fresh multi-master SSH installation on v1.28.15 with automatic controller credentials, worker-only Node registration, reverse conversion and registered reset/reinstallation without manual mode-state cleanup.
 - Managed credentials: mutation-free preflight, least-privilege API access, master deletion/readdition and local credential cleanup.
 - Native decoding of newer component fields on v1.28.15, invalid-type rejection without changing the active kubelet, and same-version upgrade after fresh install.
