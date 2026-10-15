@@ -29,6 +29,7 @@ const (
 	remoteCleanMasterOrNode = `if which kubeadm;then kubeadm reset -f %s;fi && ` + cleanKubernetesFiles
 	cleanKubernetesFiles    = `rm -rf /etc/kubernetes/ && \
 rm -rf /etc/cni && rm -rf /opt/cni && \
+rm -rf /var/lib/sealos/control-plane-mode && \
 rm -rf %s && (ip link delete kube-ipvs0 >/dev/null 2>&1 || true)
 `
 )

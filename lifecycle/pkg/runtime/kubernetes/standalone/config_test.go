@@ -182,6 +182,14 @@ apiVersion: kubeadm.k8s.io/v1beta4
 kind: InitConfiguration
 patches:
   directory: /etc/kubernetes/patches
+---
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+futureKubeletField: true
+---
+apiVersion: kubeproxy.config.k8s.io/v1alpha1
+kind: KubeProxyConfiguration
+futureProxyField: true
 `)
 	api := &v1.Pod{
 		Spec: v1.PodSpec{
@@ -205,6 +213,29 @@ patches:
 	)
 	if err != nil {
 		t.Fatal(err)
+	}
+	migrationInput, err := kubeadmMigrationConfig(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if bytes.Contains(migrationInput, []byte("futureKubeletField")) ||
+		bytes.Contains(migrationInput, []byte("futureProxyField")) {
+		t.Fatal("component configuration must not be passed to kubeadm migration")
+	}
+	migrated := filepath.Join(t.TempDir(), "migrated.yaml")
+	if err := os.WriteFile(migrated, migrationInput, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := appendComponentConfigs(source, migrated); err != nil {
+		t.Fatal(err)
+	}
+	completed, err := os.ReadFile(migrated)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Contains(completed, []byte("futureKubeletField: true")) ||
+		!bytes.Contains(completed, []byte("futureProxyField: true")) {
+		t.Fatal("migration lost component settings from newer versions")
 	}
 	decoder := utilyaml.NewYAMLOrJSONDecoder(bytes.NewReader(data), 4096)
 	var cluster, init map[string]any

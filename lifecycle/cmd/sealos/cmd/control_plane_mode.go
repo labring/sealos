@@ -137,7 +137,7 @@ func newControlPlaneModeCmdWithConfirm(ask func(string, string) (bool, error)) *
 			subcommand.Flags().
 				StringVar(&controller.Image, "route-controller-image", controller.Image, "Route-controller image; a pinned version or digest is recommended")
 			subcommand.Flags().
-				StringVar(&controller.Kubeconfig, "route-controller-kubeconfig", controller.Kubeconfig, "Dedicated controller kubeconfig path on every master")
+				StringVar(&controller.Kubeconfig, "route-controller-kubeconfig", controller.Kubeconfig, "Custom controller kubeconfig on every master; omitted to generate managed credentials")
 			subcommand.Flags().
 				StringVar(&controller.Config, "route-controller-config", "", "Optional controller configuration file on every master")
 			subcommand.Flags().

@@ -244,10 +244,11 @@ func (k *KubeadmRuntime) joinStandaloneMasters(hosts []string) error {
 			return err
 		}
 		command, err := k.prepareStandaloneBootstrap(host, standalone.BootstrapPlan{
-			Config:        config,
-			Controller:    controller,
-			Join:          true,
-			EtcdEndpoints: endpoints,
+			Config:         config,
+			Controller:     controller,
+			Join:           true,
+			InitialCluster: k.cluster.CreationTimestamp.IsZero(),
+			EtcdEndpoints:  endpoints,
 		})
 		if err != nil {
 			return err

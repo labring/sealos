@@ -49,9 +49,16 @@ The test requires an API with no Nodes and writes the worker ConfigMap and RBAC.
   retry and preservation of newer etcd versions.
 - Repeated mode switching, registered and standalone member addition/removal,
   route cleanup and controller updates.
+- Fresh multi-master SSH installation on v1.28.15 with automatic controller
+  credentials, worker-only Node registration, reverse conversion and registered
+  reset/reinstallation without manual mode-state cleanup.
+- Managed credentials: mutation-free preflight, least-privilege API access,
+  master deletion/readdition and local credential cleanup.
+- Native decoding of newer component fields on v1.28.15, invalid-type rejection
+  without changing the active kubelet, and same-version upgrade after fresh install.
 - Worker TLS bootstrap/Ready, kubelet configuration upgrade, etcd identity,
   storage bindings, Service/Pod connectivity, DNS, logs, exec and port-forward.
 
-External etcd, etcd 3.5-to-3.6 migration, custom patch layouts and full fresh-cluster
-SSH installation still need dedicated integration testing. These results do not
+External etcd, etcd 3.5-to-3.6 migration and custom patch layouts still need
+dedicated integration testing. These results do not
 establish compatibility with every CNI or guarantee application availability.

@@ -254,6 +254,22 @@ func nodeConfig(data []byte, target, name, endpoint string, api *v1.Pod) ([]byte
 	return yamlutil.MarshalConfigs(append([]any{cluster, init}, components...)...)
 }
 
+// kubeadm migration only outputs its own kinds. Passing component configs also
+// subjects them to stricter decoding than native init, without migrating them.
+func kubeadmMigrationConfig(data []byte) ([]byte, error) {
+	documents, err := configDocuments(data)
+	if err != nil {
+		return nil, err
+	}
+	var configs []any
+	for _, doc := range documents {
+		if doc["kind"] == "ClusterConfiguration" || doc["kind"] == "InitConfiguration" {
+			configs = append(configs, doc)
+		}
+	}
+	return yamlutil.MarshalConfigs(configs...)
+}
+
 func appendComponentConfigs(original []byte, migratedPath string) error {
 	documents, err := configDocuments(original)
 	if err != nil {

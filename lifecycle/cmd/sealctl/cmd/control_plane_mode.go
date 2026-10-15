@@ -57,7 +57,7 @@ func newControlPlaneModeCmd() *cobra.Command {
 			subcommand.Flags().
 				StringVar(&controller.Image, "route-controller-image", controller.Image, "Route-controller image")
 			subcommand.Flags().
-				StringVar(&controller.Kubeconfig, "route-controller-kubeconfig", controller.Kubeconfig, "Dedicated controller kubeconfig path on this host")
+				StringVar(&controller.Kubeconfig, "route-controller-kubeconfig", controller.Kubeconfig, "Custom controller kubeconfig on this host; omitted to generate managed credentials")
 			subcommand.Flags().
 				StringVar(&controller.Config, "route-controller-config", "", "Optional controller configuration file on this host")
 			subcommand.Flags().

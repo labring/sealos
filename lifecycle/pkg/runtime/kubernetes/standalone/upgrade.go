@@ -338,9 +338,13 @@ func (u *upgrade) prepareManifests(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	kubeadmConfig, err := kubeadmMigrationConfig(data)
+	if err != nil {
+		return err
+	}
 	draft := filepath.Join(u.dir, "input.yaml")
 	//nolint:gosec // u.dir is a private directory created by os.MkdirTemp.
-	if err := os.WriteFile(draft, data, 0o600); err != nil {
+	if err := os.WriteFile(draft, kubeadmConfig, 0o600); err != nil {
 		return err
 	}
 	u.config = filepath.Join(u.dir, "kubeadm.yaml")
@@ -379,11 +383,16 @@ func (u *upgrade) prepareManifests(ctx context.Context) error {
 	if err := os.WriteFile(validationPath, validation, 0o600); err != nil {
 		return err
 	}
+	// Match native init decoding while checking the local configuration with
+	// the target version. Strict config validation rejects newer defaults that
+	// the target kubelet accepts with warnings.
 	if err := u.command(
 		ctx,
 		kubeadm,
-		"config",
-		"validate",
+		"init",
+		"phase",
+		"kubelet-start",
+		"--dry-run",
 		"--config",
 		validationPath,
 	); err != nil {

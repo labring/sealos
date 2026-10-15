@@ -202,6 +202,9 @@ func resetStandalone(ctx context.Context, options ResetOptions) error {
 	if err := os.RemoveAll(filepath.Join(modeRoot, "shared")); err != nil {
 		return err
 	}
+	if err := os.Remove(DefaultRouteControllerKubeconfig); err != nil && !os.IsNotExist(err) {
+		return err
+	}
 	if err := maintenanceCommand(ctx, options.Output, "systemctl", "daemon-reload"); err != nil {
 		return err
 	}

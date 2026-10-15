@@ -31,18 +31,24 @@ forwarding and API-to-Pod/Service connectivity.
 
 ## Route-controller
 
-Sealos generates the static Pod manifest. Provision the controller kubeconfig
-and optional config file on **every master**, including newly added masters.
-Use absolute paths to regular files; only the selected files are mounted, so
-kubeconfig credentials should be embedded. Fresh-cluster credentials must match
-the cluster CA and have suitable RBAC.
+Sealos generates the static Pod manifest, a dedicated ServiceAccount with
+read-only RBAC, and a private kubeconfig on each master, including newly added
+masters. It uses a Kubernetes-issued ServiceAccount token Secret; administrator
+credentials are not copied into the controller. Generated host credentials are
+removed when switching back; the shared API identity remains available for reuse.
+
+An explicit kubeconfig path selects administrator-managed credentials instead.
+Provision that file and any optional controller config on every master. Use
+absolute paths and embedded kubeconfig credentials. To replace an existing
+custom setup with managed credentials, explicitly pass
+`--route-controller-kubeconfig=''` (with `--update-controller` if already standalone).
 
 Standalone mode accepts these flags; registered mode does not:
 
 | Flag | Default |
 | --- | --- |
 | `--route-controller-image` | `ghcr.io/labring-sigs/route-controller:0.1.0` |
-| `--route-controller-kubeconfig` | `/etc/kubernetes/route-controller/kubeconfig` |
+| `--route-controller-kubeconfig` | Unset; automatically managed |
 | `--route-controller-config` | Unset |
 | `--route-table` | `254` |
 | `--route-protocol` | `99` |
@@ -52,14 +58,13 @@ ports overlap the host's ephemeral port range, add health port `9919` and defaul
 metrics port `9918` to `net.ipv4.ip_local_reserved_ports`, retaining existing
 reservations and accounting for custom metrics settings.
 
-For a new cluster, configure the Clusterfile:
+For a new cluster, configure the Clusterfile and run `sealos apply -f Clusterfile`:
 
 ```yaml
 spec:
   controlPlaneMode: standalone
   routeController:
     image: ghcr.io/labring-sigs/route-controller:0.1.0
-    kubeconfig: /etc/kubernetes/route-controller/kubeconfig
     table: 254
     protocol: 99
 ```
@@ -101,7 +106,8 @@ Reset follows the standard Sealos best-effort cleanup: it logs failures and
 continues with remaining hosts and stages. Inspect warnings and manually clean
 any reported leftovers before reinstalling.
 
-For other lifecycle failures, repair the reported issue and repeat the original command.
+Failed initial installations require reset before reinstalling. For other
+lifecycle failures, repair the reported issue and repeat the original command.
 Keep recovery records intact. Mode conversion also permits an explicit switch
 back. Existing script-based standalone installations need a managed baseline
 before using this lifecycle; they are not adopted automatically.

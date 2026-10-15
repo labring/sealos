@@ -70,12 +70,16 @@ func routeOptionsFromState(state *modeState) (RouteControllerOptions, error) {
 			options.Config = volume.HostPath.Path
 		}
 	}
+	if pod.Annotations[controllerCredentialsAnnotation] == "managed" {
+		options.Kubeconfig = ""
+	}
 	return options, options.Validate()
 }
 
 const (
 	DefaultRouteControllerImage      = "ghcr.io/labring-sigs/route-controller:0.1.0"
-	DefaultRouteControllerKubeconfig = "/etc/kubernetes/route-controller/kubeconfig"
+	DefaultRouteControllerKubeconfig = "/etc/kubernetes/route-controller/sealos.kubeconfig"
+	controllerCredentialsAnnotation  = "sealos.io/route-controller-credentials"
 	controllerKubeconfigMount        = "/etc/route-controller/kubeconfig"
 	controllerConfigMount            = "/etc/route-controller/config.yaml"
 )
@@ -90,16 +94,17 @@ type RouteControllerOptions struct {
 
 func DefaultRouteControllerOptions() RouteControllerOptions {
 	return RouteControllerOptions{
-		Image:      DefaultRouteControllerImage,
-		Kubeconfig: DefaultRouteControllerKubeconfig,
-		Table:      254,
-		Protocol:   99,
+		Image:    DefaultRouteControllerImage,
+		Table:    254,
+		Protocol: 99,
 	}
 }
 
 func (o RouteControllerOptions) Validate() error {
-	if o.Image == "" || !filepath.IsAbs(o.Kubeconfig) {
-		return errors.New("route-controller requires an image and an absolute kubeconfig path")
+	if o.Image == "" || (o.Kubeconfig != "" && !filepath.IsAbs(o.Kubeconfig)) {
+		return errors.New(
+			"route-controller requires an image and an absolute custom kubeconfig path",
+		)
 	}
 	if o.Config != "" && !filepath.IsAbs(o.Config) {
 		return errors.New("route-controller config path must be absolute")
@@ -119,6 +124,10 @@ func routeControllerPod(options RouteControllerOptions) (*v1.Pod, error) {
 	enabled := true
 	grace := int64(15)
 	fileType := v1.HostPathFile
+	kubeconfig := options.Kubeconfig
+	if kubeconfig == "" {
+		kubeconfig = DefaultRouteControllerKubeconfig
+	}
 	args := []string{
 		"run",
 		"--kubeconfig=" + controllerKubeconfigMount,
@@ -190,13 +199,16 @@ func routeControllerPod(options RouteControllerOptions) (*v1.Pod, error) {
 					Name: "kubeconfig",
 					VolumeSource: v1.VolumeSource{
 						HostPath: &v1.HostPathVolumeSource{
-							Path: options.Kubeconfig,
+							Path: kubeconfig,
 							Type: &fileType,
 						},
 					},
 				},
 			},
 		},
+	}
+	if options.Kubeconfig == "" {
+		pod.Annotations = map[string]string{controllerCredentialsAnnotation: "managed"}
 	}
 	if options.Config != "" {
 		pod.Spec.Containers[0].VolumeMounts = append(
@@ -220,13 +232,16 @@ func routeControllerPod(options RouteControllerOptions) (*v1.Pod, error) {
 	return pod, nil
 }
 
-// The administrator provisions these host files before any lifecycle operation.
+// Custom host files must exist; managed credentials are created after preflight.
 func prepareRouteController(options RouteControllerOptions) ([]byte, error) {
 	pod, err := routeControllerPod(options)
 	if err != nil {
 		return nil, err
 	}
 	for _, volume := range pod.Spec.Volumes {
+		if volume.Name == "kubeconfig" && options.Kubeconfig == "" {
+			continue
+		}
 		info, err := os.Stat(volume.HostPath.Path)
 		if err != nil {
 			return nil, fmt.Errorf("route-controller hostPath: %w", err)

@@ -130,6 +130,9 @@ func (m *modeSwitch) stopController(ctx context.Context) error {
 }
 
 func (m *modeSwitch) updateController(ctx context.Context) (err error) {
+	if err := ensureControllerCredentials(ctx, m.controller); err != nil {
+		return err
+	}
 	if err := m.command(ctx, "stop", "kubelet"); err != nil {
 		return err
 	}

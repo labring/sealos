@@ -49,10 +49,11 @@ import (
 // BootstrapPlan is transported privately to the new host. Kubernetes config
 // remains serialized in its public schema so newer fields survive unchanged.
 type BootstrapPlan struct {
-	Config        []byte                 `json:"Config"`
-	Controller    RouteControllerOptions `json:"Controller"`
-	Join          bool                   `json:"Join"`
-	EtcdEndpoints []string               `json:"EtcdEndpoints"`
+	Config         []byte                 `json:"Config"`
+	Controller     RouteControllerOptions `json:"Controller"`
+	Join           bool                   `json:"Join"`
+	InitialCluster bool                   `json:"InitialCluster,omitempty"`
+	EtcdEndpoints  []string               `json:"EtcdEndpoints"`
 }
 
 type BootstrapOptions struct {
@@ -300,17 +301,9 @@ func (b *preparedBootstrap) execute(ctx context.Context, options BootstrapOption
 	if err := atomicModeFile(configPath, state.Plan.Config, 0o600); err != nil {
 		return err
 	}
-	if err := maintenanceCommand(
-		ctx,
-		options.Output,
-		"kubeadm",
-		"config",
-		"validate",
-		"--config",
-		configPath,
-	); err != nil {
-		return err
-	}
+	// Use the target kubeadm phases' native decoding and validation. A separate
+	// strict config validation rejects newer default fields that native init
+	// accepts with warnings when installing an older Kubernetes release.
 	for _, phase := range [][]string{{"certs", "all"}, {"kubeconfig", "all"}} {
 		command := append([]string{"init", "phase"}, phase...)
 		command = append(command, "--config", configPath)
@@ -389,9 +382,6 @@ func (b *preparedBootstrap) execute(ctx context.Context, options BootstrapOption
 	if err := controllerSwitch.stopController(ctx); err != nil {
 		return err
 	}
-	if err := atomicModeFile(routeManifestPath, manifest, 0o600); err != nil {
-		return err
-	}
 	if err := maintenanceCommand(ctx, options.Output, "systemctl", "start", "kubelet"); err != nil {
 		return err
 	}
@@ -430,6 +420,16 @@ func (b *preparedBootstrap) execute(ctx context.Context, options BootstrapOption
 		if err := etcdHealthy(ctx, etcdClient); err != nil {
 			return err
 		}
+	}
+	controller, err := routeControllerPod(state.Plan.Controller)
+	if err != nil {
+		return err
+	}
+	if err := ensureControllerCredentials(ctx, controller); err != nil {
+		return err
+	}
+	if err := atomicModeFile(routeManifestPath, manifest, 0o600); err != nil {
+		return err
 	}
 	if err := verifyBootstrap(ctx, options, state); err != nil {
 		return err
@@ -531,7 +531,7 @@ func verifyBootstrap(ctx context.Context, options BootstrapOptions, state *boots
 	// Initial installation can precede workers and CNI deployment. Component
 	// health and absence of registration are required; controller readiness is
 	// checked on join once the cluster already has its network configured.
-	if state.Plan.Join {
+	if state.Plan.Join && !state.Plan.InitialCluster {
 		err = m.waitReady(ctx, true)
 	} else {
 		err = wait.PollUntilContextCancel(

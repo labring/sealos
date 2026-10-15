@@ -407,6 +407,9 @@ func (m *modeSwitch) command(ctx context.Context, args ...string) error {
 // Restarting kubelet applies standalone configuration without issuing evictions
 // or deleting registrations. The administrator must still clean up and reboot.
 func (m *modeSwitch) toStandalone(ctx context.Context) error {
+	if err := ensureControllerCredentials(ctx, m.controller); err != nil {
+		return err
+	}
 	data, err := os.ReadFile(m.state.ConfigPath)
 	if err != nil {
 		return err
