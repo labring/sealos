@@ -15,13 +15,57 @@
 package standalone
 
 import (
+	"crypto/sha256"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"slices"
 	"strconv"
 )
+
+func fileFingerprint(path string) ([sha256.Size]byte, error) {
+	var fingerprint [sha256.Size]byte
+	file, err := os.Open(path)
+	if err != nil {
+		return fingerprint, err
+	}
+	defer file.Close()
+	hash := sha256.New()
+	if _, err := io.Copy(hash, file); err != nil {
+		return fingerprint, err
+	}
+	hash.Sum(fingerprint[:0])
+	return fingerprint, nil
+}
+
+func copyAtomic(src, dst string, mode os.FileMode) error {
+	source, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer source.Close()
+	file, err := os.CreateTemp(filepath.Dir(dst), ".sealos-upgrade-")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(file.Name())
+	defer file.Close()
+	if _, err := io.Copy(file, source); err != nil {
+		return err
+	}
+	if err := file.Chmod(mode); err != nil {
+		return err
+	}
+	if err := file.Sync(); err != nil {
+		return err
+	}
+	if err := file.Close(); err != nil {
+		return err
+	}
+	return os.Rename(file.Name(), dst)
+}
 
 type replacement struct {
 	Source       string

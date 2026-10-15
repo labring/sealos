@@ -21,7 +21,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strings"
 
 	"golang.org/x/sync/errgroup"
 )
@@ -65,10 +64,9 @@ func (k *KubeadmRuntime) restartStaticPod(component string) error {
 				if container.ID == "" {
 					return errors.New("static pod container has an empty ID")
 				}
-				containerID := "'" + strings.ReplaceAll(container.ID, "'", "'\\''") + "'"
 				if err = k.sshCmdAsync(
 					m,
-					"crictl --timeout=30s stop --timeout=10 "+containerID,
+					"crictl --timeout=30s stop --timeout=10 "+shellArgument(container.ID),
 				); err != nil {
 					return err
 				}

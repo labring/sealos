@@ -328,17 +328,17 @@ func writeJSON(path string, value any) error {
 }
 
 func serviceOverride(args []string) string {
+	escape := strings.NewReplacer(
+		"\\", "\\\\",
+		"\"", "\\\"",
+		"%", "%%",
+		"$", "$$",
+		"\n", "\\n",
+		"\r", "\\r",
+	)
 	quoted := make([]string, 0, 1+len(args))
 	for _, arg := range append([]string{"/usr/bin/kubelet"}, args...) {
-		arg = strings.NewReplacer(
-			"\\", "\\\\",
-			"\"", "\\\"",
-			"%", "%%",
-			"$", "$$",
-			"\n", "\\n",
-			"\r", "\\r",
-		).Replace(arg)
-		quoted = append(quoted, "\""+arg+"\"")
+		quoted = append(quoted, "\""+escape.Replace(arg)+"\"")
 	}
 	return "[Service]\nExecStart=\nExecStart=" + strings.Join(quoted, " ") + "\n"
 }

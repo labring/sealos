@@ -68,32 +68,28 @@ func (bs *realBootstrap) Apply(hosts ...string) error {
 	logger.Debug("apply %+v on hosts %+v", appliers, hosts)
 	for i := range appliers {
 		applier := appliers[i]
+		applyHosts := func(hosts []string) error {
+			return runParallel(hosts, func(host string) error {
+				if !applier.Filter(bs.ctx, host) {
+					return nil
+				}
+				logger.Debug("apply %s on host %s", applier, host)
+				return applier.Apply(bs.ctx, host)
+			})
+		}
 		if _, rootfsCheck := applier.(*defaultChecker); rootfsCheck &&
 			bs.ctx.GetCluster().IsStandaloneControlPlane() {
 			// Keep journal writes outside the parallel host loop.
 			if err := clusterfile.WithRootfsPreflight(
 				bs.ctx.GetCluster().Name,
 				hosts,
-				func(pending []string) error {
-					return runParallel(pending, func(host string) error {
-						if !applier.Filter(bs.ctx, host) {
-							return nil
-						}
-						return applier.Apply(bs.ctx, host)
-					})
-				},
+				applyHosts,
 			); err != nil {
 				return err
 			}
 			continue
 		}
-		if err := runParallel(hosts, func(host string) error {
-			if !applier.Filter(bs.ctx, host) {
-				return nil
-			}
-			logger.Debug("apply %s on host %s", applier, host)
-			return applier.Apply(bs.ctx, host)
-		}); err != nil {
+		if err := applyHosts(hosts); err != nil {
 			return err
 		}
 	}

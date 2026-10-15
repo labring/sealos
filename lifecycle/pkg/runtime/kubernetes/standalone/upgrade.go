@@ -16,7 +16,6 @@ package standalone
 
 import (
 	"context"
-	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -521,11 +520,11 @@ func (u *upgrade) prepareManifests(ctx context.Context) error {
 		files = append(files, filepath.Join(u.BinaryDir, binary))
 	}
 	for _, file := range files {
-		data, err := os.ReadFile(file)
+		fingerprint, err := fileFingerprint(file)
 		if err != nil {
 			return err
 		}
-		u.fingerprints[file] = sha256.Sum256(data)
+		u.fingerprints[file] = fingerprint
 	}
 	return nil
 }
@@ -646,11 +645,11 @@ func (u *upgrade) checkEtcd(ctx context.Context) error {
 
 func (u *upgrade) apply(ctx context.Context) (err error) {
 	for file, expected := range u.fingerprints {
-		data, err := os.ReadFile(file)
+		actual, err := fileFingerprint(file)
 		if err != nil {
 			return err
 		}
-		if sha256.Sum256(data) != expected {
+		if actual != expected {
 			return fmt.Errorf("file changed after preflight: %s", file)
 		}
 	}
@@ -935,31 +934,4 @@ func (u *upgrade) ready(ctx context.Context) error {
 		}
 	}
 	return nil
-}
-
-func copyAtomic(src, dst string, mode os.FileMode) error {
-	source, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-	defer source.Close()
-	file, err := os.CreateTemp(filepath.Dir(dst), ".sealos-upgrade-")
-	if err != nil {
-		return err
-	}
-	defer os.Remove(file.Name())
-	defer file.Close()
-	if _, err := io.Copy(file, source); err != nil {
-		return err
-	}
-	if err := file.Chmod(mode); err != nil {
-		return err
-	}
-	if err := file.Sync(); err != nil {
-		return err
-	}
-	if err := file.Close(); err != nil {
-		return err
-	}
-	return os.Rename(file.Name(), dst)
 }

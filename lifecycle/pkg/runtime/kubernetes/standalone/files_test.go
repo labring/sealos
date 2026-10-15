@@ -15,10 +15,47 @@
 package standalone
 
 import (
+	"bytes"
+	"context"
+	"crypto/sha256"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
+
+func TestUpgradeRejectsChangedPreflightFiles(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "kubelet")
+	content := bytes.Repeat([]byte("original binary"), 8192)
+	if err := os.WriteFile(path, content, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	fingerprint, err := fileFingerprint(path)
+	if err != nil || fingerprint != sha256.Sum256(content) {
+		t.Fatalf("unexpected file fingerprint: %x, %v", fingerprint, err)
+	}
+	u := &upgrade{fingerprints: map[string][32]byte{path: fingerprint}}
+	content[len(content)-1] ^= 1
+	if err := os.WriteFile(path, content, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := u.apply(context.Background()); err == nil ||
+		!strings.Contains(err.Error(), "file changed after preflight") {
+		t.Fatalf("expected changed-file rejection before activation: %v", err)
+	}
+	if err := os.Remove(path); err != nil {
+		t.Fatal(err)
+	}
+	if err := u.apply(context.Background()); !os.IsNotExist(err) {
+		t.Fatalf("expected missing-file rejection before activation: %v", err)
+	}
+	if err := os.Mkdir(path, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := fileFingerprint(path); err == nil {
+		t.Fatal("file read errors must not produce a successful fingerprint")
+	}
+}
 
 func TestRestorePartialReplacement(t *testing.T) {
 	dir := t.TempDir()
