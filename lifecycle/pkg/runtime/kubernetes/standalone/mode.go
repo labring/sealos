@@ -131,6 +131,9 @@ func switchMode(ctx context.Context, options ModeOptions) error {
 	if err := m.save(); err != nil {
 		return err
 	}
+	if err := os.Remove(resetStatePath); err != nil && !os.IsNotExist(err) {
+		return err
+	}
 	switch {
 	case options.Mode == ModeStandalone && m.state.ControllerUpdate != nil:
 		err = m.updateController(ctx)

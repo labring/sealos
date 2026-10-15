@@ -185,8 +185,14 @@ func TestModeRoundTripE2E(t *testing.T) {
 		Output:          os.Stdout,
 		CheckOnly:       true,
 	}
+	if err := saveResetState(&resetState{Complete: true, DestroyCluster: true}); err != nil {
+		t.Fatal(err)
+	}
 	if err := SwitchMode(ctx, options); err != nil {
 		t.Fatal(err)
+	}
+	if _, err := os.Stat(resetStatePath); err != nil {
+		t.Fatalf("preflight removed the previous reset record: %v", err)
 	}
 	if _, err := os.Stat(filepath.Join(modeRoot, "state.json")); !os.IsNotExist(err) {
 		t.Fatal("preflight wrote the conversion baseline")
@@ -198,6 +204,9 @@ func TestModeRoundTripE2E(t *testing.T) {
 		options.RouteController = &controller
 		if err := SwitchMode(ctx, options); err != nil {
 			t.Fatal(err)
+		}
+		if _, err := os.Stat(resetStatePath); !os.IsNotExist(err) {
+			t.Fatalf("conversion retained the previous reset record: %v", err)
 		}
 		if err := SwitchMode(ctx, options); err != nil {
 			t.Fatalf("standalone retry: %v", err)
