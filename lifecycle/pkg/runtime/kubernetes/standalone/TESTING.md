@@ -40,9 +40,12 @@ The fixture controller tests static Pod readiness and route ownership, not CNI r
 
 - Kubernetes v1.28.15 through v1.33.6, upgrading one minor at a time; same-version retry and preservation of newer etcd versions.
 - Repeated mode switching, registered and standalone member addition/removal, route cleanup and controller updates.
+- Registered master addition after standalone upgrade, certificate-upload failure, and temporary-registry cancellation before PID publication.
 - Fresh multi-master SSH installation on v1.28.15 with automatic controller credentials, worker-only Node registration, reverse conversion and registered reset/reinstallation without manual mode-state cleanup.
 - Managed credentials: mutation-free preflight, least-privilege API access, master deletion/readdition and local credential cleanup.
 - Native decoding of newer component fields on v1.28.15, invalid-type rejection without changing the active kubelet, and same-version upgrade after fresh install.
 - Worker TLS bootstrap/Ready, kubelet configuration upgrade, etcd identity, storage bindings, Service/Pod connectivity, DNS, logs, exec and port-forward.
+
+The Cilium v1.13.18 test profile uses native routing and external ClusterIP access. Controller readiness alone does not establish Service connectivity.
 
 External etcd, etcd 3.5-to-3.6 migration and custom patch layouts still need dedicated integration testing. These results do not establish compatibility with every CNI or guarantee application availability.
