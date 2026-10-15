@@ -27,7 +27,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       name,
       semData,
       adClickData,
-      // 网页密码注册从 cookie 读邀请上下文；服务端校验，失败不阻断注册
+      // Web password signups read invite context from cookies; server-side
+      // validation failures never block registration
       registration: webRegistrationFromRequest(req)
     });
 

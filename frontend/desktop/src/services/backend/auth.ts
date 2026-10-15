@@ -307,10 +307,12 @@ export const generateOnceToken = (props: OnceTokenPayload) =>
 export const generateCronJobToken = (props: CronJobTokenPayload) =>
   sign(props, internalJwtSecret(), { expiresIn: '60000' });
 
-// 挂起的账务调用会卡住触发链路（实名回调/登录上报/补偿 worker），必须有界
+// A hung billing call would stall the trigger chains (real-name callback /
+// login report / compensation worker), so it must be bounded
 const BILLING_CALL_TIMEOUT_MS = 30_000;
 
-// 失败重试期间的错误日志可能被更多人看到：尚未核销的活动兑换码绝不能明文落日志
+// Error logs during failed retries get wider exposure: unredeemed activity gift
+// codes must never be logged in plaintext
 const redactBillingBodyForLog = (body: Record<string, any>): Record<string, any> =>
   body.code === undefined ? body : { ...body, code: '[redacted]' };
 

@@ -10,15 +10,16 @@ const parsePositiveInt = (value: unknown, fallback: number) => {
 };
 
 /**
- * 分页查询我的邀请记录（regional 或 global token）：
- * 只返回本人记录，受邀人昵称脱敏（首字符 + ***），不含 uid/手机号/实名材料。
+ * Paginated query of the caller's invite records (regional or global token):
+ * returns only the caller's own records; invitee nicknames are masked
+ * (first character + ***); never returns uid / phone / realname materials.
  */
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
     return jsonRes(res, { code: 405, message: 'Method not allowed' });
   }
   try {
-    // 国际部署不参与活动：显式返回不可用
+    // International deployments don't participate in the activity
     if (!isActivityAvailable()) {
       return jsonRes(res, { code: 503, message: 'Activity unavailable' });
     }
@@ -26,7 +27,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       (await verifyAccessToken(req.headers)) || (await verifyGlobalToken(req.headers));
     if (!payload) return jsonRes(res, { code: 401, message: 'invalid token' });
 
-    // 默认 1/10，pageSize 上限 50，防止全表拖库
+    // pageSize is capped at 50 to prevent dumping the whole table
     const page = parsePositiveInt(req.query.page, 1);
     const pageSize = Math.min(parsePositiveInt(req.query.pageSize, 10), 50);
 

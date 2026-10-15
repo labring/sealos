@@ -96,7 +96,8 @@ describe('signin invitation SSR', () => {
     )!;
     expect(inviteCookie).toContain('Path=/; HttpOnly; SameSite=Lax; Max-Age=2592000; Secure');
     expect(res.getHeader('Cache-Control')).toContain('no-store');
-    // 浏览器收到页面响应时已保存 cookie；紧接着的 OAuth 请求即可读取相同归因。
+    // The browser has stored the cookie once the page response arrives, so the
+    // very next OAuth request reads the same attribution.
     const authRequest = {
       cookies: { sealos_invite: inviteCookie.split(';')[0].split('=')[1] }
     } as unknown as NextApiRequest;

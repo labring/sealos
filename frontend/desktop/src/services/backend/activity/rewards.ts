@@ -21,14 +21,16 @@ import {
 import { isUniqueConstraintError } from './registration';
 import { rewardIdentityKeys } from './identity.cjs';
 
-// 活动仅国内部署开放（desktop.layout.version !== 'en'）
+// Activity is only open to the CN deployment (desktop.layout.version !== 'en')
 export const isActivityAvailable = () => getVersion() !== 'en';
 
-// 资格事实（全部服务端读取；三种奖励共用同一套推导，避免判定不一致）
+// Eligibility facts (all read server-side; the three reward types share one
+// derivation to avoid inconsistent eligibility decisions)
 type EligibilityFacts = {
-  // 历史用户无 RegistrationSource 行按 WEB（可领）处理，不得武断归为 API
+  // Legacy users with no RegistrationSource row are treated as WEB (eligible);
+  // never classify them as API
   source: RegistrationSourceType;
-  // 个人或企业实名均有效
+  // Either personal or enterprise real-name verification counts
   isRealnameVerified: boolean;
   hasClientLogin: boolean;
   identityKey: string | null;
@@ -75,13 +77,14 @@ export const readEligibilityFacts = async (userUid: string): Promise<Eligibility
 
 type CreateRewardGrantResult = {
   grant: ActivityRewardGrant;
-  // false = 唯一键冲突命中的既有行（并发重复创建按「已发放」处理）
+  // false = existing row hit via unique key (concurrent duplicate = already granted)
   created: boolean;
 };
 
 /**
- * 奖励行 + 活动码 + 创建审计在一个全局库事务内创建：
- * GiftCode 先建、grant 携 giftCodeId；businessKey 唯一约束即幂等。
+ * Creates the reward row + activity gift code + creation audit in one
+ * global-db transaction: the GiftCode is created first and the grant carries
+ * its giftCodeId; the businessKey unique constraint provides idempotency.
  */
 const createRewardGrant = async (params: {
   recipientUid: string;
@@ -90,7 +93,8 @@ const createRewardGrant = async (params: {
   referralId?: string;
   identityKey?: string;
 }): Promise<CreateRewardGrantResult> => {
-  // 状态轮询直接复用已有账本，避免每次创建兑换码再回滚。
+  // Serve status polling from the existing row; without this pre-check, every
+  // poll would create a gift code and roll it back
   const existing = await globalPrisma.activityRewardGrant.findUnique({
     where: { businessKey: params.businessKey }
   });
@@ -106,8 +110,10 @@ const createRewardGrant = async (params: {
     try {
       const grant = await globalPrisma.$transaction(
         async (tx) => {
-          // 活动码不设受益人字段（所有者决定，2026-10-14）：防抢兑依赖 24 位随机码保密、
-          // 不向客户端下发、创建后立即以受益人身份核销
+          // Activity gift codes carry no beneficiary field (decided 2026-10-14):
+          // anti-sniping relies on keeping the 24-char random code secret, never
+          // sending it to the client, and redeeming it as the beneficiary
+          // immediately after creation
           if (params.referralId) {
             const referral = await tx.registrationReferral.findUnique({
               where: { id: params.referralId }
@@ -125,7 +131,8 @@ const createRewardGrant = async (params: {
           await tx.giftCodeCreation.create({
             data: {
               giftCodeId: giftCode.id,
-              // 审计上明确是系统为受益人创建的活动码，不伪装成手动充值
+              // Audit records the beneficiary: a system-created activity code,
+              // not something disguised as a manual recharge
               createdByUserUid: params.recipientUid,
               rechargeType: RechargeCodeType.ACTIVITY_RECHARGE
             }
@@ -149,7 +156,7 @@ const createRewardGrant = async (params: {
       return { grant, created: true };
     } catch (error) {
       if (isUniqueConstraintError(error)) {
-        // 唯一约束冲突：businessKey / giftCodeId / 随机 code
+        // Unique-constraint conflict: businessKey / giftCodeId / random code
         const existing = await globalPrisma.activityRewardGrant.findUnique({
           where: { businessKey: params.businessKey }
         });
@@ -160,7 +167,8 @@ const createRewardGrant = async (params: {
           });
           if (owner) return { grant: owner, created: false };
         }
-        // 随机码碰撞使用新码重试，失败事务不会留下孤立码。
+        // On a random-code collision, retry with a fresh code; the failed
+        // transaction leaves no orphaned code
         if (attempt < 2) continue;
       }
       if (
@@ -177,7 +185,8 @@ const createRewardGrant = async (params: {
   }
 };
 
-// 已有首登行拥有不可变的主体快照；换绑实名不能再占用另一个主体。
+// An existing first-login row holds an immutable identity snapshot; re-binding
+// real-name verification must not let an account claim another identity
 export const hasIdentityConflict = async (userUid: string, facts: EligibilityFacts) => {
   const own = await globalPrisma.activityRewardGrant.findUnique({
     where: { businessKey: firstLoginBusinessKey(userUid) }
@@ -206,8 +215,9 @@ const markRetryableFailure = async (grantId: string, reason: string) =>
   });
 
 /**
- * 自动核销：条件更新抢占（READY/RETRYABLE_FAILURE → REDEEMING，多副本安全），
- * 以受益人身份调用账务（内部 billing JWT），成功置 REDEEMED。
+ * Auto redemption: claim via conditional update (READY/RETRYABLE_FAILURE →
+ * REDEEMING, safe across multiple replicas), call billing as the beneficiary
+ * (internal billing JWT), then mark REDEEMED on success.
  */
 export const redeemGrant = async (grant: ActivityRewardGrant): Promise<void> => {
   if (grant.failureReason?.startsWith('conflict:')) return;
@@ -257,7 +267,7 @@ export const redeemGrant = async (grant: ActivityRewardGrant): Promise<void> => 
     },
     { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
   );
-  if (claimed.count === 0) return; // 已被其他副本抢占或已完成
+  if (claimed.count === 0) return; // claimed by another replica or already done
 
   try {
     const [giftCode, user] = await Promise.all([
@@ -273,7 +283,8 @@ export const redeemGrant = async (grant: ActivityRewardGrant): Promise<void> => 
     if (!giftCode) throw new Error(`redeemGrant: gift code missing for grant ${grant.id}`);
     if (!user) throw new Error(`redeemGrant: recipient user missing for grant ${grant.id}`);
 
-    // body 字段对齐 ParseUseGiftCodeReq（仅 code；身份走 Authorization 内部 token）
+    // Body fields match ParseUseGiftCodeReq (code only; identity travels via
+    // the Authorization internal token)
     await callBillingService(
       '/account/v1alpha1/gift-code/use',
       { userUid: grant.recipientUid, userId: user.name },
@@ -283,7 +294,7 @@ export const redeemGrant = async (grant: ActivityRewardGrant): Promise<void> => 
     await markRedeemed(grant.id, new Date());
   } catch (error) {
     console.error('redeemGrant: redeem failed, start reconcile', { grantId: grant.id, error });
-    // 失败/超时走对账，绝不能把 grant 永久卡在 REDEEMING
+    // On failure/timeout, reconcile; a grant must never get stuck in REDEEMING forever
     await reconcileGrant(grant).catch((reconcileError) => {
       console.error('redeemGrant: reconcile failed', { grantId: grant.id, error: reconcileError });
     });
@@ -291,10 +302,13 @@ export const redeemGrant = async (grant: ActivityRewardGrant): Promise<void> => 
 };
 
 /**
- * 对账（核销超时/未知错误时）：读 GiftCode 行，按三分支处理：
- * - used ∧ usedBy = 受益人 → 补记成功（响应丢失不重复充值）；
- * - used ∧ usedBy ≠ 受益人 → conflict:used_by_other，停止重试、禁止补发新码；
- * - 未使用 → 退回 READY 由补偿 worker 按退避重试。
+ * Reconciliation (on redeem timeout/unknown error): read the GiftCode row and
+ * handle three cases:
+ * - used ∧ usedBy = recipient → record success retroactively (a lost response
+ *   must not cause a double recharge);
+ * - used ∧ usedBy ≠ recipient → conflict:used_by_other, stop retrying and
+ *   forbid issuing a replacement code;
+ * - unused → back to READY, retried by the compensation worker with backoff.
  */
 export const reconcileGrant = async (grant: ActivityRewardGrant): Promise<void> => {
   const fresh = await globalPrisma.activityRewardGrant.findUnique({ where: { id: grant.id } });
@@ -330,7 +344,8 @@ export const reconcileGrant = async (grant: ActivityRewardGrant): Promise<void> 
   }
 
   if (giftCode.used && giftCode.usedBy !== fresh.recipientUid) {
-    // conflict: 前缀 worker 永久跳过；记录异常供人工排查
+    // The conflict: prefix makes the worker skip this grant permanently; log
+    // the anomaly for manual investigation
     await markRetryableFailure(fresh.id, 'conflict:used_by_other');
     console.error('reconcileGrant: activity gift code used by other user, stop retrying', {
       grantId: fresh.id,
@@ -350,7 +365,6 @@ export const reconcileGrant = async (grant: ActivityRewardGrant): Promise<void> 
     }
   }
 
-  // 未使用：退回 READY
   await globalPrisma.activityRewardGrant.updateMany({
     where: {
       id: fresh.id,
@@ -372,7 +386,8 @@ const invalidateReferral = async (id: string, reason: string) => {
           ineligibleReason: reason
         }
       });
-      // 已发起的核销仍需对账；只停止尚未抢占的奖励。
+      // Redemptions already in flight still need reconciliation; only stop
+      // grants not yet claimed
       await tx.activityRewardGrant.updateMany({
         where: {
           referralId: id,
@@ -388,7 +403,7 @@ const invalidateReferral = async (id: string, reason: string) => {
   );
 };
 
-/** 主体所有者的双方邀请礼直接补建，不递归邀请祖先。 */
+/** Backfill both-side referral rewards for the identity owner; no recursion into ancestors. */
 const grantReferralRewards = async (
   userUid: string,
   owner: ActivityRewardGrant,
@@ -399,7 +414,8 @@ const grantReferralRewards = async (
   });
   if (!referral) return;
   if (referral.status === 'INELIGIBLE') {
-    // 此账号先前未获资格，后来首次绑定了另一个合法主体；不能把一次拒绝变成永久账号封禁。
+    // The account was rejected before but has since bound a different
+    // legitimate identity; one rejection must not become a permanent account ban
     if (referral.ineligibleReason !== 'identity_already_claimed') return;
     await globalPrisma.registrationReferral.updateMany({
       where: {
@@ -445,7 +461,8 @@ const grantForEligibleUser = async (userUid: string, facts: EligibilityFacts) =>
   const existing = await globalPrisma.activityRewardGrant.findUnique({
     where: { businessKey: firstLoginBusinessKey(userUid) }
   });
-  // 已有主体快照证明条件曾满足：不因后续材料变化阻断已取得资格的邀请补领。
+  // An existing identity snapshot proves eligibility once held: later changes
+  // to the materials must not block backfill of an already-earned referral reward
   if (!existing && (!facts.hasClientLogin || !facts.isRealnameVerified || !facts.identityKey))
     return;
   const firstLogin = existing
@@ -460,7 +477,9 @@ const grantForEligibleUser = async (userUid: string, facts: EligibilityFacts) =>
     firstLogin.grant.recipientUid !== userUid ||
     !firstLogin.grant.identityKey?.startsWith('v1:')
   ) {
-    // 持久化拒绝原因，避免邀请补偿一直扫描重复主体。首登扫描轮转另有持久时间戳。
+    // Persist the rejection reason so referral backfill stops rescanning
+    // duplicate identities; the first-login scan rotation has its own
+    // persistent timestamp
     const referral = await globalPrisma.registrationReferral.findUnique({
       where: { inviteeUid: userUid }
     });
@@ -471,14 +490,19 @@ const grantForEligibleUser = async (userUid: string, facts: EligibilityFacts) =>
   await grantReferralRewards(userUid, firstLogin.grant, facts);
 };
 
-/** 服务端唯一发奖入口：主体唯一约束决定账号所有权，业务键决定单项幂等。 */
+/**
+ * The single server-side reward entry point: the identity unique constraint
+ * decides account ownership; the business key gives per-item idempotency.
+ */
 export const checkAndGrantUserRewards = async (userUid: string): Promise<void> => {
   try {
     if (!isActivityAvailable()) return;
     const facts = await readEligibilityFacts(userUid);
     if (facts.source === RegistrationSourceType.API) return;
     await grantForEligibleUser(userUid, facts);
-    // 只检查已持有主体资格且缺少邀请奖励的关系。未满足条件的老关系不会占满批次。
+    // Only scan relations that already hold an eligible identity and are
+    // missing the referral reward; stale ineligible relations never fill up
+    // the batch
     const missing: { inviteeUid: string }[] = await globalPrisma.$queryRaw(Prisma.sql`
       SELECT r."inviteeUid" FROM "RegistrationReferral" r
       JOIN "ActivityRewardGrant" owner ON owner."businessKey" = 'DESKTOP_FIRST_LOGIN:' || r."inviteeUid"::TEXT
@@ -495,14 +519,18 @@ export const checkAndGrantUserRewards = async (userUid: string): Promise<void> =
       );
     }
   } catch (error) {
-    // 奖励不可用不能阻断登录/实名；持久事实留给 worker 重试。
+    // Reward unavailability must never block login/real-name flows; persisted
+    // facts are left for the worker to retry
     console.error('checkAndGrantUserRewards: failed', { userUid, error });
   }
 };
 
-// 请求-响应链路（实名回调等）等待发奖的有界超时：到点即放行响应。
-// 已创建的 grant 不回滚——核销挂起的由补偿 worker 按 REDEEMING 滞留对账，
-// 未创建的由缺失奖励扫描补建，因此超时不会丢奖励。
+// Bounded timeout for request-response paths (e.g. real-name callbacks)
+// waiting on reward granting: release the response when the deadline hits.
+// Created grants are not rolled back — ones stuck redeeming are reconciled by
+// the compensation worker via their lingering REDEEMING status, and uncreated
+// ones are backfilled by the missing-reward scan, so a timeout never loses
+// a reward.
 const TRIGGER_GRANT_DEADLINE_MS = 5_000;
 
 export const checkAndGrantUserRewardsBounded = async (userUid: string): Promise<void> => {

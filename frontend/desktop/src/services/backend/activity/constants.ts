@@ -1,26 +1,28 @@
 import { ActivityRewardType } from 'prisma/global/generated/client';
 
-// 邀请上下文 cookie：落在 desktop 云端域名上，OAuth 往返同域不丢失。
-// 只写一次（已存在则不覆盖），首次有效链接优先。
+// Invite context cookie: lives on the desktop cloud domain, so the OAuth
+// round-trip stays same-origin and cannot lose it. Written once (never
+// overwritten); the first valid link wins.
 export const INVITE_COOKIE_NAME = 'sealos_invite';
-export const INVITE_COOKIE_MAX_AGE = 30 * 24 * 60 * 60; // 30 天，秒
+export const INVITE_COOKIE_MAX_AGE = 30 * 24 * 60 * 60; // 30 days, in seconds
 
-// 金额单位沿用现有账务：1¥ = 1,000,000（src/utils/format.ts 的 deFormatMoney）
+// Money unit follows existing accounting: 1 CNY = 1,000,000 (deFormatMoney, src/utils/format.ts)
 export const FIRST_LOGIN_REWARD_AMOUNT = 10_000_000n; // ¥10
 export const REFERRAL_REWARD_AMOUNT = 5_000_000n; // ¥5
 
-// 规则版本仅审计用，不参与资格判定
+// Rule version is audit-only; it plays no part in eligibility checks
 export const ACTIVITY_RULE_VERSION = '2026-10-15.1';
 
-// 邀请码 8 位，去混淆字母表（无 0/O/1/I/L），冲突靠唯一约束重试
+// Invite codes: 8 chars from an unambiguous alphabet (no 0/O/1/I/L);
+// collisions are retried via the unique constraint
 export const INVITE_CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 export const INVITE_CODE_LENGTH = 8;
 
-// 活动奖励码沿用现有 24 位随机字符串风格，同样去混淆
+// Activity gift codes follow the existing 24-char random-string style, same unambiguous alphabet
 export const GIFT_CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 export const GIFT_CODE_LENGTH = 24;
 
-// businessKey 唯一约束即幂等：每种奖励每业务键一次
+// The businessKey unique constraint gives idempotency: one reward per business key
 export const firstLoginBusinessKey = (userUid: string) => `DESKTOP_FIRST_LOGIN:${userUid}` as const;
 export const referralInviterBusinessKey = (referralId: string) =>
   `REFERRAL_INVITER:${referralId}` as const;
@@ -37,11 +39,12 @@ export const rewardAmount = (type: ActivityRewardType): bigint => {
   }
 };
 
-// GiftCode.comment 审计标记：明确是系统为受益人创建的活动码
+// GiftCode.comment audit marker: marks codes the system created for the beneficiary
 export const activityGiftCodeComment = (type: ActivityRewardType, businessKey: string) =>
   `activity:${type}:${businessKey}`;
 
-// 官网 #299 的邀请页上线前，统一返回可独立使用的控制台注册链接。
-// 官网部署验收后再切换此处；客户端始终透传服务端 URL。
+// Until the website (#299) invite page ships, always return the standalone
+// console signup link. Switch here once the website deployment is verified;
+// clients always pass the server URL through.
 export const buildInviteUrl = (code: string) =>
   `https://${global.AppConfig.cloud.domain}/signin?invite=${encodeURIComponent(code)}`;

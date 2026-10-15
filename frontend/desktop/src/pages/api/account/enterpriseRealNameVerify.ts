@@ -149,8 +149,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return;
     });
 
-    // 企业实名成功后触发拉新奖励资格检查：不进实名事务本身，失败仅记日志，不影响实名结果。
-    // 有界等待——账务迟迟不响应不能拖住实名成功响应，超时后交给补偿 worker 对账补发。
+    // Trigger the referral reward eligibility check after enterprise real-name
+    // success: kept outside the real-name transaction; failures only log and
+    // never affect the real-name result.
+    // Bounded wait — an unresponsive billing service must not hold up the success
+    // response; on timeout the compensation worker reconciles and reissues.
     try {
       await checkAndGrantUserRewardsBounded(userUid);
     } catch (error) {

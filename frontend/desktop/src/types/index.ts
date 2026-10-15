@@ -26,7 +26,7 @@ declare global {
   var commitCroner: Cron | undefined;
   var finishCroner: Cron | undefined;
   var runCroner: Cron | undefined;
-  // 拉新奖励补偿 worker 的 croner（getAppConfig 惰性注册）
+  // Croner for the referral reward compensation worker (lazily registered in getAppConfig)
   var activityRewardCroner: Cron | undefined;
   var WechatAccessToken: string | undefined;
   var WechatExpiresIn: number | undefined;

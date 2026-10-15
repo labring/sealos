@@ -29,7 +29,8 @@ export default defineConfig({
       },
       {
         extends: true,
-        // 浏览器测试不能沿用 Node 条件，否则 Chakra/tslib 会解析到不兼容的入口。
+        // Browser tests cannot reuse the Node conditions, or Chakra/tslib would
+        // resolve to incompatible entry points.
         resolve: { conditions: ['module', 'browser', 'import', 'default'] },
         test: {
           name: 'components',

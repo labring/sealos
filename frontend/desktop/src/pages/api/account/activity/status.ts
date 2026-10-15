@@ -5,9 +5,10 @@ import { jsonRes } from '@/services/backend/response';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 /**
- * 活动状态查询（regional 或 global token）：
- * 先跑自身 checkAndGrantUserRewards（覆盖老用户补领），失败不阻塞返回；
- * 金额为 credit 单位字符串，客户端按 1¥=1e6 展示。
+ * Activity status query (regional or global token):
+ * runs checkAndGrantUserRewards for the caller first (covers catch-up grants for
+ * existing users); a failure there must not block the response. Amounts are
+ * credit-unit strings; the client renders 1 CNY = 1e6.
  */
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -18,7 +19,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       (await verifyAccessToken(req.headers)) || (await verifyGlobalToken(req.headers));
     if (!payload) return jsonRes(res, { code: 401, message: 'invalid token' });
 
-    // 资格检查内部自带 gate 与幂等；此处失败不影响状态返回（下一轮触发再补）
+    // The eligibility check is internally gated and idempotent; a failure here does
+    // not affect the status response (the next trigger catches up)
     try {
       await checkAndGrantUserRewards(payload.userUid);
     } catch (error) {

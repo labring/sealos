@@ -6,12 +6,13 @@ import {
   INVITE_CODE_LENGTH
 } from './constants';
 
-// 用 crypto 随机在去混淆字母表上取串，避免可预测序列
+// Draw random chars from the unambiguous alphabet via crypto to avoid predictable sequences
 const randomCodeFromAlphabet = (alphabet: string, length: number) => {
   const bytes = crypto.randomBytes(length);
   let code = '';
   for (let i = 0; i < length; i++) {
-    // 拒绝采样不需要：直接按字节取模，字母表长度 31 时偏差可忽略（邀请码/活动码非安全凭据）
+    // Rejection sampling unnecessary: plain byte modulo over the 31-char alphabet
+    // has negligible bias (invite/gift codes are not security credentials)
     code += alphabet[bytes[i] % alphabet.length];
   }
   return code;
@@ -23,7 +24,7 @@ export const generateInviteCode = () =>
 export const generateActivityGiftCode = () =>
   randomCodeFromAlphabet(GIFT_CODE_ALPHABET, GIFT_CODE_LENGTH);
 
-// 昵称脱敏：首字符 + ***，空昵称给固定文案，避免暴露可识别信息
+// Avoid exposing identifiable information.
 export const maskNickname = (nickname?: string | null) => {
   const trimmed = nickname?.trim();
   if (!trimmed) return 'Sealos 用户';

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// prisma 单例整体替换为可断言的桩，避免真实连库
+// Replace the prisma singleton wholesale with an assertable stub; no real DB connection
 vi.mock('@/services/backend/db/init', () => ({
   globalPrisma: {
     activityRewardIdentityConfig: { findUnique: vi.fn() },
@@ -29,10 +29,10 @@ vi.mock('@/services/backend/db/init', () => ({
   }
 }));
 
-// 活动开关读 global.AppConfig，单测环境直接固定为国内版本
+// Activity switches read global.AppConfig; pin it to the CN version for unit tests
 vi.mock('@/services/enable', () => ({ getVersion: vi.fn(() => 'cn') }));
 
-// 核销走内部账务服务，单测里拦截以便断言「不重复核销」
+// Redemption goes through the internal billing service; intercept it to assert no double redemption
 vi.mock('@/services/backend/auth', () => ({ callBillingService: vi.fn() }));
 
 import { Prisma } from 'prisma/global/generated/client';
@@ -119,7 +119,7 @@ describe('activity rewards eligibility', () => {
       });
       (globalPrisma.enterpriseRealNameInfo.findUnique as any).mockResolvedValue(null);
       (globalPrisma.desktopLoginRecord.findUnique as any).mockResolvedValue({ userUid: USER_UID });
-      // 首登礼事务撞 businessKey 唯一约束 → 视为已发放
+      // First-login gift transaction hits the businessKey unique constraint → already granted
       (globalPrisma.$transaction as any).mockRejectedValue(p2002(ErrorClass));
       (globalPrisma.activityRewardGrant.findUnique as any)
         .mockResolvedValueOnce(null)
@@ -141,7 +141,8 @@ describe('activity rewards eligibility', () => {
         where: { businessKey: firstLoginBusinessKey(USER_UID) }
       });
       expect(globalPrisma.$transaction).toHaveBeenCalledTimes(1);
-      // 既有行不再抢占核销（重试交给补偿 worker 的退避逻辑）
+      // The existing row does not re-claim redemption (retries belong to the
+      // compensation worker's backoff)
       expect(globalPrisma.activityRewardGrant.updateMany).not.toHaveBeenCalled();
       expect(callBillingService).not.toHaveBeenCalled();
     }
@@ -233,8 +234,9 @@ describe('activity status presentation', () => {
     });
     (globalPrisma.enterpriseRealNameInfo.findUnique as any).mockResolvedValue(null);
     (globalPrisma.desktopLoginRecord.findUnique as any).mockResolvedValue({ userUid: USER_UID });
-    // 即使历史数据里已有邀请码，API 账号也不得返回可分享链接：
-    // 发奖逻辑对 API 邀请人永久跳过，页面不能承诺双方奖励。
+    // Even if legacy data already has an invite code, API accounts must not get a
+    // shareable link: rewards permanently skip API inviters, and the page must not
+    // promise rewards to both sides.
     (globalPrisma.registrationInviteCode.findUnique as any).mockResolvedValue({ code: 'ABCDEFGH' });
     (globalPrisma.registrationReferral.findMany as any).mockResolvedValue([]);
     (globalPrisma.activityRewardGrant.findMany as any).mockResolvedValue([]);
@@ -323,8 +325,8 @@ describe('registration attribution', () => {
     async (_provider, ErrorClass) => {
       const existing = { id: 'row', inviterUid: USER_UID, code: 'ABC23456' };
       (globalPrisma.registrationInviteCode.findUnique as any)
-        .mockResolvedValueOnce(null) // 预检：没有码
-        .mockResolvedValueOnce(existing); // 冲突后重读：并发已创建
+        .mockResolvedValueOnce(null) // pre-check: no code yet
+        .mockResolvedValueOnce(existing); // re-read after conflict: created concurrently
       (globalPrisma.registrationInviteCode.create as any).mockRejectedValue(p2002(ErrorClass));
 
       const code = await ensureInviteCode(USER_UID);

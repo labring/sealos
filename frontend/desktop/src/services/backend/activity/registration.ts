@@ -12,13 +12,13 @@ export type TransactionClient = Omit<
   '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
 >;
 
-// 注册来源与邀请归因上下文：API 入口显式传 API；网页入口从 cookie 读邀请码
+// Registration source + invite attribution: API sets source; web reads invite cookie.
 export type RegistrationContext = {
   source: 'WEB' | 'API';
   inviteCode?: string;
 };
 
-// 从请求 cookie 读邀请码。next API 路由自带 cookie 解析，直接复用
+// Next API routes parse cookies for us, so reuse req.cookies directly.
 export const readInviteCodeFromRequest = (req: NextApiRequest): string | undefined => {
   const code = req.cookies?.[INVITE_COOKIE_NAME];
   if (typeof code !== 'string') return undefined;
@@ -33,7 +33,10 @@ export const webRegistrationFromRequest = (req: NextApiRequest): RegistrationCon
 
 export type SigninInviteIssue = 'not_found' | 'disabled' | 'unavailable' | 'error';
 
-/** 注册页响应前接收邀请，保证用户立即发起 OAuth 时 cookie 已存在。 */
+/**
+ * Accept the invite before the signin page responds, so the cookie already
+ * exists when the user immediately starts OAuth.
+ */
 export const prepareInviteForSignin = async ({
   req,
   res,
@@ -43,12 +46,14 @@ export const prepareInviteForSignin = async ({
   res: Pick<ServerResponse, 'getHeader' | 'setHeader'>;
   invite: string | string[] | undefined;
 }): Promise<SigninInviteIssue | null> => {
-  // 不覆盖先前接收的邀请；普通登录页不为活动查询数据库。
+  // Don't overwrite a previously accepted invite; the plain login page does
+  // not query the DB for the activity.
   if (invite === undefined || req.cookies[INVITE_COOKIE_NAME]) return null;
   if (typeof invite !== 'string' || !invite.trim()) return 'not_found';
 
   try {
-    // SSR 可能是进程首次请求，不能依赖浏览器稍后才加载的 AppConfig。
+    // SSR may be the process's first request, so it cannot rely on AppConfig
+    // loaded later by the browser.
     await getCloudConfig();
     if (getVersion() === 'en') return 'unavailable';
 
@@ -74,7 +79,8 @@ export const prepareInviteForSignin = async ({
       ...(req.headers['x-forwarded-proto'] === 'https' ? ['Secure'] : [])
     ].join('; ');
     const existing = res.getHeader('Set-Cookie');
-    // 语言 cookie 先写入；必须追加，不能用邀请 cookie 把它覆盖。
+    // The language cookie was set earlier; we must append, not replace it with
+    // the invite cookie.
     res.setHeader('Set-Cookie', [
       ...(Array.isArray(existing) ? existing : existing ? [String(existing)] : []),
       cookie
@@ -87,11 +93,13 @@ export const prepareInviteForSignin = async ({
 };
 
 /**
- * 在创建 User 的同一事务内落注册归因：
- * 1. registrationSource（无该行的历史用户按 WEB 处理）；
- * 2. 有邀请码时服务端校验（存在、enabled、inviter 存在、防御性 inviterUid ≠ 新 user.uid），
- *    通过则创建 registrationReferral（inviteeUid 唯一即幂等）。
- * 邀请校验失败只静默跳过邀请（记日志），绝不能阻断注册本身。
+ * Persist registration attribution in the same transaction that creates the User:
+ * 1. registrationSource (legacy users without this row are treated as WEB);
+ * 2. when an invite code is present, validate it server-side (exists, enabled,
+ *    inviter exists, defensive inviterUid ≠ new user.uid); if it passes, create
+ *    registrationReferral (inviteeUid unique, i.e. idempotent).
+ * Invite validation failures only skip the invite silently (logged); they must
+ * never block the registration itself.
  */
 export const attachRegistrationInTransaction = async (
   tx: TransactionClient,
@@ -111,7 +119,7 @@ export const attachRegistrationInTransaction = async (
       where: { code: inviteCode },
       select: { id: true, inviterUid: true, enabled: true }
     });
-    // 服务端校验邀请码，不信任前端传入的 inviterUid
+    // Validate the invite code server-side; never trust a client-supplied inviterUid
     if (!code || !code.enabled) {
       console.warn('attachRegistration: invite code not found or disabled, skip referral', {
         userUid
@@ -119,7 +127,7 @@ export const attachRegistrationInTransaction = async (
       return;
     }
     if (code.inviterUid === userUid) {
-      // 防御性检查：注册时新用户尚无自己的码，正常不可能命中
+      // Defensive: the new user has no code of their own yet, so this should never trigger
       console.warn('attachRegistration: self referral detected, skip', { userUid });
       return;
     }
@@ -139,24 +147,27 @@ export const attachRegistrationInTransaction = async (
       }
     });
   } catch (error) {
-    // 校验类失败（码不存在/停用/自邀）走上面的 return，不影响注册；
-    // 这里兜的是 referral 写入本身的 DB 级错误——注意同事务内语句失败会毒化整个
-    // 事务，注册会随之失败。这是「同事务落归因」与「绝不阻断注册」在基础设施
-    // 故障下的取舍：按 spec 优先保证归因与账号创建的原子一致，不做跨事务兜底。
+    // Validation failures (missing/disabled/self-referral) return above and
+    // never affect registration; this handles DB-level errors from the referral
+    // write itself. A failed statement poisons the whole transaction, so the
+    // registration fails with it. Trade-off between "attribute in the same
+    // transaction" and "never block registration" under infrastructure failure:
+    // per spec, atomicity of attribution and account creation wins; no
+    // cross-transaction fallback.
     console.error('attachRegistration: failed to attach referral', { userUid, error });
     throw error;
   }
 };
 
-// 两种生成客户端的错误构造器不同，按稳定错误码识别唯一冲突。
+// The two generated clients shape errors differently; match unique conflicts by stable error code
 export const isUniqueConstraintError = (error: unknown) =>
   typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002';
 
 /**
- * 幂等 get-or-create 邀请码：
- * - 已有码直接返回（不覆盖）；
- * - 并发下 inviterUid 唯一冲突 → 重读；
- * - 随机 code 撞车 → 换码重试。
+ * Idempotent get-or-create of the invite code:
+ * - return an existing code as-is (never overwrite);
+ * - on a concurrent inviterUid unique conflict, re-read;
+ * - on a random code collision, retry with a new code.
  */
 export const ensureInviteCode = async (userUid: string) => {
   const existing = await globalPrisma.registrationInviteCode.findUnique({
@@ -175,8 +186,9 @@ export const ensureInviteCode = async (userUid: string) => {
       });
     } catch (error) {
       if (isUniqueConstraintError(error)) {
-        // 冲突可能来自 inviterUid（并发重复创建）或随机 code 撞车：
-        // 重读 inviterUid 命中则直接复用，否则换一个 code 重试
+        // The conflict may be inviterUid (concurrent duplicate create) or a
+        // random code collision: reuse if re-reading inviterUid hits, else
+        // retry with a new code
         const again = await globalPrisma.registrationInviteCode.findUnique({
           where: { inviterUid: userUid }
         });

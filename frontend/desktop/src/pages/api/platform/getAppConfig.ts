@@ -86,7 +86,8 @@ export async function getAppConfig(): Promise<AppClientConfigType> {
         }
       });
     }
-    // 拉新奖励补偿 worker：重试未完成核销 + 对账滞留 REDEEMING（沿用惰性注册模式）
+    // Referral reward compensation worker: retries unfinished redemptions and
+    // reconciles rows stuck in REDEEMING (lazy-registration pattern as above)
     if (!global.activityRewardCroner) {
       global.activityRewardCroner = new Cron('*/60 * * * * *', activityRewardJob, {
         name: 'activityRewardJob',

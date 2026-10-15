@@ -33,8 +33,9 @@ type RetryGrant = {
   attemptCount: number;
 };
 
-// 模拟这组 nullable 字段查询的数据库筛选（failureReason / lastAttemptAt）与
-// LIMIT，复现批次饥饿；lastAttemptAt 排序按 PostgreSQL ASC NULLS LAST 语义。
+// Emulate the DB filtering on the nullable fields (failureReason / lastAttemptAt)
+// and LIMIT to reproduce batch starvation; lastAttemptAt sorts with PostgreSQL
+// ASC NULLS LAST semantics.
 const failureMatches = (
   reason: string | null,
   filter: Prisma.ActivityRewardGrantWhereInput
@@ -128,8 +129,9 @@ describe('activity reward compensation worker', () => {
   });
 
   it('redeems never-attempted READY rewards behind a full batch of stale failures', async () => {
-    // 复现 PostgreSQL NULLS LAST 饥饿：50 条退避中的旧失败占满 LIMIT，
-    // 新 READY（lastAttemptAt=NULL）必须仍有独立批次被核销。
+    // Reproduces PostgreSQL NULLS LAST starvation: 50 stale failures in backoff
+    // fill the LIMIT, so fresh READY rows (lastAttemptAt=NULL) must still get
+    // redeemed by a separate batch.
     const staleFailures: RetryGrant[] = Array.from({ length: 50 }, (_, index) => ({
       id: `stale-${index}`,
       status: ActivityRewardStatus.RETRYABLE_FAILURE,
@@ -182,7 +184,8 @@ describe('activity reward compensation worker', () => {
   });
 
   it('rebuilds the first-login gift without an invitation or an existing grant', async () => {
-    // 首次创建事务失败后只剩登录事实：不依赖邀请关系或用户再次登录，cron 必须补建。
+    // Only the login fact remains after the initial creation transaction failed:
+    // without a referral or another login, the cron must rebuild the reward.
     seedRetryQueue([]);
     const userUid = '00000000-0000-4000-8000-00000000000b';
     queryRaw.mockResolvedValueOnce([{ userUid }]).mockResolvedValueOnce([]);

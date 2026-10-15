@@ -4,8 +4,10 @@ import { verifyOAuth2AccessToken } from '@/services/backend/auth';
 import { jsonRes } from '@/services/backend/response';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-// P1：普通网页登录和区域 JWT 只能证明账号身份，不能证明完成过官方 Desktop 授权。
-// 显式允许当前两个官方公开 client；不能按名字、body 或原生回调形状自动接纳第三方。
+// P1: ordinary web logins and regional JWTs only prove account identity, not that
+// official Desktop authorization was completed. The two official public clients are
+// allowed explicitly; third parties must never be auto-accepted by name, body, or
+// native callback shape.
 const DESKTOP_OAUTH_CLIENTS: Readonly<
   Record<
     string,
@@ -25,9 +27,11 @@ const DESKTOP_OAUTH_CLIENTS: Readonly<
 };
 
 /**
- * Desktop 客户端登录事实上报（经核验的官方 OAuth access token）：
- * upsert DesktopLoginRecord（userUid 主键天然幂等，重复上报只刷新 lastSeenAt），
- * 随后触发资格检查。登录事实与活动可用性无关（审计事实照记），发奖内部有 gate。
+ * Reports a desktop-client login fact (verified via an official OAuth access token):
+ * upserts a DesktopLoginRecord (the userUid primary key makes it naturally
+ * idempotent — repeat reports only refresh lastSeenAt), then triggers the
+ * eligibility check. The login fact is independent of activity availability (the
+ * audit fact is always recorded); reward granting has its own internal gate.
  */
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -43,7 +47,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         : undefined;
     if (!payload || !policy) return jsonRes(res, { code: 401, message: 'invalid Desktop token' });
 
-    // 已签名的 client_id 还必须保有官方客户端登记；删除或收回 grant 后不能继续上报。
+    // A signed client_id must still keep its official client registration; once the
+    // client is deleted or its grants revoked, it can no longer report.
     const client = await globalPrisma.oAuthClient.findUnique({
       where: { clientId: payload.client_id }
     });
@@ -58,7 +63,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const userUid = payload.sub;
     const clientVersion =
       typeof req.body?.clientVersion === 'string' ? req.body.clientVersion : undefined;
-    // access token 不含 grant 类型：只记录服务端核验的 client，不信任 body.authSource。
+    // The access token carries no grant type: record only the server-verified
+    // client and never trust body.authSource.
     const authSource = `oauth2_client:${payload.client_id}`;
 
     const now = new Date();
@@ -68,7 +74,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       update: { lastSeenAt: now, clientVersion, authSource }
     });
 
-    // 发奖失败只记日志，绝不能影响登录链路
+    // Reward failures are only logged and must never affect the login flow
     try {
       await checkAndGrantUserRewards(userUid);
     } catch (error) {

@@ -178,7 +178,8 @@ describe('google onetap api handler', () => {
       name: 'Ada Lovelace',
       avatar_url: 'persisted-avatar',
       email: 'ada@example.com',
-      // 注册页响应写入的邀请 cookie 会继续传入 OAuth 注册事务。
+      // The invite cookie written by the signup page response carries into the
+      // OAuth registration transaction.
       registration: { source: 'WEB', inviteCode: 'ABCD2345' }
     });
     expect(res.body).toMatchObject({

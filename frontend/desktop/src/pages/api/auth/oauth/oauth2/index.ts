@@ -79,7 +79,8 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
     name,
     semData,
     adClickData,
-    // 网页 OAuth2 注册从 cookie 读邀请上下文；服务端校验，失败不阻断注册
+    // Web OAuth2 signups read invite context from cookies; server-side validation
+    // failures never block registration
     registration: webRegistrationFromRequest(req)
   });
 

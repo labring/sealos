@@ -46,7 +46,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       password,
       avatar_url: '',
       name: username,
-      // API 注册：显式标记来源，且不读任何邀请上下文（API 账号不参与拉新奖励）
+      // API signup: mark the source explicitly and read no invite context (API
+      // accounts never participate in referral rewards)
       registration: { source: 'API' }
     });
     if (!globalData) throw new Error('Failed to edit db');

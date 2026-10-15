@@ -124,7 +124,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     name: payload.name || '',
     avatar_url: avatarUrl,
     email: payload.email_verified ? payload.email : undefined,
-    // 网页 Google One Tap 注册从 cookie 读邀请上下文；服务端校验，失败不阻断注册
+    // Google One Tap web signups read invite context from cookies; server-side
+    // validation failures never block registration
     registration: webRegistrationFromRequest(req)
   });
 

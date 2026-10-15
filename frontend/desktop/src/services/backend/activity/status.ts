@@ -15,14 +15,16 @@ import {
 } from './constants';
 import { isActivityAvailable, readEligibilityFacts, hasIdentityConflict } from './rewards';
 
-// 首登礼展示状态（金额为 credit 单位字符串，客户端按 1¥=1e6 展示）
+// First-login gift display status (amounts are credit-unit strings; the client
+// renders 1 CNY = 1e6)
 export type FirstLoginGiftStatus = {
   status: 'ineligible' | 'pending_realname' | 'processing' | 'credited';
   amount: string;
   creditedAt?: string;
 };
 
-// 受邀礼展示状态：本人经邀请链接注册才有（无邀请关系返回 null，客户端整行隐藏）
+// Invitee gift display status: exists only when the user registered via an invite
+// link (null when there is no referral; the client hides the whole row)
 export type InviteeGiftStatus = {
   status: 'ineligible' | 'pending_realname' | 'processing' | 'credited';
   amount: string;
@@ -57,22 +59,23 @@ export type InviteRecordItem = {
   status: InviteRecordStatus;
 };
 
-const FIRST_LOGIN_AMOUNT_STRING = FIRST_LOGIN_REWARD_AMOUNT.toString(); // ¥10，credit 单位，单一来源
-const INVITEE_AMOUNT_STRING = REFERRAL_REWARD_AMOUNT.toString(); // ¥5，credit 单位
+const FIRST_LOGIN_AMOUNT_STRING = FIRST_LOGIN_REWARD_AMOUNT.toString(); // ¥10 in credit units, single source of truth
+const INVITEE_AMOUNT_STRING = REFERRAL_REWARD_AMOUNT.toString(); // ¥5 in credit units
 
 /**
- * 活动状态汇总（activity/status 路由的 data）：
- * 调用前应已先跑 checkAndGrantUserRewards（老用户补领），这里只读不写。
+ * Activity status summary (the `data` of the activity/status route).
+ * Callers must run checkAndGrantUserRewards first (covers catch-up grants for
+ * existing users); this function is read-only.
  */
 export const getActivityStatusData = async (userUid: string): Promise<ActivityStatusData> => {
   const facts = await readEligibilityFacts(userUid);
-  // 空邀请链接在客户端表示「尚未生成」，不能表达无资格；统一关闭整个活动入口。
+  // An empty invite link reads to the client as "not generated yet" and cannot
+  // express ineligibility, so the whole activity entry is closed instead.
   const available = isActivityAvailable() && facts.source !== RegistrationSourceType.API;
 
   const identityConflict = available && (await hasIdentityConflict(userUid, facts));
   let firstLoginGift: FirstLoginGiftStatus;
   if (!available || facts.source === RegistrationSourceType.API) {
-    // 国际部署 / API 注册账号不参与
     firstLoginGift = { status: 'ineligible', amount: FIRST_LOGIN_AMOUNT_STRING };
   } else {
     const grant = await globalPrisma.activityRewardGrant.findUnique({
@@ -87,10 +90,10 @@ export const getActivityStatusData = async (userUid: string): Promise<ActivitySt
     } else if (identityConflict) {
       firstLoginGift = { status: 'ineligible', amount: FIRST_LOGIN_AMOUNT_STRING };
     } else if (grant) {
-      // 条件曾满足、发放中（含暂态失败重试）
+      // Conditions were met; payout in progress (incl. retry after transient failures)
       firstLoginGift = { status: 'processing', amount: grant.amount.toString() };
     } else if (!facts.hasClientLogin) {
-      // 无客户端登录记录：条件推进中（登录客户端后自动发放）
+      // Still progressing; granted automatically once the user logs in on the desktop client
       firstLoginGift = { status: 'processing', amount: FIRST_LOGIN_AMOUNT_STRING };
     } else if (!facts.isRealnameVerified) {
       firstLoginGift = { status: 'pending_realname', amount: FIRST_LOGIN_AMOUNT_STRING };
@@ -99,7 +102,8 @@ export const getActivityStatusData = async (userUid: string): Promise<ActivitySt
     }
   }
 
-  // 受邀礼：本人作为受邀人的 ¥5（有邀请关系才展示；条件同首登礼，独立记账）
+  // Invitee gift: the ¥5 for being invited (only shown when a referral exists; same
+  // conditions as the first-login gift, accounted independently)
   let inviteeGift: InviteeGiftStatus | null = null;
   if (available && facts.source !== RegistrationSourceType.API) {
     const referral = await globalPrisma.registrationReferral.findUnique({
@@ -123,13 +127,15 @@ export const getActivityStatusData = async (userUid: string): Promise<ActivitySt
       } else if (!facts.isRealnameVerified && facts.hasClientLogin) {
         inviteeGift = { status: 'pending_realname', amount: INVITEE_AMOUNT_STRING };
       } else {
-        // 条件推进中（客户端登录/实名任一未齐都显示为进行中，客户端打开即已上报登录事实）
+        // Processing while either client login or realname verification is missing;
+        // opening the client already reports the login fact
         inviteeGift = { status: 'processing', amount: INVITEE_AMOUNT_STRING };
       }
     }
   }
 
-  // invite 摘要：无 code 时不生成只返回空字段——code 由显式 ensure 接口创建
+  // Invite summary: without a code, return empty fields instead of creating one —
+  // codes are created by the explicit ensure endpoint
   const [inviteCode, referrals, creditedGrants] = await Promise.all([
     available
       ? globalPrisma.registrationInviteCode.findUnique({ where: { inviterUid: userUid } })
@@ -148,7 +154,8 @@ export const getActivityStatusData = async (userUid: string): Promise<ActivitySt
     })
   ]);
 
-  // validCount = 受邀人已满足条件数（受邀人奖励行已存在即条件曾满足）
+  // validCount = invitees who met the conditions (an existing invitee grant row
+  // means the conditions were once met)
   let validCount = 0;
   for (const referral of referrals) {
     const inviteeGrant = await globalPrisma.activityRewardGrant.findUnique({
@@ -160,8 +167,10 @@ export const getActivityStatusData = async (userUid: string): Promise<ActivitySt
 
   const creditedAmount = creditedGrants.reduce((sum, grant) => sum + grant.amount, 0n);
 
-  // API 注册账号与发奖/建码资格检查同一判定：邀请区不返回 code/inviteUrl，
-  // 客户端整块隐藏分享入口，避免「页面承诺双方奖励、发奖永久跳过」的状态错位。
+  // Same eligibility rule as the reward/code checks: for API-registered accounts the
+  // invite section returns no code/inviteUrl and the client hides the share entry
+  // entirely, avoiding a state mismatch where the page promises both-side rewards
+  // that are never granted.
   const invite: InviteSummary = {
     code: available ? inviteCode?.code ?? null : null,
     inviteUrl: available && inviteCode ? buildInviteUrl(inviteCode.code) : null,
@@ -174,8 +183,9 @@ export const getActivityStatusData = async (userUid: string): Promise<ActivitySt
 };
 
 /**
- * 分页邀请记录（activity/invite/records 路由的 data）：
- * 只查 inviterUid = 本人，join invitee User 取脱敏昵称，不含 uid/手机号/实名材料。
+ * Paginated invite records (the `data` of the activity/invite/records route).
+ * Queries only inviterUid = self and joins the invitee User for a masked nickname;
+ * never returns uid / phone / realname materials.
  */
 export const getInviteRecordList = async (userUid: string, page: number, pageSize: number) => {
   const [total, referrals] = await Promise.all([
@@ -202,8 +212,8 @@ export const getInviteRecordList = async (userUid: string, page: number, pageSiz
       })
     ]);
 
-    // 状态推导：无登录→pending_client_login；有登录无实名→pending_realname；
-    // 条件齐未到账→processing；到账→credited；API 来源（本期不会出现）→ineligible
+    // API-source invitees cannot occur in this phase; still handled defensively as
+    // 'ineligible'
     let status: InviteRecordStatus;
     if (
       inviteeFacts.source === RegistrationSourceType.API ||

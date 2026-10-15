@@ -133,7 +133,8 @@ async function signUp({
   name: string;
   avatar_url: string;
   semData?: SemData;
-  // 注册来源与邀请归因：与 User 同事务落库，保证归因与账号创建原子一致
+  // Registration source and invite attribution: persisted in the same transaction
+  // as the User, keeping attribution atomic with account creation
   registration?: RegistrationContext;
 }) {
   const name = nanoid(10);
@@ -161,7 +162,8 @@ async function signUp({
         }
       });
 
-      // 同一事务内写注册来源与邀请关系，保证归因与账号创建原子一致
+      // Write registration source and invite referral in the same transaction so
+      // attribution stays atomic with account creation
       await attachRegistrationInTransaction(tx, user.uid, registration);
 
       if (semData?.channel) {
@@ -233,7 +235,8 @@ async function signUpWithEmail({
           userUid: user.uid
         }
       });
-      // 同一事务内写注册来源与邀请关系，保证归因与账号创建原子一致
+      // Write registration source and invite referral in the same transaction so
+      // attribution stays atomic with account creation
       await attachRegistrationInTransaction(tx, user.uid, registration);
       if (semData?.channel) {
         await tx.userSemChannel.create({
@@ -298,7 +301,8 @@ export async function signUpByPassword({
         }
       });
 
-      // 同一事务内写注册来源与邀请关系，保证归因与账号创建原子一致
+      // Write registration source and invite referral in the same transaction so
+      // attribution stays atomic with account creation
       await attachRegistrationInTransaction(tx, user.uid, registration);
 
       if (semData?.channel) {
@@ -366,7 +370,9 @@ export const getGlobalToken = async ({
   password?: string;
   semData?: SemData;
   adClickData?: AdClickData;
-  // 注册来源与邀请归因：仅新用户创建时生效，默认 WEB；API 入口显式传 API 且不带邀请上下文
+  // Registration source and invite attribution: only applied when creating a new
+  // user, defaults to WEB; the API entry passes API explicitly and carries no
+  // invite context
   registration?: RegistrationContext;
 }) => {
   let user: User | null = null;

@@ -7,15 +7,16 @@ import { RegistrationSourceType } from 'prisma/global/generated/client';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 /**
- * 幂等 get-or-create 我的邀请码（regional 或 global token）。
- * status 接口不会自动创建码；用户显式打开邀请中心时才落库。
+ * Idempotent get-or-create of the user's invite code (regional or global token).
+ * The status endpoint never auto-creates a code; it is persisted only when the
+ * user explicitly opens the invite center.
  */
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return jsonRes(res, { code: 405, message: 'Method not allowed' });
   }
   try {
-    // 国际部署不参与活动：显式返回不可用
+    // International deployments don't participate in the activity
     if (!isActivityAvailable()) {
       return jsonRes(res, { code: 503, message: 'Activity unavailable' });
     }
@@ -23,8 +24,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       (await verifyAccessToken(req.headers)) || (await verifyGlobalToken(req.headers));
     if (!payload) return jsonRes(res, { code: 401, message: 'invalid token' });
 
-    // API 注册账号不参与任何奖励（含作为邀请人），与其发奖资格检查保持同一判定；
-    // 不发码就不会出现「页面承诺双方奖励、邀请人却永不到账」的邀请链接。
+    // API-registered accounts earn no rewards at all (including as an inviter);
+    // keep the same rule as the reward eligibility check. Issuing no code prevents
+    // invite links where the page promises both-side rewards that are never paid.
     const facts = await readEligibilityFacts(payload.userUid);
     if (facts.source === RegistrationSourceType.API) {
       return jsonRes(res, { code: 403, message: 'Ineligible for invite activity' });

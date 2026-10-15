@@ -44,7 +44,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       providerId: userInfo.openid,
       avatar_url,
       name: userInfo?.nickname,
-      // 公众号注册同样从 cookie 读邀请上下文；服务端校验，失败不阻断注册
+      // Official-account signups likewise read invite context from cookies;
+      // server-side validation failures never block registration
       registration: webRegistrationFromRequest(req)
     });
 

@@ -28,7 +28,8 @@ export const getGlobalTokenSvc = createMiddleware<AuthContext, unknown>(
       password: ctx.password,
       semData: ctx.semData,
       adClickData: ctx.adClickData,
-      // 网页注册（OAuth/手机等）统一从 cookie 读邀请上下文；服务端校验，失败不阻断注册
+      // Web signups (OAuth/phone etc.) all read invite context from cookies;
+      // server-side validation failures never block registration
       registration: webRegistrationFromRequest(req)
     });
 
