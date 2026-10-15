@@ -19,7 +19,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strconv"
 
 	"github.com/labring/sealos/pkg/apply/processor"
@@ -345,25 +344,7 @@ func (c *Applier) Delete() error {
 			return err
 		}
 		defer release()
-		if err := c.withStandaloneOperation("reset", c.deleteStandalone); err != nil {
-			return err
-		}
-		if err := os.Remove(
-			constants.Clusterfile(c.ClusterDesired.Name),
-		); err != nil &&
-			!os.IsNotExist(err) {
-			return err
-		}
-		if err := os.Remove(
-			filepath.Join(
-				constants.ClusterDir(c.ClusterDesired.Name),
-				processor.StandaloneResetProgressFile,
-			),
-		); err != nil &&
-			!os.IsNotExist(err) {
-			return err
-		}
-		return nil
+		return c.withStandaloneOperation("reset", c.deleteWithArchive)
 	}
 	release, err := clusterfile.LockMaintenance(c.ClusterDesired.Name, false)
 	if err != nil {
@@ -377,6 +358,10 @@ func (c *Applier) Delete() error {
 	); err != nil {
 		return err
 	}
+	return c.deleteWithArchive()
+}
+
+func (c *Applier) deleteWithArchive() error {
 	t := metav1.Now()
 	c.ClusterDesired.DeletionTimestamp = &t
 	defer func() {

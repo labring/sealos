@@ -45,18 +45,20 @@ func (d DeleteProcessor) Execute(cluster *v2.Cluster) (err error) {
 	if err != nil {
 		return err
 	}
-	if cluster.IsStandaloneControlPlane() {
-		return runStandaloneResetPipeline(cluster, pipLine)
-	}
+	return runResetPipeline(cluster, pipLine)
+}
+
+func runResetPipeline(cluster *v2.Cluster, pipeline []func(*v2.Cluster) error) error {
 	// TODO if error is exec net process ???
-	for _, f := range pipLine {
-		if err = f(cluster); err != nil {
+	for _, f := range pipeline {
+		if err := f(cluster); err != nil {
 			logger.Warn("failed to exec delete process, %s", err.Error())
 		}
 	}
 
 	return nil
 }
+
 func (d DeleteProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error) {
 	var todoList []func(cluster *v2.Cluster) error
 	todoList = append(todoList,
@@ -128,11 +130,6 @@ func (d *DeleteProcessor) UnMountImage(cluster *v2.Cluster) error {
 }
 
 func (d *DeleteProcessor) CleanFS(cluster *v2.Cluster) error {
-	if cluster.IsStandaloneControlPlane() {
-		// The applier commits the reset archive after all remote cleanup succeeds.
-		// Keep the local inventory, lock, and recovery journal available for retry.
-		return nil
-	}
 	workDir := constants.ClusterDir(cluster.Name)
 	dataDir := constants.NewPathResolver(cluster.Name).Root()
 	return fileutil.CleanFiles(workDir, dataDir)

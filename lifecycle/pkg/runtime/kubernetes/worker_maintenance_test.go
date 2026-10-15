@@ -20,6 +20,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/runtime/kubernetes/types"
 	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
@@ -151,6 +152,56 @@ func workerFixture(mode string) (*KubeadmRuntime, *fake.Clientset, *workerSSH) {
 		kubeadmConfig: types.NewKubeadmConfig(),
 	}
 	return runtime, client, execer
+}
+
+func TestStandaloneResetContinuesAcrossHosts(t *testing.T) {
+	for _, failure := range []string{
+		"", "kubeadm reset", "standalone reset", "rm -rf /etc/kubernetes/", removeKubeConfig,
+	} {
+		t.Run(failure, func(t *testing.T) {
+			runtime, client, execer := workerFixture(v2.ControlPlaneModeStandalone)
+			runtime.cluster = testClusterWithNodes(
+				[]string{"192.0.2.1", "192.0.2.3"}, []string{"192.0.2.2"},
+			)
+			runtime.cluster.Spec.ControlPlaneMode = v2.ControlPlaneModeStandalone
+			runtime.pathResolver = constants.NewPathResolver("reset-test")
+			execer.fail = failure
+			if err := runtime.Reset(); err != nil {
+				t.Fatal(err)
+			}
+			for _, host := range runtime.cluster.GetAllIPS() {
+				cleaned := false
+				for index, command := range execer.commands {
+					if execer.hosts[index] == host && command == removeKubeConfig {
+						cleaned = true
+					}
+				}
+				if !cleaned {
+					t.Fatalf("reset skipped host %s after an earlier failure", host)
+				}
+			}
+			for _, master := range runtime.getMasterIPAndPortList() {
+				var resetAttempted, fileCleanupAttempted bool
+				for index, command := range execer.commands {
+					if execer.hosts[index] != master {
+						continue
+					}
+					resetAttempted = resetAttempted || strings.Contains(command, "standalone reset")
+					fileCleanupAttempted = fileCleanupAttempted ||
+						strings.HasPrefix(command, "rm -rf /etc/kubernetes/")
+				}
+				if !resetAttempted || fileCleanupAttempted != (failure != "standalone reset") {
+					t.Fatalf(
+						"unexpected master cleanup on %s: reset=%t files=%t",
+						master, resetAttempted, fileCleanupAttempted,
+					)
+				}
+			}
+			if len(client.Actions()) != 0 {
+				t.Fatal("host cleanup unexpectedly depends on the API")
+			}
+		})
+	}
 }
 
 func TestWorkerJoinRetryIsSharedAcrossModes(t *testing.T) {

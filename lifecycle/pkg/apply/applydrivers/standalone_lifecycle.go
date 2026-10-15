@@ -36,7 +36,6 @@ import (
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/yaml"
 	"golang.org/x/sync/errgroup"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -253,27 +252,4 @@ func isLocalLifecycleHost(host string, addresses []net.Addr) bool {
 
 func quoteLifecyclePath(value string) string {
 	return "'" + strings.ReplaceAll(value, "'", "'\"'\"'") + "'"
-}
-
-func (c *Applier) deleteStandalone() (err error) {
-	previous := c.ClusterDesired.DeletionTimestamp
-	now := metav1.Now()
-	c.ClusterDesired.DeletionTimestamp = &now
-	defer func() {
-		if err != nil {
-			c.ClusterDesired.DeletionTimestamp = previous
-		}
-	}()
-	if err := c.deleteCluster(); err != nil {
-		return err
-	}
-	data, err := yaml.MarshalConfigs(c.getWriteBackObjects()...)
-	if err != nil {
-		return err
-	}
-	path := constants.Clusterfile(c.ClusterDesired.Name)
-	if err := clusterfile.WriteMaintenanceFile(path+".reset", data); err != nil {
-		return err
-	}
-	return nil
 }

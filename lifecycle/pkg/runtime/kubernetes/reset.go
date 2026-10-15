@@ -26,8 +26,8 @@ import (
 
 const (
 	removeKubeConfig        = "rm -rf $HOME/.kube"
-	remoteCleanMasterOrNode = `if which kubeadm;then kubeadm reset -f %s;fi && \
-rm -rf /etc/kubernetes/ && \
+	remoteCleanMasterOrNode = `if which kubeadm;then kubeadm reset -f %s;fi && ` + cleanKubernetesFiles
+	cleanKubernetesFiles    = `rm -rf /etc/kubernetes/ && \
 rm -rf /etc/cni && rm -rf /opt/cni && \
 rm -rf %s && (ip link delete kube-ipvs0 >/dev/null 2>&1 || true)
 `

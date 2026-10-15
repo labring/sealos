@@ -97,12 +97,18 @@ func (k *KubeadmRuntime) GetRawConfig() ([]byte, error) {
 
 func (k *KubeadmRuntime) Reset() error {
 	if k.cluster.IsStandaloneControlPlane() {
-		for _, node := range k.getNodeIPAndPortList() {
-			if err := k.resetWorker(node); err != nil {
-				return err
+		k.resetNodes(k.getNodeIPAndPortList())
+		for _, master := range k.getMasterIPAndPortList() {
+			if err := k.removeStandaloneMasters([]string{master}, true); err != nil {
+				logger.Error("delete master %s failed %v", master, err)
+			} else if err := k.sshCmdAsync(master, fmt.Sprintf(cleanKubernetesFiles, k.getEtcdDataDir())); err != nil {
+				logger.Error("failed to clean master files on %s: %v", master, err)
+			}
+			if err := k.sshCmdAsync(master, removeKubeConfig); err != nil {
+				logger.Error("failed to clean kubeconfig on %s: %v", master, err)
 			}
 		}
-		return k.removeStandaloneMasters(k.getMasterIPAndPortList(), true)
+		return nil
 	}
 	logger.Info(
 		"start to delete Cluster: master %s, node %s",

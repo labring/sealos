@@ -30,43 +30,47 @@ type failingStandaloneRuntime struct {
 	synced  bool
 }
 
-func TestStandaloneResetResumesAfterRuntimeWasRemoved(t *testing.T) {
-	previousRoot := constants.DefaultRuntimeRootDir
+func TestResetContinuesCleanupAfterFailure(t *testing.T) {
+	previousRuntimeRoot := constants.DefaultRuntimeRootDir
+	previousRootfs := constants.DefaultClusterRootFsDir
 	constants.DefaultRuntimeRootDir = t.TempDir()
-	t.Cleanup(func() { constants.DefaultRuntimeRootDir = previousRoot })
-	cluster := &v2.Cluster{}
-	cluster.Name = "reset-test"
-	if err := os.MkdirAll(constants.ClusterDir(cluster.Name), 0o700); err != nil {
-		t.Fatal(err)
-	}
-	runtimeCalls, cleanupCalls := 0, 0
-	failCleanup := true
-	pipeline := []func(*v2.Cluster) error{
-		func(*v2.Cluster) error {
-			runtimeCalls++
-			return nil
-		},
-		func(*v2.Cluster) error {
-			cleanupCalls++
-			if failCleanup {
-				return errors.New("unmount failed")
+	constants.DefaultClusterRootFsDir = t.TempDir()
+	t.Cleanup(func() {
+		constants.DefaultRuntimeRootDir = previousRuntimeRoot
+		constants.DefaultClusterRootFsDir = previousRootfs
+	})
+	for _, mode := range []string{"", v2.ControlPlaneModeStandalone} {
+		t.Run(mode, func(t *testing.T) {
+			cluster := &v2.Cluster{Spec: v2.ClusterSpec{ControlPlaneMode: mode}}
+			cluster.Name = "reset-test"
+			paths := []string{
+				constants.ClusterDir(cluster.Name),
+				constants.NewPathResolver(cluster.Name).Root(),
 			}
-			return nil
-		},
-	}
-	if err := runStandaloneResetPipeline(cluster, pipeline); err == nil {
-		t.Fatal("reset swallowed cleanup failure")
-	}
-	failCleanup = false
-	if err := runStandaloneResetPipeline(cluster, pipeline); err != nil {
-		t.Fatal(err)
-	}
-	if runtimeCalls != 1 || cleanupCalls != 2 {
-		t.Fatalf(
-			"retried already removed runtime: runtime=%d cleanup=%d",
-			runtimeCalls,
-			cleanupCalls,
-		)
+			for _, path := range paths {
+				if err := os.MkdirAll(path, 0o700); err != nil {
+					t.Fatal(err)
+				}
+			}
+			processor := &DeleteProcessor{}
+			pipeline := []func(*v2.Cluster) error{
+				func(*v2.Cluster) error {
+					return errors.New("runtime reset failed")
+				},
+				func(*v2.Cluster) error {
+					return errors.New("unmount failed")
+				},
+				processor.CleanFS,
+			}
+			if err := runResetPipeline(cluster, pipeline); err != nil {
+				t.Fatal(err)
+			}
+			for _, path := range paths {
+				if _, err := os.Stat(path); !os.IsNotExist(err) {
+					t.Fatalf("reset skipped filesystem cleanup: %v", err)
+				}
+			}
+		})
 	}
 }
 

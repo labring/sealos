@@ -97,7 +97,11 @@ at 3.5.32+; see the [etcd upgrade requirements](https://etcd.io/docs/v3.6/upgrad
 Bootstrap requires shared CA/SA keys; external-CA-only and rootless bootstrap are
 unsupported. Provision external-etcd credentials separately.
 
-After a failure, repair the reported issue and repeat the original command.
+Reset follows the standard Sealos best-effort cleanup: it logs failures and
+continues with remaining hosts and stages. Inspect warnings and manually clean
+any reported leftovers before reinstalling.
+
+For other lifecycle failures, repair the reported issue and repeat the original command.
 Keep recovery records intact. Mode conversion also permits an explicit switch
 back. Existing script-based standalone installations need a managed baseline
 before using this lifecycle; they are not adopted automatically.
