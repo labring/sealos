@@ -160,7 +160,11 @@ func (k *KubeadmRuntime) switchControlPlaneMode(
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		if err := rootfs.SyncLocalSealctl(k.execer, host, k.pathResolver.RootFSSealctlPath()); err != nil {
+		if err := rootfs.SyncLocalSealctl(
+			k.execer,
+			host,
+			k.pathResolver.RootFSSealctlPath(),
+		); err != nil {
 			logger.Warn("failed to sync sealctl to %s: %v", host, err)
 		}
 		if err := runConversion(host, command.String()+" --check-only"); err != nil {

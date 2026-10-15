@@ -171,7 +171,8 @@ func TestControlPlaneConversionCommitAndFailure(t *testing.T) {
 			}
 			if failure == "preflight" {
 				for _, command := range ssh.commands {
-					if strings.Contains(command, "switch '") && !strings.Contains(command, "--check-only") {
+					if strings.Contains(command, "switch '") &&
+						!strings.Contains(command, "--check-only") {
 						t.Fatal("started conversion after a failed preflight")
 					}
 				}
