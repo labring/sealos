@@ -39,7 +39,7 @@ func (k *KubeadmRuntime) joinNodes(newNodesIPList []string) error {
 	}
 
 	masters := k.getMasterIPListAndHTTPSPort()
-	if err = k.setKubernetesToken(); err != nil {
+	if err = k.setKubernetesToken(false); err != nil {
 		return err
 	}
 	if err = k.mergeWithBuiltinKubeadmConfig(); err != nil {

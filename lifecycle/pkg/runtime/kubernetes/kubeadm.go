@@ -282,7 +282,9 @@ func (k *KubeadmRuntime) getDNSDomain() string {
 }
 
 func (k *KubeadmRuntime) writeTokenFile(file string) error {
-	if err := setCertificateKey(k); err != nil {
+	// The initial file can refer to an older Kubernetes version after an upgrade.
+	// Refresh it before kubeadm validates it while uploading shared certificates.
+	if err := k.InitKubeadmConfigToMaster0(); err != nil {
 		return err
 	}
 	data, err := k.execToken(k.getMaster0IPAndPort(), k.getInitCertificateKey())
@@ -301,11 +303,11 @@ func (k *KubeadmRuntime) writeTokenFile(file string) error {
 	return nil
 }
 
-func (k *KubeadmRuntime) setKubernetesToken() error {
-	if k.token == nil {
+func (k *KubeadmRuntime) setKubernetesToken(refresh bool) error {
+	if k.token == nil || refresh {
 		logger.Info("start to get kubernetes token...")
 		tokenFile := path.Join(k.pathResolver.EtcPath(), defaultKubeadmTokenFileName)
-		if !fileutil.IsExist(tokenFile) {
+		if refresh || !fileutil.IsExist(tokenFile) {
 			err := k.writeTokenFile(tokenFile)
 			if err != nil {
 				return err
