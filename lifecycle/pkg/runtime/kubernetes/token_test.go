@@ -70,8 +70,11 @@ func TestMasterTokenRefreshDoesNotTrustWorkerTokenCache(t *testing.T) {
 			if err := runtime.setKubernetesToken(false); err != nil {
 				t.Fatalf("worker did not reuse a valid token: %v", err)
 			}
-			if runtime.kubeadmConfig.JoinConfiguration.ControlPlane.CertificateKey != token.CertificateKey {
+			if runtime.kubeadmConfig.ControlPlane.CertificateKey != token.CertificateKey {
 				t.Fatal("cached credentials were not applied to the join configuration")
+			}
+			if !inMemory {
+				runtime.token = nil
 			}
 			if err := runtime.setKubernetesToken(true); err == nil ||
 				!strings.Contains(err.Error(), "failed to load kubeadm config") {
