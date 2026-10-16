@@ -100,7 +100,11 @@ export const OAuth2ErrorCodeSchema = z.enum([
   'slow_down',
   'access_denied',
   'expired_token',
-  'server_error'
+  'server_error',
+  'invalid_token',
+  'insufficient_scope',
+  'user_not_found',
+  'method_not_allowed'
 ]);
 
 export const OAuth2ErrorResponseSchema = z.object({
@@ -132,6 +136,24 @@ export const OAuth2AuthorizeDecisionRequestSchema = z.object({
   decision: z.enum(['approve', 'deny'])
 });
 
+export const OAuth2WorkspaceRoleSchema = z.enum(['OWNER', 'MANAGER', 'DEVELOPER']);
+
+export const OAuth2WorkspaceItemSchema = z.object({
+  uid: z.string().uuid(),
+  id: z.string(),
+  display_name: z.string(),
+  role: OAuth2WorkspaceRoleSchema,
+  is_personal: z.boolean(),
+  status: z.enum(['IN_WORKSPACE', 'INVITED', 'NOT_IN_WORKSPACE']),
+  created_at: z.string().datetime(),
+  joined_at: z.string().datetime().nullable()
+});
+
+export const OAuth2WorkspacesResponseSchema = z.object({
+  workspaces: z.array(OAuth2WorkspaceItemSchema),
+  total: z.number().int().nonnegative()
+});
+
 export type OAuthClient = z.infer<typeof OAuthClientSchema>;
 export type OAuthDeviceGrant = z.infer<typeof OAuthDeviceGrantSchema>;
 export type OAuthUserConsent = z.infer<typeof OAuthUserConsentSchema>;
@@ -145,3 +167,6 @@ export type OAuth2ErrorResponse = z.infer<typeof OAuth2ErrorResponseSchema>;
 export type OAuth2AuthorizeContextQuery = z.infer<typeof OAuth2AuthorizeContextQuerySchema>;
 export type OAuth2AuthorizeContextResponse = z.infer<typeof OAuth2AuthorizeContextResponseSchema>;
 export type OAuth2AuthorizeDecisionRequest = z.infer<typeof OAuth2AuthorizeDecisionRequestSchema>;
+export type OAuth2WorkspaceRole = z.infer<typeof OAuth2WorkspaceRoleSchema>;
+export type OAuth2WorkspaceItem = z.infer<typeof OAuth2WorkspaceItemSchema>;
+export type OAuth2WorkspacesResponse = z.infer<typeof OAuth2WorkspacesResponseSchema>;
