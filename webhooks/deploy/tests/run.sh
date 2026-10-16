@@ -16,6 +16,13 @@ export PATH="$TEMP/bin:$PATH"
 
 for module in admission stargz; do
   chart="$ROOT/webhooks/$module/deploy/charts/$module-webhook"
+  expected_image="ghcr.io/labring/sealos/${module}-webhook:latest"
+  grep -Fxq "image: $expected_image" "$chart/values.yaml"
+  grep -Fxq "$expected_image" "$ROOT/webhooks/$module/deploy/.sealignore"
+  if grep -Eq '^\*|(^|/)(manifests|manifest\.yaml|.*\.(md|sh))$' "$ROOT/webhooks/$module/deploy/.sealignore"; then
+    echo "sealignore contains a file pattern" >&2
+    exit 1
+  fi
   helm lint "$chart"
   helm template "$module-webhook" "$chart" -n sealos-system > "$TEMP/$module.yaml"
   helm package "$chart" -d "$TEMP" >/dev/null

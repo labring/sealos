@@ -1,5 +1,1 @@
-*.md
-manifests
-manifest.yaml
-apply-cluster-stargz-webhook.sh
-deploy-stargz-runtime.sh
+ghcr.io/labring/sealos/admission-webhook:latest

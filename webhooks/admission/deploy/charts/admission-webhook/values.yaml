@@ -1,4 +1,4 @@
-image: ghcr.io/labring/sealos-admission-webhook:latest
+image: ghcr.io/labring/sealos/admission-webhook:latest
 imagePullPolicy: IfNotPresent
 imagePullSecrets: []
 

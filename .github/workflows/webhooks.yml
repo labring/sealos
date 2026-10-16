@@ -175,7 +175,7 @@ jobs:
         include:
           - module: admission
             binary: manager
-            ghcr_repository: sealos-admission-webhook
+            ghcr_repository: sealos/admission-webhook
           - module: stargz
             binary: stargz-webhook
             ghcr_repository: sealos/stargz-webhook
@@ -296,13 +296,9 @@ jobs:
           MODULE_NAME: ${{ matrix.module }}
         run: |
           echo "MODULE_NAME=${MODULE_NAME}" >> $GITHUB_ENV
-          echo "OLD_DOCKER_REPO=ghcr.io/labring/sealos-${MODULE_NAME}-webhook" >> $GITHUB_ENV
-          # Docker image repo (always use GHCR for manifests to avoid Aliyun bandwidth costs)
-          if [[ "$MODULE_NAME" == stargz ]]; then
-            echo "GHCR_DOCKER_REPO=ghcr.io/${REPO_OWNER}/sealos/stargz-webhook" >> $GITHUB_ENV
-          else
-            echo "GHCR_DOCKER_REPO=ghcr.io/${REPO_OWNER}/sealos-${MODULE_NAME}-webhook" >> $GITHUB_ENV
-          fi
+          echo "OLD_DOCKER_REPO=ghcr.io/labring/sealos/${MODULE_NAME}-webhook" >> $GITHUB_ENV
+          # Docker image repos use one namespace for both webhook modules.
+          echo "GHCR_DOCKER_REPO=ghcr.io/${REPO_OWNER}/sealos/${MODULE_NAME}-webhook" >> $GITHUB_ENV
           # Cluster image repos
           echo "GHCR_CLUSTER_REPO=ghcr.io/${REPO_OWNER}/sealos-cloud-${MODULE_NAME}-webhook" >> $GITHUB_ENV
           if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then

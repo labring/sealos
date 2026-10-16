@@ -29,17 +29,17 @@ main() {
   done
   helm version --short | grep -q '^v3\.' || fail 'Helm 3 is required (CI verifies 3.19.0)'
   yq --version | grep -q 'version v4\.' || fail 'mikefarah/yq v4 is required'
-  RELEASE_NAME=${RELEASE_NAME:-"${WEBHOOK_MODULE}-webhook"}
+  RELEASE_NAME=${RELEASE_NAME:-"${MODULE}-webhook"}
   RELEASE_NAMESPACE=${RELEASE_NAMESPACE:-sealos-system}
-  CHART_PATH=${CHART_PATH:-"${SCRIPT_DIR}/charts/${WEBHOOK_MODULE}-webhook"}
-  USER_VALUES_FILE=${USER_VALUES_FILE:-"/root/.sealos/cloud/values/core/${WEBHOOK_MODULE}-webhook-values.yaml"}
+  CHART_PATH=${CHART_PATH:-"${SCRIPT_DIR}/charts/${MODULE}-webhook"}
+  USER_VALUES_FILE=${USER_VALUES_FILE:-"/root/.sealos/cloud/values/core/${MODULE}-webhook-values.yaml"}
   GLOBAL_VALUES_FILE=${GLOBAL_VALUES_FILE:-/root/.sealos/cloud/values/global.yaml}
   HELM_TIMEOUT=${HELM_TIMEOUT:-5m}
   POST_RENDERER=${SCRIPT_DIR}/post-renderer.sh
   [[ -x "$POST_RENDERER" ]] || POST_RENDERER=${SCRIPT_DIR}/../../deploy/post-renderer.sh
   [[ -x "$POST_RENDERER" ]] || fail "post-renderer not found: $POST_RENDERER"
   [[ -f "$CHART_PATH/Chart.yaml" ]] || fail "chart not found: $CHART_PATH"
-  STATE_DIR="$(dirname "$USER_VALUES_FILE")/${WEBHOOK_MODULE}-webhook-state"
+  STATE_DIR="$(dirname "$USER_VALUES_FILE")/${MODULE}-webhook-state"
   MIGRATION_VALUES="${STATE_DIR}/legacy-values.yaml"
   mkdir -p "$STATE_DIR"
   # mkdir is an atomic lock across entrypoint processes, including migrations.
@@ -74,8 +74,8 @@ init_values() {
   # Bootstrap overrides are deliberately small. Never copy the entire defaults
   # file: doing that would pin old images and future chart defaults forever.
   if [[ ! -f "$USER_VALUES_FILE" ]]; then
-    if [[ -f "$CHART_PATH/${WEBHOOK_MODULE}-webhook-values.yaml" ]]; then
-      cp "$CHART_PATH/${WEBHOOK_MODULE}-webhook-values.yaml" "$WORK_DIR/new-values.yaml"
+    if [[ -f "$CHART_PATH/${MODULE}-webhook-values.yaml" ]]; then
+      cp "$CHART_PATH/${MODULE}-webhook-values.yaml" "$WORK_DIR/new-values.yaml"
     else printf '{}\n' > "$WORK_DIR/new-values.yaml"; fi
     # Hard link is atomic and cannot overwrite a file created concurrently.
     ln "$WORK_DIR/new-values.yaml" "$USER_VALUES_FILE"
@@ -83,7 +83,7 @@ init_values() {
   VALUES=()
   if [[ -f "$GLOBAL_VALUES_FILE" ]]; then
     # Only this component's config is translated into chart values.
-    WEBHOOK_MODULE="$WEBHOOK_MODULE" yq '.global.featureConfigs[strenv(WEBHOOK_MODULE)] // {}' \
+    MODULE="$MODULE" yq '.global.featureConfigs[strenv(MODULE)] // {}' \
       "$GLOBAL_VALUES_FILE" > "$WORK_DIR/global.yaml"
     VALUES+=(-f "$WORK_DIR/global.yaml")
   fi
@@ -95,7 +95,7 @@ init_values() {
 
 legacy_env() {
   local key target value output='{}'
-  if [[ "$WEBHOOK_MODULE" == admission ]]; then
+  if [[ "$MODULE" == admission ]]; then
     for key in cnameDomains cnameCheck denyDomains ingressMutatingAnnotations ingressWebhookEnabled ingressWebhookFailurePolicy namespaceWebhookEnabled namespaceWebhookFailurePolicy resourceCreatorWebhookEnabled icpEnabled icpEndpoint icpKey; do
       if printenv "$key" >/dev/null; then
         value=$(printenv "$key")
@@ -265,7 +265,7 @@ apply() {
     echo 'CA verification failed; restored the backend revision and its previous registrations.' >&2
     return 1
   fi
-  echo "${WEBHOOK_MODULE} webhook upgraded. User values: $USER_VALUES_FILE"
+  echo "${MODULE} webhook upgraded. User values: $USER_VALUES_FILE"
 }
 
 migrate() {
@@ -273,7 +273,7 @@ migrate() {
   helm list -n "$RELEASE_NAMESPACE" --all -o json > "$WORK_DIR/releases.json"
   if jq -e --arg name "$RELEASE_NAME" 'any(.[]; .name==$name)' "$WORK_DIR/releases.json" >/dev/null; then fail 'release already exists; use apply'; fi
   # Distinguish both historical stargz layouts rather than changing selectors.
-  if [[ "$WEBHOOK_MODULE" == stargz ]]; then
+  if [[ "$MODULE" == stargz ]]; then
     count=0
     for name in pod-stargz-runtime-injector pod-stargz-runtime-injector-controller-manager; do
       if [[ -n $(kubectl -n "$RELEASE_NAMESPACE" get deployment "$name" --ignore-not-found -o name) ]]; then deployment=$name; count=$((count+1)); fi
@@ -312,7 +312,7 @@ LAYOUT
     all(.items[] | select(any(.webhooks[]?; .clientConfig.service.namespace==$ns and .clientConfig.service.name==$service));
       . as $live | any($desired[0][]; .kind==$live.kind and .metadata.name==$live.metadata.name))
   ' "$WORK_DIR/all-registrations.json" >/dev/null || fail 'duplicate/custom admission registrations found; resolve them before migrating'
-  jq -e --arg module "$WEBHOOK_MODULE" '
+  jq -e --arg module "$MODULE" '
     any(.[]; .kind=="Deployment") and any(.[]; .kind=="Certificate") and any(.[]; .kind=="Issuer") and any(.[]; .kind=="Service" and (.spec.ports|any(.port==443))) and any(.[]; .kind=="MutatingWebhookConfiguration") and
     (if $module=="admission" then any(.[]; .kind=="ValidatingWebhookConfiguration") else true end)
   ' "$WEBHOOK_SNAPSHOT" >/dev/null || fail 'legacy installation is incomplete or uses custom resource names'
@@ -384,7 +384,7 @@ check_legacy_registrations() {
 
 legacy_values() {
   local live="$WORK_DIR/deployment.json"
-  if [[ "$WEBHOOK_MODULE" == admission ]]; then
+  if [[ "$MODULE" == admission ]]; then
     jq '
       def arg($key;$default): [.spec.template.spec.containers[] | select(.name=="manager") | .args[]? | select(startswith("--"+$key+"=")) | ltrimstr("--"+$key+"=")][0] // $default;
       def env($key;$default): [.spec.template.spec.containers[] | select(.name=="manager") | .env[]? | select(.name==$key) | .value][0] // $default;

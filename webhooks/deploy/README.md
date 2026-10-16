@@ -4,6 +4,9 @@ Admission and stargz have separate charts and releases. The deployment layout
 follows [sealos-apps/state-metrics](https://github.com/sealos-apps/state-metrics/tree/main/deploy).
 The supported entrypoints use Helm and stage backend changes before admission
 registration changes. They do not install cert-manager or modify node runtimes.
+Both application images use the same GHCR namespace convention:
+`ghcr.io/${REPO_OWNER}/sealos/admission-webhook` and
+`ghcr.io/${REPO_OWNER}/sealos/stargz-webhook`.
 
 ## Requirements
 
@@ -53,7 +56,10 @@ GitOps integrations must implement the same two stages themselves.
 
 ## Persistent configuration
 
-The entrypoints create an empty user override file only if it does not exist:
+The entrypoints create an empty user override file only if it does not exist.
+The packaged `*-webhook-values.yaml` files contain only user overrides; chart
+defaults and image references remain in `values.yaml` and are not copied into
+the user file:
 
 - `/root/.sealos/cloud/values/core/admission-webhook-values.yaml`
 - `/root/.sealos/cloud/values/core/stargz-webhook-values.yaml`
@@ -258,6 +264,7 @@ CI checks YAML changes, injects the exact published application image into chart
 values and appVersion, and builds both webhook cluster images for amd64/arm64.
 Chart version is independent of appVersion; increment Chart.yaml version for
 chart changes, and publish immutable app tags/digests for production. The first
-chart version is 0.1.0. Sealos build discovers the chart's images (including the
-admission metrics proxy) for its registry cache; offline image installation must
-be validated before promoting a cluster-image release.
+chart version is 0.1.0. Sealos build discovers chart image references for its
+registry cache. `.sealignore` contains image references to exclude from that
+cache; it is not a file ignore list. Offline image installation must be
+validated before promoting a cluster-image release.
