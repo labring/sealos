@@ -482,5 +482,11 @@
   "delete_account_success_hint": "正在为您退出登录…",
   "delete_account_failed_description": "账号注销未能完成，请查看下方失败的工作空间。",
   "delete_account_failed_hint": "系统在注销账号前取消工作空间订阅失败。",
-  "delete_account_failed_no_details": "未返回工作空间失败详情。"
+  "delete_account_failed_no_details": "未返回工作空间失败详情。",
+  "activity_invite_not_found": "邀请链接无效",
+  "activity_invite_disabled": "邀请链接已停用",
+  "activity_invite_unavailable": "当前环境不支持邀请活动",
+  "activity_invite_error": "邀请接收失败，请重试",
+  "activity_invite_register_hint": "你仍可正常注册和登录，本次邀请奖励可能无法关联。",
+  "activity_invite_retry": "重新接收邀请"
 }

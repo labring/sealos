@@ -6,6 +6,7 @@ import { getGlobalToken } from '../globalAuth';
 import { jsonRes } from '../response';
 import { createMiddleware } from '@/utils/factory';
 import { AdClickData } from '@/types/adClick';
+import { webRegistrationFromRequest } from '@/services/backend/activity/registration';
 type AuthContext = {
   avatar_url: string;
   providerId: string;
@@ -26,7 +27,10 @@ export const getGlobalTokenSvc = createMiddleware<AuthContext, unknown>(
       email: ctx.email,
       password: ctx.password,
       semData: ctx.semData,
-      adClickData: ctx.adClickData
+      adClickData: ctx.adClickData,
+      // Web signups (OAuth/phone etc.) all read invite context from cookies;
+      // server-side validation failures never block registration
+      registration: webRegistrationFromRequest(req)
     });
 
     if (data?.isRestricted) {

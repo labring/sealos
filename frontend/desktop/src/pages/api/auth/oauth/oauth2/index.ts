@@ -1,4 +1,5 @@
 import { getGlobalToken } from '@/services/backend/globalAuth';
+import { webRegistrationFromRequest } from '@/services/backend/activity/registration';
 import { ErrorHandler } from '@/services/backend/middleware/error';
 import { jsonRes } from '@/services/backend/response';
 import { enableOAuth2 } from '@/services/enable';
@@ -77,7 +78,10 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
     avatar_url,
     name,
     semData,
-    adClickData
+    adClickData,
+    // Web OAuth2 signups read invite context from cookies; server-side validation
+    // failures never block registration
+    registration: webRegistrationFromRequest(req)
   });
 
   if (data?.isRestricted) {

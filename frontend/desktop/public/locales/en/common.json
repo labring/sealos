@@ -490,5 +490,11 @@
   "delete_account_success_hint": "Signing you out now…",
   "delete_account_failed_description": "We could not finish deleting your account. Review the failed workspaces below.",
   "delete_account_failed_hint": "Workspace subscription cancellation failed before account deletion could finish.",
-  "delete_account_failed_no_details": "No workspace failure details were returned."
+  "delete_account_failed_no_details": "No workspace failure details were returned.",
+  "activity_invite_not_found": "This invitation link is invalid",
+  "activity_invite_disabled": "This invitation link has been disabled",
+  "activity_invite_unavailable": "The invitation event is unavailable in this environment",
+  "activity_invite_error": "We could not accept the invitation. Please try again.",
+  "activity_invite_register_hint": "You can still sign up or sign in, but this invitation may not be attributed.",
+  "activity_invite_retry": "Retry invitation"
 }

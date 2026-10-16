@@ -1,5 +1,6 @@
 import { jsonRes } from '@/services/backend/response';
 import { enableEnterpriseRealNameAuth } from '@/services/enable';
+import { checkAndGrantUserRewardsBounded } from '@/services/backend/activity/rewards';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { verifyAccessToken } from '@/services/backend/auth';
 import { globalPrisma } from '@/services/backend/db/init';
@@ -147,6 +148,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return;
     });
+
+    // Trigger the referral reward eligibility check after enterprise real-name
+    // success: kept outside the real-name transaction; failures only log and
+    // never affect the real-name result.
+    // Bounded wait — an unresponsive billing service must not hold up the success
+    // response; on timeout the compensation worker reconciles and reissues.
+    try {
+      await checkAndGrantUserRewardsBounded(userUid);
+    } catch (error) {
+      console.error('enterpriseRealNameVerify: checkAndGrantUserRewards failed', {
+        userUid,
+        error
+      });
+    }
 
     return jsonRes(res, {
       code: 200,

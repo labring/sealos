@@ -26,6 +26,8 @@ declare global {
   var commitCroner: Cron | undefined;
   var finishCroner: Cron | undefined;
   var runCroner: Cron | undefined;
+  // Croner for the referral reward compensation worker (lazily registered in getAppConfig)
+  var activityRewardCroner: Cron | undefined;
   var WechatAccessToken: string | undefined;
   var WechatExpiresIn: number | undefined;
   var nodemailer: Transporter<SMTPPool.SentMessageInfo> | undefined;
