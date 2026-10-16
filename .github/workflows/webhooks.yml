@@ -299,7 +299,7 @@ jobs:
           # Docker image repos use one namespace for both webhook modules.
           echo "GHCR_DOCKER_REPO=ghcr.io/${REPO_OWNER}/sealos/${MODULE_NAME}-webhook" >> $GITHUB_ENV
           # Cluster image repos
-          echo "GHCR_CLUSTER_REPO=ghcr.io/${REPO_OWNER}/sealos-cloud-${MODULE_NAME}-webhook" >> $GITHUB_ENV
+          echo "GHCR_CLUSTER_REPO=ghcr.io/${REPO_OWNER}/sealos/cloud-${MODULE_NAME}-webhook" >> $GITHUB_ENV
           if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then
             echo "ALIYUN_CLUSTER_REPO=${{ env.ALIYUN_REPO_PREFIX }}/sealos-cloud-${MODULE_NAME}-webhook" >> $GITHUB_ENV
           fi

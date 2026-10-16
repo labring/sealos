@@ -7,6 +7,7 @@ registration changes. They do not install cert-manager or modify node runtimes.
 Both application images use the same GHCR namespace convention:
 `ghcr.io/${REPO_OWNER}/sealos/admission-webhook` and
 `ghcr.io/${REPO_OWNER}/sealos/stargz-webhook`.
+Cluster images use `ghcr.io/${REPO_OWNER}/sealos/cloud-<module>-webhook`.
 
 ## Requirements
 
@@ -29,7 +30,7 @@ build_context=$(mktemp -d)
 cp -R webhooks/admission/deploy/charts "$build_context/charts"
 cp webhooks/admission/deploy/Kubefile webhooks/admission/deploy/entrypoint.sh \
   webhooks/deploy/helm-webhook.sh webhooks/deploy/post-renderer.sh "$build_context/"
-sealos build -t ghcr.io/labring/sealos-cloud-admission-webhook:latest \
+sealos build -t ghcr.io/labring/sealos/cloud-admission-webhook:latest \
   --platform linux/amd64 -f "$build_context/Kubefile" "$build_context"
 # Use webhooks/stargz/deploy/ and its cluster-image tag for stargz.
 ```
