@@ -269,7 +269,10 @@ func ensureControllerCredentials(ctx context.Context, pod *corev1.Pod) error {
 		func(ctx context.Context) (bool, error) {
 			err := client.Discovery().RESTClient().Get().AbsPath("/readyz").Do(ctx).Error()
 			if apierrors.IsUnauthorized(err) || apierrors.IsForbidden(err) {
-				return false, err
+				// A freshly started API server briefly rejects authenticated
+				// probes until its bootstrap controller creates the default
+				// RBAC roles. Keep waiting instead of aborting.
+				return false, nil
 			}
 			return err == nil, nil
 		},
