@@ -274,3 +274,25 @@ pnpm clean
 ## License
 
 MIT
+
+## Rybbit
+
+Mount one `RybbitScript` per application with a valid `host` and `siteId`. It enables
+Rybbit forwarding on mount, and disables forwarding and clears pending events on
+unmount or script load failure. GTM-only applications do not buffer Rybbit events.
+
+```tsx
+import { RybbitScript } from '@sealos/gtm';
+
+<RybbitScript host="https://analytics.example.com" siteId="your-site-id" />;
+```
+
+For events emitted before the component mounts, explicitly call
+`configureGTM({ rybbitEnabled: true })` in browser initialization before tracking.
+Applications that load the Rybbit SDK themselves must also enable forwarding this way,
+and can call `flushRybbitQueue()` when their SDK is ready.
+
+While the SDK loads, only the latest 100 events are retained, in order; older events
+are discarded. `configureGTM({ rybbitEnabled: false })` or
+`configureGTM({ enabled: false })` clears the queue. Re-enabling does not replay
+previously discarded events.

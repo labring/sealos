@@ -1,7 +1,8 @@
 'use client';
 import Script from 'next/script';
+import { useEffect } from 'react';
 
-import { flushRybbitQueue } from '../track';
+import { configureGTM, flushRybbitQueue } from '../track';
 
 export interface Rybbit {
   event: (eventName: string, properties?: Record<string, string | number>) => void;
@@ -21,6 +22,14 @@ interface RybbitScriptProps {
 }
 
 export function RybbitScript({ host, siteId, debug = false }: RybbitScriptProps) {
+  useEffect(() => {
+    configureGTM({ rybbitEnabled: !!host && !!siteId });
+    flushRybbitQueue();
+    return () => {
+      configureGTM({ rybbitEnabled: false });
+    };
+  }, [host, siteId]);
+
   if (debug) {
     console.log('[Sealos Rybbit] host:', host, 'site ID:', siteId);
   }
@@ -36,6 +45,7 @@ export function RybbitScript({ host, siteId, debug = false }: RybbitScriptProps)
       src={`${host.replace(/\/+$/, '')}/api/script.js`}
       data-site-id={siteId}
       onLoad={() => flushRybbitQueue()}
+      onError={() => configureGTM({ rybbitEnabled: false })}
     />
   );
 }
