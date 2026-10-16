@@ -22,7 +22,7 @@ export default defineConfig({
           name: 'unit',
           globals: true,
           environment: 'node',
-          include: ['src/__tests__/**/*.{test,spec}.{ts,tsx}'],
+          include: ['src/__tests__/integration/oauth-code.test.ts'],
           exclude: ['node_modules', 'dist', '.next', 'src/__tests__/components/**'],
           passWithNoTests: true
         }

@@ -40,7 +40,7 @@ jest.mock('@/services/enable', () => ({
 }));
 
 jest.mock('@/services/backend/auth', () => ({
-  generateAuthenticationToken: mockGenerateAuthenticationToken
+  generateGlobalAccessToken: mockGenerateAuthenticationToken
 }));
 
 jest.mock('@/utils/crypto', () => ({

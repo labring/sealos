@@ -19,6 +19,7 @@ const config = {
   testSequencer:'./src/__tests__/jest-sequencer.cjs',
   testMatch: ['**/__tests__/**/*.test.ts'],
   maxWorkers: 1,
+  testPathIgnorePatterns: ['/node_modules/', '/src/__tests__/integration/oauth-code.test.ts'],
   "transformIgnorePatterns": [
     "/node_modules/(?!(nanoid)/)"
   ]

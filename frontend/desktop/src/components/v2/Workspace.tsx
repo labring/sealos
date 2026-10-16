@@ -1,3 +1,4 @@
+import { consumePendingOauth2RedirectPath } from '@/utils/oauth2';
 import { ArrowRight, Check } from 'lucide-react';
 import { useTranslation } from 'next-i18next';
 import {
@@ -100,7 +101,7 @@ export default function Workspace() {
         throw new Error('No result data');
       }
       await sessionConfig(initRegionTokenResult.data);
-      await router.replace('/');
+      await router.replace(consumePendingOauth2RedirectPath() || '/');
     } catch (error: any) {
       if (error?.code === LICENSE_INACTIVE_CODE) {
         return toast({

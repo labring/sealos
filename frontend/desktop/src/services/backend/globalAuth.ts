@@ -1,3 +1,4 @@
+import { AuthConfigType } from '@/types';
 import { uploadConvertData } from '@/api/platform';
 import { generateGlobalAccessToken } from '@/services/backend/auth';
 import { globalPrisma } from '@/services/backend/db/init';

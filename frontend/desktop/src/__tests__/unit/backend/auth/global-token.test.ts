@@ -1,6 +1,7 @@
 import {
   GLOBAL_TOKEN_CLIENT_ID,
   generateOAuth2AccessToken,
+  generateLegacyGlobalToken,
   generateOAuth2RefreshToken,
   verifyGlobalToken
 } from '@/services/backend/auth';
@@ -86,5 +87,20 @@ describe('verifyGlobalToken', () => {
     const payload = await verifyGlobalToken(buildHeader(token));
 
     expect(payload).toBeNull();
+  });
+  it('keeps existing release-v5.1 global tokens valid', async () => {
+    const token = sign({ userUid: 'legacy-uid', userId: 'legacy-id' }, 'test-global-secret');
+    expect(await verifyGlobalToken(buildHeader(token))).toEqual({
+      userUid: 'legacy-uid',
+      userId: 'legacy-id'
+    });
+  });
+
+  it('does not add OAuth claims to tokens consumed by legacy external services', () => {
+    const token = generateLegacyGlobalToken({ userUid: 'legacy-uid', userId: 'legacy-id' });
+    const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString());
+    expect(payload).toMatchObject({ userUid: 'legacy-uid', userId: 'legacy-id' });
+    expect(payload).not.toHaveProperty('client_id');
+    expect(payload).not.toHaveProperty('token_type');
   });
 });
