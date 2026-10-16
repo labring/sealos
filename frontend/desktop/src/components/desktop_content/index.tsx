@@ -1,3 +1,4 @@
+import { getHostConfig } from '@/utils/hostConfig';
 import { getWorkspaceQuota } from '@/api/platform';
 import AppWindow from '@/components/app_window';
 import useAppStore, { BRAIN_APP_KEY, SESSION_RESTORE_APP_KEY } from '@/stores/app';
@@ -208,23 +209,7 @@ export default function Desktop({ initialAppLaunch, onInitialAppLoaded }: Deskto
       getWorkspaceQuotaApi: async () => {
         return getWorkspaceQuota().then((res) => res.data?.quota ?? []);
       },
-      getHostConfigApi: async () => {
-        const config = useConfigStore.getState();
-        return {
-          cloud: {
-            domain: config.cloudConfig?.domain || '',
-            port: config.cloudConfig?.port || '',
-            regionUid: config.cloudConfig?.regionUID || ''
-          },
-          features: {
-            subscription: config.layoutConfig?.common?.subscriptionEnabled || false,
-            analytics: Boolean(
-              config.layoutConfig?.gtmId ||
-                (config.layoutConfig?.rybbitHost && config.layoutConfig?.rybbitSiteId)
-            )
-          }
-        };
-      }
+      getHostConfigApi: getHostConfig
     });
     const relayBrainAnalytics = createBrainAnalyticsRelay({
       gtmEnabled: () => Boolean(useConfigStore.getState().layoutConfig?.gtmId),

@@ -187,3 +187,15 @@ createMasterAPP(allowedOrigins);
 ## 📄 许可证
 
 [Sealos Sustainable Use License 1.0](https://github.com/labring/sealos/blob/main/LICENSE.md)
+
+### 宿主货币配置（0.1.24）
+
+`sealosApp.getHostConfig()` 新增可选顶层字段
+`currencySymbol?: 'shellCoin' | 'cny' | 'usd'`，共用根入口导出的 `HostConfig` 类型。
+原有 `cloud`、`features.subscription`、`features.analytics` 保持不变。
+新 Desktop 从 `desktop.layout.currencySymbol` 读取；等待配置加载完成后，缺失值才
+兜底为 `shellCoin`。等待超过 8 秒时请求失败，调用方应重试，不应缓存加载失败的兜底值。
+旧 Desktop 可能不返回该字段，调用方可使用 `config.currencySymbol ?? 'shellCoin'`。
+SDK 不缓存宿主配置，字段仅表示展示符号，不进行汇率换算。
+
+源码、候选包名及发布步骤见 [RELEASING.md](./RELEASING.md)。本地候选版本不表示已经发布。
