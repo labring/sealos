@@ -27,7 +27,7 @@ spec:
   ports:
     - name: https
       port: 443
-      targetPort: webhook
+      targetPort: 9443
       protocol: TCP
   selector:
     {{- include "admission-webhook.selectorLabels" . | nindent 4 }}

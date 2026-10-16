@@ -74,7 +74,9 @@ init_values() {
   # Bootstrap overrides are deliberately small. Never copy the entire defaults
   # file: doing that would pin old images and future chart defaults forever.
   if [[ ! -f "$USER_VALUES_FILE" ]]; then
-    printf '{}\n' > "$WORK_DIR/new-values.yaml"
+    if [[ -f "$CHART_PATH/${WEBHOOK_MODULE}-webhook-values.yaml" ]]; then
+      cp "$CHART_PATH/${WEBHOOK_MODULE}-webhook-values.yaml" "$WORK_DIR/new-values.yaml"
+    else printf '{}\n' > "$WORK_DIR/new-values.yaml"; fi
     # Hard link is atomic and cannot overwrite a file created concurrently.
     ln "$WORK_DIR/new-values.yaml" "$USER_VALUES_FILE"
   fi
@@ -101,6 +103,7 @@ legacy_env() {
           cnameCheck|ingressWebhookEnabled|namespaceWebhookEnabled|resourceCreatorWebhookEnabled|icpEnabled)
             [[ "$value" == true || "$value" == false ]] || fail "$key must be true or false"
             output=$(jq --arg key "$key" --argjson val "$value" '.config[$key]=$val' <<< "$output");;
+          icpKey) output=$(jq --arg val "$value" '.config.icpKey=$val | .config.icpKeySecretRef.name=""' <<< "$output");;
           *) output=$(jq --arg key "$key" --arg val "$value" '.config[$key]=$val' <<< "$output");;
         esac
       fi
@@ -156,14 +159,22 @@ check_identities() {
   # is not a rolling upgrade; reject it before any resources are patched.
   jq -e --slurpfile live "$WEBHOOK_SNAPSHOT" '
     def id: [.apiVersion,.kind,(.metadata.namespace // ""),.metadata.name];
+    def issuer: .spec.issuerRef | .kind //= "Issuer" | .group //= "cert-manager.io";
     all(.[]; . as $d | ($live[0] | map(select(id == ($d|id))) | first) as $l |
       if $l == null then true
       elif .kind == "Deployment" then .spec.selector == $l.spec.selector
       elif .kind == "Service" then .spec.selector == $l.spec.selector
-      elif .kind == "Certificate" then .spec.secretName == $l.spec.secretName and .spec.issuerRef == $l.spec.issuerRef and (.spec.dnsNames|sort) == ($l.spec.dnsNames|sort)
+      elif .kind == "Certificate" then .spec.secretName == $l.spec.secretName and issuer == ($l|issuer) and (.spec.dnsNames|sort) == ($l.spec.dnsNames|sort)
       elif .kind == "RuntimeClass" then .handler == $l.handler
       else true end)
   ' "$WORK_DIR/desired.json" >/dev/null || fail 'immutable identity, selector or certificate reference changed'
+}
+
+check_release_identities() {
+  jq -e --slurpfile previous "$1" '
+    def identities: map(select(.kind=="Deployment" or (.kind=="Service" and (.spec.ports|any(.port==443))) or .kind=="RuntimeClass" or .kind=="Certificate" or .kind=="Issuer" or .kind=="MutatingWebhookConfiguration" or .kind=="ValidatingWebhookConfiguration") | [.kind,.metadata.namespace,.metadata.name]) | sort;
+    identities == ($previous[0] | identities)
+  ' "$WORK_DIR/desired.json" >/dev/null || fail 'resource names changed; keep the release identity fixed'
 }
 
 wait_backend() {
@@ -207,7 +218,6 @@ wait_ca() {
 
 apply() {
   local installed=false revision
-  local atomic=()
   render
   snapshot
   check_ownership
@@ -220,39 +230,38 @@ apply() {
   if [[ "$installed" == true ]]; then
     revision=$(helm history "$RELEASE_NAME" -n "$RELEASE_NAMESPACE" -o json | jq -r '[.[] | select(.status=="deployed")][-1].revision')
     [[ "$revision" != null ]] || fail 'release has no deployed revision; inspect the failed install before retrying'
-    atomic=(--atomic)
     helm get manifest "$RELEASE_NAME" -n "$RELEASE_NAMESPACE" --revision "$revision" > "$WORK_DIR/previous.yaml"
     yq -o=json -I=0 '.' "$WORK_DIR/previous.yaml" | jq -s 'map(select(. != null))' > "$WORK_DIR/previous.json"
-    jq -e --slurpfile previous "$WORK_DIR/previous.json" '
-      def identities: map(select(.kind=="Deployment" or .kind=="Service" or .kind=="Certificate" or .kind=="Issuer" or .kind=="MutatingWebhookConfiguration" or .kind=="ValidatingWebhookConfiguration") | [.kind,.metadata.namespace,.metadata.name]) | sort;
-      identities == ($previous[0] | identities)
-    ' "$WORK_DIR/desired.json" >/dev/null || fail 'resource names changed; keep the release identity fixed'
-
+    check_release_identities "$WORK_DIR/previous.json"
   fi
   export WEBHOOK_RENDER_MODE=backend
   # Both revisions retain Helm ownership of the same registrations. The first
   # revision keeps their live contents while the complete backend rolls out.
   if ! helm upgrade --install "$RELEASE_NAME" "$CHART_PATH" -n "$RELEASE_NAMESPACE" \
-    --reset-values "${VALUES[@]}" --post-renderer "$POST_RENDERER" ${atomic[@]+"${atomic[@]}"} --wait --timeout "$HELM_TIMEOUT"; then
-    echo 'Backend upgrade failed; registrations were retained. Inspect helm status and retry or rollback.' >&2
+    --reset-values "${VALUES[@]}" --post-renderer "$POST_RENDERER" --wait --timeout "$HELM_TIMEOUT"; then
+    if [[ "$installed" == true ]]; then rollback "$revision"; fi
+    echo 'Backend upgrade failed; inspect helm status before retrying.' >&2
     return 1
   fi
   if ! wait_backend; then
-    [[ "$installed" != true ]] || helm rollback "$RELEASE_NAME" "$revision" -n "$RELEASE_NAMESPACE" --wait --timeout "$HELM_TIMEOUT"
+    [[ "$installed" != true ]] || rollback "$revision"
     return 1
   fi
   if ! verify_certificate; then
-    [[ "$installed" != true ]] || helm rollback "$RELEASE_NAME" "$revision" -n "$RELEASE_NAMESPACE" --wait --timeout "$HELM_TIMEOUT"
+    [[ "$installed" != true ]] || rollback "$revision"
     echo 'Serving certificate verification failed before enabling new registrations.' >&2
     return 1
   fi
   local backend_revision
   backend_revision=$(helm history "$RELEASE_NAME" -n "$RELEASE_NAMESPACE" -o json | jq -r '.[-1].revision')
   # Rendered chart identities remain stable; cert-manager owns caBundle fields.
-  helm upgrade "$RELEASE_NAME" "$CHART_PATH" -n "$RELEASE_NAMESPACE" \
-    --reset-values "${VALUES[@]}" --atomic --wait --timeout "$HELM_TIMEOUT"
+  if ! helm upgrade "$RELEASE_NAME" "$CHART_PATH" -n "$RELEASE_NAMESPACE" \
+    --reset-values "${VALUES[@]}" --wait --timeout "$HELM_TIMEOUT"; then
+    rollback "$backend_revision"
+    return 1
+  fi
   if ! wait_ca; then
-    helm rollback "$RELEASE_NAME" "$backend_revision" -n "$RELEASE_NAMESPACE" --wait --timeout "$HELM_TIMEOUT"
+    rollback "$backend_revision"
     echo 'CA verification failed; restored the backend revision and its previous registrations.' >&2
     return 1
   fi
@@ -300,12 +309,8 @@ LAYOUT
   service_name=$(jq -r '.[] | select(.kind=="Service" and (.spec.ports | any(.port==443))) | .metadata.name' "$WORK_DIR/desired.json")
   kubectl get mutatingwebhookconfigurations,validatingwebhookconfigurations -o json > "$WORK_DIR/all-registrations.json"
   jq -e --arg ns "$RELEASE_NAMESPACE" --arg service "$service_name" --slurpfile desired "$WORK_DIR/desired.json" '
-    [ .items[] as $live | $live.webhooks[]? |
-      select(.clientConfig.service.namespace==$ns and .clientConfig.service.name==$service) |
-      . as $entry |
-      ([$desired[0][] | select(.kind==$live.kind and .metadata.name==$live.metadata.name) |
-        .webhooks[]?.name]) as $allowed |
-      select(($allowed | index($entry.name)) == null) ] | length == 0
+    all(.items[] | select(any(.webhooks[]?; .clientConfig.service.namespace==$ns and .clientConfig.service.name==$service));
+      . as $live | any($desired[0][]; .kind==$live.kind and .metadata.name==$live.metadata.name))
   ' "$WORK_DIR/all-registrations.json" >/dev/null || fail 'duplicate/custom admission registrations found; resolve them before migrating'
   jq -e --arg module "$WEBHOOK_MODULE" '
     any(.[]; .kind=="Deployment") and any(.[]; .kind=="Certificate") and any(.[]; .kind=="Issuer") and any(.[]; .kind=="Service" and (.spec.ports|any(.port==443))) and any(.[]; .kind=="MutatingWebhookConfiguration") and
@@ -322,6 +327,7 @@ LAYOUT
       [.[] | select(.kind=="Issuer")][0] as $issuer |
       {certificate:{spec:$cert.spec,issuerSpec:$issuer.spec}}' "$WEBHOOK_SNAPSHOT" > "$WORK_DIR/certificate.json"
   jq -s '.[0] * .[1] * .[2]' "$WORK_DIR/layout.json" "$WORK_DIR/legacy-values.json" "$WORK_DIR/certificate.json" > "$WORK_DIR/migration.json"
+  check_legacy_registrations
   backup="${STATE_DIR}/backup-$(date -u +%Y%m%dT%H%M%SZ)"
   mkdir "$backup"
   cp "$WEBHOOK_SNAPSHOT" "$backup/resources.json"
@@ -347,10 +353,33 @@ LAYOUT
   done < <(jq -r '.[] | [.kind,(.metadata.namespace // "default"),.metadata.name] | @tsv' "$WEBHOOK_SNAPSHOT")
   export WEBHOOK_RENDER_MODE=baseline
   if ! helm install "$RELEASE_NAME" "$CHART_PATH" -n "$RELEASE_NAMESPACE" "${VALUES[@]}" \
-    --post-renderer "$POST_RENDERER" --wait --timeout "$HELM_TIMEOUT"; then
+    --description "Legacy adoption: $(basename "$backup")" \
+    --set-string "_sealosMigrationBackup=$(basename "$backup")" --post-renderer "$POST_RENDERER" --wait --timeout "$HELM_TIMEOUT"; then
     echo "Adoption failed. Recover with: entrypoint.sh recover $backup" >&2
     return 1
   fi
+}
+
+check_legacy_registrations() {
+  # Compare the supported legacy settings independently of operator overrides.
+  # A migration must not silently discard unknown entries, selectors or rules.
+  helm template "$RELEASE_NAME" "$CHART_PATH" -n "$RELEASE_NAMESPACE" \
+    -f "$WORK_DIR/migration.json" > "$WORK_DIR/legacy-render.yaml"
+  yq -o=json -I=0 '.' "$WORK_DIR/legacy-render.yaml" | jq -s 'map(select(. != null))' > "$WORK_DIR/legacy-render.json"
+  jq -e --slurpfile expected "$WORK_DIR/legacy-render.json" '
+    def registrations:
+      map(select(.kind=="MutatingWebhookConfiguration" or .kind=="ValidatingWebhookConfiguration") |
+        .kind as $kind | {kind:.kind,name:.metadata.name,webhooks:((.webhooks // []) | map(
+          del(.clientConfig.caBundle) |
+          .clientConfig.service.port //= 443 |
+          .matchPolicy //= "Equivalent" | .failurePolicy //= "Fail" |
+          .namespaceSelector //= {} | .objectSelector //= {} |
+          .timeoutSeconds //= 10 | .matchConditions //= [] |
+          if $kind=="MutatingWebhookConfiguration" then .reinvocationPolicy //= "Never" else . end |
+          .rules |= map(.scope //= "*")
+        ) | sort_by(.name))}) | sort_by(.kind,.name);
+    registrations == ($expected[0] | registrations)
+  ' "$WEBHOOK_SNAPSHOT" >/dev/null || fail 'unsupported legacy webhook entries or policies; reconcile them before migrating'
 }
 
 legacy_values() {
@@ -381,48 +410,54 @@ legacy_values() {
       def arg($key;$default): [.spec.template.spec.containers[] | .args[]? | select(startswith("--"+$key+"=")) | ltrimstr("--"+$key+"=")][0] // $default;
       {replicaCount: .spec.replicas, webhook: {registries: arg("registries";"sealos.hub:5000"), runtimeClass: arg("runtime-class";"stargz"), skipAnnotation: arg("skip-annotation";"stargz.sealos.io/skip")}}
     ' "$live" > "$WORK_DIR/legacy-config.json"
-    jq --slurpfile config "$WORK_DIR/legacy-config.json" --slurpfile resources "$WEBHOOK_SNAPSHOT" '
+    jq --slurpfile config "$WORK_DIR/legacy-config.json" '
       [.[] | select(.kind=="MutatingWebhookConfiguration") | .webhooks[]?][0] as $rule |
-      ($resources[0][] | select(.kind=="RuntimeClass")) as $runtime |
+      ([.[] | select(.kind=="RuntimeClass")][0]) as $runtime |
       $config[0] | .webhook.failurePolicy=($rule.failurePolicy // "Ignore") | .webhook.entryName=$rule.name |
-      .runtimeClass.nodeSelector=($runtime.scheduling.nodeSelector // {})
+      if $runtime != null then
+        .runtimeClass.scheduling=($runtime.scheduling // {}) | .runtimeClass.handler=$runtime.handler
+      else . end
     ' "$WEBHOOK_SNAPSHOT"
   fi
 }
 
 rollback() {
   local revision=$1
-  helm get manifest "$RELEASE_NAME" -n "$RELEASE_NAMESPACE" --revision "$revision" > "$WORK_DIR/target.yaml"
+  helm get manifest "$RELEASE_NAME" -n "$RELEASE_NAMESPACE" --revision "$revision" > "$WORK_DIR/target.yaml" || return 1
   yq -o=json -I=0 '.' "$WORK_DIR/target.yaml" | jq -s 'map(select(. != null))' > "$WORK_DIR/desired.json"
+  helm get manifest "$RELEASE_NAME" -n "$RELEASE_NAMESPACE" > "$WORK_DIR/current.yaml" || return 1
+  yq -o=json -I=0 '.' "$WORK_DIR/current.yaml" | jq -s 'map(select(. != null))' > "$WORK_DIR/current.json"
+  check_release_identities "$WORK_DIR/current.json"
   snapshot
   check_ownership
   check_identities
-  # Remove newer endpoints first. This is safe while the newer backend is still
-  # running; only then may Helm roll back its Deployment to the old binary.
-  jq --slurpfile live "$WEBHOOK_SNAPSHOT" '
-    .[] | select(.kind=="MutatingWebhookConfiguration" or .kind=="ValidatingWebhookConfiguration") |
-    . as $target | ($live[0] | map(select(.kind==$target.kind and .metadata.name==$target.metadata.name)) | first) as $current |
-    .webhooks |= map(. as $entry | .clientConfig.caBundle=([$current.webhooks[]? | select(.name==$entry.name) | .clientConfig.caBundle][0] // $current.webhooks[0].clientConfig.caBundle))
-  ' "$WORK_DIR/desired.json" | yq -p=json -P | kubectl apply -f -
-  wait_ca
-  # Helm rollback restores the target manifest, including historical caBundle
-  # values and baseline RuntimeClass metadata. Re-apply the current CA and the
-  # keep policy after Helm has restored the backend and registrations.
-  helm rollback "$RELEASE_NAME" "$revision" -n "$RELEASE_NAMESPACE" --wait --timeout "$HELM_TIMEOUT"
-  wait_backend
-  local kind name current_ca
-  current_ca=$(cat "$WORK_DIR/expected-ca")
-  while IFS=$'\t' read -r kind name; do
-    kubectl get "$kind" "$name" -o json | jq --arg ca "$current_ca" '
+  verify_certificate || return 1
+  # A historical manifest may contain a CA that cert-manager has since rotated.
+  # Restore it as a new Helm revision with the current CA, rather than allowing
+  # native Helm rollback to write an obsolete CA during the backend rollout.
+  jq --arg ca "$(cat "$WORK_DIR/expected-ca")" '
+    map(if .kind=="MutatingWebhookConfiguration" or .kind=="ValidatingWebhookConfiguration" then
       .webhooks |= map(.clientConfig.caBundle=$ca)
-    ' | yq -p=json -P | kubectl apply -f -
-  done < <(jq -r '.[] | select(.kind=="MutatingWebhookConfiguration" or .kind=="ValidatingWebhookConfiguration") | [.kind,.metadata.name] | @tsv' "$WORK_DIR/desired.json")
-  if [[ "$WEBHOOK_MODULE" == stargz ]]; then
-    kubectl get runtimeclass "$(jq -r '.[] | select(.kind=="RuntimeClass") | .metadata.name' "$WORK_DIR/desired.json")" -o json |
-      jq '.metadata.annotations["helm.sh/resource-policy"]="keep"' | yq -p=json -P | kubectl apply -f -
-  fi
-  wait_ca
-  echo "Rolled back $RELEASE_NAME to revision $revision. Update $USER_VALUES_FILE before the next apply."
+    elif .kind=="RuntimeClass" then .metadata.annotations["helm.sh/resource-policy"]="keep"
+    else . end)
+  ' "$WORK_DIR/desired.json" > "$WORK_DIR/restored.json"
+  jq '.[] | select(.kind=="MutatingWebhookConfiguration" or .kind=="ValidatingWebhookConfiguration")' \
+    "$WORK_DIR/restored.json" | yq -p=json -P | kubectl apply -f - || return 1
+  wait_ca || return 1
+  mkdir -p "$WORK_DIR/rollback-chart/templates"
+  cat > "$WORK_DIR/rollback-chart/Chart.yaml" <<'CHART'
+apiVersion: v2
+name: webhook-manifest-restore
+version: 0.1.0
+description: Restores a historical webhook manifest with the current serving CA
+CHART
+  jq '.[]' "$WORK_DIR/restored.json" | yq -p=json -P > "$WORK_DIR/rollback-chart/manifest.yaml"
+  printf '%s\n' '{{ .Files.Get "manifest.yaml" }}' > "$WORK_DIR/rollback-chart/templates/resources.yaml"
+  helm upgrade "$RELEASE_NAME" "$WORK_DIR/rollback-chart" -n "$RELEASE_NAMESPACE" \
+    --reset-values --description "Restore webhook revision $revision with current CA" --wait --timeout "$HELM_TIMEOUT" || return 1
+  wait_backend || return 1
+  wait_ca || return 1
+  echo "Restored $RELEASE_NAME revision $revision as a new Helm revision. Update $USER_VALUES_FILE before the next apply."
 }
 
 recover() {
@@ -434,9 +469,16 @@ recover() {
   helm list -n "$RELEASE_NAMESPACE" --all -o json > "$WORK_DIR/releases.json" || fail 'cannot inspect Helm releases safely'
   if jq -e --arg name "$RELEASE_NAME" 'any(.[]; .name==$name)' "$WORK_DIR/releases.json" >/dev/null; then
     helm history "$RELEASE_NAME" -n "$RELEASE_NAMESPACE" -o json > "$WORK_DIR/history.json" || fail 'cannot inspect Helm history safely'
-    [[ $(jq length "$WORK_DIR/history.json") == 1 ]] || fail 'release has multiple revisions; use rollback'
+    jq -e 'length==1 and (.[0].revision|tonumber)==1' "$WORK_DIR/history.json" >/dev/null ||
+      fail 'release history does not match this first-adoption backup; use rollback'
+    # Helm rewrites descriptions on failed/pending installs. Stored user values
+    # survive these transitions and bind this revision to its local backup.
+    helm get values "$RELEASE_NAME" -n "$RELEASE_NAMESPACE" --revision 1 -o json > "$WORK_DIR/adoption-values.json" || fail 'cannot inspect adoption marker safely'
+    jq -e --arg backup "$(basename "$backup")" '._sealosMigrationBackup==$backup' \
+      "$WORK_DIR/adoption-values.json" >/dev/null || fail 'adoption marker does not match this backup'
   else
-    [[ -z $(kubectl -n "$RELEASE_NAMESPACE" get secret "sh.helm.release.v1.${RELEASE_NAME}.v1" --ignore-not-found -o name) ]] ||
+    live=$(kubectl -n "$RELEASE_NAMESPACE" get secret "sh.helm.release.v1.${RELEASE_NAME}.v1" --ignore-not-found -o name) || fail 'cannot inspect Helm bookkeeping safely'
+    [[ -z "$live" ]] ||
       fail 'Helm bookkeeping still exists; inspect the interrupted release before recovery'
   fi
   while IFS=$'\t' read -r kind namespace name; do
@@ -445,6 +487,13 @@ recover() {
     [[ -n "$expected_uid" && "$expected_uid" != null && $(jq -r '.metadata.uid' <<< "$live") == "$expected_uid" ]] || fail "resource identity changed: $kind/$name"
     jq -e --arg release "$RELEASE_NAME" --arg ns "$RELEASE_NAMESPACE" '(.metadata.annotations."meta.helm.sh/release-name" // $release)==$release and (.metadata.annotations."meta.helm.sh/release-namespace" // $ns)==$ns' <<< "$live" >/dev/null || fail "resource ownership changed: $kind/$name"
   done < <(jq -r '.[] | [.kind,(.metadata.namespace // "default"),.metadata.name] | @tsv' "$backup/resources.json")
+  if [[ -f "$backup/tls-secret.json" ]]; then
+    name=$(jq -r '.metadata.name' "$backup/tls-secret.json")
+    kubectl -n "$RELEASE_NAMESPACE" get secret "$name" -o json > "$WORK_DIR/recovery-secret.json"
+    jq -e --slurpfile saved "$backup/tls-secret.json" '
+      .metadata.uid!=null and .metadata.uid==$saved[0].metadata.uid and .data==$saved[0].data
+    ' "$WORK_DIR/recovery-secret.json" >/dev/null || fail 'TLS Secret changed since backup; reconcile certificate state before recovery'
+  fi
   jq '.[] | del(.status,.metadata.resourceVersion,.metadata.uid,.metadata.generation,.metadata.creationTimestamp,.metadata.managedFields)' "$backup/resources.json" | yq -p=json -P |
     kubectl apply -f -
   if [[ -f "$backup/tls-secret.json" ]]; then

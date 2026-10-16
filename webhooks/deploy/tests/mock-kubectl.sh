@@ -14,6 +14,7 @@ canonical() {
     certificate|certificates) echo Certificate;;
     secret|secrets) echo Secret;;
     namespace|namespaces) echo Namespace;;
+    runtimeclass|runtimeclasses) echo RuntimeClass;;
     mutatingwebhookconfiguration|mutatingwebhookconfigurations) echo MutatingWebhookConfiguration;;
     validatingwebhookconfiguration|validatingwebhookconfigurations) echo ValidatingWebhookConfiguration;;
     *) echo "$1";;
@@ -24,7 +25,7 @@ store() {
   kind=$(jq -r '.kind' <<< "$input"); name=$(jq -r '.metadata.name' <<< "$input"); ns=$(jq -r '.metadata.namespace // "default"' <<< "$input")
   jq --arg ca "$TEST_CA" --arg uid "mock-${kind}-${ns}-${name}" '
     .metadata.uid //= $uid |
-    if (.kind=="MutatingWebhookConfiguration" or .kind=="ValidatingWebhookConfiguration") then .webhooks |= map(.clientConfig.caBundle=$ca) else . end
+    if (env.TEST_INJECT_CA != "false") and (.kind=="MutatingWebhookConfiguration" or .kind=="ValidatingWebhookConfiguration") then .webhooks |= map(.clientConfig.caBundle=$ca) else . end
   ' <<< "$input" > "$TEST_STATE/objects/$kind.$ns.$name.json"
 }
 case "$verb" in
@@ -60,7 +61,9 @@ case "$verb" in
       mv "$TEST_STATE/object.tmp" "$file"
     done;;
   apply)
-    yq -o=json -I=0 '.' | jq -c '.' | while IFS= read -r object; do store "$object"; done
+    input=$(yq -o=json -I=0 '.' | jq -s 'map(select(. != null))')
+    jq -e 'length > 0 and all(.[]; .apiVersion != null and .kind != null and .metadata.name != null)' <<< "$input" >/dev/null
+    while IFS= read -r object; do store "$object"; done < <(jq -c '.[]' <<< "$input")
     echo kubectl:apply >> "$TEST_STATE/events";;
   patch)
     kind=$(canonical "$1"); name=$2; shift 2

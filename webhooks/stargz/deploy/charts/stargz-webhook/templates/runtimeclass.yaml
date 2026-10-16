@@ -12,6 +12,10 @@ metadata:
     {{- include "stargz-webhook.labels" . | nindent 4 }}
 handler: {{ .Values.runtimeClass.handler }}
 scheduling:
+  {{- if hasKey .Values.runtimeClass "scheduling" }}
+  {{- toYaml .Values.runtimeClass.scheduling | nindent 2 }}
+  {{- else }}
   nodeSelector:
     {{- toYaml .Values.runtimeClass.nodeSelector | nindent 4 }}
+  {{- end }}
 {{- end }}

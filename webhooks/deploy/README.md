@@ -133,21 +133,23 @@ one-time ownership transition:
    credentials. Keep that directory private and protect it like a Kubernetes
    configuration backup; it is created with mode 0700/0600.
 3. Preserve the Deployment selector, Service selector, Certificate spec, Issuer
-   spec, TLS Secret reference, business configuration, replicas and enabled rules.
+   spec, TLS Secret reference, business configuration, replicas, enabled rules
+   and the full RuntimeClass scheduling settings.
    Captured settings are saved in `<module>-webhook-state/legacy-values.yaml`.
    The old image is recorded in the baseline Helm revision, not pinned in user
    values. Existing historical stargz RBAC that the stateless webhook no longer
    needs is left intact and unmanaged.
 4. Add Helm ownership to the chart's existing objects. Install revision 1 using
    a post-renderer that records each existing object verbatim apart from server
-   metadata. This does not redeploy the old backend or activate new rules.
+   metadata and the RuntimeClass retention annotation. This does not redeploy
+   the old backend or activate new rules.
 5. Run the normal staged upgrade to the image bundled with the new chart.
 
 The admission migration supports the shipped `admission-*` layout. Stargz
 supports the original script's `pod-stargz-runtime-injector` Deployment and the
 Kustomize `pod-stargz-runtime-injector-controller-manager` Deployment. Both
 present, custom names, missing core objects, or changed immutable selectors are
-rejected before ownership changes. Check the reported diff and resolve those
+rejected before ownership changes. Inspect the live objects and resolve those
 cases explicitly rather than using `helm --take-ownership` or `--force` broadly.
 
 First adoption deliberately does **not** use `--atomic`: failed Helm installation
@@ -158,10 +160,12 @@ backup path printed by the command:
 bash webhooks/admission/deploy/entrypoint.sh recover /path/to/admission-webhook-state/backup-TIMESTAMP
 ```
 
-Recovery reapplies the snapshot, restores the prior Helm ownership keys and TLS
-Secret, and removes only the first Helm bookkeeping Secret. It never runs Helm
-uninstall. Recovery refuses release histories with more than one revision; those
-must use the rollback procedure below. A killed process may leave the operation
+Recovery first verifies the backup marker stored in revision 1's values, resource
+UIDs, ownership and TLS Secret. It refuses changed identities, rotated TLS data and
+unreadable Helm state before writing anything. It then reapplies the snapshot,
+restores prior ownership and removes only the first Helm bookkeeping Secret.
+It never runs Helm uninstall. Histories beyond the first adoption revision
+must use rollback. A killed process may leave the operation
 lock directory: confirm no installer is running before removing that empty lock.
 Backups are retained until an operator removes them after verification.
 
@@ -171,17 +175,18 @@ Edit user values, then run `entrypoint.sh apply` again. Each successful apply
 creates two revisions:
 
 1. Roll the backend while retaining live webhook registrations. Existing releases
-   use Helm's atomic rollback on a failed backend rollout. On first installation,
-   this stage has empty registrations. Readiness requires the TLS webhook server
+   restore their previous revision with the current serving CA on a failed rollout.
+   On first installation, this stage has empty registrations. Readiness requires the TLS webhook server
    to have started, not just a successful health Ping.
 2. After the complete Deployment rollout, verify Certificate readiness, serving
    certificate validity, Service DNS and certificate chain. Then publish the
    desired registrations. Wait for cainjector to inject the current CA into every
    entry; a CA verification failure restores the backend-stage revision.
 
-The registration step uses Helm atomic rollback to its immediately preceding
-backend revision. If the process is interrupted between stages, the newer backend
-continues serving the old rules; rerun apply. `HELM_TIMEOUT` defaults to `5m`.
+The registration step restores its immediately preceding backend revision if it
+fails. Automatic restoration uses the same current-CA manifest restore as explicit
+rollback; native Helm atomic rollback could reapply obsolete certificate data.
+If the process is interrupted between stages, the newer backend continues serving the old rules; rerun apply. `HELM_TIMEOUT` defaults to `5m`.
 CA injection is checked for up to 120 seconds separately. The release name,
 resource names, selectors and certificate references must remain stable during a
 rolling upgrade. Certificate rotation stays with cert-manager; no upgrade deletes
@@ -196,14 +201,18 @@ bash webhooks/admission/deploy/entrypoint.sh rollback 3
 
 The rollback entrypoint restores the target's registration rules while the newer
 backend is still available, waits for the current CA bundle, then rolls back the
-backend. It preserves the current CA when applying historical rules, so rotation
-does not restore an obsolete CA. Supported rollback targets must have compatible
-resource/certificate identities and endpoints supported by the current backend.
+backend. It records the historical manifest as a new Helm upgrade revision using
+a temporary `webhook-manifest-restore` chart, with the current CA and RuntimeClass
+retention metadata. Native `helm rollback` would reapply a baseline's historical
+CA; use the entrypoint so that obsolete CA is never written back. Supported
+rollback targets must have compatible resource/certificate identities and endpoints supported by the current backend.
 Update user values to match the restored configuration before the next apply;
-Helm rollback does not rewrite a local values file.
+rollback does not rewrite a local values file. The next `apply` uses the regular
+module chart and reconstructs values from the persistent configuration.
 
 For resource creator, the default remains **disabled**, matching the current
-Kubefile's intended behavior. Enabling it retains `failurePolicy: Fail`. Before
+Kubefile's intended behavior. Enabling it defaults to `failurePolicy: Fail`;
+`config.resourceCreatorWebhookFailurePolicy` can preserve a prior policy. Before
 returning to an image without creator endpoints, remove both creator webhook
 entries first. The rollback entrypoint handles this when the target revision has
 them disabled. Existing creator annotations are not removed or backfilled; writes
