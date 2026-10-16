@@ -1,6 +1,6 @@
 {
   "name": "@sealos/shared",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "Shared utilities, types, and components for Sealos frontend applications",
   "license": "ISC",
   "private": true,
