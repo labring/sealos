@@ -79,6 +79,7 @@ jobs:
   helm-kind-integration:
     name: Live Helm lifecycle on Kind
     runs-on: ubuntu-24.04
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: azure/setup-helm@v4.3.0
@@ -87,6 +88,7 @@ jobs:
       - uses: helm/kind-action@v1.12.0
         with:
           version: v0.25.0
+          install_only: true
       - uses: azure/setup-kubectl@v4
         with:
           version: v1.31.4

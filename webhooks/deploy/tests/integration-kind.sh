@@ -3,9 +3,26 @@ set -euo pipefail
 
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)
 CLUSTER_NAME=${KIND_CLUSTER_NAME:-webhook-helm}
-trap 'kind delete cluster --name "$CLUSTER_NAME" >/dev/null 2>&1 || true' EXIT
-
-kind create cluster --name "$CLUSTER_NAME" --wait 120s
+if kind get clusters | grep -Fxq "$CLUSTER_NAME"; then
+  echo "Refusing to replace existing Kind cluster: $CLUSTER_NAME" >&2
+  exit 1
+fi
+STATE=$(mktemp -d)
+export KUBECONFIG="$STATE/kubeconfig"
+export GOWORK=off
+cleanup() {
+  local status=$?
+  if [[ $status != 0 ]]; then
+    kubectl -n sealos-system get pods,events -o wide || true
+    kubectl -n sealos-system logs -l sealos.io/component=admission-controller-manager --all-containers --tail=60 || true
+    kubectl -n sealos-system logs -l app.kubernetes.io/name=pod-stargz-runtime-injector --all-containers --tail=60 || true
+  fi
+  kind delete cluster --name "$CLUSTER_NAME"
+  rm -rf "$STATE"
+  return "$status"
+}
+trap cleanup EXIT
+kind create cluster --name "$CLUSTER_NAME" --image kindest/node:v1.31.2 --wait 120s
 kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.16.3/cert-manager.yaml
 kubectl -n cert-manager rollout status deployment/cert-manager --timeout=180s
 kubectl -n cert-manager rollout status deployment/cert-manager-cainjector --timeout=180s
@@ -18,8 +35,8 @@ kind load docker-image --name "$CLUSTER_NAME" webhook-admission:kind webhook-sta
 kubectl create namespace sealos-system --dry-run=client -o yaml | kubectl apply -f -
 
 export HELM_TIMEOUT=3m
-export GLOBAL_VALUES_FILE="$ROOT/.context/no-global-values.yaml"
-export USER_VALUES_FILE="$ROOT/.context/kind-admission-values.yaml"
+export GLOBAL_VALUES_FILE="$STATE/no-global-values.yaml"
+export USER_VALUES_FILE="$STATE/admission-values.yaml"
 export CHART_PATH="$ROOT/webhooks/admission/deploy/charts/admission-webhook"
 export WEBHOOK_MODULE=admission
 printf 'image: webhook-admission:kind\nimagePullPolicy: Never\n' > "$USER_VALUES_FILE"
@@ -27,13 +44,14 @@ bash "$ROOT/webhooks/admission/deploy/entrypoint.sh" apply
 kubectl -n sealos-system rollout status deployment/admission-controller-manager --timeout=180s
 kubectl get mutatingwebhookconfiguration admission-mutating-webhook-configuration -o json |
   jq -e 'all(.webhooks[]; (.clientConfig.caBundle | length) > 0)'
-kubectl create namespace admission-kind-test --dry-run=client -o yaml |
+kubectl create namespace ns-kind-test --dry-run=client -o yaml |
   kubectl label --local -f - user.sealos.io/owner=kind -o yaml | kubectl apply -f -
-cat > "$ROOT/.context/kind-admission-values.yaml" <<'VALUES'
+cat > "$USER_VALUES_FILE" <<'VALUES'
 image: webhook-admission:kind
 imagePullPolicy: Never
 config:
   cnameCheck: false
+  cnameDomains: example.com
   ingressMutatingAnnotations: kind.sealos.io/test=true
 VALUES
 bash "$ROOT/webhooks/admission/deploy/entrypoint.sh" apply
@@ -42,10 +60,10 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: webhook-mutation
-  namespace: admission-kind-test
+  namespace: ns-kind-test
 spec:
   rules:
-    - host: example.com
+    - host: app.example.com
       http:
         paths:
           - path: /
@@ -56,10 +74,10 @@ spec:
                 port:
                   number: 443
 YAML
-kubectl -n admission-kind-test get ingress webhook-mutation -o json |
+kubectl -n ns-kind-test get ingress webhook-mutation -o json |
   jq -e '.metadata.annotations["kind.sealos.io/test"] == "true"'
 
-cat > "$ROOT/.context/kind-admission-values.yaml" <<'VALUES'
+cat > "$USER_VALUES_FILE" <<'VALUES'
 image: webhook-admission:kind
 imagePullPolicy: Never
 replicaCount: 2
@@ -67,14 +85,12 @@ VALUES
 bash "$ROOT/webhooks/admission/deploy/entrypoint.sh" apply
 bash "$ROOT/webhooks/admission/deploy/entrypoint.sh" rollback 2
 
-export USER_VALUES_FILE="$ROOT/.context/kind-stargz-values.yaml"
+export USER_VALUES_FILE="$STATE/stargz-values.yaml"
 export CHART_PATH="$ROOT/webhooks/stargz/deploy/charts/stargz-webhook"
 export WEBHOOK_MODULE=stargz
 cat > "$USER_VALUES_FILE" <<'VALUES'
 image: webhook-stargz:kind
 imagePullPolicy: Never
-runtimeClass:
-  create: false
 webhook:
   registries: docker.io
   runtimeClass: stargz
@@ -86,9 +102,7 @@ kubectl get mutatingwebhookconfiguration pod-stargz-runtime-injector -o json |
 kubectl create namespace webhook-kind-test --dry-run=client -o yaml |
   kubectl label --local -f - user.sealos.io/owner=kind -o yaml | kubectl apply -f -
 kubectl -n webhook-kind-test run webhook-mutation --image=docker.io/library/busybox:1.36 \
-  --restart=Never --command -- sleep 30
-until [[ $(kubectl -n webhook-kind-test get pod webhook-mutation -o jsonpath='{.spec.runtimeClassName}') == stargz ]]; do
-  sleep 2
-done
-kubectl -n webhook-kind-test delete pod webhook-mutation --ignore-not-found
+  --restart=Never --dry-run=server -o json | jq -e '.spec.runtimeClassName=="stargz"'
+kubectl -n webhook-kind-test run webhook-skip --image=docker.io/library/busybox:1.36 \
+  --restart=Never --annotations=stargz.sealos.io/skip=true --dry-run=server -o json | jq -e '.spec.runtimeClassName==null'
 echo 'PASS: Kind Helm install, staged upgrade, rollback, CA injection and admission mutation'
