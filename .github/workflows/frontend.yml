@@ -20,7 +20,7 @@ on:
   workflow_dispatch:
     inputs:
       module:
-        description: "Module (e.g., desktop, providers/applaunchpad)"
+        description: "Module (e.g., desktop, providers/costcenter)"
         required: true
         type: string
       push_image:

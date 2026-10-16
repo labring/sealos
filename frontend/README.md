@@ -6,6 +6,14 @@
 - We use `pnpm` for package management, you should have it installed before getting started. ([Tutorial](https://pnpm.io/installation))
 - Desktop app is under `desktop/` directory, sub apps are under `providers/<package>/`.
 
+App Launchpad, Database (formerly DBProvider), and the Template app store are maintained in separate repositories:
+
+- [App Launchpad](https://github.com/sealos-apps/applaunchpad)
+- [Database](https://github.com/sealos-apps/database)
+- [Template app store](https://github.com/sealos-apps/template)
+
+Build and install these apps using their respective repositories. This repository's frontend builds and `scripts/cloud/install-v2.sh` no longer include them. Desktop retains their service URLs and integrations; `service/database`, `service/launchpad`, and `service/vlogs` still provide monitoring and logs for the extracted apps.
+
 ### Install dependencies
 
 The post install script will run automatically, and local packages should be built.
@@ -37,6 +45,7 @@ pnpm dev-desktop
 
 # Run specific provider app
 pnpm dev-cost       # costcenter
+pnpm dev-license    # license
 
 # or run dev script in app's package directory
 cd desktop

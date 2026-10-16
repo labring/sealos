@@ -100,10 +100,6 @@ RUN apk add curl \
 ARG name
 ARG path
 
-# Install Git and OpenSSH client if $name is equal to template
-RUN if [ "$name" = "template" ]; then \
-    apk add --no-cache git openssh-client; \
-fi
 RUN if [ "$name" = "desktop" ]; then \
     npm install -g prisma@5.10.2; \
 fi
