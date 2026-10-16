@@ -15,16 +15,7 @@ class MasterSDK {
   private readonly eventBus = new Map<string, (e?: any) => any>();
   private readonly allowedOrigins: string[] = [];
   private readonly getWorkspaceQuotaApi: () => Promise<WorkspaceQuotaItem[]>;
-  private readonly getHostConfigApi?: () => Promise<{
-    cloud: {
-      domain: string;
-      port: string;
-      regionUid: string;
-    };
-    features: {
-      subscription: boolean;
-    };
-  }>;
+  private readonly getHostConfigApi: MasterOptions['getHostConfigApi'];
 
   private readonly apiFun: {
     [key: string]: (data: AppSendMessageType, source: MessageEventSource, origin: string) => void;

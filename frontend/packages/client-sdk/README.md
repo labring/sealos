@@ -167,3 +167,22 @@ Issues and Pull Requests are welcome!
 ## 📄 License
 
 [Sealos Sustainable Use License 1.0](https://github.com/labring/sealos/blob/main/LICENSE.md)
+
+
+### Host configuration and currency symbols
+
+Standalone apps can install `@labring/sealos-desktop-sdk@0.1.24` and call
+`sealosApp.getHostConfig()`. The exported `HostConfig` type preserves
+`cloud: { domain, port, regionUid }` and `features: { subscription, analytics? }`,
+and adds optional `currencySymbol: 'shellCoin' | 'cny' | 'usd'`.
+Use `config.currencySymbol ?? 'shellCoin'` for older hosts.
+
+Updated Desktop waits for configuration before reading `desktop.layout.currencySymbol`,
+falling back to `shellCoin` only after loading. Requests reject after 8 seconds if
+configuration is unavailable; allow retries instead of caching failures as a currency.
+On release-v5.1, subscription is false and analytics reflects GTM configuration.
+Currency symbols affect display only, not monetary conversion.
+
+Source and build scripts live in `frontend/packages/client-sdk`; build with
+`pnpm --filter sealos-desktop-sdk build`. This backport retains the workspace package
+version and must not overwrite the published scoped package with this older SDK baseline.
