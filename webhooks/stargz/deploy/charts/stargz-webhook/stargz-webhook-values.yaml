@@ -1,0 +1,3 @@
+# User overrides. The entrypoint initializes the persistent file only once.
+# Keep image out of this file to follow the image bundled with each chart.
+{}

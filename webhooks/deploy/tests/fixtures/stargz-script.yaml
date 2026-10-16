@@ -1,0 +1,144 @@
+# Snapshot of the pre-Helm script layout. Keep this independent of chart templates.
+apiVersion: node.k8s.io/v1
+kind: RuntimeClass
+metadata:
+  name: stargz
+handler: stargz
+scheduling:
+  nodeSelector:
+    stargz.sealos.io/runtime: "true"
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: stargz-runtime-injector-selfsigned-issuer
+  namespace: sealos-system
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: stargz-runtime-injector-serving-cert
+  namespace: sealos-system
+spec:
+  dnsNames:
+  - pod-stargz-runtime-injector
+  - pod-stargz-runtime-injector.sealos-system
+  - pod-stargz-runtime-injector.sealos-system.svc
+  - pod-stargz-runtime-injector.sealos-system.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: stargz-runtime-injector-selfsigned-issuer
+  secretName: stargz-runtime-injector-tls
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: pod-stargz-runtime-injector
+  namespace: sealos-system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pod-stargz-runtime-injector
+  namespace: sealos-system
+  labels:
+    app.kubernetes.io/name: pod-stargz-runtime-injector
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: pod-stargz-runtime-injector
+  template:
+    metadata:
+      annotations:
+        stargz.sealos.io/skip: "true"
+      labels:
+        app.kubernetes.io/name: pod-stargz-runtime-injector
+    spec:
+      serviceAccountName: pod-stargz-runtime-injector
+      containers:
+      - name: webhook
+        image: example.test/stargz:old
+        imagePullPolicy: IfNotPresent
+        args:
+        - --webhook-cert-dir=/tls
+        - --webhook-cert-name=tls.crt
+        - --webhook-cert-key=tls.key
+        - --metrics-bind-address=0
+        - --health-probe-bind-address=:8081
+        - --runtime-class=stargz
+        - --registries=registry.test:5000
+        - --skip-annotation=stargz.sealos.io/skip
+        ports:
+        - name: https
+          containerPort: 9443
+        - name: health
+          containerPort: 8081
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: health
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: health
+        volumeMounts:
+        - name: tls
+          mountPath: /tls
+          readOnly: true
+        resources:
+          requests:
+            cpu: 20m
+            memory: 32Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
+      volumes:
+      - name: tls
+        secret:
+          secretName: stargz-runtime-injector-tls
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pod-stargz-runtime-injector
+  namespace: sealos-system
+spec:
+  selector:
+    app.kubernetes.io/name: pod-stargz-runtime-injector
+  ports:
+  - name: https
+    port: 443
+    targetPort: https
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: pod-stargz-runtime-injector
+  annotations:
+    cert-manager.io/inject-ca-from: sealos-system/stargz-runtime-injector-serving-cert
+webhooks:
+- name: pod-stargz-runtime-injector.sealos-system.svc
+  admissionReviewVersions:
+  - v1
+  sideEffects: None
+  failurePolicy: Ignore
+  timeoutSeconds: 5
+  reinvocationPolicy: Never
+  clientConfig:
+    service:
+      name: pod-stargz-runtime-injector
+      namespace: sealos-system
+      path: /mutate
+      port: 443
+  rules:
+  - operations:
+    - CREATE
+    apiGroups:
+    - ""
+    apiVersions:
+    - v1
+    resources:
+    - pods

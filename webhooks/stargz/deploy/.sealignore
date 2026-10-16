@@ -1,0 +1,5 @@
+*.md
+manifests
+manifest.yaml
+apply-cluster-stargz-webhook.sh
+deploy-stargz-runtime.sh

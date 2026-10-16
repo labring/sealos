@@ -1,0 +1,183 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: admission-mutating-webhook-configuration
+  labels:
+    {{- include "admission-webhook.labels" . | nindent 4 }}
+  annotations:
+    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ .Values.certificate.name }}
+webhooks:{{ if not (or .Values.config.ingressWebhookEnabled .Values.config.namespaceWebhookEnabled .Values.config.resourceCreatorWebhookEnabled) }} []{{ end }}
+{{- if .Values.config.ingressWebhookEnabled }}
+  - name: mingress.sealos.io
+    admissionReviewVersions: [v1]
+    clientConfig:
+      service:
+        name: {{ .Values.service.webhookName }}
+        namespace: {{ .Release.Namespace }}
+        path: /mutate-networking-k8s-io-v1-ingress
+    failurePolicy: {{ .Values.config.ingressWebhookFailurePolicy }}
+    namespaceSelector:
+      matchExpressions:
+        - key: user.sealos.io/owner
+          operator: Exists
+    rules:
+      - apiGroups: [networking.k8s.io]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [ingresses]
+    sideEffects: None
+{{- end }}
+{{- if .Values.config.namespaceWebhookEnabled }}
+  - name: mnamespace.sealos.io
+    admissionReviewVersions: [v1]
+    clientConfig:
+      service:
+        name: {{ .Values.service.webhookName }}
+        namespace: {{ .Release.Namespace }}
+        path: /mutate--v1-namespace
+    failurePolicy: {{ .Values.config.namespaceWebhookFailurePolicy }}
+    namespaceSelector:
+      matchExpressions:
+        - key: user.sealos.io/owner
+          operator: Exists
+    rules:
+      - apiGroups: [""]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [namespaces]
+    sideEffects: None
+{{- end }}
+{{- if .Values.config.resourceCreatorWebhookEnabled }}
+  - name: mutate-resource-creator.sealos.io
+    admissionReviewVersions: [v1]
+    clientConfig:
+      service:
+        name: {{ .Values.service.webhookName }}
+        namespace: {{ .Release.Namespace }}
+        path: /mutate-resource-creator
+    failurePolicy: {{ .Values.config.resourceCreatorWebhookFailurePolicy }}
+    timeoutSeconds: {{ .Values.webhook.timeoutSeconds }}
+    namespaceSelector:
+      matchExpressions:
+        - key: user.sealos.io/owner
+          operator: Exists
+    rules:
+      - apiGroups: [apps]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [deployments, statefulsets]
+        scope: Namespaced
+      - apiGroups: [devbox.sealos.io]
+        apiVersions: [v1alpha2]
+        operations: [CREATE, UPDATE]
+        resources: [devboxes]
+        scope: Namespaced
+      - apiGroups: [objectstorage.sealos.io]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [objectstoragebuckets]
+        scope: Namespaced
+      - apiGroups: [batch]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [cronjobs]
+        scope: Namespaced
+      - apiGroups: [apps.kubeblocks.io]
+        apiVersions: [v1alpha1, v1]
+        operations: [CREATE, UPDATE]
+        resources: [clusters]
+        scope: Namespaced
+    sideEffects: None
+{{- end }}
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: admission-validating-webhook-configuration
+  labels:
+    {{- include "admission-webhook.labels" . | nindent 4 }}
+  annotations:
+    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ .Values.certificate.name }}
+webhooks:{{ if not (or .Values.config.ingressWebhookEnabled .Values.config.namespaceWebhookEnabled .Values.config.resourceCreatorWebhookEnabled) }} []{{ end }}
+{{- if .Values.config.ingressWebhookEnabled }}
+  - name: vingress.sealos.io
+    admissionReviewVersions: [v1]
+    clientConfig:
+      service:
+        name: {{ .Values.service.webhookName }}
+        namespace: {{ .Release.Namespace }}
+        path: /validate-networking-k8s-io-v1-ingress
+    failurePolicy: {{ .Values.config.ingressWebhookFailurePolicy }}
+    namespaceSelector:
+      matchExpressions:
+        - key: user.sealos.io/owner
+          operator: Exists
+    rules:
+      - apiGroups: [networking.k8s.io]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE, DELETE]
+        resources: [ingresses]
+    sideEffects: None
+{{- end }}
+{{- if .Values.config.namespaceWebhookEnabled }}
+  - name: vnamespace.sealos.io
+    admissionReviewVersions: [v1]
+    clientConfig:
+      service:
+        name: {{ .Values.service.webhookName }}
+        namespace: {{ .Release.Namespace }}
+        path: /validate--v1-namespace
+    failurePolicy: {{ .Values.config.namespaceWebhookFailurePolicy }}
+    namespaceSelector:
+      matchExpressions:
+        - key: user.sealos.io/owner
+          operator: Exists
+    rules:
+      - apiGroups: [""]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE, DELETE]
+        resources: [namespaces]
+    sideEffects: None
+{{- end }}
+{{- if .Values.config.resourceCreatorWebhookEnabled }}
+  - name: validate-resource-creator.sealos.io
+    admissionReviewVersions: [v1]
+    clientConfig:
+      service:
+        name: {{ .Values.service.webhookName }}
+        namespace: {{ .Release.Namespace }}
+        path: /validate-resource-creator
+    failurePolicy: {{ .Values.config.resourceCreatorWebhookFailurePolicy }}
+    timeoutSeconds: {{ .Values.webhook.timeoutSeconds }}
+    namespaceSelector:
+      matchExpressions:
+        - key: user.sealos.io/owner
+          operator: Exists
+    rules:
+      - apiGroups: [apps]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [deployments, statefulsets]
+        scope: Namespaced
+      - apiGroups: [devbox.sealos.io]
+        apiVersions: [v1alpha2]
+        operations: [CREATE, UPDATE]
+        resources: [devboxes]
+        scope: Namespaced
+      - apiGroups: [objectstorage.sealos.io]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [objectstoragebuckets]
+        scope: Namespaced
+      - apiGroups: [batch]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [cronjobs]
+        scope: Namespaced
+      - apiGroups: [apps.kubeblocks.io]
+        apiVersions: [v1alpha1, v1]
+        operations: [CREATE, UPDATE]
+        resources: [clusters]
+        scope: Namespaced
+    sideEffects: None
+{{- end }}

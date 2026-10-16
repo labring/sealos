@@ -41,7 +41,6 @@ on:
       - "webhooks/**"
       - ".github/workflows/webhooks.yml"
       - "!**/*.md"
-      - "!**/*.yaml"
 
   pull_request:
     branches: ["*"]
@@ -49,7 +48,6 @@ on:
       - "webhooks/**"
       - ".github/workflows/webhooks.yml"
       - "!**/*.md"
-      - "!**/*.yaml"
 
 # Avoid using ${{ github.workflow }} - when called via workflow_call, it inherits the caller's name causing conflicts
 concurrency:
@@ -64,6 +62,41 @@ env:
   ALIYUN_REPO_PREFIX: ${{ secrets.ALIYUN_REPO_PREFIX && secrets.ALIYUN_REPO_PREFIX || secrets.ALIYUN_USERNAME && format('{0}/{1}', secrets.ALIYUN_REGISTRY, secrets.ALIYUN_USERNAME) || '' }}
 
 jobs:
+  helm-deploy:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4.3.0
+        with:
+          version: v3.19.0
+      - name: Install deployment tools
+        run: |
+          curl -fsSL https://github.com/mikefarah/yq/releases/download/v4.47.2/yq_linux_amd64 -o /usr/local/bin/yq
+          chmod +x /usr/local/bin/yq
+      - name: Check charts and staged lifecycle
+        run: bash webhooks/deploy/tests/run.sh
+
+  helm-kind-integration:
+    name: Live Helm lifecycle on Kind
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4.3.0
+        with:
+          version: v3.19.0
+      - uses: helm/kind-action@v1.12.0
+        with:
+          version: v0.25.0
+      - uses: azure/setup-kubectl@v4
+        with:
+          version: v1.31.4
+      - name: Install yq
+        run: |
+          curl -fsSL https://github.com/mikefarah/yq/releases/download/v4.47.2/yq_linux_amd64 -o /usr/local/bin/yq
+          chmod +x /usr/local/bin/yq
+      - name: Run live chart lifecycle
+        run: bash webhooks/deploy/tests/integration-kind.sh
+
   resolve-modules:
     runs-on: ubuntu-24.04
     outputs:
@@ -245,7 +278,7 @@ jobs:
       packages: write
     strategy:
       matrix:
-        module: [admission]
+        module: [admission, stargz]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -260,7 +293,11 @@ jobs:
           echo "MODULE_NAME=${MODULE_NAME}" >> $GITHUB_ENV
           echo "OLD_DOCKER_REPO=ghcr.io/labring/sealos-${MODULE_NAME}-webhook" >> $GITHUB_ENV
           # Docker image repo (always use GHCR for manifests to avoid Aliyun bandwidth costs)
-          echo "GHCR_DOCKER_REPO=ghcr.io/${REPO_OWNER}/sealos-${MODULE_NAME}-webhook" >> $GITHUB_ENV
+          if [[ "$MODULE_NAME" == stargz ]]; then
+            echo "GHCR_DOCKER_REPO=ghcr.io/${REPO_OWNER}/sealos/stargz-webhook" >> $GITHUB_ENV
+          else
+            echo "GHCR_DOCKER_REPO=ghcr.io/${REPO_OWNER}/sealos-${MODULE_NAME}-webhook" >> $GITHUB_ENV
+          fi
           # Cluster image repos
           echo "GHCR_CLUSTER_REPO=ghcr.io/${REPO_OWNER}/sealos-cloud-${MODULE_NAME}-webhook" >> $GITHUB_ENV
           if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then
@@ -287,6 +324,11 @@ jobs:
         run: |
           sudo bash ./.github/scripts/install.sh
 
+      - name: Install yq
+        run: |
+          curl -fsSL https://github.com/mikefarah/yq/releases/download/v4.47.2/yq_linux_amd64 -o /usr/local/bin/yq
+          chmod +x /usr/local/bin/yq
+
       - name: Build ${{ matrix.module }}-webhook cluster image
         working-directory: webhooks/${{ matrix.module }}/deploy
         env:
@@ -294,26 +336,17 @@ jobs:
           OLD_DOCKER_REPO: ${{ env.OLD_DOCKER_REPO }}
           GHCR_DOCKER_REPO: ${{ env.GHCR_DOCKER_REPO }}
         run: |
-          # Build cluster images for each tag (amd64)
-          for TAG in $DOCKER_METADATA_OUTPUT_TAGS; do
-            # Always use GHCR docker image to avoid Aliyun bandwidth costs
-            IMAGE_TAG="${TAG##*:}"
-            NEW_DOCKER_IMAGE="${GHCR_DOCKER_REPO}:${IMAGE_TAG}"
-            echo "Updating manifests to: ${NEW_DOCKER_IMAGE}"
-            sed -i -E "s;(${OLD_DOCKER_REPO}|${GHCR_DOCKER_REPO}):[^[:space:]\"']*;${NEW_DOCKER_IMAGE};" manifests/*
-            sudo rm -rf registry
-            echo "Building ${TAG}-amd64"
-            sudo sealos build -t "${TAG}-amd64" --platform linux/amd64 -f Kubefile
-          done
-
-          # Build cluster images for each tag (arm64)
+          cp ../../deploy/helm-webhook.sh ../../deploy/post-renderer.sh .
+          CHART="charts/${MODULE_NAME}-webhook"
           for TAG in $DOCKER_METADATA_OUTPUT_TAGS; do
             IMAGE_TAG="${TAG##*:}"
             NEW_DOCKER_IMAGE="${GHCR_DOCKER_REPO}:${IMAGE_TAG}"
-            sed -i -E "s;(${OLD_DOCKER_REPO}|${GHCR_DOCKER_REPO}):[^[:space:]\"']*;${NEW_DOCKER_IMAGE};" manifests/*
-            sudo rm -rf registry
-            echo "Building ${TAG}-arm64"
-            sudo sealos build -t "${TAG}-arm64" --platform linux/arm64 -f Kubefile
+            IMAGE="$NEW_DOCKER_IMAGE" yq -i '.image = strenv(IMAGE)' "$CHART/values.yaml"
+            APP_VERSION="$IMAGE_TAG" yq -i '.appVersion = strenv(APP_VERSION)' "$CHART/Chart.yaml"
+            for ARCH in amd64 arm64; do
+              sudo rm -rf registry
+              sudo sealos build -t "${TAG}-${ARCH}" --platform "linux/${ARCH}" -f Kubefile
+            done
           done
 
       - name: Sealos login to ghcr.io

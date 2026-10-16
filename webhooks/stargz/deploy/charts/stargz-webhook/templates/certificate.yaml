@@ -1,0 +1,37 @@
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ .Values.certificate.issuerName }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "stargz-webhook.labels" . | nindent 4 }}
+spec:
+  {{- if .Values.certificate.issuerSpec }}
+  {{- toYaml .Values.certificate.issuerSpec | nindent 2 }}
+  {{- else }}
+  selfSigned: {}
+  {{- end }}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ .Values.certificate.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "stargz-webhook.labels" . | nindent 4 }}
+spec:
+  {{- if .Values.certificate.spec }}
+  {{- toYaml .Values.certificate.spec | nindent 2 }}
+  {{- else }}
+  secretName: {{ .Values.certificate.secretName }}
+  duration: {{ .Values.certificate.duration }}
+  renewBefore: {{ .Values.certificate.renewBefore }}
+  dnsNames:
+    - {{ .Values.service.name }}
+    - {{ .Values.service.name }}.{{ .Release.Namespace }}
+    - {{ .Values.service.name }}.{{ .Release.Namespace }}.svc
+    - {{ .Values.service.name }}.{{ .Release.Namespace }}.svc.cluster.local
+  issuerRef:
+    name: {{ .Values.certificate.issuerName }}
+    kind: Issuer
+  {{- end }}

@@ -1,0 +1,125 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admission-controller-manager
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "admission-webhook.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: {{ .Values.updateStrategy.maxUnavailable }}
+      maxSurge: {{ .Values.updateStrategy.maxSurge }}
+  selector:
+    matchLabels:
+      {{- include "admission-webhook.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "admission-webhook.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/name: {{ include "admission-webhook.name" . }}
+      annotations:
+        {{- toYaml .Values.podAnnotations | nindent 8 }}
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: manager
+          image: {{ .Values.image | quote }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          command: [/manager]
+          args:
+            - --health-probe-bind-address=:{{ .Values.health.port }}
+            - --metrics-bind-address=127.0.0.1:8080
+            - --leader-elect
+            - {{ printf "--ingress-mutating-annotations=%v" .Values.config.ingressMutatingAnnotations | quote }}
+            - {{ printf "--cnameDomains=%v" .Values.config.cnameDomains | quote }}
+            - {{ printf "--cnameCheck=%v" .Values.config.cnameCheck | quote }}
+            - {{ printf "--denyDomains=%v" .Values.config.denyDomains | quote }}
+          env:
+            - name: ICP_ENABLED
+              value: {{ .Values.config.icpEnabled | quote }}
+            - name: ICP_ENDPOINT
+              value: {{ .Values.config.icpEndpoint | quote }}
+            - name: ICP_KEY
+              {{- if .Values.config.icpKeySecretRef.name }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.config.icpKeySecretRef.name }}
+                  key: {{ .Values.config.icpKeySecretRef.key }}
+              {{- else }}
+              value: {{ .Values.config.icpKey | quote }}
+              {{- end }}
+          ports:
+            - name: webhook
+              containerPort: 9443
+              protocol: TCP
+            - name: health
+              containerPort: {{ .Values.health.port }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: health
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: health
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          volumeMounts:
+            - name: cert
+              mountPath: /tmp/k8s-webhook-server/serving-certs
+              readOnly: true
+        {{- if .Values.metrics.enabled }}
+        - name: kube-rbac-proxy
+          image: {{ .Values.metrics.proxyImage | quote }}
+          args:
+            - --secure-listen-address=0.0.0.0:{{ .Values.metrics.port }}
+            - --upstream=http://127.0.0.1:8080/
+            - --logtostderr=true
+            - --v=0
+          ports:
+            - name: metrics
+              containerPort: {{ .Values.metrics.port }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests:
+              cpu: 5m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 128Mi
+        {{- end }}
+      volumes:
+        - name: cert
+          secret:
+            secretName: {{ .Values.certificate.secretName }}

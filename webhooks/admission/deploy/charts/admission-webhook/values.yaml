@@ -1,0 +1,79 @@
+image: ghcr.io/labring/sealos-admission-webhook:latest
+imagePullPolicy: IfNotPresent
+imagePullSecrets: []
+
+replicaCount: 1
+
+serviceAccount:
+  create: true
+  name: admission-controller-manager
+  annotations: {}
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 128Mi
+  requests:
+    cpu: 10m
+    memory: 64Mi
+
+podSecurityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+
+podAnnotations: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+updateStrategy:
+  maxUnavailable: 0
+  maxSurge: 1
+
+config:
+  cnameDomains: cloud.sealos.io,laf.dev,laf.run
+  cnameCheck: true
+  denyDomains: ""
+  ingressMutatingAnnotations: ""
+  ingressWebhookEnabled: true
+  ingressWebhookFailurePolicy: Fail
+  namespaceWebhookEnabled: true
+  namespaceWebhookFailurePolicy: Fail
+  resourceCreatorWebhookEnabled: false
+  resourceCreatorWebhookFailurePolicy: Fail
+  icpEnabled: false
+  icpEndpoint: ""
+  icpKey: ""
+  icpKeySecretRef:
+    name: ""
+    key: ICP_KEY
+
+certificate:
+  issuerName: admission-selfsigned-issuer
+  name: admission-serving-cert
+  secretName: admission-webhook-server-cert
+  duration: 2160h
+  renewBefore: 720h
+
+service:
+  webhookName: admission-webhook-service
+  metricsName: admission-controller-manager-metrics-service
+
+metrics:
+  enabled: true
+  port: 8443
+  proxyImage: gcr.io/kubebuilder/kube-rbac-proxy:v0.14.1
+
+health:
+  port: 8081
+
+webhook:
+  timeoutSeconds: 5

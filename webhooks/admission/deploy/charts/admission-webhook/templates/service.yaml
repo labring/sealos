@@ -1,0 +1,33 @@
+{{- if .Values.metrics.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.service.metricsName }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "admission-webhook.labels" . | nindent 4 }}
+spec:
+  ports:
+    - name: https
+      port: {{ .Values.metrics.port }}
+      targetPort: metrics
+      protocol: TCP
+  selector:
+    {{- include "admission-webhook.selectorLabels" . | nindent 4 }}
+{{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.service.webhookName }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "admission-webhook.labels" . | nindent 4 }}
+spec:
+  ports:
+    - name: https
+      port: 443
+      targetPort: webhook
+      protocol: TCP
+  selector:
+    {{- include "admission-webhook.selectorLabels" . | nindent 4 }}
