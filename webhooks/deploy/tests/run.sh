@@ -55,6 +55,7 @@ entry() { bash "$ROOT/webhooks/$MODULE/deploy/entrypoint.sh" "$@" > "$TEST_STATE
 expect_failure() { if entry "$@"; then echo "unexpected success: $*" >&2; exit 1; fi; }
 
 for MODULE in admission stargz; do
+  printf 'RUN: %s fresh lifecycle\n' "$MODULE"
   new_state "fresh-$MODULE"
   if [[ $MODULE == admission ]]; then secret admission-webhook-server-cert; else secret stargz-runtime-injector-tls; fi
   entry help

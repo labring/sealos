@@ -11,6 +11,7 @@ kubectl -n cert-manager rollout status deployment/cert-manager --timeout=180s
 kubectl -n cert-manager rollout status deployment/cert-manager-cainjector --timeout=180s
 kubectl -n cert-manager rollout status deployment/cert-manager-webhook --timeout=180s
 
+(cd "$ROOT/webhooks/admission" && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -o bin/webhook-admission-amd64 ./cmd/main.go)
 docker build -t webhook-admission:kind "$ROOT/webhooks/admission"
 docker build -t webhook-stargz:kind "$ROOT/webhooks/stargz"
 kind load docker-image --name "$CLUSTER_NAME" webhook-admission:kind webhook-stargz:kind

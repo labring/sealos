@@ -90,6 +90,9 @@ jobs:
       - uses: azure/setup-kubectl@v4
         with:
           version: v1.31.4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
       - name: Install yq
         run: |
           curl -fsSL https://github.com/mikefarah/yq/releases/download/v4.47.2/yq_linux_amd64 -o /usr/local/bin/yq
