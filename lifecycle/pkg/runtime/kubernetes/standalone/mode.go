@@ -28,6 +28,7 @@ import (
 	"time"
 
 	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -37,13 +38,14 @@ import (
 )
 
 type ModeOptions struct {
-	Mode             string
-	RouteController  *RouteControllerOptions
-	CheckOnly        bool
-	Timeout          time.Duration
-	Output           io.Writer
-	UpdateController bool
-	ControllerFields []string
+	Mode              string
+	RouteController   *RouteControllerOptions
+	CheckOnly         bool
+	Timeout           time.Duration
+	Output            io.Writer
+	UpdateController  bool
+	ControllerFields  []string
+	DeleteMasterNodes bool
 }
 
 type modeState struct {
@@ -82,6 +84,9 @@ func SwitchMode(ctx context.Context, options ModeOptions) error {
 	if options.Mode == ModeRegistered &&
 		(options.RouteController != nil || options.UpdateController) {
 		return errors.New("route-controller options are only valid for standalone mode")
+	}
+	if options.Mode == ModeRegistered && options.DeleteMasterNodes {
+		return errors.New("node deletion is only valid for standalone mode")
 	}
 	if options.Timeout <= 0 {
 		return errors.New("timeout must be positive")
@@ -125,6 +130,9 @@ func switchMode(ctx context.Context, options ModeOptions) error {
 		return nil
 	}
 	if m.state.Mode == options.Mode && m.state.Target == "" {
+		if err := m.deleteNodeObject(ctx, options); err != nil {
+			return err
+		}
 		return m.waitReady(ctx, options.UpdateController)
 	}
 	m.state.Target = options.Mode
@@ -151,6 +159,9 @@ func switchMode(ctx context.Context, options ModeOptions) error {
 	}
 	// Conversion must allow CNI cleanup after activation. Explicit controller
 	// updates still wait for route readiness before committing their settings.
+	if err := m.deleteNodeObject(ctx, options); err != nil {
+		return err
+	}
 	if err := m.waitReady(ctx, options.UpdateController); err != nil {
 		return err
 	}
@@ -162,6 +173,33 @@ func switchMode(ctx context.Context, options ModeOptions) error {
 
 func (m *modeSwitch) save() error {
 	return atomicModeJSON(filepath.Join(modeRoot, "state.json"), m.state)
+}
+
+// deleteNodeObject removes this host's registered Node object once its kubelet
+// runs standalone. An unregistered kubelet cannot retire the object, so it
+// would remain NotReady forever while holding stale workload records; the pod
+// garbage collector removes orphaned pods once the Node object is gone. The
+// recorded registration UID guards against deleting a re-created object.
+func (m *modeSwitch) deleteNodeObject(ctx context.Context, options ModeOptions) error {
+	if options.Mode != ModeStandalone || !options.DeleteMasterNodes {
+		return nil
+	}
+	if m.state.Node == nil || m.state.Node.Name == "" {
+		return nil
+	}
+	deleteOptions := metav1.DeleteOptions{}
+	if m.state.RegisteredUID != "" {
+		deleteOptions.Preconditions = &metav1.Preconditions{UID: &m.state.RegisteredUID}
+	}
+	err := m.client.CoreV1().Nodes().Delete(ctx, m.state.Node.Name, deleteOptions)
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("delete registered Node object %q: %w", m.state.Node.Name, err)
+	}
+	fmt.Fprintf(m.Output, "deleted registered Node object %s\n", m.state.Node.Name)
+	return nil
 }
 
 func kubeletArgv(ctx context.Context) ([]string, error) {

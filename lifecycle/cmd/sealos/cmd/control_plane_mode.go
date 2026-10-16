@@ -111,9 +111,15 @@ func newControlPlaneModeCmdWithConfirm(ask func(string, string) (bool, error)) *
 					return err
 				}
 				if !options.CheckOnly {
-					cmd.Println(
-						"Kubelet configuration applied and kubelet restarted. The administrator must clean up old workloads and Node objects as appropriate, then reboot the control-plane hosts.",
-					)
+					if options.Mode == standalone.ModeStandalone && options.DeleteMasterNodes {
+						cmd.Println(
+							"Kubelet configuration applied, kubelet restarted, and master Node objects deleted; orphaned pods are garbage-collected. Reboot the control-plane hosts to clear CNI state.",
+						)
+					} else {
+						cmd.Println(
+							"Kubelet configuration applied and kubelet restarted. The administrator must clean up old workloads and Node objects as appropriate, then reboot the control-plane hosts.",
+						)
+					}
 					if options.Mode == standalone.ModeStandalone && !options.UpdateController {
 						cmd.Println(
 							"Route-controller reconciliation is asynchronous. Verify its readiness and Pod/Service connectivity after cleanup and reboot.",
@@ -132,6 +138,8 @@ func newControlPlaneModeCmdWithConfirm(ask func(string, string) (bool, error)) *
 		if mode == standalone.ModeStandalone {
 			subcommand.Flags().
 				BoolVar(&options.UpdateController, "update-controller", false, "Update explicitly selected controller settings while remaining standalone")
+			subcommand.Flags().
+				BoolVar(&options.DeleteMasterNodes, "delete-master-nodes", false, "Delete each master's registered Node object after conversion; orphaned workloads are then garbage-collected")
 			controller := standalone.DefaultRouteControllerOptions()
 			options.RouteController = &controller
 			subcommand.Flags().

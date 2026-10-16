@@ -52,6 +52,8 @@ func newControlPlaneModeCmd() *cobra.Command {
 		if mode == standalone.ModeStandalone {
 			subcommand.Flags().
 				BoolVar(&options.UpdateController, "update-controller", false, "Update explicitly selected controller settings on a standalone host")
+			subcommand.Flags().
+				BoolVar(&options.DeleteMasterNodes, "delete-master-nodes", false, "Delete this host's registered Node object after the standalone conversion")
 			controller := standalone.DefaultRouteControllerOptions()
 			options.RouteController = &controller
 			subcommand.Flags().

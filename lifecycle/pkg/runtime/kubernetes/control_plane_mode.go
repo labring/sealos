@@ -59,6 +59,9 @@ func (k *KubeadmRuntime) SwitchControlPlaneMode(
 		(options.RouteController != nil || options.UpdateController) {
 		return errors.New("route-controller options are only valid for standalone mode")
 	}
+	if options.Mode == standalone.ModeRegistered && options.DeleteMasterNodes {
+		return errors.New("--delete-master-nodes is only valid for standalone mode")
+	}
 	client, err := k.getKubeInterface()
 	if err != nil {
 		return err
@@ -134,6 +137,9 @@ func (k *KubeadmRuntime) switchControlPlaneMode(
 		}
 		if options.UpdateController {
 			command.WriteString(" --update-controller")
+		}
+		if options.DeleteMasterNodes {
+			command.WriteString(" --delete-master-nodes")
 		}
 		values := map[string]string{
 			"route-controller-image":      controller.Image,
