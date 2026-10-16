@@ -21,12 +21,17 @@ existing Secret instead of putting its key in values.
 
 For a source checkout, run the module's `deploy/entrypoint.sh`. A Sealos cluster
 image bundles that entrypoint, the chart, `helm-webhook.sh` and
-`post-renderer.sh`. Manual cluster-image builds must first copy the shared
-scripts into the module's deploy directory, as CI does:
+`post-renderer.sh`. Build from a temporary context containing only these files
+so the image scanner does not cache images from historical migration manifests:
 
 ```sh
-cp webhooks/deploy/helm-webhook.sh webhooks/deploy/post-renderer.sh webhooks/admission/deploy/
-# For stargz, use webhooks/stargz/deploy/ as the destination instead.
+build_context=$(mktemp -d)
+cp -R webhooks/admission/deploy/charts "$build_context/charts"
+cp webhooks/admission/deploy/Kubefile webhooks/admission/deploy/entrypoint.sh \
+  webhooks/deploy/helm-webhook.sh webhooks/deploy/post-renderer.sh "$build_context/"
+sealos build -t ghcr.io/labring/sealos-cloud-admission-webhook:latest \
+  --platform linux/amd64 -f "$build_context/Kubefile" "$build_context"
+# Use webhooks/stargz/deploy/ and its cluster-image tag for stargz.
 ```
 
 ## Install
@@ -266,5 +271,6 @@ Chart version is independent of appVersion; increment Chart.yaml version for
 chart changes, and publish immutable app tags/digests for production. The first
 chart version is 0.1.0. Sealos build discovers chart image references for its
 registry cache. `.sealignore` contains image references to exclude from that
-cache; it is not a file ignore list. Offline image installation must be
-validated before promoting a cluster-image release.
+cache; it is not a file ignore list. Neither module needs exclusions, so no
+`.sealignore` is shipped. Offline image installation must be validated before
+promoting a cluster-image release.

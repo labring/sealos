@@ -18,11 +18,14 @@ for module in admission stargz; do
   chart="$ROOT/webhooks/$module/deploy/charts/$module-webhook"
   expected_image="ghcr.io/labring/sealos/${module}-webhook:latest"
   grep -Fxq "image: $expected_image" "$chart/values.yaml"
-  grep -Fxq "$expected_image" "$ROOT/webhooks/$module/deploy/.sealignore"
-  if grep -Eq '^\*|(^|/)(manifests|manifest\.yaml|.*\.(md|sh))$' "$ROOT/webhooks/$module/deploy/.sealignore"; then
-    echo "sealignore contains a file pattern" >&2
-    exit 1
+  ignore_file="$ROOT/webhooks/$module/deploy/.sealignore"
+  if [[ -f "$ignore_file" ]]; then
+    if grep -Fxq "$expected_image" "$ignore_file" || grep -Eq '^\*|(^|/)(manifests|manifest\.yaml|.*\.(md|sh))$' "$ignore_file"; then
+      echo 'sealignore must not exclude the application image or contain file patterns' >&2
+      exit 1
+    fi
   fi
+  yq -o=json '.' "$chart/$module-webhook-values.yaml" | jq -e '. == {}' >/dev/null
   helm lint "$chart"
   helm template "$module-webhook" "$chart" -n sealos-system > "$TEMP/$module.yaml"
   helm package "$chart" -d "$TEMP" >/dev/null
@@ -65,9 +68,12 @@ expect_failure() { if entry "$@"; then echo "unexpected success: $*" >&2; exit 1
 for MODULE in admission stargz; do
   printf 'RUN: %s fresh lifecycle\n' "$MODULE"
   new_state "fresh-$MODULE"
+  printf 'global:\n  featureConfigs:\n    %s:\n      replicaCount: 2\n' "$MODULE" > "$GLOBAL_VALUES_FILE"
   if [[ $MODULE == admission ]]; then secret admission-webhook-server-cert; else secret stargz-runtime-injector-tls; fi
   entry help
   entry apply
+  jq -se 'any(.[]; .kind=="Deployment" and .spec.replicas==2)' "$TEST_STATE"/objects/*.json >/dev/null
+  yq -o=json '.' "$USER_VALUES_FILE" | jq -e '. == {}' >/dev/null
   [[ $(jq length "$TEST_STATE/history.json") == 2 ]]
   [[ $(grep -c '^helm:' "$TEST_STATE/events") == 2 ]]
   first=$(grep '^helm:' "$TEST_STATE/events" | head -1)

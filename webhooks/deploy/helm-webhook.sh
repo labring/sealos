@@ -83,7 +83,7 @@ init_values() {
   VALUES=()
   if [[ -f "$GLOBAL_VALUES_FILE" ]]; then
     # Only this component's config is translated into chart values.
-    MODULE="$MODULE" yq '.global.featureConfigs[strenv(MODULE)] // {}' \
+    yq ".global.featureConfigs.${MODULE} // {}" \
       "$GLOBAL_VALUES_FILE" > "$WORK_DIR/global.yaml"
     VALUES+=(-f "$WORK_DIR/global.yaml")
   fi
