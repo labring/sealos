@@ -25,14 +25,19 @@ export type Method =
 export type MasterOptions = {
   allowedOrigins: string[];
   getWorkspaceQuotaApi: () => Promise<WorkspaceQuotaItem[]>;
-  getHostConfigApi?: () => Promise<{
-    cloud: {
-      domain: string;
-      port: string;
-      regionUid: string;
-    };
-    features: {
-      subscription: boolean;
-    };
-  }>;
+  getHostConfigApi?: () => Promise<HostConfig>;
+};
+
+/** Configuration supplied by Desktop. Older hosts may omit optional fields. */
+export type HostConfig = {
+  cloud: {
+    domain: string;
+    port: string;
+    regionUid: string;
+  };
+  features: {
+    subscription: boolean;
+    analytics?: boolean;
+  };
+  currencySymbol?: 'shellCoin' | 'cny' | 'usd';
 };
