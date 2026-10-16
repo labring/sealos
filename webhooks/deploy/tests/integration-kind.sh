@@ -39,10 +39,6 @@ export GLOBAL_VALUES_FILE="$STATE/no-global-values.yaml"
 export USER_VALUES_FILE="$STATE/admission-values.yaml"
 export CHART_PATH="$ROOT/webhooks/admission/deploy/charts/admission-webhook"
 printf 'image: webhook-admission:kind\nimagePullPolicy: Never\n' > "$USER_VALUES_FILE"
-cat >> "$USER_VALUES_FILE" <<'VALUES'
-metrics:
-  enabled: false
-VALUES
 bash "$ROOT/webhooks/admission/deploy/entrypoint.sh" apply
 kubectl -n sealos-system rollout status deployment/admission-controller-manager --timeout=180s
 kubectl get mutatingwebhookconfiguration admission-mutating-webhook-configuration -o json |
@@ -52,8 +48,6 @@ kubectl create namespace ns-kind-test --dry-run=client -o yaml |
 cat > "$USER_VALUES_FILE" <<'VALUES'
 image: webhook-admission:kind
 imagePullPolicy: Never
-metrics:
-  enabled: false
 config:
   cnameCheck: false
   cnameDomains: example.com
@@ -85,8 +79,6 @@ kubectl -n ns-kind-test get ingress webhook-mutation -o json |
 cat > "$USER_VALUES_FILE" <<'VALUES'
 image: webhook-admission:kind
 imagePullPolicy: Never
-metrics:
-  enabled: false
 replicaCount: 2
 VALUES
 bash "$ROOT/webhooks/admission/deploy/entrypoint.sh" apply
