@@ -118,6 +118,11 @@ desktopConfig:
   bingAdConversionName: ""
 
   passwordEnabled: true
+  # Desktop OAuth authorization server: master switch enables device authorization.
+  oauth2IdpEnabled: false
+  # Requires oauth2IdpEnabled; enables authorization code + PKCE.
+  oauth2IdpAuthorizationCodeEnabled: false
+
   # OAuth providers
   githubEnabled: false
   githubClientId: ""

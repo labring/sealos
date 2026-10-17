@@ -92,6 +92,9 @@ data:
           announcementEnabled: false
           kcRotationEnabled: {{ .Values.desktopConfig.kcRotationEnabled }}
       auth:
+        oauth2idp:
+          enabled: {{ .Values.desktopConfig.oauth2IdpEnabled | default false }}
+          authorizationCodeEnabled: {{ .Values.desktopConfig.oauth2IdpAuthorizationCodeEnabled | default false }}
         callbackURL: "https://{{ .Values.desktopConfig.cloudDomain }}{{ if .Values.desktopConfig.cloudPort }}:{{ .Values.desktopConfig.cloudPort }}{{ end }}/callback"
         signUpEnabled: {{ .Values.desktopConfig.signUpEnabled }}
         baiduToken: "{{ .Values.desktopConfig.baiduToken }}"
