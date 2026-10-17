@@ -58,6 +58,7 @@ env:
   # Common versions
   GO_VERSION: "1.25"
   DEFAULT_OWNER: "labring"
+  IMAGE_SOURCE: https://github.com/${{ github.repository }}
   ALIYUN_REGISTRY: ${{ secrets.ALIYUN_REGISTRY }}
   ALIYUN_REPO_PREFIX: ${{ secrets.ALIYUN_REPO_PREFIX && secrets.ALIYUN_REPO_PREFIX || secrets.ALIYUN_USERNAME && format('{0}/{1}', secrets.ALIYUN_REGISTRY, secrets.ALIYUN_USERNAME) || '' }}
 
@@ -181,8 +182,9 @@ jobs:
         if: ${{ (github.event_name == 'push') ||(github.event_name == 'create') || (inputs.push_image == true)  }}
         with:
           registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
+          username: ${{ github.actor }}
+          # The repository token automatically links new GHCR packages to this repository.
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Login to Aliyun Registry
         uses: docker/login-action@v3
@@ -260,8 +262,8 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Login to Aliyun Registry
         if: ${{ env.ALIYUN_REGISTRY }}
         uses: docker/login-action@v3
@@ -301,7 +303,9 @@ jobs:
             for DIGEST in "${DIGESTS[@]}"; do
               SOURCES+=("${REPOSITORY}@sha256:${DIGEST}")
             done
-            docker buildx imagetools create -t "$TAG" "${SOURCES[@]}"
+            docker buildx imagetools create \
+              --annotation "index:org.opencontainers.image.source=${IMAGE_SOURCE}" \
+              -t "$TAG" "${SOURCES[@]}"
             docker buildx imagetools inspect "$TAG"
           done
 
@@ -363,6 +367,21 @@ jobs:
         run: |
           sudo bash ./.github/scripts/install.sh
 
+      - name: Sealos login to ghcr.io
+        env:
+          GH_USER: ${{ github.actor }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          sudo sealos login -u "${GH_USER}" -p "${GH_TOKEN}" --debug ghcr.io
+
+      - name: Sealos login to Aliyun Registry
+        if: ${{ env.ALIYUN_REGISTRY }}
+        env:
+          ALIYUN_USERNAME: ${{ secrets.ALIYUN_USERNAME }}
+          ALIYUN_PASSWORD: ${{ secrets.ALIYUN_PASSWORD }}
+        run: |
+          sudo sealos login -u "$ALIYUN_USERNAME" -p "$ALIYUN_PASSWORD" --debug ${{ env.ALIYUN_REGISTRY }}
+
       - name: Install yq
         env:
           ARCH: ${{ matrix.arch }}
@@ -389,23 +408,9 @@ jobs:
             IMAGE="$NEW_DOCKER_IMAGE" yq -i '.image = strenv(IMAGE)' "$CHART/values.yaml"
             APP_VERSION="$IMAGE_TAG" yq -i '.appVersion = strenv(APP_VERSION)' "$CHART/Chart.yaml"
             sudo rm -rf registry
-            sudo sealos build -t "${TAG}-${ARCH}" --platform "linux/${ARCH}" -f Kubefile
+            sudo sealos build -t "${TAG}-${ARCH}" --platform "linux/${ARCH}" \
+              --label "org.opencontainers.image.source=${IMAGE_SOURCE}" -f Kubefile
           done
-
-      - name: Sealos login to ghcr.io
-        env:
-          REPOSITORY_OWNER: ${{ github.repository_owner }}
-          GH_PAT: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
-        run: |
-          sudo sealos login -u "${REPOSITORY_OWNER}" -p "${GH_PAT}" --debug ghcr.io
-
-      - name: Sealos login to Aliyun Registry
-        if: ${{ env.ALIYUN_REGISTRY }}
-        env:
-          ALIYUN_USERNAME: ${{ secrets.ALIYUN_USERNAME }}
-          ALIYUN_PASSWORD: ${{ secrets.ALIYUN_PASSWORD }}
-        run: |
-          sudo sealos login -u "$ALIYUN_USERNAME" -p "$ALIYUN_PASSWORD" --debug ${{ env.ALIYUN_REGISTRY }}
 
       - name: Push cluster architecture images
         env:
@@ -454,9 +459,9 @@ jobs:
         run: sudo bash ./.github/scripts/install.sh
       - name: Sealos login to ghcr.io
         env:
-          REPOSITORY_OWNER: ${{ github.repository_owner }}
-          GH_PAT: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
-        run: sudo sealos login -u "$REPOSITORY_OWNER" -p "$GH_PAT" ghcr.io
+          GH_USER: ${{ github.actor }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: sudo sealos login -u "$GH_USER" -p "$GH_TOKEN" ghcr.io
       - name: Sealos login to Aliyun Registry
         if: ${{ env.ALIYUN_REGISTRY }}
         env:
