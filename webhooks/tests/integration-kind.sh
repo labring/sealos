@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)
+ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 CLUSTER_NAME=${KIND_CLUSTER_NAME:-webhook-helm}
 if kind get clusters | grep -Fxq "$CLUSTER_NAME"; then
   echo "Refusing to replace existing Kind cluster: $CLUSTER_NAME" >&2
@@ -82,8 +82,6 @@ imagePullPolicy: Never
 replicaCount: 2
 VALUES
 bash "$ROOT/webhooks/admission/deploy/entrypoint.sh" apply
-bash "$ROOT/webhooks/admission/deploy/entrypoint.sh" rollback 2
-
 export USER_VALUES_FILE="$STATE/stargz-values.yaml"
 export CHART_PATH="$ROOT/webhooks/stargz/deploy/charts/stargz-webhook"
 cat > "$USER_VALUES_FILE" <<'VALUES'
@@ -103,4 +101,4 @@ kubectl -n webhook-kind-test run webhook-mutation --image=docker.io/library/busy
   --restart=Never --dry-run=server -o json | jq -e '.spec.runtimeClassName=="stargz"'
 kubectl -n webhook-kind-test run webhook-skip --image=docker.io/library/busybox:1.36 \
   --restart=Never --annotations=stargz.sealos.io/skip=true --dry-run=server -o json | jq -e '.spec.runtimeClassName==null'
-echo 'PASS: Kind Helm install, staged upgrade, rollback, CA injection and admission mutation'
+echo 'PASS: Kind Helm install, upgrade, CA injection and admission mutation'

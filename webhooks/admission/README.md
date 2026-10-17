@@ -4,10 +4,15 @@ Provides ingress, namespace and resource-creator admission handlers.
 
 ## Helm deployment
 
-Use `bash deploy/entrypoint.sh apply` for a new installation or
-`bash deploy/entrypoint.sh migrate` for the first migration from YAML.
-See [deployment, configuration, migration and rollback](../deploy/README.md).
-The Helm chart is in `deploy/charts/admission-webhook`.
+Use `bash deploy/entrypoint.sh apply` for installation and upgrades. The
+entrypoint removes the fixed resources from the old installer on first use,
+then runs `helm upgrade --install`. `bash deploy/entrypoint.sh delete` removes
+the Helm release while preserving the user values file. The Helm chart is in
+`deploy/charts/admission-webhook`.
+
+The persistent user values file is
+`/root/.sealos/cloud/values/core/admission-webhook-values.yaml`; it is created
+from the packaged defaults once and is never overwritten by upgrades.
 
 Run unit tests with `GOWORK=off go test -race ./...`. Kubebuilder
 `config/` remains available for development; do not apply it over a Helm-managed

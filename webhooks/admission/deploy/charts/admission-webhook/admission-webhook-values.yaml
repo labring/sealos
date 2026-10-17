@@ -1,3 +1,20 @@
-# User overrides. The entrypoint initializes the persistent file only once.
-# Keep image out of this file to follow the image bundled with each chart.
-{}
+# User-editable defaults. Image, names, certificates and ports are chart-owned.
+replicaCount: 1
+
+config:
+  cnameDomains: cloud.sealos.io,laf.dev,laf.run
+  cnameCheck: true
+  denyDomains: ""
+  ingressMutatingAnnotations: ""
+  ingressWebhookEnabled: true
+  ingressWebhookFailurePolicy: Fail
+  namespaceWebhookEnabled: true
+  namespaceWebhookFailurePolicy: Fail
+  resourceCreatorWebhookEnabled: false
+  resourceCreatorWebhookFailurePolicy: Fail
+  icpEnabled: false
+  icpEndpoint: ""
+  icpKey: ""
+  icpKeySecretRef:
+    name: ""
+    key: ICP_KEY

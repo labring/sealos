@@ -3,7 +3,5 @@ FROM scratch
 COPY registry registry
 COPY charts charts
 COPY entrypoint.sh entrypoint.sh
-COPY helm-webhook.sh helm-webhook.sh
-COPY post-renderer.sh post-renderer.sh
 
 CMD ["bash entrypoint.sh"]

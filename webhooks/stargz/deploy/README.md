@@ -122,22 +122,28 @@ go test ./...
 
 ## Cluster Rollout
 
-Cluster-side deployment now uses the independent Helm chart at
-`charts/stargz-webhook`. See the shared [Helm deployment and upgrade guide](../../deploy/README.md)
-for prerequisites, persisted configuration, migration, staged upgrades and rollback.
+Cluster-side deployment uses the independent Helm chart at
+`charts/stargz-webhook`. The entrypoint removes known old resources on first
+use, then runs `helm upgrade --install`. The persistent user values file is
+`/root/.sealos/cloud/values/core/stargz-webhook-values.yaml` and is created
+once from the packaged defaults.
 Node runtime installation remains a separate operation.
 
 ```bash
-WEBHOOK_IMAGE=your-registry/stargz-webhook:immutable-tag \
-INTERNAL_REGISTRIES=your-registry \
+cat >/root/.sealos/cloud/values/core/stargz-webhook-values.yaml <<'YAML'
+replicaCount: 2
+webhook:
+  registries: your-registry
+  failurePolicy: Ignore
+YAML
 bash webhooks/stargz/deploy/entrypoint.sh apply
 ```
 
-For an existing deployment from the old script or Kustomize, run `migrate`
-instead of `apply` on the first invocation. The old
+For an existing deployment from the old script or Kustomize, `apply` cleans up
+known old resources before installing the Helm release. The old
 `apply-cluster-stargz-webhook.sh` command delegates to the Helm entrypoint and no
-longer writes Kubernetes resources independently. Its `delete` operation is
-rejected; follow the shared uninstall procedure.
+longer writes Kubernetes resources independently. `delete` uninstalls the Helm
+release but preserves `RuntimeClass/stargz`, the node runtime, and user values.
 
 Default namespace is `sealos-system`; the default failure policy remains
 `Ignore`, so an unavailable webhook does not block Pod creation. The tradeoff is
@@ -217,9 +223,8 @@ Devbox Pods are skipped automatically when they are owned by a
 
 ## Rollback
 
-Cluster-side rollback uses `entrypoint.sh rollback REVISION`, as described in
-the shared Helm guide. Disable injection and inspect running Pods before removing
-the RuntimeClass or node runtime.
+Helm keeps its normal release history for rollback. Disable injection and
+inspect running Pods before removing the RuntimeClass or node runtime.
 
 Node-side rollback:
 

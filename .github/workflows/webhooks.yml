@@ -73,8 +73,8 @@ jobs:
         run: |
           curl -fsSL https://github.com/mikefarah/yq/releases/download/v4.47.2/yq_linux_amd64 -o /usr/local/bin/yq
           chmod +x /usr/local/bin/yq
-      - name: Check charts and staged lifecycle
-        run: bash webhooks/deploy/tests/run.sh
+      - name: Check charts and deployment lifecycle
+        run: bash webhooks/tests/run.sh
 
   helm-kind-integration:
     name: Live Helm lifecycle on Kind
@@ -100,7 +100,7 @@ jobs:
           curl -fsSL https://github.com/mikefarah/yq/releases/download/v4.47.2/yq_linux_amd64 -o /usr/local/bin/yq
           chmod +x /usr/local/bin/yq
       - name: Run live chart lifecycle
-        run: bash webhooks/deploy/tests/integration-kind.sh
+        run: bash webhooks/tests/integration-kind.sh
 
   resolve-modules:
     runs-on: ubuntu-24.04
@@ -338,7 +338,7 @@ jobs:
           BUILD_CONTEXT=$(mktemp -d "${RUNNER_TEMP}/webhook-build.XXXXXX")
           trap 'sudo rm -rf "$BUILD_CONTEXT"' EXIT
           cp -R charts "$BUILD_CONTEXT/charts"
-          cp Kubefile entrypoint.sh ../../deploy/helm-webhook.sh ../../deploy/post-renderer.sh "$BUILD_CONTEXT/"
+          cp Kubefile entrypoint.sh "$BUILD_CONTEXT/"
           cd "$BUILD_CONTEXT" || exit 1
           CHART="charts/${MODULE_NAME}-webhook"
           for TAG in $DOCKER_METADATA_OUTPUT_TAGS; do
