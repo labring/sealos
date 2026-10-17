@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: admission-controller-manager
+  name: admission-webhook
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "admission-webhook.labels" . | nindent 4 }}
@@ -19,7 +19,6 @@ spec:
     metadata:
       labels:
         {{- include "admission-webhook.selectorLabels" . | nindent 8 }}
-        app.kubernetes.io/name: {{ include "admission-webhook.name" . }}
       annotations:
         {{- toYaml .Values.podAnnotations | nindent 8 }}
     spec:
@@ -43,7 +42,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       containers:
-        - name: manager
+        - name: webhook
           image: {{ .Values.image | quote }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           command: [/manager]

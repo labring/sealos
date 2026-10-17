@@ -6,7 +6,7 @@ replicaCount: 1
 
 serviceAccount:
   create: true
-  name: admission-controller-manager
+  name: admission-webhook
   annotations: {}
 
 resources:
@@ -66,7 +66,7 @@ certificate:
 
 service:
   webhookName: admission-webhook-service
-  metricsName: admission-controller-manager-metrics-service
+  metricsName: admission-webhook-metrics-service
 
 metrics:
   enabled: true

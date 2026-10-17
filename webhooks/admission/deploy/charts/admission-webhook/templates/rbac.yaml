@@ -1,7 +1,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: admission-leader-election-role
+  name: admission-webhook-leader-election-role
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "admission-webhook.labels" . | nindent 4 }}
@@ -19,7 +19,7 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: admission-manager-role
+  name: admission-webhook-role
   labels:
     {{- include "admission-webhook.labels" . | nindent 4 }}
 rules:
@@ -36,7 +36,7 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: admission-metrics-reader
+  name: admission-webhook-metrics-reader
   labels:
     {{- include "admission-webhook.labels" . | nindent 4 }}
 rules:
@@ -46,7 +46,7 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: admission-proxy-role
+  name: admission-webhook-proxy-role
   labels:
     {{- include "admission-webhook.labels" . | nindent 4 }}
 rules:
@@ -60,14 +60,14 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: admission-leader-election-rolebinding
+  name: admission-webhook-leader-election-rolebinding
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "admission-webhook.labels" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: admission-leader-election-role
+  name: admission-webhook-leader-election-role
 subjects:
   - kind: ServiceAccount
     name: {{ .Values.serviceAccount.name }}
@@ -76,13 +76,13 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: admission-manager-rolebinding
+  name: admission-webhook-rolebinding
   labels:
     {{- include "admission-webhook.labels" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: admission-manager-role
+  name: admission-webhook-role
 subjects:
   - kind: ServiceAccount
     name: {{ .Values.serviceAccount.name }}
@@ -91,13 +91,13 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: admission-proxy-rolebinding
+  name: admission-webhook-proxy-rolebinding
   labels:
     {{- include "admission-webhook.labels" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: admission-proxy-role
+  name: admission-webhook-proxy-role
 subjects:
   - kind: ServiceAccount
     name: {{ .Values.serviceAccount.name }}

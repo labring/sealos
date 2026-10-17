@@ -10,6 +10,11 @@ then runs `helm upgrade --install`. `bash deploy/entrypoint.sh delete` removes
 the Helm release while preserving the user values file. The Helm chart is in
 `deploy/charts/admission-webhook`.
 
+Helm-managed runtime resources use the `admission-webhook` naming convention,
+including the Deployment and ServiceAccount. During the first migration, the
+entrypoint removes the previous Kustomize `admission-controller-manager`
+resources before installing the chart.
+
 The persistent user values file is
 `/root/.sealos/cloud/values/core/admission-webhook-values.yaml`; it is created
 from the packaged defaults once and is never overwritten by upgrades.
