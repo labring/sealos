@@ -1,0 +1,8 @@
+apiVersion: v2
+name: vlogs-service
+description: Sealos API service for querying an external VictoriaLogs backend
+type: application
+version: 0.1.0
+appVersion: "latest"
+home: https://github.com/labring/sealos
+kubeVersion: ">=1.21.0-0"

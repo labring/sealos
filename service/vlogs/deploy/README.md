@@ -1,16 +1,165 @@
-### docker image build and deploy
-```bash
-make docker-build IMG=$(YourImageName)
-# edit deploy/manifests/depoly.yaml and deploy
-kubectl apply -f deploy/manifests/depoly.yaml
+# vlogs deployment
+
+vlogs is the Sealos log query API. It connects to an existing VictoriaLogs or
+vmauth endpoint; this chart does not install a log storage backend or log collector.
+
+## Helm
+
+Requires Kubernetes 1.21+ and Helm 3. Run these commands from `service/vlogs`.
+Create a site values file, for example:
+
+```yaml
+# vlogs-values.yaml
+config:
+  path: http://victoria-logs-single-server.vm.svc.cluster.local:9428
+  username: ""
+  password: ""
+# Optional external API addresses accepted from user kubeconfigs:
+whitelistKubernetesHosts:
+  - https://kubernetes.example.com:6443
 ```
 
-### cluster image build and deploy
+Set `config.path` to the actual backend base URL. The application appends
+`/select/logsql/query`; do not include that suffix. With an empty whitelist,
+authentication uses the in-cluster Kubernetes API address. No cluster-wide RBAC
+is granted: requests authenticate with the caller's kubeconfig.
+
 ```bash
+helm upgrade -i vlogs deploy/charts/vlogs-service \
+  -n sealos --create-namespace -f vlogs-values.yaml
+# Equivalent Make target:
+make helm-deploy HELM_VALUES=vlogs-values.yaml
 ```
 
-### Victoria Metrics
+The default Service remains `service-vlogs.sealos.svc.cluster.local:8428`.
+The chart mounts `/config/config.yml` from a Secret and restarts Pods when its
+configuration changes. TCP probes check the server listener, not backend health.
+To manage credentials outside Helm, set `existingConfigSecret` to a Secret in
+the release namespace containing the entire `config.yml` file:
 
-In order to prevent performance degradation or abnormal behavior caused by excessive data size in Prometheus, VictoriaMetrics is utilized for data collection.
+```yaml
+server:
+  addr: ":8428"
+  path: http://your-victorialogs:9428
+  username: reader
+  password: your-password
+```
 
-> By default, we use kb-prometheus-server for the data collection service.
+With an external Secret, keep `server.addr` consistent with `containerPort` and
+restart the Deployment after changing it; the application does not reload config.
+
+Common values:
+
+| Value | Default | Purpose |
+| --- | --- | --- |
+| `image` | `ghcr.io/labring/sealos-vlogs-service:latest` | Complete runtime image reference |
+| `imagePullPolicy` | `IfNotPresent` | Use `Always` if deploying a mutable tag |
+| `imagePullSecrets` | `[]` | Private registry credentials |
+| `replicaCount` | `1` | API replicas |
+| `fullnameOverride` | `service-vlogs` | Set a unique name for additional releases in a namespace |
+| `containerPort` | `8428` | Listener port; generates `server.addr` |
+| `service.port` | `8428` | Service port |
+| `config.path` | `http://victoria-logs-single-server.vm.svc.cluster.local:9428` | Example backend address; configure for your cluster |
+| `config.username` / `config.password` | empty | Backend Basic Auth |
+| `existingConfigSecret` | empty | Supply a pre-existing `config.yml` Secret |
+| `whitelistKubernetesHosts` | `[]` | Allowed Kubernetes API addresses |
+| `resources`, `nodeSelector`, `tolerations`, `affinity` | See `values.yaml` | Resource and scheduling settings |
+
+## Sealos cluster image
+
+The layout follows [state-metrics](https://github.com/sealos-apps/state-metrics):
+`registry_amd64` / `registry_arm64` caches are created with `sealos registry save`,
+then Buildx packages the matching cache as `/registry`, alongside the chart and
+`entrypoint.sh`, into a multi-architecture OCI cluster image.
+
+Prepare the persistent site configuration **before the first run**:
+
+```bash
+install -d -m 700 /root/.sealos/cloud/values/core
+install -m 600 vlogs-values.yaml /root/.sealos/cloud/values/core/vlogs-service-values.yaml
+sealos run ghcr.io/labring/sealos-cloud-vlogs-service:<tag>
+```
+
+On first install, the entrypoint copies the packaged minimal override file if no
+user file exists. Upgrades preserve that file, and omitted values inherit the new
+chart defaults. In particular, the packaged override file does not pin `image`,
+so upgrades use the runtime image shipped with the new cluster image. If you set
+`image` yourself, make sure that image is available in your environment.
+
+Installer environment overrides (pass through `sealos run --env KEY=value`):
+
+| Variable | Default |
+| --- | --- |
+| `RELEASE_NAME` | `vlogs` |
+| `RELEASE_NAMESPACE` | `sealos` |
+| `CHART_PATH` | `charts/vlogs-service` beside the entrypoint |
+| `USER_VALUES_FILE` | `/root/.sealos/cloud/values/core/vlogs-service-values.yaml` |
+| `PACKAGED_APP_VALUES_FILE` | `vlogs-service-values.yaml` inside the chart |
+| `CHART_APP_VALUES_FILE` | Compatibility alias for the packaged values file |
+| `HELM_OPTS` | Additional whitespace-separated Helm flags, e.g. `--wait --timeout 5m` |
+
+The entrypoint also accepts positional Helm arguments. Use a values file for
+values containing spaces. For multiple installations, choose distinct release
+names, `fullnameOverride` values and persistent values paths.
+
+## Build and CI
+
+The existing `services.yml` / `service-build.yml` workflows detect vlogs changes,
+including chart-only YAML changes. PRs lint/render the chart, check the entrypoint,
+test config preservation and build the runtime container for amd64 and arm64.
+On publication, the workflow waits for the runtime manifest, deployment checks
+and Go tests, pins the chart image to `sha-<9-character commit>`, saves both
+architecture caches, and pushes one multi-architecture cluster image.
+
+Published repositories:
+
+- Runtime: `ghcr.io/<owner>/sealos-vlogs-service`
+- Cluster image: `ghcr.io/<owner>/sealos-cloud-vlogs-service`
+- Optional Aliyun mirrors use the existing `ALIYUN_*` secrets.
+
+Both images use the existing branch, release, explicit and commit tag rules.
+The workflow uses `GHCR_TOKEN` or `GITHUB_TOKEN` and the existing Sealos installer.
+Other services continue to use their existing cluster image build path.
+
+To publish locally, first set the chart's `image` field in
+`deploy/charts/vlogs-service/values.yaml` to the **same** reference as `IMG`:
+
+```bash
+make docker-buildx-push IMG=example.com/team/vlogs:v1
+# Update values.yaml: image: example.com/team/vlogs:v1
+make cluster-buildx-push IMG=example.com/team/vlogs:v1 CLUSTER_IMG=example.com/team/vlogs-cluster:v1
+```
+
+The local cluster build requires Sealos, Buildx and registry login. Old manifests
+are retained for manual compatibility but are excluded from the cluster image.
+
+## Migrate an existing YAML installation
+
+The old Deployment uses an immutable `app: service-vlogs` selector, while the
+chart uses Helm release labels. Helm cannot adopt that Deployment in place.
+Back up the existing backend configuration and whitelist into your values file,
+then schedule a brief interruption to replace the old resources:
+
+```bash
+kubectl delete -f deploy/manifests/deploy.yaml --ignore-not-found
+helm upgrade -i vlogs deploy/charts/vlogs-service \
+  -n sealos --create-namespace -f vlogs-values.yaml
+```
+
+The Service name and port stay the same. Use this migration once before managing
+the installation with Helm or the new cluster image.
+
+## Validate locally
+
+```bash
+make helm-lint
+python3 -m venv /tmp/vlogs-deploy-check
+/tmp/vlogs-deploy-check/bin/pip install PyYAML==6.0.2
+/tmp/vlogs-deploy-check/bin/python deploy/tests/test_deploy.py
+```
+
+These checks need Helm and ShellCheck, but no Kubernetes cluster. To uninstall:
+
+```bash
+helm uninstall vlogs -n sealos
+```

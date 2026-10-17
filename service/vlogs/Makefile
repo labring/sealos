@@ -1,11 +1,9 @@
 IMG ?= ghcr.io/labring/sealos-vlogs-service:latest
-
-# Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
-ifeq (,$(shell go env GOBIN))
-GOBIN=$(shell go env GOPATH)/bin
-else
-GOBIN=$(shell go env GOBIN)
-endif
+CLUSTER_IMG ?= ghcr.io/labring/sealos-cloud-vlogs-service:latest
+HELM_RELEASE ?= vlogs
+HELM_NAMESPACE ?= sealos
+HELM_VALUES ?= deploy/charts/vlogs-service/vlogs-service-values.yaml
+HELM_OPTS ?=
 
 # only support linux, non cgo
 PLATFORMS ?= linux_arm64 linux_amd64
@@ -57,3 +55,23 @@ docker-push:
 .PHONY: docker-buildx-push
 docker-buildx-push: ## Build and push multi-arch image (amd64 & arm64).
 	docker buildx build --platform linux/amd64,linux/arm64 -t $(IMG) -f Dockerfile --push ../..
+
+##@ Deploy
+
+.PHONY: helm-lint
+helm-lint: ## Validate the Helm chart and installer shell script.
+	helm lint --strict deploy/charts/vlogs-service -f $(HELM_VALUES)
+	shellcheck deploy/entrypoint.sh
+
+.PHONY: helm-deploy
+helm-deploy: ## Install or upgrade vlogs with Helm.
+	helm upgrade -i $(HELM_RELEASE) deploy/charts/vlogs-service \
+		-n $(HELM_NAMESPACE) --create-namespace -f $(HELM_VALUES) $(HELM_OPTS)
+
+.PHONY: cluster-buildx-push
+cluster-buildx-push: ## Cache the chart's runtime image and publish a multi-arch cluster image.
+	@grep -Fxq 'image: $(IMG)' deploy/charts/vlogs-service/values.yaml || \
+		{ echo 'Set image in deploy/charts/vlogs-service/values.yaml to $(IMG) before building.' >&2; exit 1; }
+	cd deploy && sealos registry save --registry-dir=registry_amd64 --arch amd64 --images="$(IMG)"
+	cd deploy && sealos registry save --registry-dir=registry_arm64 --arch arm64 --images="$(IMG)"
+	docker buildx build --platform linux/amd64,linux/arm64 -t $(CLUSTER_IMG) -f deploy/Kubefile --push deploy

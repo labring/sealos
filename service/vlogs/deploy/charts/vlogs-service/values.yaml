@@ -1,0 +1,67 @@
+replicaCount: 1
+nameOverride: ""
+# Preserve the endpoint used by existing Sealos frontends. Set a different name
+# (or an empty string for release-based naming) for multiple releases per namespace.
+fullnameOverride: service-vlogs
+
+# Keep the complete reference in one field for Sealos image discovery.
+image: ghcr.io/labring/sealos-vlogs-service:latest
+imagePullPolicy: IfNotPresent
+imagePullSecrets: []
+
+containerPort: 8428
+service:
+  type: ClusterIP
+  port: 8428
+  annotations: {}
+
+# The chart writes /config/config.yml as a Secret, including backend credentials.
+# server.addr is derived from containerPort. Set path to your VictoriaLogs or
+# vmauth base URL; the application appends /select/logsql/query itself.
+config:
+  path: http://victoria-logs-single-server.vm.svc.cluster.local:9428
+  username: ""
+  password: ""
+# Use an existing Secret with a config.yml key instead of generating one.
+existingConfigSecret: ""
+
+# Comma-separated WHITELIST_KUBERNETES_HOSTS, checked against user kubeconfigs.
+# Empty uses the in-cluster Kubernetes API address supplied by Kubernetes.
+whitelistKubernetesHosts: []
+
+podAnnotations: {}
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  fsGroup: 65532
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: [ALL]
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 1Gi
+  requests:
+    cpu: 5m
+    memory: 64Mi
+
+# The service has no HTTP health endpoint; API requests require authentication.
+livenessProbe:
+  tcpSocket:
+    port: http
+  initialDelaySeconds: 15
+  periodSeconds: 20
+readinessProbe:
+  tcpSocket:
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+priorityClassName: ""

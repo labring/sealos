@@ -1,0 +1,3 @@
+registry/
+registry_*/
+tests/__pycache__/

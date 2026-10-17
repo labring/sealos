@@ -41,7 +41,7 @@ on:
         required: false
         type: boolean
   push:
-    branches: ["*"]
+    branches: ["**"]
     paths:
       - "service/**"
       - "controllers/**"
@@ -50,8 +50,9 @@ on:
       - "scripts/detect-build-modules.sh"
       - "!**/*.md"
       - "!**/*.yaml"
+      - "service/vlogs/deploy/**/*.yaml"
   pull_request:
-    branches: ["*"]
+    branches: ["**"]
     paths:
       - "service/**"
       - "controllers/**"
@@ -60,6 +61,7 @@ on:
       - "scripts/detect-build-modules.sh"
       - "!**/*.md"
       - "!**/*.yaml"
+      - "service/vlogs/deploy/**/*.yaml"
 
 env:
   GO_VERSION: "1.25"

@@ -1,0 +1,10 @@
+# Copied once to /root/.sealos/cloud/values/core/vlogs-service-values.yaml.
+# Keep overrides minimal so upgrades inherit new chart defaults and image tags.
+# Configure your VictoriaLogs / vmauth endpoint and credentials here, for example:
+# config:
+#   path: http://victoria-logs-single-server.vm.svc.cluster.local:9428
+#   username: ""
+#   password: ""
+# whitelistKubernetesHosts:
+#   - https://kubernetes.example.com:6443
+{}
