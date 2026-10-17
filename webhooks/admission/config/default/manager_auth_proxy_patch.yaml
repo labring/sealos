@@ -29,7 +29,7 @@ spec:
           capabilities:
             drop:
               - "ALL"
-        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.14.1
+        image: quay.io/brancz/kube-rbac-proxy:v0.14.1
         args:
         - "--secure-listen-address=0.0.0.0:8443"
         - "--upstream=http://127.0.0.1:8080/"

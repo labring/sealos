@@ -1,0 +1,26 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: {{ .Values.webhook.name }}
+  labels:
+    {{- include "stargz-webhook.labels" . | nindent 4 }}
+  annotations:
+    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ .Values.certificate.name }}
+webhooks:
+  - name: {{ .Values.webhook.entryName }}
+    admissionReviewVersions: [v1]
+    sideEffects: None
+    failurePolicy: {{ .Values.webhook.failurePolicy }}
+    timeoutSeconds: {{ .Values.webhook.timeoutSeconds }}
+    reinvocationPolicy: Never
+    clientConfig:
+      service:
+        name: {{ .Values.service.name }}
+        namespace: {{ .Release.Namespace }}
+        path: /mutate
+        port: 443
+    rules:
+      - operations: [CREATE]
+        apiGroups: [""]
+        apiVersions: [v1]
+        resources: [pods]

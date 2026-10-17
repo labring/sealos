@@ -122,44 +122,32 @@ go test ./...
 
 ## Cluster Rollout
 
-Run from a control-plane node or any machine with working `kubectl`:
-
-cert-manager must already be installed in the cluster. The apply script checks
-for the `cert-manager.io/v1` `Certificate` resource before creating the webhook.
-
-```bash
-chmod +x webhooks/stargz/deploy/apply-cluster-stargz-webhook.sh
-
-WEBHOOK_IMAGE=hub.staging-usw-1.sealos.io/ns-admin/stargz-runtime-injector:v1 \
-INTERNAL_REGISTRIES=hub.staging-usw-1.sealos.io \
-./webhooks/stargz/deploy/apply-cluster-stargz-webhook.sh apply
-```
-
-Multiple internal registries are comma-separated:
+Cluster-side deployment uses the independent Helm chart at
+`charts/stargz-webhook`. The entrypoint removes known old resources on first
+use, then runs `helm upgrade --install`. The persistent user values file is
+`/root/.sealos/cloud/values/core/stargz-webhook-values.yaml` and is created
+once from the packaged defaults.
+Node runtime installation remains a separate operation.
 
 ```bash
-WEBHOOK_IMAGE=hub.staging-usw-1.sealos.io/ns-admin/stargz-runtime-injector:v1 \
-INTERNAL_REGISTRIES=hub.staging-usw-1.sealos.io,registry.internal:5000,sealos.hub:5000 \
-./webhooks/stargz/deploy/apply-cluster-stargz-webhook.sh apply
+cat >/root/.sealos/cloud/values/core/stargz-webhook-values.yaml <<'YAML'
+replicaCount: 2
+webhook:
+  registries: your-registry
+  failurePolicy: Ignore
+YAML
+bash webhooks/stargz/deploy/entrypoint.sh apply
 ```
 
-Default cluster objects:
+For an existing deployment from the old script or Kustomize, `apply` cleans up
+known old resources before installing the Helm release. The old
+`apply-cluster-stargz-webhook.sh` command delegates to the Helm entrypoint and no
+longer writes Kubernetes resources independently. `delete` uninstalls the Helm
+release but preserves `RuntimeClass/stargz`, the node runtime, and user values.
 
-```text
-Namespace: sealos-system
-RuntimeClass: stargz
-Runtime handler: stargz
-Webhook: pod-stargz-runtime-injector
-Certificate: stargz-runtime-injector-serving-cert
-TLS Secret: stargz-runtime-injector-tls
-Failure policy: Ignore
-Skip annotation: stargz.sealos.io/skip=true
-```
-
-`failurePolicy` defaults to `Ignore` so a webhook outage does not block Pod
-creation. The tradeoff is that internal-registry Pods may temporarily start
-without stargz if the webhook is unavailable. Set `WEBHOOK_FAILURE_POLICY=Fail`
-only after the webhook has proven stable.
+Default namespace is `sealos-system`; the default failure policy remains
+`Ignore`, so an unavailable webhook does not block Pod creation. The tradeoff is
+that matching Pods can start without stargz while the webhook is unavailable.
 
 ## Verification
 
@@ -235,11 +223,8 @@ Devbox Pods are skipped automatically when they are owned by a
 
 ## Rollback
 
-Cluster-side rollback:
-
-```bash
-./webhooks/stargz/deploy/apply-cluster-stargz-webhook.sh delete
-```
+Helm keeps its normal release history for rollback. Disable injection and
+inspect running Pods before removing the RuntimeClass or node runtime.
 
 Node-side rollback:
 

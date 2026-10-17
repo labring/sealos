@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "stargz-webhook.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "stargz-webhook.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: {{ .Values.updateStrategy.maxUnavailable }}
+      maxSurge: {{ .Values.updateStrategy.maxSurge }}
+  selector:
+    matchLabels:
+      {{- include "stargz-webhook.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "stargz-webhook.selectorLabels" . | nindent 8 }}
+      annotations:
+        {{- toYaml (merge (dict .Values.webhook.skipAnnotation "true") (deepCopy .Values.podAnnotations)) | nindent 8 }}
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: webhook
+          image: {{ .Values.image | quote }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          command: [/stargz-webhook]
+          args:
+            - --webhook-cert-dir=/tls
+            - --webhook-cert-name=tls.crt
+            - --webhook-cert-key=tls.key
+            {{- if .Values.metrics.enabled }}
+            - --metrics-bind-address=:{{ .Values.metrics.port }}
+            {{- else }}
+            - --metrics-bind-address=0
+            {{- end }}
+            - --health-probe-bind-address=:{{ .Values.health.port }}
+            - {{ printf "--runtime-class=%s" .Values.webhook.runtimeClass | quote }}
+            - {{ printf "--registries=%s" .Values.webhook.registries | quote }}
+            - {{ printf "--skip-annotation=%s" .Values.webhook.skipAnnotation | quote }}
+          ports:
+            - name: webhook
+              containerPort: 9443
+              protocol: TCP
+            - name: health
+              containerPort: {{ .Values.health.port }}
+              protocol: TCP
+            {{- if .Values.metrics.enabled }}
+            - name: metrics
+              containerPort: {{ .Values.metrics.port }}
+              protocol: TCP
+            {{- end }}
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: health
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: health
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          volumeMounts:
+            - name: tls
+              mountPath: /tls
+              readOnly: true
+      volumes:
+        - name: tls
+          secret:
+            secretName: {{ .Values.certificate.secretName }}
