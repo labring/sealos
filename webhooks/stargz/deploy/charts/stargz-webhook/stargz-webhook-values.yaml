@@ -1,11 +1,30 @@
 # User-editable defaults. Image, names, certificates and ports are chart-owned.
 replicaCount: 2
+resources:
+  limits:
+    cpu: 200m
+    memory: 128Mi
+  requests:
+    cpu: 20m
+    memory: 32Mi
+
+podAnnotations: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+updateStrategy:
+  maxSurge: 1
 
 webhook:
   registries: sealos.hub:5000
+  timeoutSeconds: 5
   failurePolicy: Ignore
   skipAnnotation: stargz.sealos.io/skip
 
 runtimeClass:
   nodeSelector:
     stargz.sealos.io/runtime: "true"
+
+metrics:
+  enabled: false

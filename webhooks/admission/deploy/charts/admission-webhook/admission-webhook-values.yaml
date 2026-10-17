@@ -1,5 +1,20 @@
 # User-editable defaults. Image, names, certificates and ports are chart-owned.
 replicaCount: 1
+resources:
+  limits:
+    cpu: 500m
+    memory: 128Mi
+  requests:
+    cpu: 10m
+    memory: 64Mi
+
+podAnnotations: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+updateStrategy:
+  maxSurge: 1
 
 config:
   cnameDomains: cloud.sealos.io,laf.dev,laf.run
@@ -10,7 +25,7 @@ config:
   ingressWebhookFailurePolicy: Fail
   namespaceWebhookEnabled: true
   namespaceWebhookFailurePolicy: Fail
-  resourceCreatorWebhookEnabled: false
+  resourceCreatorWebhookEnabled: true
   resourceCreatorWebhookFailurePolicy: Fail
   icpEnabled: false
   icpEndpoint: ""
@@ -18,3 +33,9 @@ config:
   icpKeySecretRef:
     name: ""
     key: ICP_KEY
+
+metrics:
+  enabled: true
+
+webhook:
+  timeoutSeconds: 5
