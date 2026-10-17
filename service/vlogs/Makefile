@@ -41,37 +41,37 @@ clean:
 	rm -f $(SERVICE_NAME)
 
 .PHONY: build
-build: clean ## Build service-hub binary.
-	CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) go build $(GO_BUILD_FLAGS) -o bin/manager main.go
+build: clean ## Build the vlogs binary.
+	CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) GOARCH=$(TARGETARCH) go build $(GO_BUILD_FLAGS) -o bin/manager .
 
 .PHONY: docker-build
-docker-build: ## Build docker image for specified architecture.
-	docker build --platform linux/$(TARGETARCH) -t $(IMG) -f Dockerfile ../..
+docker-build: build ## Compile the binary and package a single-architecture image.
+	docker build --platform linux/$(TARGETARCH) -t $(IMG) -f Dockerfile .
 
 .PHONY: docker-push
 docker-push:
 	docker push $(IMG)
 
-.PHONY: docker-buildx-push
-docker-buildx-push: ## Build and push multi-arch image (amd64 & arm64).
-	docker buildx build --platform linux/amd64,linux/arm64 -t $(IMG) -f Dockerfile --push ../..
+.PHONY: docker-build-push
+docker-build-push: docker-build ## Build and push this runner's runtime image.
+	docker push $(IMG)
 
 ##@ Deploy
 
 .PHONY: helm-lint
 helm-lint: ## Validate the Helm chart and installer shell script.
 	helm lint --strict deploy/charts/vlogs-service -f $(HELM_VALUES)
-	shellcheck deploy/entrypoint.sh
+	shellcheck deploy/entrypoint.sh scripts/merge-images.sh
 
 .PHONY: helm-deploy
 helm-deploy: ## Install or upgrade vlogs with Helm.
 	helm upgrade -i $(HELM_RELEASE) deploy/charts/vlogs-service \
 		-n $(HELM_NAMESPACE) --create-namespace -f $(HELM_VALUES) $(HELM_OPTS)
 
-.PHONY: cluster-buildx-push
-cluster-buildx-push: ## Cache the chart's runtime image and publish a multi-arch cluster image.
+.PHONY: cluster-build-push
+cluster-build-push: ## Cache and package a cluster image for this runner's architecture.
 	@grep -Fxq 'image: $(IMG)' deploy/charts/vlogs-service/values.yaml || \
 		{ echo 'Set image in deploy/charts/vlogs-service/values.yaml to $(IMG) before building.' >&2; exit 1; }
-	cd deploy && sealos registry save --registry-dir=registry_amd64 --arch amd64 --images="$(IMG)"
-	cd deploy && sealos registry save --registry-dir=registry_arm64 --arch arm64 --images="$(IMG)"
-	docker buildx build --platform linux/amd64,linux/arm64 -t $(CLUSTER_IMG) -f deploy/Kubefile --push deploy
+	cd deploy && sealos registry save --registry-dir=registry --arch $(TARGETARCH) --images="$(IMG)"
+	docker build --platform linux/$(TARGETARCH) -t $(CLUSTER_IMG) -f deploy/Kubefile deploy
+	docker push $(CLUSTER_IMG)

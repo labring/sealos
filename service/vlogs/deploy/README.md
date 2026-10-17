@@ -68,9 +68,9 @@ Common values:
 ## Sealos cluster image
 
 The layout follows [state-metrics](https://github.com/sealos-apps/state-metrics):
-`registry_amd64` / `registry_arm64` caches are created with `sealos registry save`,
-then Buildx packages the matching cache as `/registry`, alongside the chart and
-`entrypoint.sh`, into a multi-architecture OCI cluster image.
+each native runner uses `sealos registry save` to create its architecture's cache,
+then packages it as `/registry`, alongside the chart and `entrypoint.sh`.
+An independent release job combines the two images with `docker manifest`.
 
 Prepare the persistent site configuration **before the first run**:
 
@@ -105,11 +105,21 @@ names, `fullnameOverride` values and persistent values paths.
 ## Build and CI
 
 The existing `services.yml` / `service-build.yml` workflows detect vlogs changes,
-including chart-only YAML changes. PRs lint/render the chart, check the entrypoint,
+including chart-only YAML changes, and call `vlogs-images.yml` after deployment
+checks and Go tests pass. PRs lint/render the chart, check the entrypoint,
 test config preservation and build the runtime container for amd64 and arm64.
-On publication, the workflow waits for the runtime manifest, deployment checks
-and Go tests, pins the chart image to `sha-<9-character commit>`, saves both
-architecture caches, and pushes one multi-architecture cluster image.
+
+Both runtime and cluster image jobs use `ubuntu-24.04` for amd64 and
+`ubuntu-24.04-arm` for arm64. Go compiles directly on each native runner; the
+runtime Dockerfile only packages `bin/manager`. Docker packaging uses ordinary
+`docker build`, with no Buildx action, cross-architecture build or QEMU setup.
+Independent release jobs wait for both architectures before publishing a combined
+image using `docker manifest create`, `annotate` and `push`.
+
+Architecture tags use `build-<run-id>-<attempt>-<arch>` and merged internal tags
+use `build-<run-id>-<attempt>`. The cluster chart references this run's merged
+runtime tag, preventing concurrent workflows from mixing runtime images. Each
+cluster runner caches only its own architecture before packaging its image.
 
 Published repositories:
 
@@ -117,21 +127,40 @@ Published repositories:
 - Cluster image: `ghcr.io/<owner>/sealos-cloud-vlogs-service`
 - Optional Aliyun mirrors use the existing `ALIYUN_*` secrets.
 
-Both images use the existing branch, release, explicit and commit tag rules.
+Both merged images retain the existing branch, release, explicit and commit tags.
 The workflow uses `GHCR_TOKEN` or `GITHUB_TOKEN` and the existing Sealos installer.
 Other services continue to use their existing cluster image build path.
 
-To publish locally, first set the chart's `image` field in
-`deploy/charts/vlogs-service/values.yaml` to the **same** reference as `IMG`:
+To publish locally, run the runtime build on each matching Linux machine:
 
 ```bash
-make docker-buildx-push IMG=example.com/team/vlogs:v1
-# Update values.yaml: image: example.com/team/vlogs:v1
-make cluster-buildx-push IMG=example.com/team/vlogs:v1 CLUSTER_IMG=example.com/team/vlogs-cluster:v1
+# On amd64:
+make docker-build-push IMG=example.com/team/vlogs:v1-amd64
+# On arm64:
+make docker-build-push IMG=example.com/team/vlogs:v1-arm64
+# After both pushes, on either machine:
+docker manifest create example.com/team/vlogs:v1 \
+  example.com/team/vlogs:v1-amd64 example.com/team/vlogs:v1-arm64
+docker manifest push --purge example.com/team/vlogs:v1
 ```
 
-The local cluster build requires Sealos, Buildx and registry login. Old manifests
-are retained for manual compatibility but are excluded from the cluster image.
+Set the chart's `image` field in `deploy/charts/vlogs-service/values.yaml` to
+`example.com/team/vlogs:v1` on both machines, then build each cluster image:
+
+```bash
+# On amd64:
+make cluster-build-push IMG=example.com/team/vlogs:v1 CLUSTER_IMG=example.com/team/vlogs-cluster:v1-amd64
+# On arm64:
+make cluster-build-push IMG=example.com/team/vlogs:v1 CLUSTER_IMG=example.com/team/vlogs-cluster:v1-arm64
+# After both pushes:
+docker manifest create example.com/team/vlogs-cluster:v1 \
+  example.com/team/vlogs-cluster:v1-amd64 example.com/team/vlogs-cluster:v1-arm64
+docker manifest push --purge example.com/team/vlogs-cluster:v1
+```
+
+Local builds require Go, Docker, Sealos for the cluster cache and registry login.
+Old manifests are retained for manual compatibility but excluded from the cluster
+image.
 
 ## Migrate an existing YAML installation
 
@@ -156,6 +185,7 @@ make helm-lint
 python3 -m venv /tmp/vlogs-deploy-check
 /tmp/vlogs-deploy-check/bin/pip install PyYAML==6.0.2
 /tmp/vlogs-deploy-check/bin/python deploy/tests/test_deploy.py
+/tmp/vlogs-deploy-check/bin/python deploy/tests/test_images.py
 ```
 
 These checks need Helm and ShellCheck, but no Kubernetes cluster. To uninstall:

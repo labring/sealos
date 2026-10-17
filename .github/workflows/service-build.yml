@@ -68,10 +68,11 @@ jobs:
           helm lint --strict service/vlogs/deploy/charts/vlogs-service
           helm lint --strict service/vlogs/deploy/charts/vlogs-service \
             -f service/vlogs/deploy/charts/vlogs-service/vlogs-service-values.yaml
-          shellcheck service/vlogs/deploy/entrypoint.sh
+          shellcheck service/vlogs/deploy/entrypoint.sh service/vlogs/scripts/merge-images.sh
           python3 -m venv "${RUNNER_TEMP}/vlogs-deploy-check"
           "${RUNNER_TEMP}/vlogs-deploy-check/bin/pip" install PyYAML==6.0.2
           "${RUNNER_TEMP}/vlogs-deploy-check/bin/python" service/vlogs/deploy/tests/test_deploy.py
+          "${RUNNER_TEMP}/vlogs-deploy-check/bin/python" service/vlogs/deploy/tests/test_images.py
 
   golangci-lint:
     if: ${{ !inputs.disable_cilint && (github.event_name == 'push' || github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch') }}
@@ -109,6 +110,7 @@ jobs:
         run: go test -race ./... -count=1 -v
 
   image-build:
+    if: ${{ inputs.module != 'vlogs' }}
     strategy:
       matrix:
         include:
@@ -387,101 +389,14 @@ jobs:
             bash scripts/manifest-cluster-images.sh "$TAG"
           done
 
-  vlogs-cluster-image-build:
-    name: Build multi-arch vlogs cluster image
-    needs: [image-release, validate-vlogs-deploy, unit-test]
-    if: ${{ inputs.push_image && inputs.module == 'vlogs' }}
-    runs-on: ubuntu-24.04
+  vlogs-images:
+    needs: [validate-vlogs-deploy, unit-test]
+    if: ${{ inputs.module == 'vlogs' }}
     permissions:
       contents: read
       packages: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set image repositories
-        env:
-          REPO_OWNER: ${{ github.repository_owner }}
-        run: |
-          echo "GHCR_DOCKER_REPO=ghcr.io/${REPO_OWNER,,}/sealos-vlogs-service" >> "$GITHUB_ENV"
-          echo "GHCR_CLUSTER_REPO=ghcr.io/${REPO_OWNER,,}/sealos-cloud-vlogs-service" >> "$GITHUB_ENV"
-          if [[ -n "${ALIYUN_REPO_PREFIX}" ]]; then
-            echo "ALIYUN_CLUSTER_REPO=${ALIYUN_REPO_PREFIX}/sealos-cloud-vlogs-service" >> "$GITHUB_ENV"
-          fi
-
-      - name: Cluster image metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: |
-            ${{ env.GHCR_CLUSTER_REPO }}
-            ${{ env.ALIYUN_CLUSTER_REPO }}
-          tags: |
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
-            type=raw,value=${{ inputs.push_image_tag }},enable=${{ inputs.push_image_tag != '' && inputs.push_image_tag != 'latest' }}
-            type=ref,event=branch
-            type=ref,event=tag
-            type=sha
-          labels: |
-            org.opencontainers.image.source=https://github.com/${{ github.repository }}
-        env:
-          DOCKER_METADATA_SHORT_SHA_LENGTH: 9
-
-      - name: Install Sealos image cache tools
-        run: sudo bash .github/scripts/install.sh
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
-
-      - name: Login to Aliyun Registry
-        if: ${{ env.ALIYUN_REGISTRY }}
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.ALIYUN_REGISTRY }}
-          username: ${{ secrets.ALIYUN_USERNAME }}
-          password: ${{ secrets.ALIYUN_PASSWORD }}
-
-      - name: Cache runtime images for each architecture
-        working-directory: service/vlogs/deploy
-        env:
-          REPO_OWNER: ${{ github.repository_owner }}
-          GH_TOKEN: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          # Use the commit tag published by image-release for every cluster tag.
-          # Never cache a mutable branch/latest tag from a concurrent build.
-          IMAGE_TAG="sha-${GITHUB_SHA:0:9}"
-          export VLOGS_IMAGE="${GHCR_DOCKER_REPO}:${IMAGE_TAG}"
-          python3 - <<'PY'
-          import os
-          import pathlib
-          import re
-
-          chart = pathlib.Path("charts/vlogs-service")
-          values = chart / "values.yaml"
-          content, count = re.subn(r"^image: .+$", "image: " + os.environ["VLOGS_IMAGE"], values.read_text(), flags=re.M)
-          if count != 1:
-              raise SystemExit("expected exactly one vlogs image in chart defaults")
-          values.write_text(content)
-          PY
-          sudo sealos login -u "${REPO_OWNER}" -p "${GH_TOKEN}" ghcr.io
-          # Cache the exact chart image; legacy manifests must not add latest images.
-          sudo sealos registry save --registry-dir=registry_amd64 --arch amd64 --images="${VLOGS_IMAGE}"
-          sudo sealos registry save --registry-dir=registry_arm64 --arch arm64 --images="${VLOGS_IMAGE}"
-
-      - name: Build and push multi-arch cluster image
-        uses: docker/build-push-action@v6
-        with:
-          context: service/vlogs/deploy
-          file: service/vlogs/deploy/Kubefile
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+    uses: ./.github/workflows/vlogs-images.yml
+    with:
+      push_image: ${{ inputs.push_image }}
+      push_image_tag: ${{ inputs.push_image_tag }}
+    secrets: inherit

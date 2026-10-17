@@ -1,0 +1,4 @@
+*
+!bin/
+bin/*
+!bin/manager

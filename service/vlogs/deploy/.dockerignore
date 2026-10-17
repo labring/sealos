@@ -1,4 +1,4 @@
-registry
+registry_*
 manifests
 tests
 README.md

@@ -283,8 +283,8 @@ check_workflow_changes() {
             return 0
         fi
     else
-        # Check for services.yml or service-build.yml changes
-        if git diff --name-only "$BASE_REF" HEAD | grep -qE "^\.github/workflows/(services\.yml|service-build\.yml)$"; then
+        # Check shared service workflows and the native vlogs image workflow
+        if git diff --name-only "$BASE_REF" HEAD | grep -qE "^\.github/workflows/(services\.yml|service-build\.yml|vlogs-images\.yml)$"; then
             return 0
         fi
     fi
