@@ -12,7 +12,7 @@ import yaml
 
 
 ROOT = Path(__file__).resolve().parents[4]
-WORKFLOW = yaml.safe_load((ROOT / ".github/workflows/vlogs-images.yml").read_text())
+WORKFLOW = yaml.safe_load((ROOT / ".github/workflows/service-build.yml").read_text())
 
 
 class ImageTests(unittest.TestCase):
@@ -48,7 +48,8 @@ class ImageTests(unittest.TestCase):
             "PATH": str(self.bin) + os.pathsep + os.environ["PATH"],
             "COMMAND_LOG": str(self.log),
             "IMAGE_REPO": "ghcr.io/example/vlogs",
-            "GHCR_RUNTIME_REPO": "ghcr.io/example/vlogs",
+            "GHCR_REPO": "ghcr.io/example/vlogs",
+            "GHCR_DOCKER_REPO": "ghcr.io/example/vlogs",
             "GHCR_CLUSTER_REPO": "ghcr.io/example/vlogs-cluster",
             "BUILD_TAG": "build-123-2",
             "GITHUB_REPOSITORY": "example/sealos",
@@ -77,21 +78,24 @@ class ImageTests(unittest.TestCase):
 
     def test_both_build_stages_have_native_runners(self):
         expected = {"amd64": "ubuntu-24.04", "arm64": "ubuntu-24.04-arm"}
-        for job in ("runtime-build", "cluster-build"):
+        for job in ("image-build", "cluster-image-build"):
             matrix = WORKFLOW["jobs"][job]["strategy"]["matrix"]["include"]
             self.assertEqual({row["arch"]: row["runner"] for row in matrix}, expected)
-        self.assertEqual(WORKFLOW["jobs"]["runtime-release"]["needs"], "runtime-build")
-        self.assertEqual(WORKFLOW["jobs"]["cluster-build"]["needs"], "runtime-release")
-        self.assertEqual(WORKFLOW["jobs"]["cluster-release"]["needs"], "cluster-build")
-        self.assertNotIn("buildx", json.dumps(WORKFLOW).lower())
+        self.assertEqual(WORKFLOW["jobs"]["image-release"]["needs"], "image-build")
+        self.assertEqual(WORKFLOW["jobs"]["cluster-image-build"]["needs"], ["image-release"])
+        self.assertEqual(WORKFLOW["jobs"]["cluster-image-release"]["needs"], "cluster-image-build")
+        for job in WORKFLOW["jobs"].values():
+            for step in job.get("steps", []):
+                if "buildx" in json.dumps(step).lower() or "docker/build-push-action" in step.get("uses", ""):
+                    self.assertEqual(step["if"], "${{ inputs.module == 'account' }}")
         self.assertNotIn("qemu", json.dumps(WORKFLOW).lower())
 
     def test_runtime_compiles_on_matching_arch_and_only_packages_with_docker(self):
         for arch in ("amd64", "arm64"):
             self.env["ARCH"] = arch
-            result = self.run_step("runtime-build", "Compile native binary")
+            result = self.run_step("image-build", "Compile native binary")
             self.assertEqual(result.returncode, 0, result.stderr)
-            result = self.run_step("runtime-build", "Package and publish native runtime image")
+            result = self.run_step("image-build", "Package and publish native runtime image")
             self.assertEqual(result.returncode, 0, result.stderr)
             commands = self.commands()
             self.assertTrue(any(cmd[:2] == ["go", "build"] for cmd in commands))
@@ -100,12 +104,12 @@ class ImageTests(unittest.TestCase):
 
     def test_wrong_native_arch_fails_before_compilation(self):
         self.env.update(ARCH="arm64", MOCK_NATIVE_ARCH="amd64")
-        self.assertNotEqual(self.run_step("runtime-build", "Compile native binary").returncode, 0)
+        self.assertNotEqual(self.run_step("image-build", "Compile native binary").returncode, 0)
         self.assertFalse(any(cmd[:2] == ["go", "build"] for cmd in self.commands()))
 
     def test_pr_packages_without_pushing(self):
         self.env.update(ARCH="amd64", PUSH_IMAGE="false")
-        result = self.run_step("runtime-build", "Package and publish native runtime image")
+        result = self.run_step("image-build", "Package and publish native runtime image")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertFalse(any(cmd[:2] == ["docker", "push"] for cmd in self.commands()))
 
@@ -114,13 +118,40 @@ class ImageTests(unittest.TestCase):
             self.env["ARCH"] = arch
             chart = self.root / "service/vlogs/deploy/charts/vlogs-service"
             shutil.copytree(ROOT / "service/vlogs/deploy/charts/vlogs-service", chart, dirs_exist_ok=True)
-            result = self.run_step("cluster-build", "Cache and package native cluster image")
+            result = self.run_step("cluster-image-build", "Cache and package native cluster image")
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(yaml.safe_load((chart / "values.yaml").read_text())["image"],
                              "ghcr.io/example/vlogs:build-123-2")
             saves = [cmd for cmd in self.commands() if cmd[:4] == ["sudo", "sealos", "registry", "save"]]
             self.assertEqual(saves[-1], ["sudo", "sealos", "registry", "save", "--registry-dir=registry",
                                         "--arch", arch, "--images=ghcr.io/example/vlogs:build-123-2"])
+
+    def test_account_cluster_builds_publish_arch_images_before_remote_merge(self):
+        (self.bin / "sed").symlink_to(self.bin / "mock")
+        tags = ["ghcr.io/example/account-cluster:latest", "mirror.example.com/account-cluster:latest"]
+        self.env.update(
+            OLD_DOCKER_REPO="ghcr.io/labring/sealos-account-service",
+            GHCR_DOCKER_REPO="ghcr.io/example/sealos-account-service",
+            DOCKER_METADATA_OUTPUT_TAGS="\n".join(tags),
+        )
+        for arch in ("amd64", "arm64"):
+            self.env["ARCH"] = arch
+            result = self.run_step("cluster-image-build", "Build and push account cluster image")
+            self.assertEqual(result.returncode, 0, result.stderr)
+            for tag in tags:
+                self.assertIn(["sudo", "sealos", "build", "-t", f"{tag}-{arch}",
+                               "--platform", f"linux/{arch}", "-f", "Kubefile"], self.commands())
+                self.assertIn(["sudo", "sealos", "push", f"{tag}-{arch}"], self.commands())
+        result = self.run_step("cluster-image-release", "Merge and publish account cluster manifests")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        commands = self.commands()
+        for tag in tags:
+            for arch in ("amd64", "arm64"):
+                add = ["sudo", "sealos", "manifest", "add", tag, f"docker://{tag}-{arch}"]
+                self.assertIn(add, commands)
+                self.assertLess(commands.index(["sudo", "sealos", "push", f"{tag}-{arch}"]),
+                                commands.index(add))
+            self.assertIn(["sudo", "sealos", "manifest", "push", "--all", tag, f"docker://{tag}"], commands)
 
     def test_merge_publishes_both_architectures_and_mirror(self):
         self.env["MIRROR_REPO"] = "mirror.example.com/team/vlogs"
@@ -142,6 +173,49 @@ class ImageTests(unittest.TestCase):
     def test_manifest_push_failure_is_returned(self):
         self.env["PUSH_EXIT_CODE"] = "19"
         self.assertEqual(self.merge().returncode, 19)
+
+    def test_manual_or_reusable_calls_reject_retired_services(self):
+        for module in ("account", "vlogs", "database", "launchpad"):
+            self.env["MODULE"] = module
+            result = self.run_step("validate-deploy", "Validate service module")
+            if module in ("account", "vlogs"):
+                self.assertEqual(result.returncode, 0, result.stderr)
+            else:
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("Unsupported service module", result.stderr)
+
+    def test_full_and_incremental_detection_exclude_retired_services(self):
+        scripts = self.root / "scripts"
+        scripts.mkdir()
+        for filename in ("detect-build-modules.sh", "generate-dependencies.sh"):
+            shutil.copy2(ROOT / "scripts" / filename, scripts / filename)
+        for module in ("account", "vlogs", "database", "launchpad"):
+            module_dir = self.root / "service" / module
+            module_dir.mkdir(parents=True)
+            (module_dir / "go.mod").write_text(f"module github.com/labring/sealos/service/{module}\n")
+
+        def git(*args):
+            return subprocess.check_output(["git", *args], cwd=self.root, text=True).strip()
+
+        def commit(message):
+            git("add", "scripts", "service")
+            git("-c", "user.name=Test", "-c", "user.email=test@example.com",
+                "commit", "--no-gpg-sign", "-qm", message)
+
+        git("init", "-q")
+        commit("baseline")
+        base = git("rev-parse", "HEAD")
+        command = ["bash", str(scripts / "detect-build-modules.sh"), "service", base]
+        result = subprocess.run([*command, "true"], env=self.env, text=True, capture_output=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout), [{"name": "account", "path": "account"},
+                                                    {"name": "vlogs", "path": "vlogs"}])
+        for module in ("database", "launchpad"):
+            (self.root / "service" / module / "main.go").write_text("package main\n")
+        commit("retired service changes")
+        result = subprocess.run([*command, "false"], env=self.env, text=True, capture_output=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout), [])
 
 
 if __name__ == "__main__":

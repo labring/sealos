@@ -47,11 +47,12 @@ on:
       - "controllers/**"
       - ".github/workflows/services.yml"
       - ".github/workflows/service-build.yml"
-      - ".github/workflows/vlogs-images.yml"
       - "scripts/detect-build-modules.sh"
       - "!**/*.md"
       - "!**/*.yaml"
       - "service/vlogs/deploy/**/*.yaml"
+      - "!service/database/**"
+      - "!service/launchpad/**"
   pull_request:
     branches: ["**"]
     paths:
@@ -59,11 +60,12 @@ on:
       - "controllers/**"
       - ".github/workflows/services.yml"
       - ".github/workflows/service-build.yml"
-      - ".github/workflows/vlogs-images.yml"
       - "scripts/detect-build-modules.sh"
       - "!**/*.md"
       - "!**/*.yaml"
       - "service/vlogs/deploy/**/*.yaml"
+      - "!service/database/**"
+      - "!service/launchpad/**"
 
 env:
   GO_VERSION: "1.25"

@@ -105,13 +105,16 @@ names, `fullnameOverride` values and persistent values paths.
 ## Build and CI
 
 The existing `services.yml` / `service-build.yml` workflows detect vlogs changes,
-including chart-only YAML changes, and call `vlogs-images.yml` after deployment
-checks and Go tests pass. PRs lint/render the chart, check the entrypoint,
-test config preservation and build the runtime container for amd64 and arm64.
+including chart-only YAML changes. The shared `service-build.yml` builds the
+remaining `account` and `vlogs` services; database and launchpad are excluded from
+automatic detection, full releases and the manual service selector. Image builds
+start after deployment checks and Go tests pass. PRs lint/render the chart, check
+the entrypoint, test config preservation and build the runtime container for
+amd64 and arm64.
 
 Both runtime and cluster image jobs use `ubuntu-24.04` for amd64 and
 `ubuntu-24.04-arm` for arm64. Go compiles directly on each native runner; the
-runtime Dockerfile only packages `bin/manager`. Docker packaging uses ordinary
+runtime Dockerfile only packages `bin/manager`. vlogs packaging uses ordinary
 `docker build`, with no Buildx action, cross-architecture build or QEMU setup.
 Independent release jobs wait for both architectures before publishing a combined
 image using `docker manifest create`, `annotate` and `push`.
@@ -129,7 +132,7 @@ Published repositories:
 
 Both merged images retain the existing branch, release, explicit and commit tags.
 The workflow uses `GHCR_TOKEN` or `GITHUB_TOKEN` and the existing Sealos installer.
-Other services continue to use their existing cluster image build path.
+The account service retains its existing image formats and chart deployment.
 
 To publish locally, run the runtime build on each matching Linux machine:
 

@@ -29,9 +29,7 @@ declare -A CONTROLLER_MODULES=(
 )
 
 declare -A SERVICE_MODULES=(
-    ["database"]="database"
     ["account"]="account"
-    ["launchpad"]="launchpad"
     ["vlogs"]="vlogs"
 )
 
@@ -283,8 +281,8 @@ check_workflow_changes() {
             return 0
         fi
     else
-        # Check shared service workflows and the native vlogs image workflow
-        if git diff --name-only "$BASE_REF" HEAD | grep -qE "^\.github/workflows/(services\.yml|service-build\.yml|vlogs-images\.yml)$"; then
+        # Check the shared service workflows
+        if git diff --name-only "$BASE_REF" HEAD | grep -qE "^\.github/workflows/(services\.yml|service-build\.yml)$"; then
             return 0
         fi
     fi
@@ -347,7 +345,7 @@ check_cross_project_dependencies() {
         for dep in "${dep_array[@]}"; do
             dep=$(echo "$dep" | xargs)
 
-            # Parse dependency: "controllers/account" or "service/database"
+            # Parse dependency: "controllers/account" or "service/account"
             if [[ "$dep" =~ ^(controllers|service)/(.+)$ ]]; then
                 local dep_type="${BASH_REMATCH[1]}"
                 local dep_module="${BASH_REMATCH[2]}"
