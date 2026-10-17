@@ -1,3 +1,4 @@
+import { getCloudConfig } from '@/pages/api/platform/getCloudConfig';
 import { OAuth2AuthorizeDecisionRequestSchema, OAuth2ErrorResponseSchema } from '@/schema/oauth2';
 import { OAuth2HttpError } from '@/services/backend/oauth2/errors';
 import { resolveOAuth2AuthUser } from '@/services/backend/oauth2/auth';
@@ -21,6 +22,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    if (!global.AppConfig) await getCloudConfig();
     const auth = await resolveOAuth2AuthUser(req);
     if (!auth?.userUid) {
       throw new OAuth2HttpError(401, 'invalid_request', 'Authentication required');

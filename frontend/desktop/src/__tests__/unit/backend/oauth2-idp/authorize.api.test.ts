@@ -1,3 +1,5 @@
+jest.mock('@/pages/api/platform/getCloudConfig', () => ({ getCloudConfig: jest.fn() }));
+
 import { OAuth2HttpError } from '@/services/backend/oauth2/errors';
 
 jest.mock('@/services/backend/oauth2/auth', () => ({

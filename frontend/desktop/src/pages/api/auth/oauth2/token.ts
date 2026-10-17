@@ -1,3 +1,4 @@
+import { getCloudConfig } from '@/pages/api/platform/getCloudConfig';
 import {
   CODE_REFRESH_PREFIX,
   exchangeAuthorizationCode,
@@ -29,6 +30,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    if (!global.AppConfig) await getCloudConfig();
     const normalized = normalizeOAuth2Body(req.body);
     if (
       normalized.grant_type === 'authorization_code' ||

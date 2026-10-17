@@ -1,3 +1,4 @@
+import { getCloudConfig } from '@/pages/api/platform/getCloudConfig';
 import {
   OAuth2DeviceRequestSchema,
   OAuth2DeviceResponseSchema,
@@ -20,6 +21,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    if (!global.AppConfig) await getCloudConfig();
     const parsedBodyResult = OAuth2DeviceRequestSchema.safeParse(normalizeOAuth2Body(req.body));
     if (!parsedBodyResult.success) {
       return res.status(400).json(

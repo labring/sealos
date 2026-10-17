@@ -1,3 +1,4 @@
+import { getCloudConfig } from '@/pages/api/platform/getCloudConfig';
 import {
   OAuth2AuthorizeContextQuerySchema,
   OAuth2AuthorizeContextResponseSchema,
@@ -21,6 +22,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    if (!global.AppConfig) await getCloudConfig();
     const parsedQueryResult = OAuth2AuthorizeContextQuerySchema.safeParse(
       normalizeOAuth2Query(req.query)
     );
