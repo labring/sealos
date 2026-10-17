@@ -16,7 +16,12 @@ ensure_values() {
   chmod 600 "$USER_VALUES_FILE"
   echo "Created user values: $USER_VALUES_FILE"
 }
-release_exists() { helm status "$RELEASE_NAME" -n "$RELEASE_NAMESPACE" >/dev/null 2>&1; }
+release_exists() {
+  local releases
+  releases=$(helm list --all --short --filter "^${RELEASE_NAME}$" -n "$RELEASE_NAMESPACE") ||
+    die "unable to query Helm releases in namespace $RELEASE_NAMESPACE"
+  [[ "$releases" == "$RELEASE_NAME" ]]
+}
 delete_legacy_resources() {
   local kind name
   kubectl delete mutatingwebhookconfiguration admission-mutating-webhook-configuration --ignore-not-found
@@ -46,7 +51,9 @@ apply() {
   helm upgrade --install "$RELEASE_NAME" "$CHART_PATH" --namespace "$RELEASE_NAMESPACE" --create-namespace --reset-values --values "$USER_VALUES_FILE" --wait --timeout "$HELM_TIMEOUT"
 }
 delete_release() {
-  release_exists && helm uninstall "$RELEASE_NAME" -n "$RELEASE_NAMESPACE" --wait --timeout "$HELM_TIMEOUT" || true
+  if release_exists; then
+    helm uninstall "$RELEASE_NAME" -n "$RELEASE_NAMESPACE" --wait --timeout "$HELM_TIMEOUT"
+  fi
   echo "Removed Helm release $RELEASE_NAME; preserved $USER_VALUES_FILE"
 }
 usage() { echo "Usage: $0 [apply|delete]"; }

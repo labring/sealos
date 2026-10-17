@@ -15,8 +15,11 @@ mkdir -p "$TEMP/bin"
 cat > "$TEMP/bin/helm" <<'HELM'
 #!/usr/bin/env bash
 printf '%s\n' "$*" >> "$CALL_LOG"
-if [[ $1 == status ]]; then [[ -f "$RELEASE_STATE" ]]; exit; fi
-if [[ $1 == upgrade ]]; then touch "$RELEASE_STATE"; fi
+if [[ $1 == list ]]; then
+  if [[ -f "$RELEASE_STATE" ]]; then cat "$RELEASE_STATE"; fi
+  exit
+fi
+if [[ $1 == upgrade ]]; then printf '%s\n' "$3" > "$RELEASE_STATE"; fi
 HELM
 cat > "$TEMP/bin/kubectl" <<'KUBECTL'
 #!/usr/bin/env bash
