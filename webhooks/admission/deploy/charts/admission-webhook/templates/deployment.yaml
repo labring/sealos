@@ -52,7 +52,7 @@ spec:
             - --metrics-bind-address=127.0.0.1:8080
             - --leader-elect
             - {{ printf "--ingress-mutating-annotations=%v" .Values.config.ingressMutatingAnnotations | quote }}
-            - {{ printf "--cnameDomains=%v" .Values.config.cnameDomains | quote }}
+            - {{ printf "--cnameDomains=%s" (join "," (compact (list .Values.config.cnameDomains .Values.config.cnameAppenDomains))) | quote }}
             - {{ printf "--cnameCheck=%v" .Values.config.cnameCheck | quote }}
             - {{ printf "--denyDomains=%v" .Values.config.denyDomains | quote }}
           env:

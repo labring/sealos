@@ -24,6 +24,9 @@
           "type": "string",
           "minLength": 1
         },
+        "cnameAppenDomains": {
+          "type": "string"
+        },
         "cnameCheck": {
           "type": "boolean"
         },

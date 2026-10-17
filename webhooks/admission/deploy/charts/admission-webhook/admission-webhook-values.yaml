@@ -17,7 +17,7 @@ updateStrategy:
   maxSurge: 1
 
 config:
-  cnameDomains: cloud.sealos.io,laf.dev,laf.run
+  cnameAppenDomains: ""
   cnameCheck: false
   denyDomains: ""
   ingressMutatingAnnotations: ""

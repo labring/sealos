@@ -12,14 +12,7 @@ die() { echo "error: $*" >&2; exit 1; }
 ensure_values() {
   [[ -f "$USER_VALUES_FILE" ]] && return
   mkdir -p "$(dirname "$USER_VALUES_FILE")"
-  local line
-  while IFS= read -r line; do
-    if [[ "$line" == "  cnameDomains:"* && -n "${cnameDomains:-}" ]]; then
-      printf "  cnameDomains: '%s'\n" "${cnameDomains//\'/\'\'}"
-    else
-      printf '%s\n' "$line"
-    fi
-  done < "$CHART_PATH/admission-webhook-values.yaml" > "$USER_VALUES_FILE"
+  cp "$CHART_PATH/admission-webhook-values.yaml" "$USER_VALUES_FILE"
   chmod 600 "$USER_VALUES_FILE"
   echo "Created user values: $USER_VALUES_FILE"
 }
@@ -53,9 +46,14 @@ RESOURCES
   kubectl delete clusterrolebinding admission-manager-rolebinding admission-proxy-rolebinding --ignore-not-found
 }
 apply() {
+  local domain cname_domains
+  domain=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.cloudDomain}') ||
+    die "unable to read cloudDomain from ConfigMap sealos-system/sealos-config"
+  [[ -n "$domain" ]] || die "cloudDomain is empty in ConfigMap sealos-system/sealos-config"
+  cname_domains="$domain,hub.$domain,cloud.sealos.io,laf.dev,laf.run"
   ensure_values
   if ! release_exists; then delete_legacy_resources; fi
-  helm upgrade --install "$RELEASE_NAME" "$CHART_PATH" --namespace "$RELEASE_NAMESPACE" --create-namespace --reset-values --values "$USER_VALUES_FILE" --wait --timeout "$HELM_TIMEOUT"
+  helm upgrade --install "$RELEASE_NAME" "$CHART_PATH" --namespace "$RELEASE_NAMESPACE" --create-namespace --reset-values --values "$USER_VALUES_FILE" --set "config.cnameDomains=${cname_domains//,/\\,}" --wait --timeout "$HELM_TIMEOUT"
 }
 delete_release() {
   if release_exists; then
