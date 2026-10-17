@@ -36,8 +36,14 @@ check_file_exits() {
 
 check_file_exits /usr/bin/sealos
 
+case "$(uname -m)" in
+  x86_64) SEALOS_ARCH=amd64 ;;
+  aarch64|arm64) SEALOS_ARCH=arm64 ;;
+  *) error "Unsupported architecture: $(uname -m)" ;;
+esac
+
 pushd "$(mktemp -d)" >/dev/null || exit
-  until curl -sLo "sealos.tar.gz"  "https://github.com/labring/sealos/releases/download/v5.1.2-rc5/sealos_5.1.2-rc5_linux_amd64.tar.gz"; do sleep 3; done
+  until curl -fsSLo "sealos.tar.gz" "https://github.com/labring/sealos/releases/download/v5.1.2-rc5/sealos_5.1.2-rc5_linux_${SEALOS_ARCH}.tar.gz"; do sleep 3; done
   tar -zxf sealos.tar.gz sealos &&  chmod +x sealos && mv sealos /usr/bin
   rm -rf sealos.tar.gz
   sealos version
