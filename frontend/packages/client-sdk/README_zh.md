@@ -167,3 +167,26 @@ createMasterAPP(allowedOrigins);
 ## 📄 许可证
 
 [Sealos Sustainable Use License 1.0](https://github.com/labring/sealos/blob/main/LICENSE.md)
+
+
+### 宿主配置与货币符号
+
+独立子应用可安装 `@labring/sealos-desktop-sdk@0.1.24`，通过现有 App SDK 实例调用 `getHostConfig()`：
+
+```ts
+import type { HostConfig } from '@labring/sealos-desktop-sdk';
+
+const config: HostConfig = await sealosApp.getHostConfig();
+const currencySymbol = config.currencySymbol ?? 'shellCoin';
+```
+
+返回值保留 `cloud: { domain, port, regionUid }` 和 `features: { subscription, analytics? }`，
+新增可选的顶层 `currencySymbol: 'shellCoin' | 'cny' | 'usd'`。旧宿主可能缺失此字段。
+更新后的 Desktop 等待配置加载后读取 `desktop.layout.currencySymbol`，缺失时返回 `shellCoin`；
+等待超过 8 秒会拒绝请求，调用方应允许重试，不应将请求失败缓存为默认货币。
+release-v5.1 没有订阅配置，`features.subscription` 返回 `false`，`analytics` 根据 GTM 配置返回。
+货币符号仅用于展示，不进行金额换算。
+
+SDK 源码和构建流程位于本仓库 `frontend/packages/client-sdk`，执行
+`pnpm --filter sealos-desktop-sdk build` 构建。本分支仅回移接口能力，保留工作区包版本；
+不应使用本分支较旧的 SDK 基线覆盖已发布的 scoped 包。

@@ -19,7 +19,7 @@ ENV icpEnabled="false"
 ENV icpEndpoint=""
 ENV icpKey=""
 
-ENV resourceCreatorWebhookEnabled="true"
+ENV resourceCreatorWebhookEnabled="false"
 
 ENV namespaceWebhookEnabled="true"
 ENV namespaceWebhookFailurePolicy="Fail"
