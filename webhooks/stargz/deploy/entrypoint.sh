@@ -25,21 +25,25 @@ release_exists() {
 delete_legacy_resources() {
   local kind name
   kubectl delete mutatingwebhookconfiguration pod-stargz-runtime-injector pod-stargz-runtime-injector-mutating-webhook-configuration --ignore-not-found
-  while IFS=$'\t' read -r kind name; do
+  while IFS=' ' read -r kind name; do
     [[ -z "$name" ]] || kubectl delete "$kind" "$name" -n "$RELEASE_NAMESPACE" --ignore-not-found
   done <<'RESOURCES'
 deployment pod-stargz-runtime-injector
 deployment pod-stargz-runtime-injector-controller-manager
 service pod-stargz-runtime-injector
 service pod-stargz-runtime-injector-webhook-service
+service pod-stargz-runtime-injector-controller-manager-metrics-service
 certificate stargz-runtime-injector-serving-cert
 certificate pod-stargz-runtime-injector-serving-cert
 issuer stargz-runtime-injector-selfsigned-issuer
 issuer pod-stargz-runtime-injector-selfsigned-issuer
 serviceaccount pod-stargz-runtime-injector
 serviceaccount pod-stargz-runtime-injector-controller-manager
+role pod-stargz-runtime-injector-leader-election-role
+rolebinding pod-stargz-runtime-injector-leader-election-rolebinding
 RESOURCES
-  kubectl delete clusterrole,clusterrolebinding pod-stargz-runtime-injector-manager-role pod-stargz-runtime-injector-manager-rolebinding stargz-runtime-injector-manager-role stargz-runtime-injector-manager-rolebinding --ignore-not-found
+  kubectl delete clusterrole pod-stargz-runtime-injector-manager-role pod-stargz-runtime-injector-metrics-auth-role pod-stargz-runtime-injector-metrics-reader stargz-runtime-injector-manager-role --ignore-not-found
+  kubectl delete clusterrolebinding pod-stargz-runtime-injector-manager-rolebinding pod-stargz-runtime-injector-metrics-auth-rolebinding stargz-runtime-injector-manager-rolebinding --ignore-not-found
   # RuntimeClass/stargz remains available to existing Pods and node handlers.
   # Add Helm ownership so the chart can retain and manage the existing object.
   if kubectl get runtimeclass stargz >/dev/null 2>&1; then

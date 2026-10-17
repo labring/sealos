@@ -26,7 +26,7 @@ delete_legacy_resources() {
   local kind name
   kubectl delete mutatingwebhookconfiguration admission-mutating-webhook-configuration --ignore-not-found
   kubectl delete validatingwebhookconfiguration admission-validating-webhook-configuration --ignore-not-found
-  while IFS=$'\t' read -r kind name; do
+  while IFS=' ' read -r kind name; do
     [[ -z "$name" ]] || kubectl delete "$kind" "$name" -n "$RELEASE_NAMESPACE" --ignore-not-found
   done <<'RESOURCES'
 deployment admission-controller-manager
