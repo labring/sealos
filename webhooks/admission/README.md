@@ -1,80 +1,44 @@
-# admission
-// TODO(user): Add simple overview of use/purpose
+# Sealos admission webhook
 
-## Description
-// TODO(user): An in-depth paragraph about your project and overview of use
+Provides ingress, namespace and resource-creator admission handlers.
 
-## Getting Started
-You’ll need a Kubernetes cluster to run against. You can use [KIND](https://sigs.k8s.io/kind) to get a local cluster for testing, or run against a remote cluster.
-**Note:** Your controller will automatically use the current context in your kubeconfig file (i.e. whatever cluster `kubectl cluster-info` shows).
+## Helm deployment
 
-### Running on the cluster
-1. Install Instances of Custom Resources:
+Use `bash deploy/entrypoint.sh apply` for installation and upgrades. The
+entrypoint removes the fixed resources from the old installer on first use,
+then runs `helm upgrade --install`. `bash deploy/entrypoint.sh delete` removes
+the Helm release while preserving the user values file. The Helm chart is in
+`deploy/charts/admission-webhook`.
 
-```sh
-kubectl apply -f config/samples/
+Helm-managed runtime resources use the `admission-webhook` naming convention,
+including the Deployment and ServiceAccount. During the first migration, the
+entrypoint removes the previous Kustomize `admission-controller-manager`
+resources before installing the chart.
+
+The persistent user values file is
+`/root/.sealos/cloud/values/core/admission-webhook-values.yaml`; it is created
+from the packaged defaults once and is never overwritten by upgrades.
+On every install or upgrade, the entrypoint reads `cloudDomain` from ConfigMap
+`sealos-system/sealos-config` and overrides `config.cnameDomains` with
+`<domain>,hub.<domain>,cloud.sealos.io,laf.dev,laf.run`. If the ConfigMap cannot
+be read or the domain is empty, it exits before cleaning up legacy resources.
+The `cnameDomains` environment variable is no longer used.
+
+Set `config.cnameAppenDomains` in the user values to a comma-separated list of
+additional domains (default: `""`). The chart appends these domains to the base
+list when rendering the manager arguments. `config.cnameCheck` defaults to
+`false` in the user values; existing files retain their configured value.
+For example:
+
+```yaml
+config:
+  cnameAppenDomains: apps.example.com,custom.example.com
+  cnameCheck: false
 ```
 
-2. Build and push your image to the location specified by `IMG`:
-
-```sh
-make docker-build docker-push IMG=<some-registry>/admission:tag
-```
-
-3. Deploy the controller to the cluster with the image specified by `IMG`:
-
-```sh
-make deploy IMG=<some-registry>/admission:tag
-```
-
-### Uninstall CRDs
-To delete the CRDs from the cluster:
-
-```sh
-make uninstall
-```
-
-### Undeploy controller
-UnDeploy the controller from the cluster:
-
-```sh
-make undeploy
-```
-
-## Contributing
-// TODO(user): Add detailed information on how you would like others to contribute to this project
-
-### How it works
-This project aims to follow the Kubernetes [Operator pattern](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/).
-
-It uses [Controllers](https://kubernetes.io/docs/concepts/architecture/controller/),
-which provide a reconcile function responsible for synchronizing resources until the desired state is reached on the cluster.
-
-### Test It Out
-1. Install the CRDs into the cluster:
-
-```sh
-make install
-```
-
-2. Run your controller (this will run in the foreground, so switch to a new terminal if you want to leave it running):
-
-```sh
-make run
-```
-
-**NOTE:** You can also run this in one step by running: `make install run`
-
-### Modifying the API definitions
-If you are editing the API definitions, generate the manifests such as CRs or CRDs using:
-
-```sh
-make manifests
-```
-
-**NOTE:** Run `make --help` for more information on all potential `make` targets
-
-More information can be found via the [Kubebuilder Documentation](https://book.kubebuilder.io/introduction.html)
+Run unit tests with `GOWORK=off go test -race ./...`. Kubebuilder
+`config/` remains available for development; do not apply it over a Helm-managed
+production release.
 
 ## 应用和数据库创建人记录
 
@@ -85,7 +49,7 @@ More information can be found via the [Kubebuilder Documentation](https://book.k
 
 创建人 webhook 不查询数据库；只记录请求身份，User.id 映射由独立 admin 应用的查询接口处理，不新增表。更新保留原记录，历史资源不因编辑补写创建人。Deployment/StatefulSet 转换在旧主资源仍存在时继承原记录；删除后重建重新记录。后台服务使用自身凭据创建时记录服务身份，不推测发起账号。
 
-部署需要同时更新控制器镜像与 webhook 配置，由现有 admission Manager、Service 和 cert-manager 证书承载；集群镜像通过 `resourceCreatorWebhookEnabled` 控制启用（默认 `true`）。创建人 webhook 使用 `failurePolicy: Fail`：服务不可达时，匹配命名空间内的 Deployment、StatefulSet、数据库 Cluster、Devbox、ObjectStorageBucket 和 CronJob 创建/更新会被阻止；创建人处理不依赖账号映射数据库，但应用类型转换仍需读取 Kubernetes 中的原工作负载。升级应先确保新控制器端点与证书可用，再启用新 webhook；回退旧 admission 镜像前需从共享 MutatingWebhookConfiguration/ValidatingWebhookConfiguration 中移除创建人条目（集群镜像可设置 `resourceCreatorWebhookEnabled=false`），停用期间无法保证创建人记录完整。
+部署需要同时更新控制器镜像与 webhook 配置，由现有 admission Manager、Service 和 cert-manager 证书承载；集群镜像通过 `resourceCreatorWebhookEnabled` 控制启用（默认 `false`）。创建人 webhook 使用 `failurePolicy: Fail`：服务不可达时，匹配命名空间内的 Deployment、StatefulSet、数据库 Cluster、Devbox、ObjectStorageBucket 和 CronJob 创建/更新会被阻止；创建人处理不依赖账号映射数据库，但应用类型转换仍需读取 Kubernetes 中的原工作负载。升级应先确保新控制器端点与证书可用，再启用新 webhook；回退旧 admission 镜像前需从共享 MutatingWebhookConfiguration/ValidatingWebhookConfiguration 中移除创建人条目（集群镜像可设置 `resourceCreatorWebhookEnabled=false`），停用期间无法保证创建人记录完整。
 
 本仓库此次仅提供创建人 webhook。创建账号、按账号查询资源、按命名空间查询资源由独立 admin 应用实现；不在 account-service 或子应用列表、详情接口增加创建人查询字段。匹配范围为带 `user.sealos.io/owner` 标签且名称以 `ns-` 开头的命名空间，应用需带 `cloud.sealos.io/app-deploy-manager` 标签，数据库支持 `apps.kubeblocks.io/v1alpha1` 与 `v1` 的顶层 Cluster。
 

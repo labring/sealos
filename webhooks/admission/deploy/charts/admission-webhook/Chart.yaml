@@ -1,0 +1,12 @@
+apiVersion: v2
+name: admission-webhook
+description: Sealos admission webhooks
+type: application
+version: 0.1.0
+appVersion: "latest"
+keywords:
+  - kubernetes
+  - admission
+  - webhook
+maintainers:
+  - name: sealos

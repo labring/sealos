@@ -1,0 +1,83 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": [
+    "image",
+    "webhook"
+  ],
+  "properties": {
+    "image": {
+      "type": "string",
+      "minLength": 1
+    },
+    "replicaCount": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "webhook": {
+      "type": "object",
+      "required": [
+        "registries",
+        "runtimeClass"
+      ],
+      "properties": {
+        "registries": {
+          "type": "string",
+          "minLength": 1
+        },
+        "runtimeClass": {
+          "type": "string",
+          "minLength": 1
+        },
+        "failurePolicy": {
+          "enum": [
+            "Ignore",
+            "Fail"
+          ]
+        },
+        "timeoutSeconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 30
+        }
+      }
+    },
+    "imagePullPolicy": {
+      "enum": [
+        "Always",
+        "IfNotPresent",
+        "Never"
+      ]
+    },
+    "updateStrategy": {
+      "type": "object",
+      "properties": {
+        "maxUnavailable": {
+          "enum": [
+            0
+          ]
+        },
+        "maxSurge": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "runtimeClass": {
+      "type": "object",
+      "properties": {
+        "create": {
+          "type": "boolean"
+        },
+        "handler": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}
