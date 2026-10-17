@@ -1,6 +1,6 @@
 import { Box, Button, Divider, Stack, Flex, useColorModeValue, Text } from '@chakra-ui/react';
 import useProtocol from '@/components/signin/auth/useProtocol';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
 import { GoogleIcon, GithubIcon } from '../icons';
@@ -18,11 +18,12 @@ import { PhoneCheckForm } from './PhoneCheckForm';
 
 interface SigninComponentProps {
   isModal?: boolean;
+  notice?: ReactNode;
 }
 
 type LoginStep = 'select' | 'email-verify' | 'phone-verify';
 
-export default function SigninComponent({ isModal = false }: SigninComponentProps) {
+export default function SigninComponent({ isModal = false, notice }: SigninComponentProps) {
   const { t, i18n } = useTranslation();
   const conf = useConfigStore();
   const router = useRouter();
@@ -222,6 +223,8 @@ export default function SigninComponent({ isModal = false }: SigninComponentProp
               | undefined
           )?.[i18n.language] ?? t('v2:workspace_welcome_default')}
         </Text>
+
+        {notice}
 
         {conf.layoutConfig?.version === 'cn' ? (
           needPhone && (

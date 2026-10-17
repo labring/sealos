@@ -4,6 +4,7 @@ import { strongPassword } from '@/utils/crypto';
 import { enablePassword } from '@/services/enable';
 import { getGlobalToken } from '@/services/backend/globalAuth';
 import { AuthError } from '@/services/backend/errors';
+import { webRegistrationFromRequest } from '@/services/backend/activity/registration';
 import { ProviderType } from 'prisma/global/generated/client';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -25,7 +26,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       password,
       name,
       semData,
-      adClickData
+      adClickData,
+      // Web password signups read invite context from cookies; server-side
+      // validation failures never block registration
+      registration: webRegistrationFromRequest(req)
     });
 
     if (data?.isRestricted) {

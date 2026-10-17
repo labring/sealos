@@ -1,4 +1,5 @@
 import { verifyGlobalToken } from '@/services/backend/auth';
+import { checkAndGrantUserRewardsBounded } from '@/services/backend/activity/rewards';
 import { jsonRes } from '@/services/backend/response';
 import { enableRealNameAuth } from '@/services/enable';
 import * as tcsdk from 'tencentcloud-sdk-nodejs';
@@ -274,6 +275,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return;
     });
+
+    // Trigger the referral reward eligibility check after real-name success: kept
+    // outside the real-name transaction; failures only log and never affect the
+    // real-name result or the page.
+    // Bounded wait — an unresponsive billing service must not hold up the result
+    // page; on timeout the compensation worker reconciles and reissues.
+    try {
+      await checkAndGrantUserRewardsBounded(userUid);
+    } catch (error) {
+      console.error('faceIdRealNameAuthCallback: checkAndGrantUserRewards failed', {
+        userUid,
+        error
+      });
+    }
 
     res.setHeader('Content-Type', 'text/html');
     return res.send(`

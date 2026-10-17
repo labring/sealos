@@ -3,10 +3,13 @@ import type { GTMEvent, GTMEventType } from './types';
 interface GTMConfig {
   enabled?: boolean;
   debug?: boolean;
+  /** Enable buffering and forwarding only when Rybbit is configured. */
+  rybbitEnabled?: boolean;
 }
 
 // Rybbit event properties are limited to 2KB in total and primitive values only.
 const MAX_RYBBIT_PROPERTY_LENGTH = 512;
+const MAX_RYBBIT_QUEUE_SIZE = 100;
 
 type ExtractEventByType<T extends GTMEventType> = Extract<GTMEvent, { event: T }>;
 
@@ -28,6 +31,9 @@ class GTMTracker {
 
   configure(config: GTMConfig) {
     this.config = { ...this.config, ...config };
+    if (!this.config.enabled || !this.config.rybbitEnabled) {
+      this.rybbitQueue = [];
+    }
     return this;
   }
 
@@ -68,7 +74,7 @@ class GTMTracker {
   }
 
   private forwardToRybbit(gtmEvent: GTMEvent): void {
-    if (typeof window === 'undefined') return;
+    if (!this.config.rybbitEnabled || typeof window === 'undefined') return;
 
     const { event, ...payload } = gtmEvent;
     const properties: Record<string, string | number> = {};
@@ -87,6 +93,9 @@ class GTMTracker {
       if (this.config.debug) {
         console.log('[Sealos Rybbit] script not loaded yet, event queued:', event);
       }
+      if (this.rybbitQueue.length >= MAX_RYBBIT_QUEUE_SIZE) {
+        this.rybbitQueue.shift();
+      }
       this.rybbitQueue.push({ event, properties });
       return;
     }
@@ -95,11 +104,18 @@ class GTMTracker {
       console.log('[Sealos Rybbit] event forwarded:', event, properties);
     }
 
+    this.flushRybbitQueue();
     window.rybbit.event(event, properties);
   }
 
   flushRybbitQueue(): void {
-    if (typeof window === 'undefined' || typeof window.rybbit?.event !== 'function') return;
+    if (
+      !this.config.enabled ||
+      !this.config.rybbitEnabled ||
+      typeof window === 'undefined' ||
+      typeof window.rybbit?.event !== 'function'
+    )
+      return;
     while (this.rybbitQueue.length > 0) {
       const queued = this.rybbitQueue.shift();
       if (!queued) continue;

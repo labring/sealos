@@ -29,6 +29,9 @@ export default defineConfig({
       },
       {
         extends: true,
+        // Browser tests cannot reuse the Node conditions, or Chakra/tslib would
+        // resolve to incompatible entry points.
+        resolve: { conditions: ['module', 'browser', 'import', 'default'] },
         test: {
           name: 'components',
           globals: true,

@@ -45,4 +45,39 @@ describe('client SDK parent boundary', () => {
     await expect(sessionPromise).resolves.toEqual({ user: 'test-user' });
     cleanup?.();
   });
+
+  it.each([undefined, 'usd'] as const)(
+    'preserves host config with currencySymbol=%s',
+    async (currencySymbol) => {
+      const postMessage = vi.fn();
+      let listener: ((event: MessageEvent) => void) | undefined;
+      vi.stubGlobal('window', {
+        location: { origin: 'https://app.example.com' },
+        parent: { postMessage },
+        addEventListener: (_type: string, callback: (event: MessageEvent) => void) => {
+          listener = callback;
+        },
+        removeEventListener: vi.fn()
+      });
+      const cleanup = createSealosApp();
+      try {
+        const pending = sealosApp.getHostConfig();
+        const request = postMessage.mock.calls[0][0];
+        expect(request.apiName).toBe('getHostConfig');
+        const config = {
+          cloud: { domain: 'example.com', port: '443', regionUid: 'region-1' },
+          features: { subscription: true, analytics: true },
+          ...(currencySymbol ? { currencySymbol } : {})
+        };
+        listener?.({
+          data: { messageId: request.messageId, success: true, data: config },
+          origin: 'https://desktop.example.com',
+          source: {}
+        } as MessageEvent);
+        await expect(pending).resolves.toEqual(config);
+      } finally {
+        cleanup?.();
+      }
+    }
+  );
 });

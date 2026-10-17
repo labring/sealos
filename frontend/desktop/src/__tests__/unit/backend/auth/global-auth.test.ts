@@ -11,6 +11,7 @@ vi.mock('@/services/backend/auth', () => ({
 
 vi.mock('@/services/backend/db/init', () => ({
   globalPrisma: {
+    $transaction: vi.fn(),
     oauthProvider: {
       findUnique: vi.fn(),
       findFirst: vi.fn()
@@ -67,7 +68,7 @@ describe('getGlobalToken', () => {
     mockPrisma.userInfo.findUnique.mockResolvedValue({ isInited: true });
   });
 
-  it('does not update existing user profile on sign in', async () => {
+  it('does not update the profile or attach invitations when an existing user signs in', async () => {
     const existingUser = {
       uid: 'user-uid',
       id: 'user-id',
@@ -94,10 +95,12 @@ describe('getGlobalToken', () => {
       providerId: 'github-id',
       name: 'github-login',
       avatar_url: 'new-avatar',
-      email: 'github-user@example.com'
+      email: 'github-user@example.com',
+      registration: { source: 'WEB', inviteCode: 'ABCD2345' }
     });
 
     expect(mockPrisma.user.update).not.toHaveBeenCalled();
+    expect(mockPrisma.$transaction).not.toHaveBeenCalled();
     expect(mockGenerateGlobalAccessToken).toHaveBeenCalledWith({
       sub: existingUser.uid,
       user_id: existingUser.id,

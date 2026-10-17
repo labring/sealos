@@ -2,6 +2,10 @@ import { uploadConvertData } from '@/api/platform';
 import { generateGlobalAccessToken } from '@/services/backend/auth';
 import { globalPrisma } from '@/services/backend/db/init';
 import { AuthError } from '@/services/backend/errors';
+import {
+  attachRegistrationInTransaction,
+  RegistrationContext
+} from '@/services/backend/activity/registration';
 import { SemData } from '@/types/sem';
 import { hashPassword } from '@/utils/crypto';
 import { nanoid } from 'nanoid';
@@ -121,13 +125,17 @@ async function signUp({
   id,
   name: nickname,
   avatar_url,
-  semData
+  semData,
+  registration
 }: {
   provider: ProviderType;
   id: string;
   name: string;
   avatar_url: string;
   semData?: SemData;
+  // Registration source and invite attribution: persisted in the same transaction
+  // as the User, keeping attribution atomic with account creation
+  registration?: RegistrationContext;
 }) {
   const name = nanoid(10);
   const displayName = nickname?.trim() ? nickname : nanoid(8);
@@ -153,6 +161,10 @@ async function signUp({
           }
         }
       });
+
+      // Write registration source and invite referral in the same transaction so
+      // attribution stays atomic with account creation
+      await attachRegistrationInTransaction(tx, user.uid, registration);
 
       if (semData?.channel) {
         await tx.userSemChannel.create({
@@ -181,7 +193,8 @@ async function signUpWithEmail({
   name: nickname,
   avatar_url,
   semData,
-  email
+  email,
+  registration
 }: {
   provider: ProviderType;
   id: string;
@@ -189,6 +202,7 @@ async function signUpWithEmail({
   avatar_url: string;
   semData?: SemData;
   email: string;
+  registration?: RegistrationContext;
 }) {
   const name = nanoid(10);
   const displayName = nickname?.trim() ? nickname : nanoid(8);
@@ -221,6 +235,9 @@ async function signUpWithEmail({
           userUid: user.uid
         }
       });
+      // Write registration source and invite referral in the same transaction so
+      // attribution stays atomic with account creation
+      await attachRegistrationInTransaction(tx, user.uid, registration);
       if (semData?.channel) {
         await tx.userSemChannel.create({
           data: {
@@ -247,13 +264,15 @@ export async function signUpByPassword({
   name: nickname,
   avatar_url,
   password,
-  semData
+  semData,
+  registration
 }: {
   id: string;
   name: string;
   avatar_url: string;
   password: string;
   semData?: SemData;
+  registration?: RegistrationContext;
 }) {
   const name = nanoid(10);
   const displayName = nickname?.trim() ? nickname : nanoid(8);
@@ -281,6 +300,10 @@ export async function signUpByPassword({
           }
         }
       });
+
+      // Write registration source and invite referral in the same transaction so
+      // attribution stays atomic with account creation
+      await attachRegistrationInTransaction(tx, user.uid, registration);
 
       if (semData?.channel) {
         await tx.userSemChannel.create({
@@ -336,7 +359,8 @@ export const getGlobalToken = async ({
   avatar_url,
   password,
   semData,
-  adClickData
+  adClickData,
+  registration
 }: {
   provider: ProviderType;
   providerId: string;
@@ -346,6 +370,10 @@ export const getGlobalToken = async ({
   password?: string;
   semData?: SemData;
   adClickData?: AdClickData;
+  // Registration source and invite attribution: only applied when creating a new
+  // user, defaults to WEB; the API entry passes API explicitly and carries no
+  // invite context
+  registration?: RegistrationContext;
 }) => {
   let user: User | null = null;
 
@@ -419,7 +447,8 @@ export const getGlobalToken = async ({
           name,
           avatar_url,
           semData,
-          email
+          email,
+          registration
         });
       } else {
         signUpResult = await signUp({
@@ -427,7 +456,8 @@ export const getGlobalToken = async ({
           id: providerId,
           name,
           avatar_url,
-          semData
+          semData,
+          registration
         });
       }
 

@@ -652,9 +652,14 @@ func (k *KubeadmRuntime) upgradeOtherNodes(conversion *types.ConvertedKubeadmCon
 		if err != nil {
 			return err
 		}
+		// Cordon and uncordon run on the bootstrap master: only that host
+		// keeps an ambient admin kubeconfig, other nodes deliberately have
+		// none (see copyKubeAdminConfigCommand).
+		master0ip := k.getMaster0IPAndPort()
+		if err = k.sshCmdAsync(master0ip, fmt.Sprintf(cordonNodeCmd, nodename)); err != nil {
+			return err
+		}
 		err = k.sshCmdAsyncSeq(ip,
-			// kubectl cordon <node-to-cordon>
-			fmt.Sprintf(cordonNodeCmd, nodename),
 			// install kubelet:{version},kubectl{version} at the node
 			fmt.Sprintf(installKubectlCmd, kubeBinaryPath),
 			fmt.Sprintf(installKubeletCmd, kubeBinaryPath),
@@ -665,7 +670,7 @@ func (k *KubeadmRuntime) upgradeOtherNodes(conversion *types.ConvertedKubeadmCon
 		if err != nil {
 			return err
 		}
-		if err = k.tryUncordonNode(ip, nodename); err != nil {
+		if err = k.tryUncordonNode(master0ip, nodename); err != nil {
 			return err
 		}
 	}

@@ -6,6 +6,7 @@ import {
   finishTransactionJob,
   runTransactionjob
 } from '@/services/backend/cronjob';
+import { activityRewardJob } from '@/services/backend/activity/worker';
 import { jsonRes } from '@/services/backend/response';
 import {
   AppClientConfigType,
@@ -82,6 +83,16 @@ export async function getAppConfig(): Promise<AppClientConfigType> {
         name: 'finishTransactionJob',
         catch: (err) => {
           console.error('[finishTransactionJob Cron] Error:', err);
+        }
+      });
+    }
+    // Referral reward compensation worker: retries unfinished redemptions and
+    // reconciles rows stuck in REDEEMING (lazy-registration pattern as above)
+    if (!global.activityRewardCroner) {
+      global.activityRewardCroner = new Cron('*/60 * * * * *', activityRewardJob, {
+        name: 'activityRewardJob',
+        catch: (err) => {
+          console.error('[activityRewardJob Cron] Error:', err);
         }
       });
     }

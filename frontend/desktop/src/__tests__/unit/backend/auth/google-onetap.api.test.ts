@@ -151,6 +151,7 @@ describe('google onetap api handler', () => {
   it('signs in with verified Google payload and sets shared auth cookie', async () => {
     const req: any = {
       method: 'POST',
+      cookies: { sealos_invite: 'ABCD2345' },
       headers: {
         origin: 'https://www.example.com',
         'x-forwarded-proto': 'https'
@@ -176,7 +177,10 @@ describe('google onetap api handler', () => {
       providerId: 'google-sub',
       name: 'Ada Lovelace',
       avatar_url: 'persisted-avatar',
-      email: 'ada@example.com'
+      email: 'ada@example.com',
+      // The invite cookie written by the signup page response carries into the
+      // OAuth registration transaction.
+      registration: { source: 'WEB', inviteCode: 'ABCD2345' }
     });
     expect(res.body).toMatchObject({
       code: 200,
@@ -216,7 +220,8 @@ describe('google onetap api handler', () => {
       providerId: 'google-sub',
       name: 'Ada Lovelace',
       avatar_url: '',
-      email: undefined
+      email: undefined,
+      registration: { source: 'WEB', inviteCode: undefined }
     });
   });
 

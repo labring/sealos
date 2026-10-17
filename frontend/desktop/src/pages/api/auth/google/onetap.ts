@@ -3,6 +3,7 @@ import { OAuth2Client } from 'google-auth-library';
 import { enableGoogle } from '@/services/enable';
 import { persistImage } from '@/services/backend/persistImage';
 import { getGlobalToken } from '@/services/backend/globalAuth';
+import { webRegistrationFromRequest } from '@/services/backend/activity/registration';
 import { ErrorHandler } from '@/services/backend/middleware/error';
 import { jsonRes } from '@/services/backend/response';
 import { SHARED_AUTH_COOKIE_NAME } from '@/utils/cookieUtils';
@@ -122,7 +123,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     providerId: payload.sub,
     name: payload.name || '',
     avatar_url: avatarUrl,
-    email: payload.email_verified ? payload.email : undefined
+    email: payload.email_verified ? payload.email : undefined,
+    // Google One Tap web signups read invite context from cookies; server-side
+    // validation failures never block registration
+    registration: webRegistrationFromRequest(req)
   });
 
   if (data?.isRestricted) {
