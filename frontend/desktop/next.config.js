@@ -28,7 +28,7 @@ const nextConfig = withPWA({
   },
   swcMinify: isProduction,
   output: 'standalone',
-  transpilePackages: ['@sealos/ui', 'sealos-desktop-sdk', '@sealos/driver'],
+  transpilePackages: ['@sealos/ui', 'sealos-desktop-sdk', '@sealos/driver', '@sealos/shadcn-ui'],
   experimental: {
     outputFileTracingRoot: path.join(__dirname, '../')
   }

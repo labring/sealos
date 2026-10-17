@@ -1,3 +1,4 @@
+import { consumePendingOauth2RedirectPath } from '@/utils/oauth2';
 import { getRegionToken } from '@/api/auth';
 import request from '@/services/request';
 import useSessionStore from '@/stores/session';
@@ -79,7 +80,7 @@ export function PhoneCheckForm() {
             method: 'phone'
           });
           await sessionConfig(regionTokenRes.data);
-          await router.replace('/');
+          await router.replace(consumePendingOauth2RedirectPath() || '/');
         }
       }
     }

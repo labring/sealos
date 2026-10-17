@@ -13,6 +13,7 @@ import NProgress from 'nprogress';
 import 'nprogress/nprogress.css';
 import '@sealos/driver/src/driver.css';
 import '@/styles/globals.scss';
+import '@/styles/oauth2.css';
 import { useJoinDiscordPromptStore } from '@/stores/joinDiscordPrompt';
 import useAppStore from '@/stores/app';
 
@@ -63,7 +64,13 @@ const App = ({ Component, pageProps }: AppProps) => {
       />
       <Hydrate state={pageProps.dehydratedState}>
         <ChakraProvider theme={theme}>
-          <Component {...pageProps} />
+          {router.pathname.startsWith('/oauth2/') ? (
+            <div className="oauth2-page">
+              <Component {...pageProps} />
+            </div>
+          ) : (
+            <Component {...pageProps} />
+          )}
         </ChakraProvider>
       </Hydrate>
     </QueryClientProvider>

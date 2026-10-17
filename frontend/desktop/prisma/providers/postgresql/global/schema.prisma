@@ -24,6 +24,74 @@ model OauthProvider {
   @@index([userUid])
 }
 
+enum OAuthClientType {
+  PUBLIC
+  CONFIDENTIAL
+}
+
+enum DeviceGrantStatus {
+  PENDING
+  APPROVED
+  DENIED
+  CONSUMED
+}
+
+model OAuthClient {
+  id                String          @id @default(uuid()) @db.Uuid
+  clientId          String          @unique
+  clientType        OAuthClientType @default(PUBLIC)
+  userUid           String?         @db.Uuid
+  user              User?           @relation(fields: [userUid], references: [uid], onDelete: SetNull)
+  clientSecretHash  String?
+  allowedGrantTypes String[]        @default([])
+  redirectUris      String[]        @default([])
+  name              String
+  logoUrl           String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  deviceGrants OAuthDeviceGrant[]
+  consents     OAuthUserConsent[]
+
+  @@map("OAuthClient")
+}
+
+model OAuthDeviceGrant {
+  id             String            @id @default(uuid()) @db.Uuid
+  clientId       String
+  client         OAuthClient       @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+  deviceCodeHash String            @unique
+  userCodeHash   String            @unique
+  userUid        String?           @db.Uuid
+  user           User?             @relation(fields: [userUid], references: [uid], onDelete: SetNull)
+  status         DeviceGrantStatus @default(PENDING)
+  expiresAt      DateTime
+  lastPollAt     DateTime?
+  pollCount      Int               @default(0)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  @@index([clientId, status, expiresAt], map: "idx_device_grants_client_status_exp")
+  @@index([userUid, status, expiresAt], map: "idx_device_grants_user_status_exp")
+  @@index([expiresAt], map: "idx_device_grants_expires")
+  @@map("OAuthDeviceGrant")
+}
+
+model OAuthUserConsent {
+  id        String      @id @default(uuid()) @db.Uuid
+  userUid   String      @db.Uuid
+  user      User        @relation(fields: [userUid], references: [uid], onDelete: Cascade)
+  clientId  String
+  client    OAuthClient @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@unique([userUid, clientId], map: "uq_user_consents_user_client")
+  @@index([clientId], map: "idx_user_consents_client")
+  @@index([userUid], map: "idx_user_consents_user")
+  @@map("OAuthUserConsent")
+}
+
 model Region {
   uid            String              @id @default(uuid()) @db.Uuid
   displayName    String
@@ -129,6 +197,9 @@ model User {
   id                          String                     @unique
   name                        String                     @unique
   oauthProvider               OauthProvider[]
+  oauthClients                OAuthClient[]
+  oauthDeviceGrants           OAuthDeviceGrant[]
+  oauthUserConsents           OAuthUserConsent[]
   status                      UserStatus                 @default(NORMAL_USER)
   oldMergeUserTransactionInfo MergeUserTransactionInfo[] @relation("oldUser")
   newMergeUserTransactionInfo MergeUserTransactionInfo[] @relation("newUser")
@@ -460,4 +531,54 @@ enum TaskType {
 enum TaskStatus {
   NOT_COMPLETED
   COMPLETED
+}
+
+// Separate state and credentials for authorization-code clients; device grants are untouched.
+model OAuthAuthorizationRequest {
+  id          String   @id @default(uuid()) @db.Uuid
+  clientId    String
+  redirectUri String
+  state       String
+  challenge   String
+  browserHash String
+  status      String   @default("PENDING")
+  userUid     String?  @db.Uuid
+  codeHash    String?  @unique
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+
+  @@index([expiresAt])
+  @@index([clientId])
+}
+
+model OAuthRefreshSession {
+  id        String                  @id @default(uuid()) @db.Uuid
+  clientId  String
+  userUid   String                  @db.Uuid
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime                @default(now())
+  tokens    OAuthCodeRefreshToken[]
+
+  @@index([clientId])
+  @@index([userUid])
+  @@index([expiresAt])
+}
+
+model OAuthCodeRefreshToken {
+  hash       String              @id
+  sessionId  String              @db.Uuid
+  session    OAuthRefreshSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  consumedAt DateTime?
+  createdAt  DateTime            @default(now())
+
+  @@index([sessionId])
+}
+
+model OAuthCodeRateLimit {
+  key       String   @id
+  count     Int      @default(1)
+  expiresAt DateTime
+
+  @@index([expiresAt])
 }

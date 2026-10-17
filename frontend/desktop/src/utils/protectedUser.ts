@@ -1,9 +1,9 @@
-import type { AccessTokenPayload, AuthenticationTokenPayload } from '@/types/token';
+import type { AccessTokenPayload, GlobalTokenPayload } from '@/types/token';
 
 export const PROTECTED_ADMIN_USER_MESSAGE = 'ADMIN_ACCOUNT_DELETE_FORBIDDEN';
 
 type ProtectedUserPayload = Partial<
-  Pick<AccessTokenPayload, 'userId' | 'userCrName'> & Pick<AuthenticationTokenPayload, 'userId'>
+  Pick<AccessTokenPayload, 'userId' | 'userCrName'> & Pick<GlobalTokenPayload, 'userId'>
 >;
 
 export const isProtectedAdminUser = (payload: ProtectedUserPayload) =>
