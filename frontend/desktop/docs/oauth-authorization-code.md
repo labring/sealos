@@ -6,9 +6,9 @@ This is an OAuth 2.0 authorization server capability in Web Desktop. It does not
 
 Deploy the new global database migration before enabling the flow. Use the migration directory for the configured provider (CockroachDB or PostgreSQL), then regenerate its Prisma client. The PostgreSQL migration also adds the existing OAuth models missing from that provider's schema.
 
-In the Desktop server configuration, set `desktop.auth.oauth2idp.enabled: true` and `desktop.auth.oauth2idp.authorizationCodeEnabled: true`. The second flag defaults to false. Configure `desktop.auth.callbackURL` with the correct public HTTPS origin; decision requests compare their Origin header against it. Disabling only the new flag blocks authorization and code exchange but permits existing code-flow refresh sessions to refresh or revoke.
+In the Desktop server configuration, set `desktop.auth.oauth2idp.enabled: true` and `desktop.auth.oauth2idp.authorizationCodeEnabled: true`. Without explicit server configuration, these capabilities remain disabled; the Helm chart enables both by default. Configure `desktop.auth.callbackURL` with the correct public HTTPS origin; decision requests compare their Origin header against it. Disabling only the new flag blocks authorization and code exchange but permits existing code-flow refresh sessions to refresh or revoke.
 
-For Helm deployments, set these values (both default to `false`):
+Helm deployments enable both flows by default with these values:
 
 ```yaml
 desktopConfig:
@@ -16,7 +16,7 @@ desktopConfig:
   oauth2IdpAuthorizationCodeEnabled: true
 ```
 
-The deployment entrypoint reads user overrides from `/root/.sealos/cloud/values/core/desktop-values.yaml`. Existing files are preserved, so add the flags there when upgrading. Alternatively, pass `HELM_OPTIONS="--set desktopConfig.oauth2IdpEnabled=true --set desktopConfig.oauth2IdpAuthorizationCodeEnabled=true"`. The chart maps these values to the server configuration above; `callbackURL` is generated from `desktopConfig.cloudDomain` and `cloudPort`. These flags are separate from `oauth2Enabled` / `oauth2Pkce`, which configure third-party login providers. Restart Desktop after configuration changes because its configuration is mounted using `subPath`. Enabling the flags does not register OAuth clients.
+The deployment entrypoint reads user overrides from `/root/.sealos/cloud/values/core/desktop-values.yaml`. Existing files are preserved: explicit `false` overrides remain disabled on upgrade, while omitted flags inherit the chart defaults. Set either flag to `false` there to disable the corresponding capability. Alternatively, pass `HELM_OPTIONS="--set desktopConfig.oauth2IdpEnabled=true --set desktopConfig.oauth2IdpAuthorizationCodeEnabled=true"`. The chart maps these values to the server configuration above; `callbackURL` is generated from `desktopConfig.cloudDomain` and `cloudPort`. These flags are separate from `oauth2Enabled` / `oauth2Pkce`, which configure third-party login providers. Restart Desktop after configuration changes because its configuration is mounted using `subPath`. Enabling the flags does not register OAuth clients.
 
 Register one PUBLIC OAuthClient per native app. Set `allowedGrantTypes` to include `authorization_code` and `refresh_token`, and populate `redirectUris`. No client secret is required. Existing device clients need no changes. A client may explicitly allow both device and code grants.
 

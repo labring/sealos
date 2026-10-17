@@ -81,9 +81,9 @@ desktopConfig:
   jwtGlobal: ""                    # Auto-fetched from sealos-config.jwtGlobal
 
   # Desktop OAuth authorization server (not third-party OAuth login).
-  oauth2IdpEnabled: false
+  oauth2IdpEnabled: true
   # Requires oauth2IdpEnabled; enables authorization code + PKCE.
-  oauth2IdpAuthorizationCodeEnabled: false
+  oauth2IdpAuthorizationCodeEnabled: true
 
   # Render-safe defaults for nested layout fields. CI/sealos build may render
   # the chart with only this base values file loaded.
