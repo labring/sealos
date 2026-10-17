@@ -13,6 +13,11 @@ the Helm release while preserving the user values file. The Helm chart is in
 The persistent user values file is
 `/root/.sealos/cloud/values/core/admission-webhook-values.yaml`; it is created
 from the packaged defaults once and is never overwritten by upgrades.
+On creation, the `cnameDomains` environment variable (for example, Sealos
+`--env cnameDomains=cloud.example.com`) initializes `config.cnameDomains` in
+this file. Without it, the packaged domain defaults are used. Later changes
+should be made in the values file. `config.cnameCheck` defaults to `false` in
+the user values; existing files retain their configured value.
 
 Run unit tests with `GOWORK=off go test -race ./...`. Kubebuilder
 `config/` remains available for development; do not apply it over a Helm-managed

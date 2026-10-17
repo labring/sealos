@@ -12,7 +12,14 @@ die() { echo "error: $*" >&2; exit 1; }
 ensure_values() {
   [[ -f "$USER_VALUES_FILE" ]] && return
   mkdir -p "$(dirname "$USER_VALUES_FILE")"
-  cp "$CHART_PATH/admission-webhook-values.yaml" "$USER_VALUES_FILE"
+  local line
+  while IFS= read -r line; do
+    if [[ "$line" == "  cnameDomains:"* && -n "${cnameDomains:-}" ]]; then
+      printf "  cnameDomains: '%s'\n" "${cnameDomains//\'/\'\'}"
+    else
+      printf '%s\n' "$line"
+    fi
+  done < "$CHART_PATH/admission-webhook-values.yaml" > "$USER_VALUES_FILE"
   chmod 600 "$USER_VALUES_FILE"
   echo "Created user values: $USER_VALUES_FILE"
 }

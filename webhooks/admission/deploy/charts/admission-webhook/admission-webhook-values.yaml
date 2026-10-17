@@ -18,7 +18,7 @@ updateStrategy:
 
 config:
   cnameDomains: cloud.sealos.io,laf.dev,laf.run
-  cnameCheck: true
+  cnameCheck: false
   denyDomains: ""
   ingressMutatingAnnotations: ""
   ingressWebhookEnabled: true
