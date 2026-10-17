@@ -25,10 +25,10 @@ import (
 	v1beta1 "github.com/labring/sealos/pkg/types/v1beta1"
 )
 
-func TestDeleteStaticPodMissingContainerError(t *testing.T) {
+func TestRestartStaticPodMissingContainerError(t *testing.T) {
 	stub := &stubSSH{
 		cmdToStringResponses: map[string]string{
-			"master0|crictl ps -a --name kube-scheduler -o json": `{"containers":[]}`,
+			"master0|crictl ps --state Running --name '^kube-scheduler$' -o json": `{"containers":[]}`,
 		},
 	}
 	rt := &KubeadmRuntime{
@@ -36,18 +36,19 @@ func TestDeleteStaticPodMissingContainerError(t *testing.T) {
 		cluster: testCluster([]string{"master0"}),
 	}
 
-	err := rt.deleteStaticPod(clientkubernetes.KubeScheduler)
+	err := rt.restartStaticPod(clientkubernetes.KubeScheduler)
 	if err == nil {
-		t.Fatal("expected deleteStaticPod to fail when no container is returned")
+		t.Fatal("expected restartStaticPod to fail when no container is returned")
 	}
 	if !strings.Contains(err.Error(), "not found static pod running") {
-		t.Fatalf("deleteStaticPod() error = %v, want missing static pod error", err)
+		t.Fatalf("restartStaticPod() error = %v, want missing static pod error", err)
 	}
 }
 
 type stubSSH struct {
 	cmdToStringResponses map[string]string
 	copyCalls            []string
+	asyncCalls           []string
 	mu                   sync.Mutex
 }
 
@@ -62,7 +63,14 @@ func (s *stubSSH) Copy(host, src, dst string) error {
 
 func (s *stubSSH) Fetch(host, src, dst string) error { return nil }
 
-func (s *stubSSH) CmdAsync(host string, cmds ...string) error { return nil }
+func (s *stubSSH) CmdAsync(host string, cmds ...string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for _, command := range cmds {
+		s.asyncCalls = append(s.asyncCalls, host+"|"+command)
+	}
+	return nil
+}
 
 func (s *stubSSH) CmdAsyncWithContext(ctx context.Context, host string, cmds ...string) error {
 	return nil
@@ -99,5 +107,25 @@ func testClusterWithNodes(masters, nodes []string) *v1beta1.Cluster {
 		Spec: v1beta1.ClusterSpec{
 			Hosts: hosts,
 		},
+	}
+}
+
+func TestRestartStaticPodStopsRunningContainerWithoutRemovingSandbox(t *testing.T) {
+	containerID := strings.Repeat("a", 64)
+	stub := &stubSSH{
+		cmdToStringResponses: map[string]string{
+			"master0|crictl ps --state Running --name '^kube-apiserver$' -o json": `{"containers":[{"id":"` + containerID + `","podSandboxId":"sandbox"}]}`,
+		},
+	}
+	runtime := &KubeadmRuntime{
+		execer:  stub,
+		cluster: testCluster([]string{"master0"}),
+	}
+	if err := runtime.restartStaticPod(clientkubernetes.KubeAPIServer); err != nil {
+		t.Fatal(err)
+	}
+	want := "master0|crictl --timeout=30s stop --timeout=10 '" + containerID + "'"
+	if len(stub.asyncCalls) != 1 || stub.asyncCalls[0] != want {
+		t.Fatalf("restart commands = %v, want only %q", stub.asyncCalls, want)
 	}
 }

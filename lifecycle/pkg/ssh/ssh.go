@@ -119,6 +119,7 @@ type Interface interface {
 type Client struct {
 	*ssh.ClientConfig
 	*Option
+	ctx context.Context
 }
 
 var _ Interface = &Client{}
