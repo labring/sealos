@@ -39,7 +39,7 @@ spec:
               subPath: config.yaml
           readinessProbe:
             httpGet:
-              path: /api/platform/getAppConfig
+              path: /api/platform/getClientAppConfig
               port: {{ .Values.service.port }}
             initialDelaySeconds: 5
             periodSeconds: 3
