@@ -19,11 +19,19 @@ spec:
     metadata:
       labels:
         {{- include "license-frontend.labels" . | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
       serviceAccountName: {{ include "license-frontend.serviceAccountName" . }}
       containers:
         - name: {{ .Chart.Name }}
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
           env:
+            - name: NODE_TLS_REJECT_UNAUTHORIZED
+              value: {{ .Values.licenseConfig.tlsRejectUnauthorized | quote }}
             - name: SEALOS_DOMAIN
               value: {{ .Values.licenseConfig.cloudDomain | quote }}
             - name: LICENSE_DOMAIN
@@ -44,15 +52,12 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
           image: "{{ .Values.image }}"
           imagePullPolicy: {{ .Values.imagePullPolicy }}
+          startupProbe:
+            {{- toYaml .Values.startupProbe | nindent 12 }}
           readinessProbe:
-            httpGet:
-              path: /api/cronjob/init
-              port: {{ .Values.service.port }}
-            initialDelaySeconds: 5
-            periodSeconds: 3
-            timeoutSeconds: 3
-            successThreshold: 1
-            failureThreshold: 3
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
           volumeMounts:
             - name: license-frontend-volume
               mountPath: /config.yaml
