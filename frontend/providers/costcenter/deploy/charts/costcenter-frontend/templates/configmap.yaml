@@ -29,14 +29,14 @@ data:
         enabled: {{ .Values.costcenterConfig.invoice.enabled }}
         serviceToken: {{ .Values.costcenterConfig.invoice.serviceToken | quote }}
         feishuApp:
-          appId: {{ .Values.costcenterConfig.invoice.feishuApp.appId | quote }}
-          appSecret: {{ .Values.costcenterConfig.invoice.feishuApp.appSecret | quote }}
-          feiShuBotURL: {{ .Values.costcenterConfig.invoice.feishuApp.feiShuBotURL | default .Values.costcenterConfig.invoice.feiShuBotURL | quote }}
-          chatId: {{ .Values.costcenterConfig.invoice.feishuApp.chatId | quote }}
-          token: {{ .Values.costcenterConfig.invoice.feishuApp.token | quote }}
+          appId: {{ .Values.costcenterConfig.invoice.feishuApp.appId | default .Values.costcenterConfig.invoice.feishApp.appId | quote }}
+          appSecret: {{ .Values.costcenterConfig.invoice.feishuApp.appSecret | default .Values.costcenterConfig.invoice.feishApp.appSecret | quote }}
+          feiShuBotURL: {{ .Values.costcenterConfig.invoice.feishuApp.feiShuBotURL | default .Values.costcenterConfig.invoice.feishApp.feiShuBotURL | default .Values.costcenterConfig.invoice.feiShuBotURL | quote }}
+          chatId: {{ .Values.costcenterConfig.invoice.feishuApp.chatId | default .Values.costcenterConfig.invoice.feishApp.chatId | quote }}
+          token: {{ .Values.costcenterConfig.invoice.feishuApp.token | default .Values.costcenterConfig.invoice.feishApp.token | quote }}
           template:
-            id: {{ .Values.costcenterConfig.invoice.feishuApp.template.id | quote }}
-            version: {{ .Values.costcenterConfig.invoice.feishuApp.template.version | quote }}
+            id: {{ .Values.costcenterConfig.invoice.feishuApp.template.id | default .Values.costcenterConfig.invoice.feishApp.templateId | quote }}
+            version: {{ .Values.costcenterConfig.invoice.feishuApp.template.version | default .Values.costcenterConfig.invoice.feishApp.templateVersion | quote }}
         aliSms:
           endpoint: {{ .Values.costcenterConfig.invoice.aliSms.endpoint | quote }}
           accessKeyID: {{ .Values.costcenterConfig.invoice.aliSms.accessKeyID | quote }}

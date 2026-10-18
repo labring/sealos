@@ -94,6 +94,15 @@ costcenterConfig:
       template:
         id: ""
         version: ""
+    # Legacy release-v5.1 spelling; values are rendered under feishuApp.
+    feishApp:
+      appId: ""
+      appSecret: ""
+      feiShuBotURL: ""
+      chatId: ""
+      token: ""
+      templateId: ""
+      templateVersion: ""
     serviceToken: ""
     aliSms:
       endpoint: ""
