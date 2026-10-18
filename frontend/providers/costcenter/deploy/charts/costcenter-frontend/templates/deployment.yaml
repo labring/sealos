@@ -19,6 +19,8 @@ spec:
     metadata:
       labels:
         {{- include "costcenter-frontend.selectorLabels" . | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
       containers:
         - name: {{ .Chart.Name }}
@@ -33,19 +35,19 @@ spec:
                 - "ALL"
           image: "{{ .Values.image }}"
           imagePullPolicy: {{ .Values.imagePullPolicy }}
+          env:
+            - name: NODE_TLS_REJECT_UNAUTHORIZED
+              value: {{ .Values.costcenterConfig.tlsRejectUnauthorized | quote }}
           volumeMounts:
             - name: costcenter-frontend-volume
               mountPath: /app/data/config.yaml
               subPath: config.yaml
+          startupProbe:
+            {{- toYaml .Values.startupProbe | nindent 12 }}
           readinessProbe:
-            httpGet:
-              path: /api/platform/getAppConfig
-              port: {{ .Values.service.port }}
-            initialDelaySeconds: 5
-            periodSeconds: 3
-            timeoutSeconds: 2
-            successThreshold: 3
-            failureThreshold: 3
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
       {{- with .Values.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}

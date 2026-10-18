@@ -14,13 +14,34 @@ resources:
 # Costcenter business configuration
 # Customize these settings based on your requirements
 costcenterConfig:
+  cloudDomain: "127.0.0.1.nip.io"
+  cloudPort: ""
+  httpPort: ""
+  disableHttps: false
+  regionUID: "randomRegionUID"
+  certSecretName: "wildcard-cert"
+  tlsRejectUnauthorized: "1"
   transferEnabled: true
   currencyType: "shellCoin"
+  rechargeRequiresRealName: false
+  giftCodeEnabled: true
+  subscriptionEnabled: false
+  gpuEnabled: false
 
   # Invoice configuration
   invoice:
     enabled: false
     feiShuBotURL: ""
+    feishuApp:
+      appId: ""
+      appSecret: ""
+      feiShuBotURL: ""
+      chatId: ""
+      token: ""
+      template:
+        id: ""
+        version: ""
+    serviceToken: ""
     aliSms:
       endpoint: ""
       accessKeyID: ""
@@ -30,6 +51,10 @@ costcenterConfig:
       invoiceCompletedTemplateCode: ""
     mongo:
       uri: ""
+    billingInfo:
+      companyName: ""
+      addressLines: []
+      contactLines: []
 
   # Recharge configuration
   recharge:
@@ -47,3 +72,5 @@ costcenterConfig:
   components:
     accountService:
       url: "http://account-service.account-system.svc:2333"
+    desktop:
+      url: "http://desktop-frontend.sealos.svc:3000"

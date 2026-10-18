@@ -1,0 +1,37 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "costcenter-frontend.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    kubernetes.io/ingress.class: {{ .Values.ingress.className | quote }}
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "PUT, GET, POST, DELETE, PATCH, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "{{ include "costcenter-frontend.scheme" . }}://{{ .Values.costcenterConfig.cloudDomain }}{{ include "costcenter-frontend.portSuffix" . }}, {{ include "costcenter-frontend.scheme" . }}://*.{{ .Values.costcenterConfig.cloudDomain }}{{ include "costcenter-frontend.portSuffix" . }}"
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_clear_headers "X-Frame-Options:";
+    higress.io/response-header-control-remove: X-Frame-Options
+    {{- with .Values.ingress.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  ingressClassName: {{ .Values.ingress.className | quote }}
+  rules:
+    - host: {{ include "costcenter-frontend.host" . | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "costcenter-frontend.fullname" . }}
+                port:
+                  number: {{ .Values.service.port }}
+  {{- if not (eq (toString .Values.costcenterConfig.disableHttps) "true") }}
+  tls:
+    - hosts:
+        - {{ include "costcenter-frontend.host" . | quote }}
+      secretName: {{ .Values.costcenterConfig.certSecretName | quote }}
+  {{- end }}
