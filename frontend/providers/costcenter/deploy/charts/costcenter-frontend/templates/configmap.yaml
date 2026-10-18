@@ -14,15 +14,15 @@ data:
           billing: {{ .Values.costcenterConfig.jwtInternal | quote }}
       invoice:
         enabled: {{ .Values.costcenterConfig.invoice.enabled }}
-        feishApp:
-          appId: {{ .Values.costcenterConfig.invoice.feishApp.appId | quote }}
-          appSecret: {{ .Values.costcenterConfig.invoice.feishApp.appSecret | quote }}
-          feiShuBotURL: {{ .Values.costcenterConfig.invoice.feishApp.feiShuBotURL | default .Values.costcenterConfig.invoice.feiShuBotURL | quote }}
-          chatId: {{ .Values.costcenterConfig.invoice.feishApp.chatId | quote }}
-          token: {{ .Values.costcenterConfig.invoice.feishApp.token | quote }}
+        feishuApp:
+          appId: {{ .Values.costcenterConfig.invoice.feishuApp.appId | default .Values.costcenterConfig.invoice.feishApp.appId | quote }}
+          appSecret: {{ .Values.costcenterConfig.invoice.feishuApp.appSecret | default .Values.costcenterConfig.invoice.feishApp.appSecret | quote }}
+          feiShuBotURL: {{ .Values.costcenterConfig.invoice.feishuApp.feiShuBotURL | default .Values.costcenterConfig.invoice.feishApp.feiShuBotURL | default .Values.costcenterConfig.invoice.feiShuBotURL | quote }}
+          chatId: {{ .Values.costcenterConfig.invoice.feishuApp.chatId | default .Values.costcenterConfig.invoice.feishApp.chatId | quote }}
+          token: {{ .Values.costcenterConfig.invoice.feishuApp.token | default .Values.costcenterConfig.invoice.feishApp.token | quote }}
           template:
-            id: {{ .Values.costcenterConfig.invoice.feishApp.templateId | quote }}
-            version: {{ .Values.costcenterConfig.invoice.feishApp.templateVersion | quote }}
+            id: {{ .Values.costcenterConfig.invoice.feishuApp.templateId | default .Values.costcenterConfig.invoice.feishApp.templateId | quote }}
+            version: {{ .Values.costcenterConfig.invoice.feishuApp.templateVersion | default .Values.costcenterConfig.invoice.feishApp.templateVersion | quote }}
         serviceToken: {{ .Values.costcenterConfig.invoice.serviceToken | quote }}
         aliSms:
           endpoint: {{ .Values.costcenterConfig.invoice.aliSms.endpoint | quote }}

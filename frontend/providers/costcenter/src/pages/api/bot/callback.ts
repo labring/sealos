@@ -23,7 +23,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
       }
 
       // !todo
-      if (token === global.AppConfig.costCenter.invoice.feishApp.token) {
+      if (token === global.AppConfig.costCenter.invoice.feishuApp.token) {
         return resp.json({ challenge });
       }
     } else {
@@ -52,8 +52,8 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
         !event ||
         schema !== '2.0' ||
         !header ||
-        header.token !== global.AppConfig.costCenter.invoice.feishApp.token ||
-        header.app_id !== global.AppConfig.costCenter.invoice.feishApp.appId
+        header.token !== global.AppConfig.costCenter.invoice.feishuApp.token ||
+        header.app_id !== global.AppConfig.costCenter.invoice.feishuApp.appId
       ) {
         throw Error('feishu request error');
       }

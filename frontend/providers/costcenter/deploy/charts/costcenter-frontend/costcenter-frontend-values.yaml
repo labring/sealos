@@ -36,9 +36,9 @@ costcenterConfig:
   transferEnabled: true
   invoice:
     enabled: false
-    # Deprecated compatibility key. Prefer invoice.feishApp.feiShuBotURL.
+    # Deprecated compatibility key. Prefer invoice.feishuApp.feiShuBotURL.
     feiShuBotURL: ""
-    feishApp:
+    feishuApp:
       appId: ""
       appSecret: ""
       feiShuBotURL: ""
