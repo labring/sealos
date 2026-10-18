@@ -6,20 +6,15 @@ Victoria Logs service for Sealos.
 
 1. Build and push the image:
 
-```bash
+```sh
 make docker-build docker-push IMG=<some-registry>/sealos-vlogs-service:latest
 ```
 
-2. Use the cluster deployment package built from `deploy/Kubefile` and run the
-   resulting image with Sealos. The shared service build workflow publishes the
-   `sealos-cloud-vlogs-service` cluster image.
+2. Use the deploy package under `deploy/`.
 
-The deployment entrypoint installs or upgrades the Helm release `vlogs` in the
-`sealos` namespace, removes the legacy raw-manifest install on first migration,
-renders backend credentials from `sealos-system/vlogs-config-user`, and injects
-`WHITELIST_KUBERNETES_HOSTS` from the current cloud URL.
+The entrypoint installs or upgrades the Helm release `service-vlogs` in namespace `sealos`, removes the legacy raw-manifest install on first migration, renders the config file fields, and injects `WHITELIST_KUBERNETES_HOSTS` automatically from cluster values.
 
-User overrides live at `/root/.sealos/cloud/values/core/vlogs-values.yaml`.
+User overrides live at `/root/.sealos/cloud/values/core/service-vlogs-monitor-values.yaml`.
 
 ## License
 
