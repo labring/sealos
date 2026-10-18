@@ -5,25 +5,38 @@ metadata:
   namespace: {{ .Release.Namespace }}
 data:
   config.yaml: |-
+    cloud:
+      domain: {{ .Values.costcenterConfig.cloudDomain | quote }}
+      port: {{ .Values.costcenterConfig.cloudPort | int }}
+      regionUid: {{ .Values.costcenterConfig.regionUID | quote }}
+      certSecretName: {{ .Values.costcenterConfig.certSecretName | quote }}
     costCenter:
-      transferEnabled: {{ .Values.costcenterConfig.transferEnabled }}
-      currencyType: {{ .Values.costcenterConfig.currencyType | quote }}
+      features:
+        rechargeRequiresRealName: {{ .Values.costcenterConfig.features.rechargeRequiresRealName }}
+        transfer: {{ .Values.costcenterConfig.features.transfer }}
+        giftCode: {{ .Values.costcenterConfig.features.giftCode }}
+        subscription: {{ .Values.costcenterConfig.features.subscription }}
+        gpu: {{ .Values.costcenterConfig.features.gpu }}
+      ui:
+        currencySymbol: {{ .Values.costcenterConfig.currencySymbol | quote }}
+        meta:
+          scripts: {{ .Values.costcenterConfig.meta.scripts | toYaml | nindent 12 }}
+          noscripts: {{ .Values.costcenterConfig.meta.noscripts | toYaml | nindent 12 }}
       auth:
         jwt:
           internal: {{ .Values.costcenterConfig.jwtInternal | quote }}
-          billing: {{ .Values.costcenterConfig.jwtInternal | quote }}
       invoice:
         enabled: {{ .Values.costcenterConfig.invoice.enabled }}
-        feishApp:
-          appId: {{ .Values.costcenterConfig.invoice.feishApp.appId | quote }}
-          appSecret: {{ .Values.costcenterConfig.invoice.feishApp.appSecret | quote }}
-          feiShuBotURL: {{ .Values.costcenterConfig.invoice.feishApp.feiShuBotURL | default .Values.costcenterConfig.invoice.feiShuBotURL | quote }}
-          chatId: {{ .Values.costcenterConfig.invoice.feishApp.chatId | quote }}
-          token: {{ .Values.costcenterConfig.invoice.feishApp.token | quote }}
-          template:
-            id: {{ .Values.costcenterConfig.invoice.feishApp.templateId | quote }}
-            version: {{ .Values.costcenterConfig.invoice.feishApp.templateVersion | quote }}
         serviceToken: {{ .Values.costcenterConfig.invoice.serviceToken | quote }}
+        feishuApp:
+          appId: {{ .Values.costcenterConfig.invoice.feishuApp.appId | quote }}
+          appSecret: {{ .Values.costcenterConfig.invoice.feishuApp.appSecret | quote }}
+          feiShuBotURL: {{ .Values.costcenterConfig.invoice.feishuApp.feiShuBotURL | quote }}
+          chatId: {{ .Values.costcenterConfig.invoice.feishuApp.chatId | quote }}
+          token: {{ .Values.costcenterConfig.invoice.feishuApp.token | quote }}
+          template:
+            id: {{ .Values.costcenterConfig.invoice.feishuApp.templateId | quote }}
+            version: {{ .Values.costcenterConfig.invoice.feishuApp.templateVersion | quote }}
         aliSms:
           endpoint: {{ .Values.costcenterConfig.invoice.aliSms.endpoint | quote }}
           accessKeyID: {{ .Values.costcenterConfig.invoice.aliSms.accessKeyID | quote }}
@@ -33,6 +46,10 @@ data:
           invoiceCompletedTemplateCode: {{ .Values.costcenterConfig.invoice.aliSms.invoiceCompletedTemplateCode | quote }}
         mongo:
           uri: {{ .Values.costcenterConfig.invoice.mongo.uri | quote }}
+        billingInfo:
+          companyName: {{ .Values.costcenterConfig.invoice.billingInfo.companyName | quote }}
+          addressLines: {{ .Values.costcenterConfig.invoice.billingInfo.addressLines | toYaml | nindent 12 }}
+          contactLines: {{ .Values.costcenterConfig.invoice.billingInfo.contactLines | toYaml | nindent 12 }}
       recharge:
         enabled: {{ .Values.costcenterConfig.recharge.enabled }}
         payMethods:
@@ -44,5 +61,8 @@ data:
             enabled: {{ .Values.costcenterConfig.recharge.payMethods.stripe.enabled }}
             publicKey: {{ .Values.costcenterConfig.recharge.payMethods.stripe.publicKey | quote }}
       components:
-        accountService:
-          url: {{ .Values.costcenterConfig.components.accountService.url | quote }}
+        billing:
+          url: {{ .Values.costcenterConfig.components.billing.url | quote }}
+          secret: {{ .Values.costcenterConfig.components.billing.secret | quote }}
+        desktop:
+          url: {{ .Values.costcenterConfig.components.desktop.url | quote }}
