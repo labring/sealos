@@ -28,17 +28,17 @@ jobs:
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ inputs.prNumber }}
-          TARGET_BRANCH: ${{ inputs.target }}
+          PR_NUMBER: "${{ inputs.prNumber }}"
+          TARGET_BRANCH: "${{ inputs.target }}"
         run: |
-          git config --global --add safe.directory /github/workspace
+          git config --global --add safe.directory "${GITHUB_WORKSPACE}"
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          bash "./${PROJECT_PATH}/scripts/cherry-pick.sh"  ${PR_NUMBER} ${TARGET_BRANCH}
+          bash "${GITHUB_WORKSPACE}/scripts/cherry-pick.sh" "${PR_NUMBER}" "${TARGET_BRANCH}"
       - name: Get PR title
         id: pr_title
         env:
-          PR_NUMBER: ${{ inputs.prNumber }}
+          PR_NUMBER: "${{ inputs.prNumber }}"
         uses: actions/github-script@v6
         with:
           script: |
@@ -53,12 +53,12 @@ jobs:
           title: ${{ fromJSON(steps.pr_title.outputs.result) }}
           body: |
             fix(cherry-pick): Automated CherryPick ${{ inputs.prNumber }} for ${{ inputs.target }}
-            
+
             Automated changes by [create-pull-request](https://github.com/peter-evans/create-pull-request) GitHub action
           commit-message: |
             🤖 cherry-pick to ${{ inputs.target }} using robot.
-          branch: cherry-pick-${{ inputs.target }}-${{ inputs.prNumber }}
-          base: ${{ inputs.target }}
+          branch: "cherry-pick-${{ inputs.target }}-${{ inputs.prNumber }}"
+          base: "${{ inputs.target }}"
           draft: true
           signoff: true
           labels: |

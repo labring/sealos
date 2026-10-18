@@ -40,6 +40,7 @@ on:
       - "frontend/pnpm-lock.yaml"
       - "frontend/pnpm-workspace.yaml"
       - "frontend/tsconfig*.json"
+      - "frontend/Dockerfile"
       - ".github/workflows/frontend.yml"
       - ".github/workflows/frontends.yml"
       - "!**/*.md"
@@ -53,6 +54,7 @@ on:
       - "frontend/pnpm-lock.yaml"
       - "frontend/pnpm-workspace.yaml"
       - "frontend/tsconfig*.json"
+      - "frontend/Dockerfile"
       - ".github/workflows/frontend.yml"
       - ".github/workflows/frontends.yml"
       - "!**/*.md"
@@ -68,8 +70,13 @@ jobs:
     outputs:
       modules: ${{ steps.set-matrix.outputs.modules }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          # paths-filter may need the merge-base; avoid its shallow-history deepen race.
+          fetch-depth: 0
+      - name: Verify shared frontend runtime settings
+        run: grep -qx 'ENV UV_USE_IO_URING=0' frontend/Dockerfile
+      - uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590 # v3
         id: filter
         with:
           filters: |
@@ -80,6 +87,7 @@ jobs:
               - 'frontend/pnpm-lock.yaml'
               - 'frontend/pnpm-workspace.yaml'
               - 'frontend/tsconfig*.json'
+              - 'frontend/Dockerfile'
               - '.github/workflows/frontend.yml'
               - '.github/workflows/frontends.yml'
             license:
@@ -127,8 +135,55 @@ jobs:
           echo "modules=$json_modules" >> "$GITHUB_OUTPUT"
           echo "Building modules: $json_modules"
 
-  image-build:
+  helm-validate:
     needs: detect-changes
+    if: needs.detect-changes.outputs.modules != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module: ${{ fromJSON(needs.detect-changes.outputs.modules) }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4
+      - name: Validate Helm charts
+        shell: bash
+        env:
+          MODULE: ${{ matrix.module }}
+        run: |
+          chart_root="frontend/${MODULE}/deploy/charts"
+          if [[ ! -d "${chart_root}" ]]; then
+            echo "No Helm chart found for ${MODULE}; skipping"
+            exit 0
+          fi
+
+          found=false
+          while IFS= read -r -d '' chart_file; do
+            found=true
+            chart_dir=$(dirname "${chart_file}")
+            chart_name=$(basename "${chart_dir}")
+            user_values=$(find "${chart_dir}" -maxdepth 1 -type f -name '*-values.yaml' -print -quit)
+
+            helm lint "${chart_dir}"
+            helm template "${chart_name}" "${chart_dir}" \
+              --namespace "${chart_name}" >/dev/null
+
+            if [[ -n "${user_values}" ]]; then
+              helm lint "${chart_dir}" --values "${user_values}"
+              helm template "${chart_name}" "${chart_dir}" \
+                --namespace "${chart_name}" \
+                --values "${user_values}" >/dev/null
+            fi
+          done < <(find "${chart_root}" -mindepth 2 -maxdepth 2 -name Chart.yaml -print0)
+
+          if [[ "${found}" == "false" ]]; then
+            echo "No Helm chart found for ${MODULE}; skipping"
+          fi
+
+  image-build:
+    needs:
+      - detect-changes
+      - helm-validate
     if: needs.detect-changes.outputs.modules != '[]'
     uses: ./.github/workflows/frontend.yml
     permissions:

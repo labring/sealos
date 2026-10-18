@@ -131,6 +131,13 @@ jobs:
         with:
           type: prune
 
+      - name: Stop kubelet if present
+        run: |
+          sudo systemctl stop kubelet || true
+          sudo systemctl disable kubelet || true
+          sudo pkill -x kubelet || true
+          sudo fuser -k 10250/tcp || true
+
       - name: Verify E2e test
         env:
           UNIT: ${{ matrix.unit }}
