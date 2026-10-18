@@ -26,7 +26,7 @@ sealos run desktop-frontend:latest \
 
 The Helm Chart uses two values files to manage configuration:
 
-### 1. values-default.yaml
+### 1. values.yaml
 
 Contains default Helm Chart configurations that should not be modified.
 
@@ -53,7 +53,7 @@ Contains user-customizable configurations.
 
 **Modification**: ✅ Modify as needed
 
-**Note**: Auto-configured items in values-default.yaml (such as cloudDomain, jwtInternal, etc.) are automatically fetched by the entrypoint script from the `sealos-system/sealos-config` ConfigMap and will be overridden. To modify these values, edit the ConfigMap or use HELM_OPTIONS.
+**Note**: Auto-configured items in values.yaml (such as cloudDomain, jwtInternal, etc.) are fetched by the entrypoint script from the `sealos-system/sealos-config` ConfigMap and overridden at deploy time. Explicit `HELM_OPTIONS` / `HELM_OPTS` values are applied after auto-configuration; the TLS trust setting from cloud tools is enforced last.
 
 For detailed documentation, see [VALUES_FILES_GUIDE.md](./VALUES_FILES_GUIDE.md).
 
@@ -444,7 +444,7 @@ kubectl logs -n sealos -l app.kubernetes.io/name=desktop-frontend --tail=100 -f
 
 **Issue**: Existing resources prevent installation
 
-- **Solution**: The script automatically adopts existing resources by adding Helm labels
+- **Solution**: The script adopts unowned existing resources and refuses resources owned by another Helm release
 
 ## Advanced Usage
 
@@ -467,11 +467,10 @@ sealos run desktop-frontend:latest \
 sealos run desktop-frontend:latest \
   -e HELM_OPTIONS="--set desktopConfig.guideEnabled=true --set desktopConfig.rechargeEnabled=true --set desktopConfig.smsEnabled=true --set desktopConfig.emailEnabled=true --set desktopConfig.emailHost=smtp.example.com --set desktopConfig.emailPort=587"
 
-# Combine environment variables and HELM_OPTIONS
+# Combine deployment environment settings and HELM_OPTIONS
 sealos run desktop-frontend:latest \
   -e HELM_OPTIONS="--set desktopConfig.layoutTitle=\"My Cloud\"" \
-  -e CLOUD_DOMAIN=override.example.com \
-  -e GITHUB_ENABLED=true
+  -e RELEASE_NAMESPACE=override-namespace
 ```
 
 **Common customization options:**

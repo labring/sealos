@@ -18,15 +18,14 @@ sealos run desktop-frontend:latest \
   -e HELM_OPTIONS="--set-string desktopConfig.realNameReward=0"
 ```
 
-### 方式 3: 结合环境变量使用
+### 方式 3: 结合自动配置使用
 
-环境变量优先级高于 `HELM_OPTIONS` 中的 `--set` 参数：
+`HELM_OPTIONS` 和 `HELM_OPTS` 会在自动配置之后应用；cloud tools 提供的 `desktopConfig.tlsRejectUnauthorized` 会在二者之后强制注入：
 
 ```bash
-# 环境变量会覆盖 HELM_OPTIONS 中的值
+# HELM_OPTIONS 会覆盖自动配置值
 sealos run desktop-frontend:latest \
-  -e HELM_OPTIONS="--set desktopConfig.cloudDomain=from-helm.com" \
-  -e CLOUD_DOMAIN=from-env.com  # 这个值会生效
+  -e HELM_OPTIONS="--set desktopConfig.cloudDomain=from-helm.com"
 ```
 
 ## 配置项分类

@@ -1,10 +1,4 @@
 # Default values for desktop frontend helm chart.
-global:
-  featureConfigs:
-    database:
-      # Database backend for Prisma migrations.
-      # Supported values: cockroachdb, postgresql
-      type: cockroachdb
 image: ghcr.io/labring/sealos-desktop-frontend:latest
 imagePullPolicy: IfNotPresent
 
@@ -62,6 +56,7 @@ desktopConfig:
   cloudPort: ""                     # Auto-fetched from sealos-config.cloudPort
   regionUID: "randomRegionUID"      # Auto-fetched from sealos-config.regionUID
   certSecretName: "wildcard-cert"   # Fixed value
+  tlsRejectUnauthorized: "1"
   proxyDomain: ""                   # Auto-fetched from sealos-config.proxyDomain
 
   allowedAllOrigins: false
@@ -70,6 +65,8 @@ desktopConfig:
     - "license"
   googleOneTapOrigins: []
 
+  # Supported values: cockroachdb, postgresql
+  databaseType: cockroachdb
   # Database connections (auto-configured from sealos-config)
   databaseMongodbURI: ""               # Auto-fetched from sealos-config.databaseMongodbURI
   databaseGlobalCockroachdbURI: ""     # Auto-fetched from sealos-config.databaseGlobalCockroachdbURI
@@ -97,6 +94,9 @@ desktopConfig:
     privateProtocol:
       zh: https://sealos.io/zh-Hans/docs/msa/privacy-policy
       en: https://sealos.io/docs/msa/privacy-policy
+  # Team management
+  maxTeamCount: 0
+  maxTeamMemberCount: 0
 
 # End of auto-configured values
 # ============================================================================
@@ -125,9 +125,16 @@ ingress:
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
-  # Will be auto-configured from desktopConfig.cloudDomain
-  hosts: []
-  tls: []
+  # Render-safe defaults. The entrypoint replaces these with cloudDomain.
+  hosts:
+    - host: "127.0.0.1.nip.io"
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - hosts:
+        - "127.0.0.1.nip.io"
+      secretName: "wildcard-cert"
 
 nodeSelector: {}
 

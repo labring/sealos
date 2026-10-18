@@ -26,7 +26,7 @@ sealos run desktop-frontend:latest \
 
 Helm Chart 使用两个 values 文件来管理配置：
 
-### 1. values-default.yaml
+### 1. values.yaml
 
 包含 Helm Chart 的默认配置，不应修改。
 
@@ -53,7 +53,7 @@ Helm Chart 使用两个 values 文件来管理配置：
 
 **是否修改**: ✅ 根据需要修改
 
-**注意**: values-default.yaml 中的自动配置项（如 cloudDomain、jwtInternal 等）会被 entrypoint 脚本从 `sealos-system/sealos-config` ConfigMap 自动获取并覆盖。如需修改这些值，请修改 ConfigMap 或使用 HELM_OPTIONS。
+**注意**: values.yaml 中的自动配置项（如 cloudDomain、jwtInternal 等）会由 entrypoint 脚本从 `sealos-system/sealos-config` ConfigMap 获取，并在部署时覆盖。显式的 `HELM_OPTIONS` / `HELM_OPTS` 会追加在自动配置之后，cloud tools 提供的 TLS trust 配置最后强制注入。
 
 详细文档请参考 [VALUES_FILES_GUIDE.md](./VALUES_FILES_GUIDE.md)。
 
@@ -439,7 +439,7 @@ kubectl logs -n sealos -l app.kubernetes.io/name=desktop-frontend --tail=100 -f
 
 **问题**: 现有资源阻止安装
 
-- **解决**: 脚本会自动通过添加 Helm 标签来接纳现有资源
+- **解决**: 脚本只接管无 owner 的现有资源；如果资源属于其他 Helm release，会拒绝接管
 
 ## 高级用法
 
@@ -462,11 +462,10 @@ sealos run desktop-frontend:latest \
 sealos run desktop-frontend:latest \
   -e HELM_OPTIONS="--set desktopConfig.guideEnabled=true --set desktopConfig.rechargeEnabled=true --set desktopConfig.smsEnabled=true --set desktopConfig.emailEnabled=true --set desktopConfig.emailHost=smtp.example.com --set desktopConfig.emailPort=587"
 
-# 结合环境变量和 HELM_OPTIONS
+# 结合部署环境变量和 HELM_OPTIONS
 sealos run desktop-frontend:latest \
   -e HELM_OPTIONS="--set desktopConfig.layoutTitle=\"我的云平台\"" \
-  -e CLOUD_DOMAIN=override.example.com \
-  -e GITHUB_ENABLED=true
+  -e RELEASE_NAMESPACE=override-namespace
 ```
 
 **常用自定义选项：**
@@ -577,26 +576,26 @@ kubectl get configmap sealos-desktop-config -n sealos -o yaml
 kubectl exec -n sealos deployment/sealos-desktop -- cat /app/data/config.yaml
 ```
 
-### 5. 环境变量和 HELM_OPTIONS 的区别和优先级？
+### 5. 配置来源和 HELM_OPTIONS 的优先级？
 
 **使用场景：**
 
-- **环境变量**: 少量配置、快速测试、常用配置项
 - **HELM_OPTIONS**: 多个配置、生产部署、访问所有 60+ 参数
 
 **优先级从高到低：**
 
-1. 环境变量（如 `CLOUD_DOMAIN`）
-2. HELM_OPTIONS 中的 `--set` 参数
-3. values.yaml 默认值
+1. values.yaml 默认值
+2. 持久化用户 values
+3. `sealos-system/sealos-config` 自动配置
+4. HELM_OPTIONS / HELM_OPTS 中的 `--set` 参数
+5. cloud tools 强制注入的 `desktopConfig.tlsRejectUnauthorized`
 
 **示例：**
 
 ```bash
-# 环境变量会覆盖 HELM_OPTIONS 的值
+# HELM_OPTIONS 会覆盖自动配置值
 sealos run desktop-frontend:latest \
-  -e HELM_OPTIONS="--set desktopConfig.cloudDomain=from-helm.com" \
-  -e CLOUD_DOMAIN=from-env.com  # 这个值会生效
+  -e HELM_OPTIONS="--set desktopConfig.cloudDomain=from-helm.com"
 ```
 
 ## 技术支持

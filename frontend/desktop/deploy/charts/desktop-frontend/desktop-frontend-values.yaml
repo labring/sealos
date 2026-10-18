@@ -8,16 +8,9 @@
 #   - passwordSalt
 #   - databaseMongodbURI, databaseGlobalCockroachdbURI, databaseLocalCockroachdbURI
 #
-# See values-auto.yaml for reference values and documentation.
+# See values.yaml for chart defaults and auto-configured reference values.
 
 replicaCount: 1
-
-# Prisma database backend used by the init container migrations.
-# Supported values: cockroachdb, postgresql
-# global:
-#   featureConfigs:
-#     database:
-#       type: cockroachdb
 
 resources:
   limits:
@@ -41,7 +34,20 @@ desktopConfig:
   # forcedLanguage and currencySymbol will be auto-configured based on version:
   # - version: "cn" → forcedLanguage: "zh", currencySymbol: "shellCoin"
   # - version: "en" → forcedLanguage: "en", currencySymbol: "usd"
-  version: "en"
+  version: "cn"
+
+  allowedAllOrigins: true
+  # Authentication secrets (auto-configured from sealos-config)
+  passwordSalt: "randomSalt"       # Auto-fetched from sealos-config.passwordSalt
+  jwtInternal: ""                  # Auto-fetched from sealos-config.jwtInternal
+  jwtRegional: ""                  # Auto-fetched from sealos-config.jwtRegional
+  jwtGlobal: ""                    # Auto-fetched from sealos-config.jwtGlobal
+  # Supported values: cockroachdb, postgresql
+  databaseType: cockroachdb
+  # Database connections (auto-configured from sealos-config)
+  databaseMongodbURI: ""               # Auto-fetched from sealos-config.databaseMongodbURI
+  databaseGlobalCockroachdbURI: ""     # Auto-fetched from sealos-config.databaseGlobalCockroachdbURI
+  databaseLocalCockroachdbURI: ""      # Auto-fetched from sealos-config.databaseLocalCockroachdbURI
 
   # Google Tag Manager
   gtmId: ""
@@ -102,7 +108,7 @@ desktopConfig:
   metaDescription: "Sealos Cloud"
   metaKeywords: "Sealos Cloud"
 
-  signUpEnabled: true
+  signUpEnabled: false
   baiduToken: ""
   bingAdTenant: ""
   bingAdClientId: ""
