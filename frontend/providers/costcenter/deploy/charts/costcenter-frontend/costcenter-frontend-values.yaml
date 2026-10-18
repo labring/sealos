@@ -20,6 +20,27 @@ costcenterConfig:
   # Invoice configuration
   invoice:
     enabled: false
+    serviceToken: ""
+    # Preferred main-schema values key.
+    feishuApp:
+      appId: ""
+      appSecret: ""
+      feiShuBotURL: ""
+      chatId: ""
+      token: ""
+      template:
+        id: ""
+        version: ""
+    # Legacy release-v5.1 values accepted for existing installations.
+    feishApp:
+      appId: ""
+      appSecret: ""
+      feiShuBotURL: ""
+      chatId: ""
+      token: ""
+      templateId: ""
+      templateVersion: ""
+    # Legacy webhook-only values accepted for existing installations.
     feiShuBotURL: ""
     aliSms:
       endpoint: ""
@@ -30,6 +51,10 @@ costcenterConfig:
       invoiceCompletedTemplateCode: ""
     mongo:
       uri: ""
+    billingInfo:
+      companyName: ""
+      addressLines: []
+      contactLines: []
 
   # Recharge configuration
   recharge:
@@ -45,5 +70,11 @@ costcenterConfig:
 
   # Component URLs
   components:
+    billing:
+      url: ""
+      secret: ""
+    desktop:
+      url: "http://desktop-frontend.sealos.svc:3000"
+    # Legacy values key retained for existing overrides.
     accountService:
       url: "http://account-service.account-system.svc:2333"

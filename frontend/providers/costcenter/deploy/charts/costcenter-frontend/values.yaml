@@ -25,6 +25,33 @@ service:
   type: ClusterIP
   port: 3000
 
+ingress:
+  className: nginx
+  host: ""
+  annotations: {}
+
+startupProbe:
+  httpGet:
+    path: /api/platform/getClientAppConfig
+    port: 3000
+  periodSeconds: 2
+  timeoutSeconds: 3
+  failureThreshold: 30
+readinessProbe:
+  httpGet:
+    path: /api/platform/getClientAppConfig
+    port: 3000
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 6
+livenessProbe:
+  httpGet:
+    path: /api/platform/getClientAppConfig
+    port: 3000
+  periodSeconds: 20
+  timeoutSeconds: 3
+  failureThreshold: 3
+
 resources:
   limits:
     cpu: 1000m
@@ -37,12 +64,42 @@ resources:
 # Note: jwtInternal is auto-configured by entrypoint.sh from sealos-config ConfigMap
 # For business configurations (transfer, invoice, recharge, etc.), see costcenter-frontend-values.yaml
 costcenterConfig:
+  cloudDomain: "127.0.0.1.nip.io"
+  cloudPort: ""
+  httpPort: ""
+  disableHttps: false
+  regionUID: "randomRegionUID"
+  certSecretName: "wildcard-cert"
+  tlsRejectUnauthorized: "1"
   jwtInternal: ""  # Auto-injected by entrypoint script
   transferEnabled: true
   currencyType: "shellCoin"
+  rechargeRequiresRealName: false
+  giftCodeEnabled: true
+  subscriptionEnabled: false
+  gpuEnabled: false
   invoice:
     enabled: false
     feiShuBotURL: ""
+    feishuApp:
+      appId: ""
+      appSecret: ""
+      feiShuBotURL: ""
+      chatId: ""
+      token: ""
+      template:
+        id: ""
+        version: ""
+    # Accept the release-v5.1 spelling while rendering only the main schema key.
+    feishApp:
+      appId: ""
+      appSecret: ""
+      feiShuBotURL: ""
+      chatId: ""
+      token: ""
+      templateId: ""
+      templateVersion: ""
+    serviceToken: ""
     aliSms:
       endpoint: ""
       accessKeyID: ""
@@ -52,6 +109,10 @@ costcenterConfig:
       invoiceCompletedTemplateCode: ""
     mongo:
       uri: ""
+    billingInfo:
+      companyName: ""
+      addressLines: []
+      contactLines: []
   recharge:
     enabled: false
     payMethods:
@@ -63,8 +124,14 @@ costcenterConfig:
         enabled: false
         publicKey: ""
   components:
+    billing:
+      url: ""
+      secret: ""
+    # Legacy values key retained for existing overrides.
     accountService:
       url: "http://account-service.account-system.svc:2333"
+    desktop:
+      url: "http://desktop-frontend.sealos.svc:3000"
 
 # Affinity for pod anti-affinity
 affinity:
