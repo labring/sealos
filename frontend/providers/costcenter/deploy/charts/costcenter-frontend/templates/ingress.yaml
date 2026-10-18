@@ -7,7 +7,7 @@ metadata:
     kubernetes.io/ingress.class: {{ .Values.ingress.className | quote }}
     nginx.ingress.kubernetes.io/enable-cors: "true"
     nginx.ingress.kubernetes.io/cors-allow-methods: "PUT, GET, POST, DELETE, PATCH, OPTIONS"
-    nginx.ingress.kubernetes.io/cors-allow-origin: "{{ include "costcenter-frontend.scheme" . }}://{{ .Values.costcenterConfig.cloudDomain }}{{ include "costcenter-frontend.portSuffix" . }}, {{ include "costcenter-frontend.scheme" . }}://*.{{ .Values.costcenterConfig.cloudDomain }}{{ include "costcenter-frontend.portSuffix" . }}"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "{{ include "costcenter-frontend.scheme" . }}://{{ include "costcenter-frontend.host" . }}{{ include "costcenter-frontend.portSuffix" . }}, {{ include "costcenter-frontend.scheme" . }}://*.{{ .Values.costcenterConfig.cloudDomain }}{{ include "costcenter-frontend.portSuffix" . }}"
     nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
     nginx.ingress.kubernetes.io/configuration-snippet: |
