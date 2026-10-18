@@ -74,6 +74,13 @@ sealos run labring/account-service:latest \
 - `tolerations`: 容忍度配置，默认 `[]`
 - `affinity`: 亲和性配置，默认 `{}`
 
+### Ingress 域名配置
+
+- `ingress.enabled`: 是否创建 Ingress，默认 `true`
+- `ingress.hostname`: 显式设置 Ingress/TLS host；为空时使用 `account-api.{cloudDomain}`
+- `ingress.cloudDomain` / `ingress.cloudPort`: 推荐的云域名和端口配置，供入口脚本自动传入
+- `cloudDomain` / `cloudPort`: 兼容旧版顶层配置；嵌套字段存在时优先使用，嵌套 `cloudPort` 显式设为空可移除旧端口
+
 ### 自动伸缩
 
 - `autoscaling.enabled`: 是否启用自动伸缩，默认 `false`

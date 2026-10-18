@@ -85,9 +85,8 @@ regionInfoConfigMapName: region-info
 # ============================================================================
 # Auto-configured Ingress values (from sealos-system/sealos-config ConfigMap)
 # ============================================================================
-# The following ingress values are automatically fetched from the
-# sealos-system/sealos-config ConfigMap by the entrypoint script and will
-# override any values set here. These are provided as reference defaults.
+# The entrypoint script reads these ingress values from the
+# sealos-system/sealos-config ConfigMap and passes them under ingress.*.
 #
 # To override these auto-configured values, use HELM_OPTIONS or modify the
 # sealos-config ConfigMap directly.
@@ -98,6 +97,8 @@ ingress:
   enabled: true
   hostname: "" # Default: account-api.{cloudDomain}
   certSecretName: "wildcard-cert" # TLS certificate secret name
+  # cloudDomain and cloudPort stay optional so missing fields fall back to the
+  # legacy top-level values below. An explicitly empty ingress.cloudPort wins.
 
 # Cloud configuration
 cloudDomain: "cloud.sealos.io"
