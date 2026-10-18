@@ -49,11 +49,20 @@ trap restore_deployment_on_failure EXIT
 
 # Read cluster configuration through the ConfigMap interface used by main.
 AUTO_CONFIG_HELM_OPTS=()
+ENFORCED_CONFIG_HELM_OPTS=()
 add_set_string() {
   local key="$1"
   local value="$2"
   if [ -n "${value}" ]; then
     AUTO_CONFIG_HELM_OPTS+=(--set-string "${key}=${value}")
+  fi
+}
+
+add_enforced_set_string() {
+  local key="$1"
+  local value="$2"
+  if [ -n "${value}" ]; then
+    ENFORCED_CONFIG_HELM_OPTS+=(--set-string "${key}=${value}")
   fi
 }
 
@@ -64,7 +73,8 @@ add_set_string costcenterConfig.disableHttps "$(get_cm_value sealos-system sealo
 add_set_string costcenterConfig.regionUID "$(get_cm_value sealos-system sealos-config regionUID)"
 add_set_string costcenterConfig.certSecretName "$(get_cm_value sealos-system sealos-config certSecretName)"
 add_set_string costcenterConfig.jwtInternal "$(get_cm_value sealos-system sealos-config jwtInternal)"
-add_set_string costcenterConfig.tlsRejectUnauthorized "$(get_cm_value sealos-system sealos-config tlsRejectUnauthorized)"
+TLS_REJECT_UNAUTHORIZED="$(get_cm_value sealos-system sealos-config tlsRejectUnauthorized)"
+add_enforced_set_string costcenterConfig.tlsRejectUnauthorized "${TLS_REJECT_UNAUTHORIZED:-1}"
 
 # Check if Deployment selector matches expected Helm labels
 check_deployment_selector() {
@@ -156,6 +166,7 @@ recreate_deployment_if_needed "costcenter-frontend"
 # Prepare values files
 SERVICE_NAME="costcenter-frontend"
 USER_VALUES_PATH="/root/.sealos/cloud/values/core/${SERVICE_NAME}-values.yaml"
+GLOBALS_VALUES_PATH="/root/.sealos/cloud/values/global.yaml"
 
 # Copy user values template if not exists
 if [ ! -f "${USER_VALUES_PATH}" ]; then
@@ -174,11 +185,18 @@ if [ -n "${HELM_OPTS}" ]; then
   HELM_EXTRA_ARGS+=("${HELM_OPTS_ARGS[@]}")
 fi
 
+GLOBAL_VALUES_ARGS=()
+if [ -f "${GLOBALS_VALUES_PATH}" ]; then
+  GLOBAL_VALUES_ARGS=(-f "${GLOBALS_VALUES_PATH}")
+fi
+
 helm upgrade -i "${RELEASE_NAME}" -n "${RELEASE_NAMESPACE}" --create-namespace "${CHART_PATH}" \
   -f "./charts/${SERVICE_NAME}/values.yaml" \
   -f "${USER_VALUES_PATH}" \
+  "${GLOBAL_VALUES_ARGS[@]}" \
   "${AUTO_CONFIG_HELM_OPTS[@]}" \
-  "${HELM_EXTRA_ARGS[@]}"
+  "${HELM_EXTRA_ARGS[@]}" \
+  "${ENFORCED_CONFIG_HELM_OPTS[@]}"
 
 DEPLOYMENT_REPLACEMENT_COMPLETE=true
 if [ -n "${DEPLOYMENT_BACKUP_FILE}" ]; then

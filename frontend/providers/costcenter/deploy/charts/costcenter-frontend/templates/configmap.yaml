@@ -18,7 +18,7 @@ data:
         subscription: {{ .Values.costcenterConfig.subscriptionEnabled }}
         gpu: {{ .Values.costcenterConfig.gpuEnabled }}
       ui:
-        currencySymbol: {{ .Values.costcenterConfig.currencyType | quote }}
+        currencySymbol: {{ include "costcenter-frontend.currencySymbol" . | quote }}
         meta:
           scripts: []
           noscripts: []

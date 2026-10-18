@@ -78,3 +78,13 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- define "costcenter-frontend.url" -}}
 {{- include "costcenter-frontend.scheme" . -}}://{{ include "costcenter-frontend.host" . }}{{ include "costcenter-frontend.portSuffix" . }}
 {{- end }}
+
+{{- define "costcenter-frontend.currencySymbol" -}}
+{{- $currency := "" -}}
+{{- with .Values.global -}}
+{{- with .billing -}}
+{{- $currency = .currency -}}
+{{- end -}}
+{{- end -}}
+{{- if eq (toString $currency) "cny" -}}shellCoin{{- else -}}usd{{- end -}}
+{{- end }}
