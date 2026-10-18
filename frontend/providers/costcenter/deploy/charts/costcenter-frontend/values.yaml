@@ -6,10 +6,10 @@ imagePullPolicy: Always
 imagePullSecrets: []
 fullnameOverride: "costcenter-frontend"
 
+replicaCount: 1
+
 podAnnotations: {}
 podLabels: {}
-
-replicaCount: 1
 
 podSecurityContext:
   runAsNonRoot: true
@@ -33,16 +33,63 @@ resources:
     cpu: 10m
     memory: 128Mi
 
+ingress:
+  className: nginx
+  host: ""
+  annotations: {}
+
+tests:
+  image: busybox:1.36.1
+  path: /healthz
+
+startupProbe:
+  httpGet:
+    path: /healthz
+    port: 3000
+  periodSeconds: 2
+  timeoutSeconds: 3
+  failureThreshold: 30
+readinessProbe:
+  httpGet:
+    path: /healthz
+    port: 3000
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 6
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: 3000
+  periodSeconds: 20
+  timeoutSeconds: 3
+  failureThreshold: 3
+
 # Costcenter frontend configuration
 # Note: jwtInternal is auto-configured by entrypoint.sh from sealos-config ConfigMap
 # For business configurations (transfer, invoice, recharge, etc.), see costcenter-frontend-values.yaml
 costcenterConfig:
-  jwtInternal: ""  # Auto-injected by entrypoint script
+  cloudDomain: "127.0.0.1.nip.io"
+  cloudPort: ""
+  httpPort: ""
+  disableHttps: false
+  certSecretName: "wildcard-cert"
+  tlsRejectUnauthorized: "1"
+  jwtInternal: ""
   transferEnabled: true
   currencyType: "shellCoin"
   invoice:
     enabled: false
+    # Deprecated compatibility key. Prefer invoice.feishApp.feiShuBotURL.
     feiShuBotURL: ""
+    feishApp:
+      appId: ""
+      appSecret: ""
+      feiShuBotURL: ""
+      chatId: ""
+      token: ""
+      templateId: ""
+      templateVersion: ""
+    serviceToken: ""
     aliSms:
       endpoint: ""
       accessKeyID: ""
