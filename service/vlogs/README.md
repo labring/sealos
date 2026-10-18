@@ -1,35 +1,25 @@
-# RESTServer
+# Service VLogs
 
-## Description
-
-restserver for victoria logs
+Victoria Logs service for Sealos.
 
 ## Getting Started
 
-### Running on the cluster
+1. Build and push the image:
 
-1. Build and push your image to the location specified by `IMG`:
-
-```sh
+```bash
 make docker-build docker-push IMG=<some-registry>/sealos-vlogs-service:latest
 ```
 
-2. Deploy the restserver:
+2. Use the cluster deployment package built from `deploy/Kubefile` and run the
+   resulting image with Sealos. The shared service build workflow publishes the
+   `sealos-cloud-vlogs-service` cluster image.
 
-```sh
-kubectl apply -f deploy/manifests/
-```
+The deployment entrypoint installs or upgrades the Helm release `vlogs` in the
+`sealos` namespace, removes the legacy raw-manifest install on first migration,
+renders backend credentials from `sealos-system/vlogs-config-user`, and injects
+`WHITELIST_KUBERNETES_HOSTS` from the current cloud URL.
 
-### How it works
-
-To enable the database frontend application to retrieve monitoring data, you need to modify the environment variable `MONITOR_URL` of the frontend deployment to the corresponding address of the restserver.
-
-Additionally, to configure the data source, you need to set the environment variable `VM_SERVICE_HOST` of the restserver deployment to the correct address.
-
-```
-e.g.
-http://prometheus.sealos.svc.cluster.local
-```
+User overrides live at `/root/.sealos/cloud/values/core/vlogs-values.yaml`.
 
 ## License
 

@@ -1,5 +1,7 @@
 FROM scratch
+COPY charts charts
 COPY registry registry
-COPY manifests manifests
+COPY remove remove
+COPY entrypoint.sh entrypoint.sh
 
-CMD ["kubectl apply -f manifests/deploy.yaml"]
+CMD ["bash entrypoint.sh"]
