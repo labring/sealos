@@ -188,11 +188,21 @@ describe('signin invitation SSR', () => {
     }
   );
 
-  it('generates a direct registration link until the website invitation page is deployed', () => {
+  it.each(['bja.sealos.run', 'hzh.sealos.run', 'localhost:3000'])(
+    'shares the official website invitation page from %s',
+    (domain) => {
+      global.AppConfig = { ...config, cloud: { ...config.cloud, domain } };
+      expect(buildInviteUrl(CODE)).toBe(`https://sealos.run/invite/${CODE}`);
+    }
+  );
+
+  it('keeps the invite code inside one website path segment', () => {
     global.AppConfig = config;
-    expect(buildInviteUrl(CODE)).toBe(`https://console.example.com/signin?invite=${CODE}`);
     expect(buildInviteUrl('code&extra=value')).toBe(
-      'https://console.example.com/signin?invite=code%26extra%3Dvalue'
+      'https://sealos.run/invite/code%26extra%3Dvalue'
+    );
+    expect(buildInviteUrl('code/extra?value=#fragment')).toBe(
+      'https://sealos.run/invite/code%2Fextra%3Fvalue%3D%23fragment'
     );
   });
 });
