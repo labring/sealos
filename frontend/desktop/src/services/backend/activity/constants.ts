@@ -43,8 +43,7 @@ export const rewardAmount = (type: ActivityRewardType): bigint => {
 export const activityGiftCodeComment = (type: ActivityRewardType, businessKey: string) =>
   `activity:${type}:${businessKey}`;
 
-// Until the website (#299) invite page ships, always return the standalone
-// console signup link. Switch here once the website deployment is verified;
-// clients always pass the server URL through.
+// Share the public website landing page in every deployment. The website carries
+// the code to the console /signin entry; clients pass this URL through unchanged.
 export const buildInviteUrl = (code: string) =>
-  `https://${global.AppConfig.cloud.domain}/signin?invite=${encodeURIComponent(code)}`;
+  `https://sealos.run/invite/${encodeURIComponent(code)}`;

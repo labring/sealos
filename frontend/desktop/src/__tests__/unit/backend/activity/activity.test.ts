@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Replace the prisma singleton wholesale with an assertable stub; no real DB connection
 vi.mock('@/services/backend/db/init', () => ({
@@ -220,10 +220,29 @@ describe('activity rewards eligibility', () => {
 describe('activity status presentation', () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    vi.stubGlobal('AppConfig', { cloud: { domain: 'bja.sealos.run' } });
     (globalPrisma.activityRewardIdentityConfig.findUnique as any).mockResolvedValue({
       pepper: 'a'.repeat(64)
     });
     (globalPrisma.$queryRaw as any).mockResolvedValue([]);
+  });
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('returns the official website link for an existing invitation code', async () => {
+    (globalPrisma.registrationSource.findUnique as any).mockResolvedValue({ source: 'WEB' });
+    (globalPrisma.userRealNameInfo.findUnique as any).mockResolvedValue(null);
+    (globalPrisma.enterpriseRealNameInfo.findUnique as any).mockResolvedValue(null);
+    (globalPrisma.desktopLoginRecord.findUnique as any).mockResolvedValue(null);
+    (globalPrisma.registrationInviteCode.findUnique as any).mockResolvedValue({ code: 'ABCD2345' });
+    (globalPrisma.registrationReferral.findMany as any).mockResolvedValue([]);
+    (globalPrisma.activityRewardGrant.findMany as any).mockResolvedValue([]);
+
+    const data = await getActivityStatusData(USER_UID);
+
+    expect(data.available).toBe(true);
+    expect(data.invite.code).toBe('ABCD2345');
+    expect(data.invite.inviteUrl).toBe('https://sealos.run/invite/ABCD2345');
   });
 
   it('hides the invite share entry for API-registered accounts', async () => {
