@@ -20,6 +20,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/labring/sealos/pkg/types/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -52,11 +53,17 @@ spec:
 `)
 	for _, mode := range []string{"standalone", "registered"} {
 		var err error
-		image := ""
-		if mode == "standalone" {
-			image = "registry.example/controller:new"
+		controller := &v1beta1.RouteControllerConfig{
+			Image:      "registry.example/controller:new",
+			Kubeconfig: "/etc/kubernetes/route-controller/kc",
+			Config:     "/etc/kubernetes/route-controller/config.yaml",
+			Table:      200,
+			Protocol:   88,
 		}
-		data, err = replaceControlPlaneMode(data, mode, image)
+		if mode == "registered" {
+			controller = nil
+		}
+		data, err = replaceControlPlaneMode(data, mode, controller)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -67,10 +74,33 @@ spec:
 			"podSubnet: 10.244.0.0/16",
 			"kind: Config",
 			"data: preserved",
-			"image: registry.example/controller:new",
 		} {
 			if !strings.Contains(string(data), value) {
 				t.Fatalf("mode commit lost %q: %s", value, data)
+			}
+		}
+		if mode == "standalone" {
+			for _, value := range []string{
+				"image: registry.example/controller:new",
+				"kubeconfig: /etc/kubernetes/route-controller/kc",
+				"config: /etc/kubernetes/route-controller/config.yaml",
+				"table: 200",
+				"protocol: 88",
+			} {
+				if !strings.Contains(string(data), value) {
+					t.Fatalf("controller commit lost %q: %s", value, data)
+				}
+			}
+		} else {
+			// A nil controller must leave the committed settings alone.
+			for _, value := range []string{
+				"image: registry.example/controller:new",
+				"kubeconfig: /etc/kubernetes/route-controller/kc",
+				"table: 200",
+			} {
+				if !strings.Contains(string(data), value) {
+					t.Fatalf("registered commit dropped %q: %s", value, data)
+				}
 			}
 		}
 	}

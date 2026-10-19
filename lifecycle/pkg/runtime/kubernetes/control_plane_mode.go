@@ -32,6 +32,7 @@ import (
 	"github.com/labring/sealos/pkg/filesystem/rootfs"
 	"github.com/labring/sealos/pkg/runtime/kubernetes/standalone"
 	"github.com/labring/sealos/pkg/ssh"
+	"github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/logger"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -108,53 +109,19 @@ func (k *KubeadmRuntime) switchControlPlaneMode(
 		cm = nil
 	}
 	journal.Target = options.Mode
-	controllerImage := ""
+	var controllerSettings *v1beta1.RouteControllerConfig
 	var command strings.Builder
 	command.WriteString(strings.Join([]string{
 		shellArgument(k.pathResolver.RootFSSealctlPath()), "switch", shellArgument(options.Mode),
 		"--timeout", shellArgument(options.Timeout.String()),
 	}, " "))
 	if options.Mode == standalone.ModeStandalone {
-		controller := standalone.DefaultRouteControllerOptions()
-		if options.RouteController != nil {
-			controller = *options.RouteController
-		}
-		if err := controller.Validate(); err != nil {
+		arguments, settings, err := k.standaloneControllerCommand(options)
+		if err != nil {
 			return err
 		}
-		fields := standalone.RouteControllerFlags
-		if options.ControllerFields != nil {
-			fields = options.ControllerFields
-		}
-		if !slices.Contains(fields, "route-controller-image") {
-			if saved := k.cluster.Spec.RouteController; saved != nil && saved.Image != "" {
-				controller.Image = saved.Image
-				fields = append(slices.Clone(fields), "route-controller-image")
-			}
-		}
-		if slices.Contains(fields, "route-controller-image") {
-			controllerImage = controller.Image
-		}
-		if options.UpdateController {
-			command.WriteString(" --update-controller")
-		}
-		if options.DeleteMasterNodes {
-			command.WriteString(" --delete-master-nodes")
-		}
-		values := map[string]string{
-			"route-controller-image":      controller.Image,
-			"route-controller-kubeconfig": controller.Kubeconfig,
-			"route-controller-config":     controller.Config,
-			"route-table":                 strconv.Itoa(controller.Table),
-			"route-protocol":              strconv.Itoa(controller.Protocol),
-		}
-		for _, field := range fields {
-			value, ok := values[field]
-			if !ok {
-				return fmt.Errorf("unknown controller flag %q", field)
-			}
-			command.WriteString(" --" + field + " " + shellArgument(value))
-		}
+		command.WriteString(arguments)
+		controllerSettings = settings
 	}
 	// sealctl enforces the requested host timeout. Allow it to return its
 	// diagnostic before the transport expires, and cancel on lease loss.
@@ -255,7 +222,7 @@ func (k *KubeadmRuntime) switchControlPlaneMode(
 		}
 	}
 	path := constants.Clusterfile(k.cluster.Name)
-	if err := clusterfile.SetControlPlaneMode(path, options.Mode, controllerImage); err != nil {
+	if err := clusterfile.SetControlPlaneMode(path, options.Mode, controllerSettings); err != nil {
 		return err
 	}
 	for _, host := range hosts {
@@ -286,6 +253,93 @@ func (k *KubeadmRuntime) switchControlPlaneMode(
 	}
 	k.cluster.Spec.ControlPlaneMode = options.Mode
 	return nil
+}
+
+// standaloneControllerCommand renders the sealctl conversion arguments for the
+// route controller. Settings the operator selected with flags win; the rest are
+// inherited from the committed Clusterfile so a conversion renders the same
+// controller as a fresh standalone install (see initStandaloneMaster) instead
+// of silently dropping them.
+func (k *KubeadmRuntime) standaloneControllerCommand(
+	options standalone.ModeOptions,
+) (string, *v1beta1.RouteControllerConfig, error) {
+	controller := standalone.DefaultRouteControllerOptions()
+	if options.RouteController != nil {
+		controller = *options.RouteController
+	}
+	if err := controller.Validate(); err != nil {
+		return "", nil, err
+	}
+	fields := standalone.RouteControllerFlags
+	if options.ControllerFields != nil {
+		fields = options.ControllerFields
+	}
+	// fields may alias the package-level default; clone before appending.
+	fields = slices.Clone(fields)
+	if saved := k.cluster.Spec.RouteController; saved != nil {
+		fields = inheritControllerField(fields, "route-controller-image", saved.Image != "",
+			func() { controller.Image = saved.Image })
+		fields = inheritControllerField(
+			fields,
+			"route-controller-kubeconfig",
+			saved.Kubeconfig != "",
+			func() { controller.Kubeconfig = saved.Kubeconfig },
+		)
+		fields = inheritControllerField(fields, "route-controller-config", saved.Config != "",
+			func() { controller.Config = saved.Config })
+		fields = inheritControllerField(fields, "route-table", saved.Table != 0,
+			func() { controller.Table = saved.Table })
+		fields = inheritControllerField(fields, "route-protocol", saved.Protocol != 0,
+			func() { controller.Protocol = saved.Protocol })
+	}
+	var command strings.Builder
+	if options.UpdateController {
+		command.WriteString(" --update-controller")
+	}
+	if options.DeleteMasterNodes {
+		command.WriteString(" --delete-master-nodes")
+	}
+	values := map[string]string{
+		"route-controller-image":      controller.Image,
+		"route-controller-kubeconfig": controller.Kubeconfig,
+		"route-controller-config":     controller.Config,
+		"route-table":                 strconv.Itoa(controller.Table),
+		"route-protocol":              strconv.Itoa(controller.Protocol),
+	}
+	for _, field := range fields {
+		value, ok := values[field]
+		if !ok {
+			return "", nil, fmt.Errorf("unknown controller flag %q", field)
+		}
+		command.WriteString(" --" + field + " " + shellArgument(value))
+	}
+	if len(fields) == 0 {
+		return command.String(), nil, nil
+	}
+	settings := v1beta1.RouteControllerConfig{}
+	for _, field := range fields {
+		switch field {
+		case "route-controller-image":
+			settings.Image = controller.Image
+		case "route-controller-kubeconfig":
+			settings.Kubeconfig = controller.Kubeconfig
+		case "route-controller-config":
+			settings.Config = controller.Config
+		case "route-table":
+			settings.Table = controller.Table
+		case "route-protocol":
+			settings.Protocol = controller.Protocol
+		}
+	}
+	return command.String(), &settings, nil
+}
+
+func inheritControllerField(fields []string, flag string, present bool, apply func()) []string {
+	if present && !slices.Contains(fields, flag) {
+		apply()
+		return append(fields, flag)
+	}
+	return fields
 }
 
 func (k *KubeadmRuntime) copyModeFile(host, path string) error {

@@ -20,6 +20,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -87,11 +88,16 @@ func (s *modeSSH) CmdAsync(host string, commands ...string) error {
 
 func TestControlPlaneConversionCommitAndFailure(t *testing.T) {
 	for _, scenario := range []struct {
-		failure     string
-		recover     string
-		image       string
-		flag        string
-		syncFailure bool
+		failure        string
+		recover        string
+		image          string
+		flag           string
+		kubeconfig     string
+		flagKubeconfig string
+		config         string
+		table          int
+		protocol       int
+		syncFailure    bool
 	}{
 		{failure: "preflight"},
 		{failure: "host", recover: standalone.ModeStandalone},
@@ -101,6 +107,18 @@ func TestControlPlaneConversionCommitAndFailure(t *testing.T) {
 		{failure: "preflight", syncFailure: true},
 		{failure: "none", image: "registry.example/controller:custom"},
 		{failure: "none", image: "registry.example/controller:custom", flag: "registry.example/controller:override"},
+		{
+			failure:    "none",
+			kubeconfig: "/etc/kubernetes/route-controller/kc",
+			config:     "/etc/route-controller/config.yaml",
+			table:      200,
+			protocol:   88,
+		},
+		{
+			failure:        "none",
+			kubeconfig:     "/etc/kubernetes/route-controller/saved",
+			flagKubeconfig: "/etc/kubernetes/route-controller/override",
+		},
 	} {
 		t.Run(scenario.failure+"/"+scenario.recover, func(t *testing.T) {
 			if scenario.syncFailure && runtime.GOOS != "linux" {
@@ -113,7 +131,13 @@ func TestControlPlaneConversionCommitAndFailure(t *testing.T) {
 				constants.DefaultRuntimeRootDir = previousRoot
 			})
 			cluster := testCluster([]string{"master0", "master1", "master2"})
-			cluster.Spec.RouteController = &v2.RouteControllerConfig{Image: scenario.image}
+			cluster.Spec.RouteController = &v2.RouteControllerConfig{
+				Image:      scenario.image,
+				Kubeconfig: scenario.kubeconfig,
+				Config:     scenario.config,
+				Table:      scenario.table,
+				Protocol:   scenario.protocol,
+			}
 			path := constants.Clusterfile(cluster.Name)
 			if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 				t.Fatal(err)
@@ -155,12 +179,22 @@ func TestControlPlaneConversionCommitAndFailure(t *testing.T) {
 				ControllerFields: []string{},
 			}
 			expectedImage := scenario.image
-			if scenario.flag != "" {
+			expectedKubeconfig := scenario.kubeconfig
+			if scenario.flag != "" || scenario.flagKubeconfig != "" {
 				controller := standalone.DefaultRouteControllerOptions()
-				controller.Image = scenario.flag
+				var selected []string
+				if scenario.flag != "" {
+					controller.Image = scenario.flag
+					selected = append(selected, "route-controller-image")
+					expectedImage = scenario.flag
+				}
+				if scenario.flagKubeconfig != "" {
+					controller.Kubeconfig = scenario.flagKubeconfig
+					selected = append(selected, "route-controller-kubeconfig")
+					expectedKubeconfig = scenario.flagKubeconfig
+				}
 				options.RouteController = &controller
-				options.ControllerFields = []string{"route-controller-image"}
-				expectedImage = scenario.flag
+				options.ControllerFields = selected
 			}
 			err := rt.SwitchControlPlaneMode(context.Background(), options)
 			if (err != nil) != (failure != "none") {
@@ -200,15 +234,8 @@ func TestControlPlaneConversionCommitAndFailure(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if failure == "none" && expectedImage != "" {
-				if !strings.Contains(string(data), "image: "+expectedImage) {
-					t.Fatalf("controller image was not committed: %s", data)
-				}
-				imageArgument := "--route-controller-image '" + expectedImage + "'"
-				if !strings.Contains(ssh.commands[0], imageArgument) {
-					t.Fatalf("incorrect controller image selection: %s", ssh.commands[0])
-				}
-			}
+			assertControllerSelection(t, ssh.commands[0], string(data),
+				expectedImage, expectedKubeconfig, scenario.table)
 			if strings.Contains(
 				string(data),
 				"controlPlaneMode: standalone",
@@ -255,5 +282,39 @@ func TestControlPlaneConversionCommitAndFailure(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func assertControllerSelection(
+	t *testing.T,
+	command, data string,
+	image, kubeconfig string,
+	table int,
+) {
+	t.Helper()
+	if image != "" {
+		if !strings.Contains(data, "image: "+image) {
+			t.Fatalf("controller image was not committed: %s", data)
+		}
+		if !strings.Contains(command, "--route-controller-image '"+image+"'") {
+			t.Fatalf("incorrect controller image selection: %s", command)
+		}
+	}
+	if kubeconfig != "" {
+		if !strings.Contains(data, "kubeconfig: "+kubeconfig) {
+			t.Fatalf("controller kubeconfig was not committed: %s", data)
+		}
+		if !strings.Contains(command, "--route-controller-kubeconfig '"+kubeconfig+"'") {
+			t.Fatalf("incorrect controller kubeconfig selection: %s", command)
+		}
+	}
+	if table != 0 {
+		tableValue := strconv.Itoa(table)
+		if !strings.Contains(command, "--route-table '"+tableValue+"'") {
+			t.Fatalf("incorrect route table selection: %s", command)
+		}
+		if !strings.Contains(data, "table: "+tableValue) {
+			t.Fatalf("route table was not committed: %s", data)
+		}
 	}
 }

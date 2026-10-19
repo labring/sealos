@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 
 	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/types/v1beta1"
 	"golang.org/x/sys/unix"
 	utilyaml "k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/yaml"
@@ -79,19 +80,25 @@ func lockMaintenance(name string, conversion, lifecycle bool) (func(), error) {
 
 // SetControlPlaneMode preserves all Clusterfile documents and unknown fields.
 // Only the cluster's committed mode changes after every host has been verified.
-func SetControlPlaneMode(path, mode, controllerImage string) error {
+// A non-nil controller commits the effective route-controller settings next to
+// the mode so later conversions and node additions reuse them.
+func SetControlPlaneMode(path, mode string, controller *v1beta1.RouteControllerConfig) error {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
-	data, err = replaceControlPlaneMode(data, mode, controllerImage)
+	data, err = replaceControlPlaneMode(data, mode, controller)
 	if err != nil {
 		return err
 	}
 	return WriteMaintenanceFile(path, data)
 }
 
-func replaceControlPlaneMode(data []byte, mode, controllerImage string) ([]byte, error) {
+func replaceControlPlaneMode(
+	data []byte,
+	mode string,
+	controller *v1beta1.RouteControllerConfig,
+) ([]byte, error) {
 	decoder := utilyaml.NewYAMLOrJSONDecoder(bytes.NewReader(data), 4096)
 	var result bytes.Buffer
 	count := 0
@@ -114,13 +121,30 @@ func replaceControlPlaneMode(data []byte, mode, controllerImage string) ([]byte,
 				return nil, errors.New("Cluster spec is missing")
 			}
 			spec["controlPlaneMode"] = mode
-			if controllerImage != "" {
-				controller, _ := spec["routeController"].(map[string]any)
-				if controller == nil {
-					controller = make(map[string]any)
+			if controller != nil {
+				saved, _ := spec["routeController"].(map[string]any)
+				if saved == nil {
+					saved = make(map[string]any)
 				}
-				controller["image"] = controllerImage
-				spec["routeController"] = controller
+				// Only selected fields are rewritten; unknown keys are kept.
+				if controller.Image != "" {
+					saved["image"] = controller.Image
+				}
+				if controller.Kubeconfig != "" {
+					saved["kubeconfig"] = controller.Kubeconfig
+				}
+				if controller.Config != "" {
+					saved["config"] = controller.Config
+				}
+				if controller.Table != 0 {
+					saved["table"] = controller.Table
+				}
+				if controller.Protocol != 0 {
+					saved["protocol"] = controller.Protocol
+				}
+				if len(saved) != 0 {
+					spec["routeController"] = saved
+				}
 			}
 		}
 		encoded, err := yaml.Marshal(doc)
