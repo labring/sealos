@@ -13,7 +13,7 @@ export type Mongo = {
 
 export type Invoice = {
   enabled: boolean;
-  feishApp: {
+  feishuApp: {
     appId: string;
     appSecret: string;
     feiShuBotURL: string;
@@ -92,7 +92,7 @@ export var DefaultAppConfig: AppConfigType = {
     currencyType: 'shellCoin',
     invoice: {
       enabled: false,
-      feishApp: {
+      feishuApp: {
         appId: '',
         appSecret: '',
         feiShuBotURL: '',

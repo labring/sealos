@@ -3,6 +3,7 @@ import * as yaml from 'js-yaml';
 import { readFileSync } from 'fs';
 import { jsonRes } from '@/service/backend/response';
 import { AppConfigType, DefaultAppConfig } from '@/types/config';
+import { normalizeFeishuAppConfig } from '@/utils/feishu-config';
 
 export type Response = {
   REALNAME_RECHARGE_LIMIT: boolean;
@@ -44,7 +45,7 @@ export function initAppConfig() {
     const filename =
       process.env.NODE_ENV === 'development' ? 'data/config.yaml.local' : '/app/data/config.yaml';
     const yamlResult: any = yaml.load(readFileSync(filename, 'utf-8'));
-    global.AppConfig = getAppConfig(DefaultAppConfig, yamlResult);
+    global.AppConfig = getAppConfig(DefaultAppConfig, normalizeFeishuAppConfig(yamlResult));
   }
 }
 
