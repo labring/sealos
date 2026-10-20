@@ -40,6 +40,22 @@ desktopConfig:
   certSecretName: "wildcard-cert"            # TLS 证书 Secret 名称
 ```
 
+#### Registry management origin
+
+`desktopConfig.registryInternalUrl` sets the server-side `SEALOS_REGISTRY_INTERNAL_URL`
+used to initialize workspace registry credentials. The default is
+`http://sealos-registry.registry-system.svc.cluster.local`; change it when the
+Registry Service name or namespace differs. Use the management origin, not the
+image push/pull endpoint.
+
+Set it in `/root/.sealos/cloud/values/core/desktop-values.yaml`, or pass
+`SEALOS_REGISTRY_INTERNAL_URL` to the deployment entrypoint. An explicit
+`HELM_OPTIONS="--set-string desktopConfig.registryInternalUrl=http://custom-registry.custom.svc.cluster.local:8080"`
+takes precedence over the entrypoint environment override and values files.
+The override also works with `AUTO_CONFIG_ENABLED=false`.
+For local development, set `SEALOS_REGISTRY_INTERNAL_URL` in `.env.local` using
+`.env.template` as the reference.
+
 ### 2. 数据库配置
 
 ```yaml
