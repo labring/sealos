@@ -135,7 +135,7 @@ jobs:
           while IFS= read -r tag; do
             [[ -n "$tag" ]] || continue
             export IMAGE_TAG="${tag##*:}"
-            context="${RUNNER_TEMP}/sealos-cloud-components-${IMAGE_TAG}"
+            context="$(mktemp -d "${RUNNER_TEMP}/sealos-cloud-components.XXXXXX")"
             bash deploy/sealos-cloud/init.sh "$context"
             sudo sealos login -u "${{ github.repository_owner }}" -p "$GHCR_TOKEN" --debug ghcr.io
             if [[ -n "$ALIYUN_REGISTRY" ]]; then
@@ -152,5 +152,6 @@ jobs:
             sudo sealos manifest add "$tag" "docker://${tag}-amd64"
             sudo sealos manifest add "$tag" "docker://${tag}-arm64"
             sudo sealos manifest push --all "$tag" "docker://${tag}"
-            rm -rf "$context"
+            # Sealos runs as root and leaves root-owned registry/build files in the context.
+            sudo rm -rf -- "$context"
           done <<< "$IMAGE_TAGS"
