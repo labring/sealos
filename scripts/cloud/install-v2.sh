@@ -91,7 +91,7 @@ if [  -f "sealos.env" ]; then
 fi
 
 export image_repository=${SEALOS_V2_IMAGE_REPO:-"labring/sealos"}
-export sealos_cloud_image_repository=${SEALOS_V2_CLOUD_IMAGE_REPO:-"labring"}
+export sealos_cloud_image_repository=${SEALOS_V2_CLOUD_IMAGE_REPO:-"labring/sealos"}
 export sealos_cloud_version=${SEALOS_V2_CLOUD_VERSION:-"v5.1.1"}
 export sealos_cli_version=${SEALOS_V2_CLI_VERSION:-"v5.1.1"}
 export github_use_proxy=${SEALOS_V2_PROXY:-"false"}
@@ -124,8 +124,8 @@ Supported environment variables (all optional unless noted):
 
 General image & version settings
   SEALOS_V2_IMAGE_REPO         Image repo for runtime components (default: labring/sealos)
-  SEALOS_V2_CLOUD_IMAGE_REPO   Image repo for Sealos Cloud image (default: labring)
-  SEALOS_V2_CLOUD_VERSION      Sealos Cloud image tag (default: v5.1.1)
+  SEALOS_V2_CLOUD_IMAGE_REPO   Image repo for component cluster image (default: labring/sealos)
+  SEALOS_V2_CLOUD_VERSION      Component cluster image tag (default: v5.1.1)
   SEALOS_V2_CLI_VERSION        Sealos CLI version to install (default: v5.1.1)
   SEALOS_V2_PROXY              Use proxy for GitHub/images when "true" (default: false)
 
@@ -340,9 +340,8 @@ execute_commands() {
     run_and_log "sealos run ${image_registry}/${image_repository}/victoria-metrics-k8s-stack:${victoria_metrics_k8s_stack_version}"
     run_and_log "sealos run --env SEALOS_CLOUD_PORT=${sealos_cloud_port} --env SEALOS_CLOUD_DOMAIN=${sealos_cloud_domain} ${image_registry}/${image_repository}/higress:${higress_version}"
     run_and_log "sealos run ${image_registry}/${image_repository}/kubeblocks:${kubeblocks_version}"
-    print "[Step 4] Starting Sealos Cloud installation..."
+    print "[Step 4] Configuring Sealos Cloud certificates..."
 
-    run_and_log "sealos run ${image_registry}/${sealos_cloud_image_repository}/sealos-cloud:${sealos_cloud_version} --env SEALOS_CLOUD_DOMAIN=\"${sealos_cloud_domain}\" --env SEALOS_CLOUD_PORT=\"${sealos_cloud_port}\" --env SEALOS_CLOUD_DIR=${sealos_cloud_config_dir} "
     if [[ "${sealos_enable_acme,,}" == "true" ]]; then
         run_and_log "sealos run ${image_registry}/${image_repository}/sealos-certs:${sealos_cert_version} --env SEALOS_CLOUD_CERT_MODE=acmedns "
     elif [[ -n "${cert_path}" ]] || [[ -n "${key_path}" ]]; then
@@ -352,130 +351,11 @@ execute_commands() {
     fi
 }
 
-declare -A cloudImages
-
-cloudImages=(
-    # controllers
-    ["user"]="sealos-cloud-user-controller"
-    ["app"]="sealos-cloud-app-controller"
-    ["resources"]="sealos-cloud-resources-controller"
-    ["account"]="sealos-cloud-account-controller"
-    ["license"]="sealos-cloud-license-controller"
-
-    # frontends
-    ["frontend-desktop"]="sealos-cloud-desktop-frontend"
-    ["frontend-costcenter"]="sealos-cloud-costcenter-frontend"
-    ["frontend-license"]="sealos-cloud-license-frontend"
-
-    # services
-    ["database-service"]="sealos-cloud-database-service"
-    ["account-service"]="sealos-cloud-account-service"
-    ["launchpad-service"]="sealos-cloud-launchpad-service"
-    ["job-init"]="sealos-cloud-job-init-controller"
-    ["job-heartbeat"]="sealos-cloud-job-heartbeat-controller"
-)
-
 run_cloud(){
     registry_domain="sealos.hub:5000"
     run_and_log "sealos login -u admin -p ${registry_password} ${registry_domain}"
-    for name in "${!cloudImages[@]}"; do
-       run_and_log "sealos pull --policy=always -q  ${registry_domain}/${sealos_cloud_image_repository}/${cloudImages[$name]}:${sealos_cloud_version}"
-    done
-    if [[ "${dry_run,,}" == "false" ]]; then
-      varCloudDomain=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.cloudDomain}')
-      varCloudPort=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.cloudPort}')
-      varRegionUID=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.regionUID}')
-      varDatabaseGlobalCockroachdbURI=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.databaseGlobalCockroachdbURI}')
-      varDatabaseLocalCockroachdbURI=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.databaseLocalCockroachdbURI}')
-      varDatabaseMongodbURI=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.databaseMongodbURI}')
-      varPasswordSalt=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.passwordSalt}')
-      varJwtInternal=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.jwtInternal}')
-      varJwtRegional=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.jwtRegional}')
-      varJwtGlobal=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.jwtGlobal}')
-    fi
-    print "[Step 5] Starting Sealos Cloud Desktop Frontend..."
-    run_and_log "sealos run ${registry_domain}/${sealos_cloud_image_repository}/sealos-cloud-desktop-frontend:${sealos_cloud_version} \
-              --env cloudDomain=${varCloudDomain} \
-              --env cloudPort=\"${varCloudPort}\" \
-              --env certSecretName=\"wildcard-cert\" \
-              --env passwordEnabled=\"true\" \
-              --env passwordSalt=\"${varPasswordSalt}\" \
-              --env regionUID=\"${varRegionUID}\" \
-              --env databaseMongodbURI=\"${varDatabaseMongodbURI}/sealos-auth?authSource=admin\" \
-              --env databaseLocalCockroachdbURI=\"${varDatabaseLocalCockroachdbURI}\" \
-              --env databaseGlobalCockroachdbURI=\"${varDatabaseGlobalCockroachdbURI}\" \
-              --env jwtInternal=\"${varJwtInternal}\" \
-              --env jwtRegional=\"${varJwtRegional}\" \
-              --env jwtGlobal=\"${varJwtGlobal}\" "
-    if [[ "${dry_run,,}" == "false" ]]; then
-      while true; do
-        # shellcheck disable=SC2126
-        NOT_RUNNING=$(kubectl get pods -n sealos --no-headers | grep desktop-frontend | grep -v "Running" | wc -l)
-        if [[ $NOT_RUNNING -eq 0 ]]; then
-            info "All pods are in Running state for desktop-frontend !"
-            break
-        else
-            warn "Waiting for pods to be in Running state for desktop-frontend..."
-            sleep 15
-        fi
-      done
-    fi
-    print "[Step 6] Starting Sealos Cloud Controllers and Services..."
-    run_and_log "sealos run ${registry_domain}/${sealos_cloud_image_repository}/${cloudImages["user"]}:${sealos_cloud_version} \
-    --env cloudDomain=\"${varCloudDomain}\" \
-    --env apiserverPort=\"6443\" "
-
-    run_and_log "sealos run ${registry_domain}/${sealos_cloud_image_repository}/${cloudImages["app"]}:${sealos_cloud_version}"
-
-    run_and_log "sealos run ${registry_domain}/${sealos_cloud_image_repository}/${cloudImages["resources"]}:${sealos_cloud_version} \
-    --env MONGO_URI=\"${varDatabaseMongodbURI}\" --env DEFAULT_NAMESPACE=\"resources-system\" "
-
-    run_and_log "sealos run ${registry_domain}/${sealos_cloud_image_repository}/${cloudImages["account"]}:${sealos_cloud_version} \
-    --env MONGO_URI=\"${varDatabaseMongodbURI}\" \
-    --env TRAFFIC_MONGO_URI=\"${varDatabaseMongodbURI}\" \
-    --env cloudDomain=\"${varCloudDomain}\" \
-    --env cloudPort=\"${varCloudPort}\" \
-    --env DEFAULT_NAMESPACE=\"account-system\" \
-    --env GLOBAL_COCKROACH_URI=\"${varDatabaseGlobalCockroachdbURI}\" \
-    --env LOCAL_COCKROACH_URI=\"${varDatabaseLocalCockroachdbURI}\" \
-    --env LOCAL_REGION=\"${varRegionUID}\" \
-    --env ACCOUNT_API_JWT_SECRET=\"${varJwtInternal}\" "
-
-    run_and_log "sealos run ${registry_domain}/${sealos_cloud_image_repository}/${cloudImages["account-service"]}:${sealos_cloud_version} --env cloudDomain=\"${varCloudDomain}\" --env cloudPort=\"${varCloudPort}\" "
-
-    run_and_log "sealos run ${registry_domain}/${sealos_cloud_image_repository}/${cloudImages["license"]}:${sealos_cloud_version}"
-
-    print "[Step 7] Starting Sealos Cloud Authorize..."
-    run_and_log "sealos run ${registry_domain}/${sealos_cloud_image_repository}/${cloudImages["job-init"]}:${sealos_cloud_version} --env PASSWORD_SALT=$(echo -n \"${varPasswordSalt}\") "
-    run_and_log "sealos run ${registry_domain}/${sealos_cloud_image_repository}/${cloudImages["job-heartbeat"]}:${sealos_cloud_version}"
-
-    if [[ "${dry_run,,}" == "false" ]]; then
-        while [ -z "$(kubectl get ns ns-admin 2>/dev/null)" ]; do
-          sleep 1
-        done
-    fi
-
-    print "[Step 8] Starting Sealos Cloud Frontends..."
-
-    run_and_log "sealos run ${registry_domain}/${sealos_cloud_image_repository}/${cloudImages["frontend-costcenter"]}:${sealos_cloud_version} \
-    --env cloudDomain=${varCloudDomain} \
-    --env cloudPort=\"${varCloudPort}\" \
-    --env certSecretName=\"wildcard-cert\" \
-    --env transferEnabled=\"true\" \
-    --env rechargeEnabled=\"false\" \
-    --env jwtInternal=\"${varJwtInternal}\" "
-
-    run_and_log "sealos run ${registry_domain}/${sealos_cloud_image_repository}/${cloudImages["frontend-license"]}:${sealos_cloud_version} \
-    --env cloudDomain=${varCloudDomain} \
-    --env cloudPort=\"${varCloudPort}\" \
-    --env certSecretName=\"wildcard-cert\" \
-    --env MONGODB_URI=\"${varDatabaseMongodbURI}/sealos-license?authSource=admin\" \
-    --env licensePurchaseDomain=\"license.sealos.io\" "
-
-    run_and_log "sealos run ${registry_domain}/${sealos_cloud_image_repository}/${cloudImages["database-service"]}:${sealos_cloud_version}"
-
-    run_and_log "sealos run ${registry_domain}/${sealos_cloud_image_repository}/${cloudImages["launchpad-service"]}:${sealos_cloud_version}"
-
+    print "[Step 5] Starting Sealos Cloud components..."
+    run_and_log "sealos run ${registry_domain}/${sealos_cloud_image_repository}/sealos-cloud:${sealos_cloud_version}"
 }
 
 finish_info(){

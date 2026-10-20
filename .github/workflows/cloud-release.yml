@@ -8,11 +8,6 @@ on:
         required: false
         default: ""
         type: string
-      build_offline_tar_only:
-        description: "Build offline tar only"
-        required: false
-        default: false
-        type: boolean
   workflow_dispatch:
     inputs:
       tag:
@@ -20,11 +15,6 @@ on:
         required: false
         default: ""
         type: string
-      build_offline_tar_only:
-        description: "Build offline tar only"
-        required: false
-        default: false
-        type: boolean
 
 env:
   # Common versions
@@ -38,7 +28,6 @@ permissions:
 
 jobs:
   release-controllers:
-    if: ${{ inputs.build_offline_tar_only == false }}
     uses: ./.github/workflows/controllers.yml
     with:
       push_image: true
@@ -48,7 +37,6 @@ jobs:
     secrets: inherit
 
   release-frontends:
-    if: ${{ inputs.build_offline_tar_only == false }}
     uses: ./.github/workflows/frontends.yml
     with:
       push_image: true
@@ -57,7 +45,6 @@ jobs:
     secrets: inherit
 
   release-service:
-    if: ${{ inputs.build_offline_tar_only == false }}
     uses: ./.github/workflows/services.yml
     with:
       push_image: true
@@ -67,10 +54,107 @@ jobs:
     secrets: inherit
 
   release-webhook:
-    if: ${{ inputs.build_offline_tar_only == false }}
     uses: ./.github/workflows/webhooks.yml
     with:
       push_image: true
       push_image_tag: ${{ inputs.tag }}
       disable_cilint: true
     secrets: inherit
+
+  release-components:
+    needs:
+      - release-controllers
+      - release-frontends
+      - release-service
+      - release-webhook
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    env:
+      ALIYUN_REGISTRY: ${{ secrets.ALIYUN_REGISTRY }}
+      ALIYUN_REPO_PREFIX: ${{ secrets.ALIYUN_REPO_PREFIX && secrets.ALIYUN_REPO_PREFIX || secrets.ALIYUN_USERNAME && format('{0}/{1}', secrets.ALIYUN_REGISTRY, secrets.ALIYUN_USERNAME) || '' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set image repositories
+        env:
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+        run: |
+          echo "GHCR_REPO=ghcr.io/${REPOSITORY_OWNER}/sealos/sealos-cloud" >> "$GITHUB_ENV"
+          if [[ -n "${ALIYUN_REPO_PREFIX}" ]]; then
+            echo "ALIYUN_REPO=${ALIYUN_REPO_PREFIX}/sealos/sealos-cloud" >> "$GITHUB_ENV"
+          fi
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ env.GHCR_REPO }}
+            ${{ env.ALIYUN_REPO }}
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'main') }}
+            type=raw,value=${{ inputs.tag }},enable=${{ inputs.tag != '' && inputs.tag != 'latest' }}
+            type=ref,event=branch
+            type=ref,event=tag
+            type=sha
+        env:
+          DOCKER_METADATA_SHORT_SHA_LENGTH: 9
+
+      - name: Install sealos
+        run: sudo bash ./.github/scripts/install.sh
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Login to Aliyun Registry
+        if: ${{ env.ALIYUN_REGISTRY }}
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.ALIYUN_REGISTRY }}
+          username: ${{ secrets.ALIYUN_USERNAME }}
+          password: ${{ secrets.ALIYUN_PASSWORD }}
+
+      - name: Build and publish component cluster images
+        env:
+          IMAGE_OWNER: ${{ github.repository_owner }}
+          IMAGE_SOURCE: ${{ github.server_url }}/${{ github.repository }}
+          IMAGE_TAGS: ${{ steps.meta.outputs.tags }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
+          ALIYUN_USERNAME: ${{ secrets.ALIYUN_USERNAME }}
+          ALIYUN_PASSWORD: ${{ secrets.ALIYUN_PASSWORD }}
+        run: |
+          set -euo pipefail
+          while IFS= read -r tag; do
+            [[ -n "$tag" ]] || continue
+            export IMAGE_TAG="${tag##*:}"
+            context="$(mktemp -d "${RUNNER_TEMP}/sealos-cloud.XXXXXX")"
+            bash deploy/sealos-cloud/init.sh "$context"
+            sudo sealos login -u "${{ github.repository_owner }}" -p "$GHCR_TOKEN" --debug ghcr.io
+            if [[ -n "$ALIYUN_REGISTRY" ]]; then
+              sudo sealos login -u "$ALIYUN_USERNAME" -p "$ALIYUN_PASSWORD" --debug "$ALIYUN_REGISTRY"
+            fi
+            (
+              cd "$context"
+              sudo sealos build -t "${tag}-amd64" --platform linux/amd64 \
+                --label "org.opencontainers.image.source=${IMAGE_SOURCE}" -f Kubefile .
+              sudo sealos build -t "${tag}-arm64" --platform linux/arm64 \
+                --label "org.opencontainers.image.source=${IMAGE_SOURCE}" -f Kubefile .
+            )
+            sudo sealos push "${tag}-amd64"
+            sudo sealos push "${tag}-arm64"
+            sudo sealos manifest create "$tag"
+            sudo sealos manifest add "$tag" "docker://${tag}-amd64"
+            sudo sealos manifest add "$tag" "docker://${tag}-arm64"
+            sudo sealos manifest push --all "$tag" "docker://${tag}"
+            # Sealos runs as root and leaves root-owned registry/build files in the context.
+            sudo rm -rf -- "$context"
+          done <<< "$IMAGE_TAGS"

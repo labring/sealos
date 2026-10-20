@@ -62,4 +62,3 @@ jobs:
     secrets: inherit
     with:
       tag: ${{ github.ref_name }}
-      build_offline_tar_only: false
