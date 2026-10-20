@@ -98,9 +98,6 @@ add_enforced_set_string() {
   fi
 }
 
-# Optional installer override; Helm values provide the default management origin.
-add_set_string desktopConfig.registryInternalUrl "${SEALOS_REGISTRY_INTERNAL_URL:-}"
-
 load_cloud_tools_or_exit
 tls_reject_unauthorized="$(read_cert_tls_reject_unauthorized)"
 add_enforced_set_string desktopConfig.tlsRejectUnauthorized "${tls_reject_unauthorized}"

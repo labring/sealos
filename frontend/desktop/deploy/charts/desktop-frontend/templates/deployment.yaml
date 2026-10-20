@@ -68,8 +68,6 @@ spec:
           env:
             - name: NODE_TLS_REJECT_UNAUTHORIZED
               value: {{ .Values.desktopConfig.tlsRejectUnauthorized | quote }}
-            - name: SEALOS_REGISTRY_INTERNAL_URL
-              value: {{ .Values.desktopConfig.registryInternalUrl | default "http://sealos-registry.registry-system.svc.cluster.local" | quote }}
             - name: PRISMA_DB_PROVIDER
               value: "{{ .Values.desktopConfig.databaseType }}"
           command: ["/bin/sh", "-c"]

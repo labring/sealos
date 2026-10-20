@@ -47,10 +47,6 @@ autoConfigEnabled: true
 # ============================================================================
 
 desktopConfig:
-  # Registry management origin; injected as SEALOS_REGISTRY_INTERNAL_URL.
-  # Override for a custom Registry Service name or namespace.
-  registryInternalUrl: "http://sealos-registry.registry-system.svc.cluster.local"
-
   # Basic cloud configuration (auto-configured from sealos-config)
   cloudDomain: "127.0.0.1.nip.io"  # Auto-fetched from sealos-config.cloudDomain
   cloudPort: ""                     # Auto-fetched from sealos-config.cloudPort
