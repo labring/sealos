@@ -126,6 +126,7 @@ jobs:
       - name: Build and publish component cluster images
         env:
           IMAGE_OWNER: ${{ github.repository_owner }}
+          IMAGE_SOURCE: ${{ github.server_url }}/${{ github.repository }}
           IMAGE_TAGS: ${{ steps.meta.outputs.tags }}
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
           ALIYUN_USERNAME: ${{ secrets.ALIYUN_USERNAME }}
@@ -143,8 +144,10 @@ jobs:
             fi
             (
               cd "$context"
-              sudo sealos build -t "${tag}-amd64" --platform linux/amd64 -f Kubefile .
-              sudo sealos build -t "${tag}-arm64" --platform linux/arm64 -f Kubefile .
+              sudo sealos build -t "${tag}-amd64" --platform linux/amd64 \
+                --label "org.opencontainers.image.source=${IMAGE_SOURCE}" -f Kubefile .
+              sudo sealos build -t "${tag}-arm64" --platform linux/arm64 \
+                --label "org.opencontainers.image.source=${IMAGE_SOURCE}" -f Kubefile .
             )
             sudo sealos push "${tag}-amd64"
             sudo sealos push "${tag}-arm64"
