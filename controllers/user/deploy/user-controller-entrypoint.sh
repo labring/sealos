@@ -58,3 +58,9 @@ helm upgrade -i "${RELEASE_NAME}" -n "${RELEASE_NAMESPACE}" --create-namespace "
 
 # Apply CRDs
 helm show crds ./charts/${SERVICE_NAME} | kubectl apply -f - --server-side --force-conflicts
+
+# Retire the standalone app manager only after its replacement is ready.
+kubectl rollout status deployment -n "${RELEASE_NAMESPACE}" \
+  -l "app.kubernetes.io/instance=${RELEASE_NAME}" --timeout=5m
+kubectl delete deployment app-controller-manager -n app-system \
+  --ignore-not-found --wait=true --timeout=60s

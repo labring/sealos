@@ -14,3 +14,20 @@ sealos build -t docker.io/labring/sealos-user-controller:latest -f Kubefile .
 
 sealos run docker.io/labring/sealos-user-controller:latest
 ```
+
+### Upgrading from the standalone app controller
+
+The user controller package now includes the App, Template, and Instance APIs
+and CRDs. After Helm installation and CRD application succeed, the entrypoint
+waits up to five minutes for the user release's Deployment rollout to complete,
+then deletes `app-system/app-controller-manager` and its owned ReplicaSets/Pods.
+If installation, CRD application, or rollout fails, this cleanup does not run.
+Missing legacy Deployments are ignored, so fresh installations and repeated
+upgrades can use the same entrypoint. App CRDs, App/Template/Instance objects,
+the `app-system` namespace, and its remaining resources are preserved.
+
+Run the entrypoint regression tests with:
+
+```shell
+python3 controllers/user/deploy/test_entrypoint.py
+```
