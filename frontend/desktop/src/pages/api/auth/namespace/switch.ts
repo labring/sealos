@@ -4,6 +4,7 @@ import { prisma } from '@/services/backend/db/init';
 import { validate } from 'uuid';
 import { JoinStatus } from 'prisma/region/generated/client';
 import { generateAccessToken, generateAppToken, verifyAccessToken } from '@/services/backend/auth';
+import { ensureWorkspaceRegistrySecret } from '@/services/backend/registrySecret';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -36,6 +37,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       userId: payload.userId,
       userUid: payload.userUid
     };
+    await ensureWorkspaceRegistrySecret(jwtPayload);
     const token = generateAccessToken(jwtPayload);
     const appToken = generateAppToken(jwtPayload);
     const data = {
