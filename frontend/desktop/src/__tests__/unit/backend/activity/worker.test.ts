@@ -14,8 +14,8 @@ vi.mock('@/services/backend/db/init', () => ({
     $queryRaw: queryRaw
   }
 }));
+vi.mock('@/services/enable', () => ({ isActivityAvailable: vi.fn(() => true) }));
 vi.mock('@/services/backend/activity/rewards', () => ({
-  isActivityAvailable: vi.fn(() => true),
   reconcileGrant: vi.fn(),
   redeemGrant: vi.fn(),
   checkAndGrantUserRewards: grantUserRewards

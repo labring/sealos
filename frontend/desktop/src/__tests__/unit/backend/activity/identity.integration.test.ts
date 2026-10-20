@@ -15,7 +15,7 @@ vi.mock('@/services/backend/db/init', async () => {
   const { PrismaClient } = await import('prisma/providers/postgresql/global/generated/client');
   return { globalPrisma: new PrismaClient(options) };
 });
-vi.mock('@/services/enable', () => ({ getVersion: () => 'cn' }));
+vi.mock('@/services/enable', () => ({ getVersion: () => 'cn', isActivityAvailable: () => true }));
 vi.mock('@/services/backend/auth', () => ({ callBillingService: vi.fn() }));
 
 import { globalPrisma as db } from '@/services/backend/db/init';

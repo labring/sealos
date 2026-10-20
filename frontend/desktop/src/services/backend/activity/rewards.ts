@@ -1,4 +1,4 @@
-import { getVersion } from '@/services/enable';
+import { isActivityAvailable } from '@/services/enable';
 import { globalPrisma } from '@/services/backend/db/init';
 import { callBillingService } from '../auth';
 import {
@@ -20,9 +20,6 @@ import {
 } from './constants';
 import { isUniqueConstraintError } from './registration';
 import { rewardIdentityKeys } from './identity.cjs';
-
-// Activity is only open to the CN deployment (desktop.layout.version !== 'en')
-export const isActivityAvailable = () => getVersion() !== 'en';
 
 // Eligibility facts (all read server-side; the three reward types share one
 // derivation to avoid inconsistent eligibility decisions)

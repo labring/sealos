@@ -13,7 +13,8 @@ import {
   referralInviterBusinessKey,
   REFERRAL_REWARD_AMOUNT
 } from './constants';
-import { isActivityAvailable, readEligibilityFacts, hasIdentityConflict } from './rewards';
+import { readEligibilityFacts, hasIdentityConflict } from './rewards';
+import { isActivityAvailable } from '@/services/enable';
 
 // First-login gift display status (amounts are credit-unit strings; the client
 // renders 1 CNY = 1e6)

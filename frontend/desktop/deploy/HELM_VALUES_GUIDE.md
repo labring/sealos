@@ -113,6 +113,7 @@ desktopConfig:
   realNameAuthEnabled: false # 启用实名认证
   licenseCheckEnabled: false # 启用 License 检查
   passwordEnabled: true # 启用密码登录
+  activityEnabled: true # 桌面拉新奖励（邀请好友/首次登录礼）开关；仅 version "cn" 生效，false 关闭活动
 ```
 
 ### 9. Common URLs 配置

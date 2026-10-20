@@ -1,6 +1,7 @@
 import { buildInviteUrl } from '@/services/backend/activity/constants';
 import { ensureInviteCode } from '@/services/backend/activity/registration';
-import { isActivityAvailable, readEligibilityFacts } from '@/services/backend/activity/rewards';
+import { readEligibilityFacts } from '@/services/backend/activity/rewards';
+import { isActivityAvailable } from '@/services/enable';
 import { verifyAccessToken, verifyGlobalToken } from '@/services/backend/auth';
 import { jsonRes } from '@/services/backend/response';
 import { RegistrationSourceType } from 'prisma/global/generated/client';
@@ -16,7 +17,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return jsonRes(res, { code: 405, message: 'Method not allowed' });
   }
   try {
-    // International deployments don't participate in the activity
+    // International deployments and deployments with desktop.activity.enabled=false
+    // don't participate in the activity
     if (!isActivityAvailable()) {
       return jsonRes(res, { code: 503, message: 'Activity unavailable' });
     }
