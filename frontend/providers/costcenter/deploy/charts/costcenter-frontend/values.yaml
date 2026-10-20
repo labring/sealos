@@ -79,8 +79,17 @@ costcenterConfig:
   currencyType: "shellCoin"
   invoice:
     enabled: false
-    # Deprecated compatibility key. Prefer invoice.feishApp.feiShuBotURL.
+    # Deprecated compatibility key. Prefer invoice.feishuApp.feiShuBotURL.
     feiShuBotURL: ""
+    feishuApp:
+      appId: ""
+      appSecret: ""
+      feiShuBotURL: ""
+      chatId: ""
+      token: ""
+      templateId: ""
+      templateVersion: ""
+    # Deprecated alias for existing custom values.
     feishApp:
       appId: ""
       appSecret: ""

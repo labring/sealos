@@ -1,0 +1,12 @@
+apiVersion: v2
+name: stargz-webhook
+description: Sealos stargz runtime class admission webhook
+type: application
+version: 0.1.0
+appVersion: "latest"
+keywords:
+  - kubernetes
+  - admission
+  - stargz
+maintainers:
+  - name: sealos

@@ -6,7 +6,7 @@ import { customAlphabet } from 'nanoid';
 import { retrySerially } from '@/utils/tools';
 import { AccessTokenPayload } from '@/types/token';
 import { JoinStatus, Role } from 'prisma/region/generated/client';
-import { generateAccessToken, generateAppToken } from '@/services/backend/auth';
+import { generateRegionalToken, generateAppToken } from '@/services/backend/auth';
 import { withEncodedKubeconfig } from '@/services/backend/kubeconfigEncoding';
 import { v4 } from 'uuid';
 import { getDefaultPrivateWorkspaceName } from '@/services/backend/svc/workspaceDefaults';
@@ -339,7 +339,7 @@ export async function getRegionToken({
   await ensureWorkspaceRegistrySecret(payload);
   return withEncodedKubeconfig({
     kubeconfig,
-    token: generateAccessToken(payload),
+    token: generateRegionalToken(payload),
     appToken: generateAppToken(payload)
   });
 }
@@ -599,7 +599,7 @@ export async function initRegionToken({
   await ensureWorkspaceRegistrySecret(payload);
   return withEncodedKubeconfig({
     kubeconfig,
-    token: generateAccessToken(payload),
+    token: generateRegionalToken(payload),
     appToken: generateAppToken(payload)
   });
 }

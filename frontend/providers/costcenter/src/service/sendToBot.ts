@@ -20,7 +20,7 @@ const getStatus = (invoiceStatus: InvoicePayload['status']) =>
 export const updateTenantAccessToken = async () => {
   try {
     initAppConfig();
-    const feishuConfig = global.AppConfig.costCenter.invoice.feishApp;
+    const feishuConfig = global.AppConfig.costCenter.invoice.feishuApp;
 
     const body = {
       app_id: feishuConfig.appId,
@@ -109,8 +109,8 @@ const generateBotTemplate = ({
   const card = {
     type: 'template',
     data: {
-      template_id: AppConfig.costCenter.invoice.feishApp.template.id,
-      template_version_name: AppConfig.costCenter.invoice.feishApp.template.version,
+      template_id: AppConfig.costCenter.invoice.feishuApp.template.id,
+      template_version_name: AppConfig.costCenter.invoice.feishuApp.template.version,
       template_variable: {
         invoiceId: invoice.id,
         invoiceDetail,
@@ -174,7 +174,7 @@ export const sendToBot = async ({
 
   const body = {
     msg_type: 'interactive',
-    receive_id: AppConfig.costCenter.invoice.feishApp.chatId,
+    receive_id: AppConfig.costCenter.invoice.feishuApp.chatId,
     content: JSON.stringify(card)
   };
 
@@ -201,7 +201,7 @@ export const sendToUpdateBot = async ({
   const card = generateBotTemplate({ invoice, payments });
   const body = {
     msg_type: 'interactive',
-    receive_id: AppConfig.costCenter.invoice.feishApp.chatId,
+    receive_id: AppConfig.costCenter.invoice.feishuApp.chatId,
     content: JSON.stringify(card)
   };
 

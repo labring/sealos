@@ -22,7 +22,7 @@ jest.mock('axios');
 jest.mock('@kubernetes/client-node', () => ({ CustomObjectsApi: class {} }));
 jest.mock('@/services/backend/auth', () => ({
   generateAppToken: (payload: unknown) => JSON.stringify(payload),
-  generateAccessToken: () => 'regional-token',
+  generateRegionalToken: () => 'regional-token',
   verifyAccessToken: () => mockVerify()
 }));
 jest.mock('@/services/backend/kubernetes/admin', () => ({

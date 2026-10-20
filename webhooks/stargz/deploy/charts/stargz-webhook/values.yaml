@@ -1,0 +1,72 @@
+image: ghcr.io/labring/sealos/stargz-webhook:latest
+imagePullPolicy: IfNotPresent
+imagePullSecrets: []
+
+deploymentName: pod-stargz-runtime-injector
+selectorLabels:
+  app.kubernetes.io/name: pod-stargz-runtime-injector
+replicaCount: 2
+
+serviceAccount:
+  create: true
+  name: pod-stargz-runtime-injector
+  annotations: {}
+
+runtimeClass:
+  create: true
+  name: stargz
+  handler: stargz
+  nodeSelector:
+    stargz.sealos.io/runtime: "true"
+
+webhook:
+  name: pod-stargz-runtime-injector
+  entryName: pod-stargz-runtime-injector.sealos-system.svc
+  registries: sealos.hub:5000
+  runtimeClass: stargz
+  skipAnnotation: stargz.sealos.io/skip
+  failurePolicy: Ignore
+  timeoutSeconds: 5
+
+certificate:
+  issuerName: stargz-runtime-injector-selfsigned-issuer
+  name: stargz-runtime-injector-serving-cert
+  secretName: stargz-runtime-injector-tls
+  duration: 2160h
+  renewBefore: 720h
+
+service:
+  name: pod-stargz-runtime-injector
+
+health:
+  port: 8081
+
+metrics:
+  enabled: false
+  port: 8443
+
+resources:
+  limits:
+    cpu: 200m
+    memory: 128Mi
+  requests:
+    cpu: 20m
+    memory: 32Mi
+
+podAnnotations: {}
+podSecurityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+securityContext:
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: [ALL]
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+updateStrategy:
+  maxUnavailable: 0
+  maxSurge: 1

@@ -1,3 +1,4 @@
+import { consumePendingOauth2RedirectPath } from '@/utils/oauth2';
 import { useRouter } from 'next/router';
 import { useEffect } from 'react';
 import useSessionStore from '@/stores/session';
@@ -131,7 +132,7 @@ export default function Callback() {
               const regionTokenRes = await getRegionToken();
               if (regionTokenRes?.data) {
                 await sessionConfig(regionTokenRes.data);
-                await router.replace('/');
+                await router.replace(consumePendingOauth2RedirectPath() || '/');
               }
             } else {
               throw new Error();

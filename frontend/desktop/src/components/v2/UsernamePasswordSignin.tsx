@@ -1,3 +1,4 @@
+import { consumePendingOauth2RedirectPath } from '@/utils/oauth2';
 import {
   Button,
   Flex,
@@ -90,7 +91,7 @@ export default function UsernamePasswordSignin({ onBack }: UsernamePasswordSigni
           const regionTokenRes = await getRegionToken();
           if (regionTokenRes?.data) {
             await sessionConfig(regionTokenRes.data);
-            await router.replace('/');
+            await router.replace(consumePendingOauth2RedirectPath() || '/');
           }
         }
 

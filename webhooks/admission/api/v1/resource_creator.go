@@ -143,8 +143,12 @@ func (h *ResourceCreator) Handle(ctx context.Context, req admission.Request) adm
 	}
 	original := obj.GetAnnotations()
 	if req.Operation == admissionv1.Update {
-		// Also preserve absence on legacy resources: an edit is not a creation.
-		copyCreator(annotations, old.GetAnnotations())
+		// Only the ns-admin kubeconfig identity may correct or backfill creators.
+		// Match the authenticated actor, not the resource namespace or RBAC groups.
+		if req.UserInfo.Username != "system:serviceaccount:user-system:admin" {
+			// Also preserve absence on legacy resources: an edit is not a creation.
+			copyCreator(annotations, old.GetAnnotations())
+		}
 	} else {
 		values, err := h.creationIdentity(ctx, req, obj)
 		if err != nil {

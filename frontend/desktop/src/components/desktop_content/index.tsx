@@ -1,6 +1,7 @@
 import AppWindow from '@/components/app_window';
 import useAppStore from '@/stores/app';
 import { useConfigStore } from '@/stores/config';
+import { getHostConfig } from '@/utils/hostConfig';
 import { useDesktopConfigStore } from '@/stores/desktopConfig';
 import { WindowSize } from '@/types';
 import { Box, Flex, Image, useToast } from '@chakra-ui/react';
@@ -168,7 +169,8 @@ export default function Desktop() {
   useEffect(() => {
     const cleanup = createMasterAPP({
       allowedOrigins: cloudConfig?.allowedOrigins || ['*'],
-      getWorkspaceQuotaApi: async () => []
+      getWorkspaceQuotaApi: async () => [],
+      getHostConfigApi: getHostConfig
     });
     return cleanup;
   }, [cloudConfig?.allowedOrigins]);
