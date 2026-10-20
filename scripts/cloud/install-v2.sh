@@ -368,9 +368,7 @@ cloudImages=(
     ["frontend-license"]="sealos-cloud-license-frontend"
 
     # services
-    ["database-service"]="sealos-cloud-database-service"
     ["account-service"]="sealos-cloud-account-service"
-    ["launchpad-service"]="sealos-cloud-launchpad-service"
     ["job-init"]="sealos-cloud-job-init-controller"
     ["job-heartbeat"]="sealos-cloud-job-heartbeat-controller"
 )
@@ -471,10 +469,6 @@ run_cloud(){
     --env certSecretName=\"wildcard-cert\" \
     --env MONGODB_URI=\"${varDatabaseMongodbURI}/sealos-license?authSource=admin\" \
     --env licensePurchaseDomain=\"license.sealos.io\" "
-
-    run_and_log "sealos run ${registry_domain}/${sealos_cloud_image_repository}/${cloudImages["database-service"]}:${sealos_cloud_version}"
-
-    run_and_log "sealos run ${registry_domain}/${sealos_cloud_image_repository}/${cloudImages["launchpad-service"]}:${sealos_cloud_version}"
 
 }
 
