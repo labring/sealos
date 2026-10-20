@@ -27,7 +27,7 @@ the controller, frontend, service, and webhook workflows finish.
 The entrypoint applies the app controller manifests, deploys controllers and
 services, and waits for their deployments before running the account
 initialization Job. It then deploys the heartbeat CronJob, frontend charts, and
-admission webhook manifests. `drop/` and `remove/` files remain isolated under
+admission webhook Helm chart. `drop/` and `remove/` files remain isolated under
 `assets/<component>/` and are passed to their owning component scripts.
 
 The installer runs the base `sealos-cloud` image followed by this component

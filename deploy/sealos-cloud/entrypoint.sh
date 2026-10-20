@@ -7,8 +7,13 @@ COMPONENT_DIR="${ROOT_DIR}/scripts/components"
 run_component() {
   local name="$1"
   shift
+  local env_args=()
+  while [[ "$#" -gt 0 && "$1" == *=* ]]; do
+    env_args+=("$1")
+    shift
+  done
   echo "[sealos-cloud] Deploying ${name}"
-  (cd "${ROOT_DIR}" && env "$@" bash "${COMPONENT_DIR}/${name}.sh")
+  (cd "${ROOT_DIR}" && env "${env_args[@]}" bash "${COMPONENT_DIR}/${name}.sh" "$@")
 }
 
 wait_deployment() {
@@ -51,5 +56,6 @@ wait_deployment costcenter-frontend costcenter-frontend
 run_component license-frontend
 wait_deployment license-frontend license-frontend
 
-kubectl apply -f "${ROOT_DIR}/manifests/admission/deploy.yaml"
+run_component admission-webhook "CHART_PATH=${ROOT_DIR}/charts/admission-webhook" apply
+wait_deployment sealos-system admission-webhook
 echo "[sealos-cloud] Component deployment completed"

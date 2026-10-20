@@ -70,6 +70,7 @@ add_chart_component account-service service/account/deploy account-service-entry
 add_chart_component database-service service/database/deploy entrypoint.sh
 add_chart_component launchpad-service service/launchpad/deploy entrypoint.sh
 add_chart_component vlogs-service service/vlogs/deploy entrypoint.sh
+add_chart_component admission-webhook webhooks/admission/deploy entrypoint.sh
 
 copy_file "${ROOT_DIR}/controllers/app/deploy/manifests/deploy.yaml" "${STAGING_DIR}/manifests/app-controller/deploy.yaml"
 copy_asset_dir "${ROOT_DIR}/controllers/node/deploy/drop" node-controller/drop
@@ -77,12 +78,10 @@ copy_asset_dir "${ROOT_DIR}/controllers/user/deploy/drop" user-controller/drop
 copy_asset_dir "${ROOT_DIR}/service/database/deploy/remove" database-service/remove
 copy_asset_dir "${ROOT_DIR}/service/launchpad/deploy/remove" launchpad-service/remove
 copy_asset_dir "${ROOT_DIR}/service/vlogs/deploy/remove" vlogs-service/remove
-copy_file "${ROOT_DIR}/webhooks/admission/deploy/manifests/deploy.yaml.tmpl" "${STAGING_DIR}/manifests/admission/deploy.yaml.tmpl"
-
 replace_image() {
-  local repo="$1"
-  local old_image="ghcr.io/labring/sealos-${repo}:latest"
-  local new_image="ghcr.io/${IMAGE_OWNER}/sealos-${repo}:${IMAGE_TAG}"
+  local image="$1"
+  local old_image="ghcr.io/labring/${image}:latest"
+  local new_image="ghcr.io/${IMAGE_OWNER}/${image}:${IMAGE_TAG}"
   local matches
   matches="$(grep -RIlF "${old_image}" "${STAGING_DIR}/charts" "${STAGING_DIR}/assets" "${STAGING_DIR}/manifests" || true)"
   [[ -n "${matches}" ]] || { echo "No default image reference found for ${repo}" >&2; exit 1; }
@@ -92,10 +91,11 @@ replace_image() {
 }
 
 for image in \
-  account-controller job-heartbeat-controller job-init-controller license-controller \
-  node-controller resources-controller user-controller app-controller \
-  desktop-frontend costcenter-frontend license-frontend \
-  account-service database-service launchpad-service vlogs-service admission-webhook; do
+  sealos-account-controller sealos-job-heartbeat-controller sealos-job-init-controller sealos-license-controller \
+  sealos-node-controller sealos-resources-controller sealos-user-controller sealos-app-controller \
+  sealos-desktop-frontend sealos-costcenter-frontend sealos-license-frontend \
+  sealos-account-service sealos-database-service sealos-launchpad-service sealos-vlogs-service \
+  sealos/admission-webhook; do
   replace_image "${image}"
 done
 

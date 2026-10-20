@@ -7,7 +7,4 @@ COPY assets assets
 COPY manifests manifests
 COPY entrypoint.sh entrypoint.sh
 
-ENV cnameDomains="cloud.sealos.io,laf.dev,laf.run"
-ENV cnameCheck="false"
-
 CMD ["bash entrypoint.sh"]
