@@ -84,9 +84,9 @@ jobs:
         env:
           REPOSITORY_OWNER: ${{ github.repository_owner }}
         run: |
-          echo "GHCR_REPO=ghcr.io/${REPOSITORY_OWNER}/sealos/sealos-cloud-components" >> "$GITHUB_ENV"
+          echo "GHCR_REPO=ghcr.io/${REPOSITORY_OWNER}/sealos/sealos-cloud" >> "$GITHUB_ENV"
           if [[ -n "${ALIYUN_REPO_PREFIX}" ]]; then
-            echo "ALIYUN_REPO=${ALIYUN_REPO_PREFIX}/sealos/sealos-cloud-components" >> "$GITHUB_ENV"
+            echo "ALIYUN_REPO=${ALIYUN_REPO_PREFIX}/sealos/sealos-cloud" >> "$GITHUB_ENV"
           fi
 
       - name: Docker meta
@@ -135,7 +135,7 @@ jobs:
           while IFS= read -r tag; do
             [[ -n "$tag" ]] || continue
             export IMAGE_TAG="${tag##*:}"
-            context="$(mktemp -d "${RUNNER_TEMP}/sealos-cloud-components.XXXXXX")"
+            context="$(mktemp -d "${RUNNER_TEMP}/sealos-cloud.XXXXXX")"
             bash deploy/sealos-cloud/init.sh "$context"
             sudo sealos login -u "${{ github.repository_owner }}" -p "$GHCR_TOKEN" --debug ghcr.io
             if [[ -n "$ALIYUN_REGISTRY" ]]; then

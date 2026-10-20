@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 CONTEXT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-STAGING_DIR="${1:-${RUNNER_TEMP:-/tmp}/sealos-cloud-components}"
+STAGING_DIR="${1:-${RUNNER_TEMP:-/tmp}/sealos-cloud}"
 IMAGE_OWNER="${IMAGE_OWNER:-labring}"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
 

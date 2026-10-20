@@ -14,9 +14,9 @@ container image owner and tag; Sealos collects the referenced images into the
 cluster image's generated `registry/` directory during `sealos build`.
 
 ```sh
-IMAGE_OWNER=labring IMAGE_TAG=v5.1.1 bash deploy/sealos-cloud/init.sh /tmp/sealos-cloud-components
-cd /tmp/sealos-cloud-components
-sealos build -t labring/sealos/sealos-cloud-components:v5.1.1 .
+IMAGE_OWNER=labring IMAGE_TAG=v5.1.1 bash deploy/sealos-cloud/init.sh /tmp/sealos-cloud
+cd /tmp/sealos-cloud
+sealos build -t labring/sealos/sealos-cloud:v5.1.1 .
 ```
 
 The cloud release workflow builds and publishes amd64 and arm64 images after

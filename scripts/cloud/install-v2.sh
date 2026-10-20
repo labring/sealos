@@ -266,7 +266,7 @@ install_pull_images() {
     pull_image "${image_registry}/${image_repository}/cockroach:${cockroach_version}"
     pull_image "${image_registry}/${image_repository}/metrics-server:${metrics_server_version}"
     pull_image "${image_registry}/${image_repository}/victoria-metrics-k8s-stack:${victoria_metrics_k8s_stack_version}"
-    pull_image "${image_registry}/${sealos_cloud_image_repository}/sealos-cloud-components:${sealos_cloud_version}"
+    pull_image "${image_registry}/${sealos_cloud_image_repository}/sealos-cloud:${sealos_cloud_version}"
     pull_image "${image_registry}/${image_repository}/sealos-finish:${sealos_finish_version}"
     pull_image "${image_registry}/${image_repository}/sealos-certs:${sealos_cert_version}"
 }
@@ -355,7 +355,7 @@ run_cloud(){
     registry_domain="sealos.hub:5000"
     run_and_log "sealos login -u admin -p ${registry_password} ${registry_domain}"
     print "[Step 5] Starting Sealos Cloud components..."
-    run_and_log "sealos run ${registry_domain}/${sealos_cloud_image_repository}/sealos-cloud-components:${sealos_cloud_version}"
+    run_and_log "sealos run ${registry_domain}/${sealos_cloud_image_repository}/sealos-cloud:${sealos_cloud_version}"
 }
 
 finish_info(){
