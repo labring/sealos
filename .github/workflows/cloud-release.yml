@@ -99,9 +99,9 @@ jobs:
         env:
           REPOSITORY_OWNER: ${{ github.repository_owner }}
         run: |
-          echo "GHCR_REPO=ghcr.io/${REPOSITORY_OWNER}/sealos-cloud-components" >> "$GITHUB_ENV"
+          echo "GHCR_REPO=ghcr.io/${REPOSITORY_OWNER}/sealos/sealos-cloud-components" >> "$GITHUB_ENV"
           if [[ -n "${ALIYUN_REPO_PREFIX}" ]]; then
-            echo "ALIYUN_REPO=${ALIYUN_REPO_PREFIX}/sealos-cloud-components" >> "$GITHUB_ENV"
+            echo "ALIYUN_REPO=${ALIYUN_REPO_PREFIX}/sealos/sealos-cloud-components" >> "$GITHUB_ENV"
           fi
 
       - name: Docker meta

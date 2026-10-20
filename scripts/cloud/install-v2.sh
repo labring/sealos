@@ -91,7 +91,7 @@ if [  -f "sealos.env" ]; then
 fi
 
 export image_repository=${SEALOS_V2_IMAGE_REPO:-"labring/sealos"}
-export sealos_cloud_image_repository=${SEALOS_V2_CLOUD_IMAGE_REPO:-"labring"}
+export sealos_cloud_image_repository=${SEALOS_V2_CLOUD_IMAGE_REPO:-"labring/sealos"}
 export sealos_cloud_version=${SEALOS_V2_CLOUD_VERSION:-"v5.1.1"}
 export sealos_cli_version=${SEALOS_V2_CLI_VERSION:-"v5.1.1"}
 export github_use_proxy=${SEALOS_V2_PROXY:-"false"}
@@ -124,8 +124,8 @@ Supported environment variables (all optional unless noted):
 
 General image & version settings
   SEALOS_V2_IMAGE_REPO         Image repo for runtime components (default: labring/sealos)
-  SEALOS_V2_CLOUD_IMAGE_REPO   Image repo for Sealos Cloud image (default: labring)
-  SEALOS_V2_CLOUD_VERSION      Sealos Cloud image tag (default: v5.1.1)
+  SEALOS_V2_CLOUD_IMAGE_REPO   Image repo for component cluster image (default: labring/sealos)
+  SEALOS_V2_CLOUD_VERSION      Component cluster image tag (default: v5.1.1)
   SEALOS_V2_CLI_VERSION        Sealos CLI version to install (default: v5.1.1)
   SEALOS_V2_PROXY              Use proxy for GitHub/images when "true" (default: false)
 
@@ -266,7 +266,6 @@ install_pull_images() {
     pull_image "${image_registry}/${image_repository}/cockroach:${cockroach_version}"
     pull_image "${image_registry}/${image_repository}/metrics-server:${metrics_server_version}"
     pull_image "${image_registry}/${image_repository}/victoria-metrics-k8s-stack:${victoria_metrics_k8s_stack_version}"
-    pull_image "${image_registry}/${sealos_cloud_image_repository}/sealos-cloud:${sealos_cloud_version}"
     pull_image "${image_registry}/${sealos_cloud_image_repository}/sealos-cloud-components:${sealos_cloud_version}"
     pull_image "${image_registry}/${image_repository}/sealos-finish:${sealos_finish_version}"
     pull_image "${image_registry}/${image_repository}/sealos-certs:${sealos_cert_version}"
@@ -341,9 +340,8 @@ execute_commands() {
     run_and_log "sealos run ${image_registry}/${image_repository}/victoria-metrics-k8s-stack:${victoria_metrics_k8s_stack_version}"
     run_and_log "sealos run --env SEALOS_CLOUD_PORT=${sealos_cloud_port} --env SEALOS_CLOUD_DOMAIN=${sealos_cloud_domain} ${image_registry}/${image_repository}/higress:${higress_version}"
     run_and_log "sealos run ${image_registry}/${image_repository}/kubeblocks:${kubeblocks_version}"
-    print "[Step 4] Starting Sealos Cloud installation..."
+    print "[Step 4] Configuring Sealos Cloud certificates..."
 
-    run_and_log "sealos run ${image_registry}/${sealos_cloud_image_repository}/sealos-cloud:${sealos_cloud_version} --env SEALOS_CLOUD_DOMAIN=\"${sealos_cloud_domain}\" --env SEALOS_CLOUD_PORT=\"${sealos_cloud_port}\" --env SEALOS_CLOUD_DIR=${sealos_cloud_config_dir} "
     if [[ "${sealos_enable_acme,,}" == "true" ]]; then
         run_and_log "sealos run ${image_registry}/${image_repository}/sealos-certs:${sealos_cert_version} --env SEALOS_CLOUD_CERT_MODE=acmedns "
     elif [[ -n "${cert_path}" ]] || [[ -n "${key_path}" ]]; then
