@@ -42,4 +42,28 @@ resources:
   kind: DeleteRequest
   path: github.com/labring/sealos/controllers/user/api/v1
   version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: sealos.io
+  group: app
+  kind: App
+  path: github.com/labring/sealos/controllers/user/api/app/v1
+  version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: sealos.io
+  group: app
+  kind: Template
+  path: github.com/labring/sealos/controllers/user/api/app/v1
+  version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: sealos.io
+  group: app
+  kind: Instance
+  path: github.com/labring/sealos/controllers/user/api/app/v1
+  version: v1
 version: "3"

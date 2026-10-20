@@ -26,7 +26,7 @@ import (
 	"time"
 
 	"github.com/apecloud/kubeblocks/apis/dataprotection/v1alpha1"
-	appv1 "github.com/labring/sealos/controllers/app/api/v1"
+	appv1 "github.com/labring/sealos/controllers/user/api/app/v1"
 	"github.com/labring/sealos/controllers/pkg/database"
 	"github.com/labring/sealos/controllers/pkg/database/mongo"
 	"github.com/labring/sealos/controllers/pkg/objectstorage"

@@ -76,3 +76,17 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - app.sealos.io
+  resources:
+  - apps
+  - instances
+  - templates
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch

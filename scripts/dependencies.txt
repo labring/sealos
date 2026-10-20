@@ -3,4 +3,4 @@
 
 controllers/account=controllers/user
 controllers/job-init=controllers/account,controllers/user
-controllers/resources=controllers/app,controllers/user
+controllers/resources=controllers/user

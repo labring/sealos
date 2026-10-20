@@ -20,7 +20,6 @@ source "${REPO_ROOT}/scripts/generate-dependencies.sh"
 declare -A CONTROLLER_MODULES=(
     ["user"]="user"
     ["account"]="account"
-    ["app"]="app"
     ["license"]="license"
     ["job-init"]="job/init"
     ["job-heartbeat"]="job/heartbeat"

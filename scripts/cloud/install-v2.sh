@@ -357,7 +357,6 @@ declare -A cloudImages
 cloudImages=(
     # controllers
     ["user"]="sealos-cloud-user-controller"
-    ["app"]="sealos-cloud-app-controller"
     ["resources"]="sealos-cloud-resources-controller"
     ["account"]="sealos-cloud-account-controller"
     ["license"]="sealos-cloud-license-controller"
@@ -424,8 +423,6 @@ run_cloud(){
     run_and_log "sealos run ${registry_domain}/${sealos_cloud_image_repository}/${cloudImages["user"]}:${sealos_cloud_version} \
     --env cloudDomain=\"${varCloudDomain}\" \
     --env apiserverPort=\"6443\" "
-
-    run_and_log "sealos run ${registry_domain}/${sealos_cloud_image_repository}/${cloudImages["app"]}:${sealos_cloud_version}"
 
     run_and_log "sealos run ${registry_domain}/${sealos_cloud_image_repository}/${cloudImages["resources"]}:${sealos_cloud_version} \
     --env MONGO_URI=\"${varDatabaseMongodbURI}\" --env DEFAULT_NAMESPACE=\"resources-system\" "

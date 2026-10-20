@@ -19,6 +19,9 @@ resources:
 - bases/user.sealos.io_users.yaml
 - bases/user.sealos.io_operationrequests.yaml
 - bases/user.sealos.io_deleterequests.yaml
+- bases/app.sealos.io_apps.yaml
+- bases/app.sealos.io_templates.yaml
+- bases/app.sealos.io_instances.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:

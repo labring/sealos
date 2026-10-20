@@ -1,3 +1,12 @@
+## App APIs
+
+This module also provides the `app.sealos.io/v1` App, Template, and Instance APIs
+in `api/app/v1`. Their API group, kinds, and CRD schemas are unchanged.
+The user controller registers both user and app APIs; no separate app manager is required.
+App CRDs are included in `config/crd` and the `deploy/charts/user-controller` Helm chart.
+Run `make generate manifests` after changing API definitions.
+App samples are in `config/samples/app_*.yaml` and `deploy/appexample`.
+
 # add user
 
 create user:

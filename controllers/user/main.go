@@ -23,6 +23,7 @@ import (
 	"time"
 
 	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
+	appv1 "github.com/labring/sealos/controllers/user/api/app/v1"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	"github.com/labring/sealos/controllers/user/controllers"
 	usercache "github.com/labring/sealos/controllers/user/controllers/cache"
@@ -55,9 +56,11 @@ func init() {
 
 	utilruntime.Must(licensev1.AddToScheme(scheme))
 	utilruntime.Must(userv1.AddToScheme(scheme))
+	utilruntime.Must(appv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
+// +kubebuilder:rbac:groups=app.sealos.io,resources=apps;templates;instances,verbs=get;list;watch;create;update;patch;delete
 func main() {
 	var (
 		metricsAddr                string

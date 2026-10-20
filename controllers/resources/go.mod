@@ -13,7 +13,6 @@ replace (
 require (
 	github.com/apecloud/kubeblocks v0.9.3
 	github.com/go-logr/logr v1.4.2
-	github.com/labring/sealos/controllers/app v0.0.0-20240807070504-eb838607f089
 	github.com/labring/sealos/controllers/pkg v0.0.0-20240715064441-d1193f70675b
 	github.com/labring/sealos/controllers/user v0.0.0
 	github.com/minio/minio-go/v7 v7.0.64
