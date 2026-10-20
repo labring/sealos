@@ -16,7 +16,6 @@ import { globalPrisma } from '@/services/backend/db/init';
 import { compareSystemAppOrder } from '@/utils/appSort';
 import { switchKubeconfigNamespace } from '@/utils/switchKubeconfigNamespace';
 import { UserStatus } from 'prisma/global/generated/client';
-import { ensureWorkspaceRegistrySecret } from '@/services/backend/registrySecret';
 
 const normalizeForcedIconStyle = (value: string | undefined): TForcedIconStyle | undefined => {
   if (value === 'contain' || value === 'fill') {
@@ -51,9 +50,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!_kc) return jsonRes(res, { code: 404, message: 'user is not found' });
     const realKc = switchKubeconfigNamespace(_kc, payload.workspaceId);
     const kc = K8sApi(realKc);
-
-    // Also covers sessions issued by private SSO or other independent login flows.
-    await ensureWorkspaceRegistrySecret(payload);
 
     const getMeta = (namespace = 'app-system') => ({
       group: 'app.sealos.io',

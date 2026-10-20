@@ -229,14 +229,13 @@ describe('initialization entry points', () => {
     expect(await getRegionToken({ userUid: payload.userUid, userId: payload.userId })).toBeNull();
     expect(post).not.toHaveBeenCalled();
   });
-  it('backfills desktop bootstrap for sessions issued by independent SSO flows', async () => {
+  it('lists installed apps without initializing registry credentials', async () => {
     mockGlobalPrisma.user.findUnique.mockResolvedValue({ uid: payload.userUid });
     const { default: handler } = await import('@/pages/api/desktop/getInstalledApps');
     const res = { json: jest.fn() };
     await handler({ headers: {} } as any, res as any);
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 200 }));
-    expect(post).toHaveBeenCalledTimes(1);
-    expect(tokenPayload()).toEqual(payload);
+    expect(post).not.toHaveBeenCalled();
   });
 
   it('initializes the selected team on workspace switch', async () => {
