@@ -33,6 +33,8 @@ wait_deployment user-system user-controller-manager
 
 kubectl apply -f "${ROOT_DIR}/manifests/app-controller/deploy.yaml"
 wait_deployment app-system app-controller-manager
+run_component account-controller
+wait_deployment account-system account-controller-manager
 run_component account-service
 wait_deployment account-system account-service
 run_component job-init
@@ -51,6 +53,4 @@ run_component node-controller DROP_DIR="${ROOT_DIR}/assets/node-controller/drop"
 wait_deployment node-system node
 run_component resources-controller
 wait_deployment resources-system resources-controller-manager
-run_component account-controller
-wait_deployment account-system account-controller-manager
 echo "[sealos-cloud] Component deployment completed"
