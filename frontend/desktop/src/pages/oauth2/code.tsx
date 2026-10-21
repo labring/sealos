@@ -5,6 +5,7 @@ import { Button } from '@sealos/shadcn-ui/button';
 import useSessionStore from '@/stores/session';
 import { setPendingCodeRequestId } from '@/utils/oauth2';
 import type { GetServerSideProps } from 'next';
+import { useTranslation } from 'next-i18next';
 
 type Context = {
   client_name: string;
@@ -14,6 +15,7 @@ type Context = {
 };
 
 export default function OAuthCodePage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const token = useSessionStore((s) => s.token);
   const isUserLogin = useSessionStore((s) => s.isUserLogin);
@@ -28,7 +30,7 @@ export default function OAuthCodePage() {
     setContext(null);
     setError('');
     if (!requestId) {
-      setError('Missing authorization request. Start again in the app.');
+      setError(t('common:oauth_code_missing_request'));
       return;
     }
     if (!isUserLogin() || !token) {
@@ -54,17 +56,15 @@ export default function OAuthCodePage() {
           return;
         }
         if (!response.ok)
-          throw new Error(
-            payload.error_description || 'Unable to load authorization. Start again in the app.'
-          );
+          throw new Error(payload.error_description || t('common:oauth_code_load_failed_retry'));
         setContext(payload);
       } catch (err) {
         if (!controller.signal.aborted)
-          setError(err instanceof Error ? err.message : 'Unable to load authorization.');
+          setError(err instanceof Error ? err.message : t('common:oauth_code_load_failed'));
       }
     })();
     return () => controller.abort();
-  }, [router.isReady, requestId, token, isUserLogin, router]);
+  }, [router.isReady, requestId, token, isUserLogin, router, t]);
 
   const decide = async (decision: 'approve' | 'deny') => {
     if (submitting.current || !context) return;
@@ -80,12 +80,10 @@ export default function OAuthCodePage() {
       });
       const payload = await response.json();
       if (!response.ok)
-        throw new Error(
-          payload.error_description || 'Authorization failed. Start again in the app.'
-        );
+        throw new Error(payload.error_description || t('common:oauth_code_decision_failed_retry'));
       window.location.assign(payload.redirect_uri);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Authorization failed.');
+      setError(err instanceof Error ? err.message : t('common:oauth_code_decision_failed'));
       submitting.current = false;
       setBusy(false);
     }
@@ -94,7 +92,7 @@ export default function OAuthCodePage() {
   return (
     <main className="mx-auto max-w-lg px-4 py-16">
       <Head>
-        <title>Authorize application · Sealos</title>
+        <title>{t('common:oauth_code_title')} · Sealos</title>
         <meta name="referrer" content="no-referrer" />
       </Head>
       <section
@@ -104,13 +102,13 @@ export default function OAuthCodePage() {
       >
         <p className="font-semibold">Sealos</p>
         <h1 id="authorization-title" className="text-2xl font-semibold">
-          Authorize application
+          {t('common:oauth_code_title')}
         </h1>
-        {!context && !error && <p role="status">Loading authorization request…</p>}
+        {!context && !error && <p role="status">{t('common:oauth_code_loading')}</p>}
         {context && (
           <>
             <p className="break-words text-sm text-zinc-600">
-              Signed in as <strong>{context.account}</strong>
+              {t('common:oauth_code_signed_in_as')} <strong>{context.account}</strong>
             </p>
             <div className="flex items-center gap-3">
               {context.client_logo_url && (
@@ -124,23 +122,17 @@ export default function OAuthCodePage() {
               )}
               <p className="break-words font-semibold">{context.client_name}</p>
             </div>
-            <p>
-              This application will be able to access your Sealos account and resources with your
-              existing permissions, and stay signed in. This authorization does not restrict access
-              to selected workspaces.
-            </p>
-            <p className="text-sm text-zinc-600">
-              Approve only if you started this request and trust this application.
-            </p>
+            <p>{t('common:oauth_code_access_description')}</p>
+            <p className="text-sm text-zinc-600">{t('common:oauth_code_trust_notice')}</p>
             <div className="flex gap-3">
               <Button variant="outline" onClick={() => decide('deny')} disabled={busy}>
-                Deny
+                {t('common:oauth_code_deny')}
               </Button>
               <Button onClick={() => decide('approve')} disabled={busy}>
-                Approve
+                {t('common:oauth_code_approve')}
               </Button>
             </div>
-            {busy && <p role="status">Returning to the application…</p>}
+            {busy && <p role="status">{t('common:oauth_code_returning')}</p>}
           </>
         )}
         {error && (
@@ -153,10 +145,15 @@ export default function OAuthCodePage() {
   );
 }
 
-export const getServerSideProps: GetServerSideProps = async ({ req, res }) => {
+export const getServerSideProps: GetServerSideProps = async ({ req, res, locales }) => {
   const { ensureLocaleCookie } = await import('@/utils/ssrLocale');
-  ensureLocaleCookie({ req, res, defaultLocale: 'en' });
+  const { serverSideTranslations } = await import('next-i18next/serverSideTranslations');
+  const locale = ensureLocaleCookie({ req, res, defaultLocale: 'en' });
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('Referrer-Policy', 'no-referrer');
-  return { props: {} };
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, undefined, null, locales || []))
+    }
+  };
 };
