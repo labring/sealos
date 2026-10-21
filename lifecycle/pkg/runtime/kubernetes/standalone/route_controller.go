@@ -18,9 +18,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/netip"
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -69,6 +71,9 @@ func routeOptionsFromState(state *modeState) (RouteControllerOptions, error) {
 		return RouteControllerOptions{}, errors.New("invalid controller baseline")
 	}
 	options.Image = pod.Spec.Containers[0].Image
+	options.PodCIDR = flagValue(pod.Spec.Containers[0].Args, "pod-cidr")
+	options.ServiceCIDR = flagValue(pod.Spec.Containers[0].Args, "service-cidr")
+	options.RouterCIDR = flagValue(pod.Spec.Containers[0].Args, "router-cidr")
 	for _, volume := range pod.Spec.Volumes {
 		if volume.HostPath == nil {
 			continue
@@ -95,12 +100,15 @@ const (
 )
 
 type RouteControllerOptions struct {
-	Enabled    bool   `json:"Enabled"`
-	Image      string `json:"Image"`
-	Kubeconfig string `json:"Kubeconfig"`
-	Config     string `json:"Config"`
-	Table      int    `json:"Table"`
-	Protocol   int    `json:"Protocol"`
+	Enabled     bool   `json:"Enabled"`
+	Image       string `json:"Image"`
+	Kubeconfig  string `json:"Kubeconfig"`
+	Config      string `json:"Config"`
+	PodCIDR     string `json:"PodCIDR"`
+	ServiceCIDR string `json:"ServiceCIDR"`
+	RouterCIDR  string `json:"RouterCIDR"`
+	Table       int    `json:"Table"`
+	Protocol    int    `json:"Protocol"`
 }
 
 func DefaultRouteControllerOptions() RouteControllerOptions {
@@ -127,6 +135,18 @@ func (o RouteControllerOptions) Validate() error {
 	if o.Table <= 0 || o.Table > 2147483647 || o.Protocol < 1 || o.Protocol > 255 {
 		return errors.New("route-controller requires route table 1..2147483647 and protocol 1..255")
 	}
+	// Empty values keep the controller's automatic CIDR discovery.
+	for name, value := range map[string]string{
+		"pod-cidr":     o.PodCIDR,
+		"service-cidr": o.ServiceCIDR,
+		"router-cidr":  o.RouterCIDR,
+	} {
+		for _, entry := range strings.Fields(strings.ReplaceAll(value, ",", " ")) {
+			if _, err := netip.ParsePrefix(entry); err != nil {
+				return fmt.Errorf("invalid %s entry %q: %w", name, entry, err)
+			}
+		}
+	}
 	return nil
 }
 
@@ -152,6 +172,15 @@ func routeControllerPod(options RouteControllerOptions) (*v1.Pod, error) {
 	}
 	if options.Config != "" {
 		args = append(args, "--config="+controllerConfigMount)
+	}
+	if options.PodCIDR != "" {
+		args = append(args, "--pod-cidr="+options.PodCIDR)
+	}
+	if options.ServiceCIDR != "" {
+		args = append(args, "--service-cidr="+options.ServiceCIDR)
+	}
+	if options.RouterCIDR != "" {
+		args = append(args, "--router-cidr="+options.RouterCIDR)
 	}
 	pod := &v1.Pod{
 		TypeMeta: metav1.TypeMeta{

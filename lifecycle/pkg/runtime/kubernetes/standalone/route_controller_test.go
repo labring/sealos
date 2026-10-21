@@ -73,6 +73,9 @@ func TestGeneratedRouteControllerExplicitOwnership(t *testing.T) {
 	options.Image = "example.com/controller:v1"
 	options.Config = "/etc/kubernetes/route-controller/config.yaml"
 	options.Kubeconfig = "/etc/kubernetes/route-controller/custom.conf"
+	options.PodCIDR = "10.64.0.0/10,10.96.0.0/16"
+	options.ServiceCIDR = "10.96.0.0/12"
+	options.RouterCIDR = "192.168.128.0/24"
 	options.Table = 200
 	options.Protocol = 111
 	pod, err := routeControllerPod(options)
@@ -83,6 +86,9 @@ func TestGeneratedRouteControllerExplicitOwnership(t *testing.T) {
 	for name, want := range map[string]string{
 		"route-table":               "200",
 		"route-protocol":            "111",
+		"pod-cidr":                  "10.64.0.0/10,10.96.0.0/16",
+		"service-cidr":              "10.96.0.0/12",
+		"router-cidr":               "192.168.128.0/24",
 		"health-probe-bind-address": "127.0.0.1:9919",
 		"config":                    controllerConfigMount,
 		"kubeconfig":                controllerKubeconfigMount,
@@ -114,6 +120,15 @@ func TestRouteControllerRejectsInvalidOptions(t *testing.T) {
 		},
 		"protocol": func(o *RouteControllerOptions) {
 			o.Protocol = 256
+		},
+		"pod-cidr": func(o *RouteControllerOptions) {
+			o.PodCIDR = "10.0.0.0/8,not-a-cidr"
+		},
+		"service-cidr": func(o *RouteControllerOptions) {
+			o.ServiceCIDR = "10.0.0.0"
+		},
+		"router-cidr": func(o *RouteControllerOptions) {
+			o.RouterCIDR = "192.168.1.999/24"
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -217,5 +232,41 @@ func TestControllerUpdateRecordsManagedCredentials(t *testing.T) {
 				t.Fatalf("disable update did not clear the deployment: %+v", state)
 			}
 		})
+	}
+}
+
+func TestRouteControllerCIDRStateRoundtrip(t *testing.T) {
+	options := DefaultRouteControllerOptions()
+	options.PodCIDR = "10.64.0.0/10"
+	options.ServiceCIDR = "10.96.0.0/12"
+	options.RouterCIDR = "192.168.128.0/24"
+	manifest, err := prepareRouteController(options)
+	if err != nil {
+		t.Fatal(err)
+	}
+	state := &modeState{
+		Mode:          ModeStandalone,
+		RouteManifest: manifest,
+		RouteTable:    options.Table,
+		RouteProtocol: options.Protocol,
+	}
+	restored, err := routeOptionsFromState(state)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if restored.PodCIDR != options.PodCIDR || restored.ServiceCIDR != options.ServiceCIDR ||
+		restored.RouterCIDR != options.RouterCIDR {
+		t.Fatalf("CIDR selection lost in state roundtrip: %+v", restored)
+	}
+	merged, err := mergeControllerOptions(
+		restored,
+		RouteControllerOptions{Enabled: true, RouterCIDR: "192.168.0.0/16"},
+		[]string{"route-controller-router-cidr"},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if merged.RouterCIDR != "192.168.0.0/16" || merged.PodCIDR != options.PodCIDR {
+		t.Fatalf("CIDR merge lost sibling values: %+v", merged)
 	}
 }

@@ -31,6 +31,9 @@ var RouteControllerFlags = []string{
 	"route-controller-image",
 	"route-controller-kubeconfig",
 	"route-controller-config",
+	"route-controller-pod-cidr",
+	"route-controller-service-cidr",
+	"route-controller-router-cidr",
 	"route-table",
 	"route-protocol",
 }
@@ -60,6 +63,12 @@ func mergeControllerOptions(
 			current.Kubeconfig = requested.Kubeconfig
 		case "route-controller-config":
 			current.Config = requested.Config
+		case "route-controller-pod-cidr":
+			current.PodCIDR = requested.PodCIDR
+		case "route-controller-service-cidr":
+			current.ServiceCIDR = requested.ServiceCIDR
+		case "route-controller-router-cidr":
+			current.RouterCIDR = requested.RouterCIDR
 		case "route-table":
 			current.Table = requested.Table
 		case "route-protocol":

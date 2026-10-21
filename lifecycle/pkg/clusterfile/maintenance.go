@@ -130,6 +130,21 @@ func replaceControlPlaneMode(
 				if controller.Enabled != nil {
 					saved["enabled"] = *controller.Enabled
 				}
+				// A nil pointer leaves the saved value untouched; an explicit
+				// empty string clears it back to automatic discovery.
+				for name, value := range map[string]*string{
+					"podCIDR":     controller.PodCIDR,
+					"serviceCIDR": controller.ServiceCIDR,
+					"routerCIDR":  controller.RouterCIDR,
+				} {
+					switch {
+					case value == nil:
+					case *value == "":
+						delete(saved, name)
+					default:
+						saved[name] = *value
+					}
+				}
 				if controller.Image != "" {
 					saved["image"] = controller.Image
 				}

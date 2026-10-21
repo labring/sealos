@@ -56,6 +56,15 @@ func (k *KubeadmRuntime) initStandaloneMaster() error {
 			controller.Kubeconfig = saved.Kubeconfig
 		}
 		controller.Config = saved.Config
+		if saved.PodCIDR != nil {
+			controller.PodCIDR = *saved.PodCIDR
+		}
+		if saved.ServiceCIDR != nil {
+			controller.ServiceCIDR = *saved.ServiceCIDR
+		}
+		if saved.RouterCIDR != nil {
+			controller.RouterCIDR = *saved.RouterCIDR
+		}
 		if saved.Table != 0 {
 			controller.Table = saved.Table
 		}

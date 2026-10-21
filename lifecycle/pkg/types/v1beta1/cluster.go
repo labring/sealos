@@ -17,11 +17,10 @@ package v1beta1
 import (
 	"path"
 
+	"github.com/labring/sealos/pkg/version"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
-
-	"github.com/labring/sealos/pkg/version"
 )
 
 // +kubebuilder:object:root=true
@@ -81,9 +80,11 @@ var (
 	imageDistributionKeyV2 = path.Join(GroupName, "distribution")
 )
 
-var ImageTypeKeys = []string{imageTypeKey, imageTypeKeyV2}
-var ImageVersionKeys = []string{imageVersionKey, imageVersionKeyV2}
-var ImageDistributionKeys = []string{imageDistributionKey, imageDistributionKeyV2}
+var (
+	ImageTypeKeys         = []string{imageTypeKey, imageTypeKeyV2}
+	ImageVersionKeys      = []string{imageVersionKey, imageVersionKeyV2}
+	ImageDistributionKeys = []string{imageDistributionKey, imageDistributionKeyV2}
+)
 
 type MountImage struct {
 	Name       string            `json:"name"`
@@ -272,10 +273,13 @@ type ClusterSpec struct {
 // RouteControllerConfig contains only CNI-independent deployment settings.
 // A nil Enabled keeps the controller on; false deploys no controller at all.
 type RouteControllerConfig struct {
-	Enabled    *bool  `json:"enabled,omitempty"`
-	Image      string `json:"image,omitempty"`
-	Kubeconfig string `json:"kubeconfig,omitempty"`
-	Config     string `json:"config,omitempty"`
-	Table      int    `json:"table,omitempty"`
-	Protocol   int    `json:"protocol,omitempty"`
+	Enabled     *bool   `json:"enabled,omitempty"`
+	Image       string  `json:"image,omitempty"`
+	Kubeconfig  string  `json:"kubeconfig,omitempty"`
+	Config      string  `json:"config,omitempty"`
+	PodCIDR     *string `json:"podCIDR,omitempty"`
+	ServiceCIDR *string `json:"serviceCIDR,omitempty"`
+	RouterCIDR  *string `json:"routerCIDR,omitempty"`
+	Table       int     `json:"table,omitempty"`
+	Protocol    int     `json:"protocol,omitempty"`
 }

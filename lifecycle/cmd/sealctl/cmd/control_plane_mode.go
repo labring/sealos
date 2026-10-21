@@ -65,6 +65,12 @@ func newControlPlaneModeCmd() *cobra.Command {
 			subcommand.Flags().
 				StringVar(&controller.Config, "route-controller-config", "", "Optional controller configuration file on this host")
 			subcommand.Flags().
+				StringVar(&controller.PodCIDR, "route-controller-pod-cidr", controller.PodCIDR, "Allowed cluster Pod CIDRs, comma-separated; empty discovers them automatically")
+			subcommand.Flags().
+				StringVar(&controller.ServiceCIDR, "route-controller-service-cidr", controller.ServiceCIDR, "Cluster Service CIDR; empty discovers it automatically")
+			subcommand.Flags().
+				StringVar(&controller.RouterCIDR, "route-controller-router-cidr", controller.RouterCIDR, "Allowed worker node IP CIDR for route next hops; empty allows every worker")
+			subcommand.Flags().
 				IntVar(&controller.Table, "route-table", controller.Table, "Routing table owned by route-controller")
 			subcommand.Flags().
 				IntVar(&controller.Protocol, "route-protocol", controller.Protocol, "Routing protocol owned by route-controller")

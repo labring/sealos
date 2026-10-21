@@ -103,6 +103,9 @@ func TestControlPlaneConversionCommitAndFailure(t *testing.T) {
 		protocol       int
 		enabled        *bool
 		flagEnabled    *bool
+		routerCIDR     string
+		flagRouterCIDR string
+		clearRouter    bool
 		syncFailure    bool
 	}{
 		{failure: "preflight"},
@@ -128,6 +131,9 @@ func TestControlPlaneConversionCommitAndFailure(t *testing.T) {
 		{failure: "none", enabled: boolPtr(false)},
 		{failure: "none", flagEnabled: boolPtr(false)},
 		{failure: "none", enabled: boolPtr(false), flagEnabled: boolPtr(true)},
+		{failure: "none", routerCIDR: "192.168.128.0/24"},
+		{failure: "none", routerCIDR: "192.168.128.0/24", flagRouterCIDR: "192.168.0.0/16"},
+		{failure: "none", routerCIDR: "192.168.128.0/24", clearRouter: true},
 	} {
 		t.Run(scenario.failure+"/"+scenario.recover, func(t *testing.T) {
 			if scenario.syncFailure && runtime.GOOS != "linux" {
@@ -140,7 +146,7 @@ func TestControlPlaneConversionCommitAndFailure(t *testing.T) {
 				constants.DefaultRuntimeRootDir = previousRoot
 			})
 			cluster := testCluster([]string{"master0", "master1", "master2"})
-			cluster.Spec.RouteController = &v2.RouteControllerConfig{
+			spec := &v2.RouteControllerConfig{
 				Enabled:    scenario.enabled,
 				Image:      scenario.image,
 				Kubeconfig: scenario.kubeconfig,
@@ -148,6 +154,10 @@ func TestControlPlaneConversionCommitAndFailure(t *testing.T) {
 				Table:      scenario.table,
 				Protocol:   scenario.protocol,
 			}
+			if scenario.routerCIDR != "" {
+				spec.RouterCIDR = &scenario.routerCIDR
+			}
+			cluster.Spec.RouteController = spec
 			path := constants.Clusterfile(cluster.Name)
 			if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 				t.Fatal(err)
@@ -198,7 +208,14 @@ func TestControlPlaneConversionCommitAndFailure(t *testing.T) {
 			expectedKubeconfig := scenario.kubeconfig
 			expectedEnabled := scenario.enabled == nil || *scenario.enabled
 			expectEnabledFlag := scenario.enabled != nil
-			if scenario.flag != "" || scenario.flagKubeconfig != "" || scenario.flagEnabled != nil {
+			expectedRouterCIDR := scenario.routerCIDR
+			expectRouterFlag := scenario.routerCIDR != ""
+			if scenario.flagRouterCIDR != "" || scenario.clearRouter {
+				expectedRouterCIDR = scenario.flagRouterCIDR
+				expectRouterFlag = true
+			}
+			if scenario.flag != "" || scenario.flagKubeconfig != "" ||
+				scenario.flagEnabled != nil || scenario.flagRouterCIDR != "" || scenario.clearRouter {
 				controller := standalone.DefaultRouteControllerOptions()
 				var selected []string
 				if scenario.flag != "" {
@@ -216,6 +233,10 @@ func TestControlPlaneConversionCommitAndFailure(t *testing.T) {
 					selected = append(selected, "route-controller-enabled")
 					expectedEnabled = *scenario.flagEnabled
 					expectEnabledFlag = true
+				}
+				if scenario.flagRouterCIDR != "" || scenario.clearRouter {
+					controller.RouterCIDR = scenario.flagRouterCIDR
+					selected = append(selected, "route-controller-router-cidr")
 				}
 				options.RouteController = &controller
 				options.ControllerFields = selected
@@ -260,7 +281,8 @@ func TestControlPlaneConversionCommitAndFailure(t *testing.T) {
 			}
 			assertControllerSelection(t, ssh.commands[0], string(data),
 				expectedImage, expectedKubeconfig, scenario.table,
-				expectedEnabled, expectEnabledFlag)
+				expectedEnabled, expectEnabledFlag,
+				expectedRouterCIDR, expectRouterFlag)
 			if failure == "none" && scenarioDisables {
 				assertControllerIdentityRemoved(t, client)
 			}
@@ -292,6 +314,7 @@ func assertControllerSelection(
 	image, kubeconfig string,
 	table int,
 	enabled, enabledSelected bool,
+	routerCIDR string, routerSelected bool,
 ) {
 	t.Helper()
 	if image != "" {
@@ -326,6 +349,17 @@ func assertControllerSelection(
 		}
 		if !strings.Contains(data, "enabled: "+value) {
 			t.Fatalf("controller enabled was not committed: %s", data)
+		}
+	}
+	if routerSelected {
+		if !strings.Contains(command, "--route-controller-router-cidr '"+routerCIDR+"'") {
+			t.Fatalf("incorrect router CIDR selection: %s", command)
+		}
+		if routerCIDR != "" && !strings.Contains(data, "routerCIDR: "+routerCIDR) {
+			t.Fatalf("router CIDR was not committed: %s", data)
+		}
+		if routerCIDR == "" && strings.Contains(data, "routerCIDR:") {
+			t.Fatalf("cleared router CIDR was not removed from the Clusterfile: %s", data)
 		}
 	}
 }

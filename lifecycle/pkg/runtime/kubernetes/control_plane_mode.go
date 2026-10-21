@@ -295,6 +295,17 @@ func (k *KubeadmRuntime) standaloneControllerCommand(
 		)
 		fields = inheritControllerField(fields, "route-controller-config", saved.Config != "",
 			func() { controller.Config = saved.Config })
+		inheritCIDRField := func(field string, saved, target *string) {
+			fields = inheritControllerField(fields, field, saved != nil,
+				func() { *target = *saved })
+		}
+		inheritCIDRField("route-controller-pod-cidr", saved.PodCIDR, &controller.PodCIDR)
+		inheritCIDRField(
+			"route-controller-service-cidr",
+			saved.ServiceCIDR,
+			&controller.ServiceCIDR,
+		)
+		inheritCIDRField("route-controller-router-cidr", saved.RouterCIDR, &controller.RouterCIDR)
 		fields = inheritControllerField(fields, "route-table", saved.Table != 0,
 			func() { controller.Table = saved.Table })
 		fields = inheritControllerField(fields, "route-protocol", saved.Protocol != 0,
@@ -312,12 +323,15 @@ func (k *KubeadmRuntime) standaloneControllerCommand(
 		command.WriteString(" --delete-master-nodes")
 	}
 	values := map[string]string{
-		"route-controller-enabled":    strconv.FormatBool(controller.Enabled),
-		"route-controller-image":      controller.Image,
-		"route-controller-kubeconfig": controller.Kubeconfig,
-		"route-controller-config":     controller.Config,
-		"route-table":                 strconv.Itoa(controller.Table),
-		"route-protocol":              strconv.Itoa(controller.Protocol),
+		"route-controller-enabled":      strconv.FormatBool(controller.Enabled),
+		"route-controller-image":        controller.Image,
+		"route-controller-kubeconfig":   controller.Kubeconfig,
+		"route-controller-config":       controller.Config,
+		"route-controller-pod-cidr":     controller.PodCIDR,
+		"route-controller-service-cidr": controller.ServiceCIDR,
+		"route-controller-router-cidr":  controller.RouterCIDR,
+		"route-table":                   strconv.Itoa(controller.Table),
+		"route-protocol":                strconv.Itoa(controller.Protocol),
 	}
 	for _, field := range fields {
 		value, ok := values[field]
@@ -345,6 +359,12 @@ func (k *KubeadmRuntime) standaloneControllerCommand(
 			settings.Kubeconfig = controller.Kubeconfig
 		case "route-controller-config":
 			settings.Config = controller.Config
+		case "route-controller-pod-cidr":
+			settings.PodCIDR = &controller.PodCIDR
+		case "route-controller-service-cidr":
+			settings.ServiceCIDR = &controller.ServiceCIDR
+		case "route-controller-router-cidr":
+			settings.RouterCIDR = &controller.RouterCIDR
 		case "route-table":
 			settings.Table = controller.Table
 		case "route-protocol":
