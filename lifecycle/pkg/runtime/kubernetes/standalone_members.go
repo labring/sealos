@@ -46,6 +46,9 @@ func (k *KubeadmRuntime) initStandaloneMaster() error {
 	}
 	controller := standalone.DefaultRouteControllerOptions()
 	if saved := k.cluster.Spec.RouteController; saved != nil {
+		if saved.Enabled != nil {
+			controller.Enabled = *saved.Enabled
+		}
 		if saved.Image != "" {
 			controller.Image = saved.Image
 		}

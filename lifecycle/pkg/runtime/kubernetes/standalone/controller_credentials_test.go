@@ -259,7 +259,11 @@ func TestPreflightControllerIdentityChecksEveryManagedObject(t *testing.T) {
 		creates++
 	}
 	if creates != len(controllerIdentityResources()) {
-		t.Fatalf("expected %d identity creates, got %d", len(controllerIdentityResources()), creates)
+		t.Fatalf(
+			"expected %d identity creates, got %d",
+			len(controllerIdentityResources()),
+			creates,
+		)
 	}
 	secrets := 0
 	for _, action := range client.Actions() {
@@ -286,9 +290,13 @@ func TestPreflightControllerIdentitySurfacesAdmissionDenial(t *testing.T) {
 		schema.GroupResource{Resource: "clusterroles"}, controllerIdentity,
 		errors.New("name is not in the allowlist"),
 	)
-	resources.PrependReactor("create", "clusterroles", func(clienttesting.Action) (bool, runtime.Object, error) {
-		return true, nil, denied
-	})
+	resources.PrependReactor(
+		"create",
+		"clusterroles",
+		func(clienttesting.Action) (bool, runtime.Object, error) {
+			return true, nil, denied
+		},
+	)
 	err := preflightControllerIdentity(
 		context.Background(), fake.NewSimpleClientset(), resources,
 	)

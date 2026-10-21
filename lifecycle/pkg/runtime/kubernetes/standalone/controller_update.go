@@ -25,6 +25,7 @@ import (
 )
 
 var RouteControllerFlags = []string{
+	"route-controller-enabled",
 	"route-controller-image",
 	"route-controller-kubeconfig",
 	"route-controller-config",
@@ -46,6 +47,8 @@ func mergeControllerOptions(
 	}
 	for _, field := range fields {
 		switch field {
+		case "route-controller-enabled":
+			current.Enabled = requested.Enabled
 		case "route-controller-image":
 			current.Image = requested.Image
 		case "route-controller-kubeconfig":
@@ -90,7 +93,8 @@ func (m *modeSwitch) prepareControllerUpdate() error {
 	if err != nil {
 		return err
 	}
-	if desired.Table != current.Table || desired.Protocol != current.Protocol {
+	if desired.Enabled &&
+		(desired.Table != current.Table || desired.Protocol != current.Protocol) {
 		if err := reservedRoutesEmpty(desired.Table, desired.Protocol); err != nil {
 			return err
 		}
@@ -99,6 +103,7 @@ func (m *modeSwitch) prepareControllerUpdate() error {
 		PreviousTable:    current.Table,
 		PreviousProtocol: current.Protocol,
 	}
+	m.state.ControllerDisabled = !desired.Enabled
 	m.state.RouteManifest = manifest
 	m.state.RouteTable = desired.Table
 	m.state.RouteProtocol = desired.Protocol
@@ -130,8 +135,10 @@ func (m *modeSwitch) stopController(ctx context.Context) error {
 }
 
 func (m *modeSwitch) updateController(ctx context.Context) (err error) {
-	if err := ensureControllerCredentials(ctx, m.controller); err != nil {
-		return err
+	if !m.state.ControllerDisabled {
+		if err := ensureControllerCredentials(ctx, m.controller); err != nil {
+			return err
+		}
 	}
 	if err := m.command(ctx, "stop", "kubelet"); err != nil {
 		return err
@@ -150,8 +157,17 @@ func (m *modeSwitch) updateController(ctx context.Context) (err error) {
 	if err := removeReservedRoutes(previous.PreviousTable, previous.PreviousProtocol); err != nil {
 		return err
 	}
-	if err := atomicModeFile(routeManifestPath, m.state.RouteManifest, 0o600); err != nil {
-		return err
+	if m.state.ControllerDisabled {
+		// Nothing reprograms the table once the controller is gone; drop the
+		// routes it owned under the requested pair as well.
+		if err := removeReservedRoutes(m.state.RouteTable, m.state.RouteProtocol); err != nil {
+			return err
+		}
+	}
+	if len(m.state.RouteManifest) != 0 {
+		if err := atomicModeFile(routeManifestPath, m.state.RouteManifest, 0o600); err != nil {
+			return err
+		}
 	}
 	return m.command(ctx, "start", "kubelet")
 }

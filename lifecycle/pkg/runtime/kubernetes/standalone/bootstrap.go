@@ -194,11 +194,13 @@ func bootstrapStandalone(ctx context.Context, options BootstrapOptions) error {
 				)
 			}
 		}
-		if err := reservedRoutesEmpty(
-			state.Plan.Controller.Table,
-			state.Plan.Controller.Protocol,
-		); err != nil {
-			return err
+		if state.Plan.Controller.Enabled {
+			if err := reservedRoutesEmpty(
+				state.Plan.Controller.Table,
+				state.Plan.Controller.Protocol,
+			); err != nil {
+				return err
+			}
 		}
 	default:
 		return err
@@ -421,15 +423,17 @@ func (b *preparedBootstrap) execute(ctx context.Context, options BootstrapOption
 			return err
 		}
 	}
-	controller, err := routeControllerPod(state.Plan.Controller)
-	if err != nil {
-		return err
-	}
-	if err := ensureControllerCredentials(ctx, controller); err != nil {
-		return err
-	}
-	if err := atomicModeFile(routeManifestPath, manifest, 0o600); err != nil {
-		return err
+	if state.Plan.Controller.Enabled {
+		controller, err := routeControllerPod(state.Plan.Controller)
+		if err != nil {
+			return err
+		}
+		if err := ensureControllerCredentials(ctx, controller); err != nil {
+			return err
+		}
+		if err := atomicModeFile(routeManifestPath, manifest, 0o600); err != nil {
+			return err
+		}
 	}
 	if err := verifyBootstrap(ctx, options, state); err != nil {
 		return err
@@ -496,9 +500,13 @@ func verifyBootstrap(ctx context.Context, options BootstrapOptions, state *boots
 			return err
 		}
 	}
-	pod, err := routeControllerPod(controller)
-	if err != nil {
-		return err
+	var pod *v1.Pod
+	if controller.Enabled {
+		controllerPod, err := routeControllerPod(controller)
+		if err != nil {
+			return err
+		}
+		pod = controllerPod
 	}
 	client, err := bootstrapAPIClient()
 	if err != nil {
@@ -532,7 +540,7 @@ func verifyBootstrap(ctx context.Context, options BootstrapOptions, state *boots
 	// health and absence of registration are required; controller readiness is
 	// checked on join once the cluster already has its network configured.
 	if state.Plan.Join && !state.Plan.InitialCluster {
-		err = m.waitReady(ctx, true)
+		err = m.waitReady(ctx, controller.Enabled)
 	} else {
 		err = wait.PollUntilContextCancel(
 			ctx,

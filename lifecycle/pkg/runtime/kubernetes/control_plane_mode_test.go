@@ -86,6 +86,8 @@ func (s *modeSSH) CmdAsync(host string, commands ...string) error {
 	return nil
 }
 
+func boolPtr(v bool) *bool { return &v }
+
 func TestControlPlaneConversionCommitAndFailure(t *testing.T) {
 	for _, scenario := range []struct {
 		failure        string
@@ -97,6 +99,8 @@ func TestControlPlaneConversionCommitAndFailure(t *testing.T) {
 		config         string
 		table          int
 		protocol       int
+		enabled        *bool
+		flagEnabled    *bool
 		syncFailure    bool
 	}{
 		{failure: "preflight"},
@@ -119,6 +123,9 @@ func TestControlPlaneConversionCommitAndFailure(t *testing.T) {
 			kubeconfig:     "/etc/kubernetes/route-controller/saved",
 			flagKubeconfig: "/etc/kubernetes/route-controller/override",
 		},
+		{failure: "none", enabled: boolPtr(false)},
+		{failure: "none", flagEnabled: boolPtr(false)},
+		{failure: "none", enabled: boolPtr(false), flagEnabled: boolPtr(true)},
 	} {
 		t.Run(scenario.failure+"/"+scenario.recover, func(t *testing.T) {
 			if scenario.syncFailure && runtime.GOOS != "linux" {
@@ -132,6 +139,7 @@ func TestControlPlaneConversionCommitAndFailure(t *testing.T) {
 			})
 			cluster := testCluster([]string{"master0", "master1", "master2"})
 			cluster.Spec.RouteController = &v2.RouteControllerConfig{
+				Enabled:    scenario.enabled,
 				Image:      scenario.image,
 				Kubeconfig: scenario.kubeconfig,
 				Config:     scenario.config,
@@ -180,7 +188,9 @@ func TestControlPlaneConversionCommitAndFailure(t *testing.T) {
 			}
 			expectedImage := scenario.image
 			expectedKubeconfig := scenario.kubeconfig
-			if scenario.flag != "" || scenario.flagKubeconfig != "" {
+			expectedEnabled := scenario.enabled == nil || *scenario.enabled
+			expectEnabledFlag := scenario.enabled != nil
+			if scenario.flag != "" || scenario.flagKubeconfig != "" || scenario.flagEnabled != nil {
 				controller := standalone.DefaultRouteControllerOptions()
 				var selected []string
 				if scenario.flag != "" {
@@ -192,6 +202,12 @@ func TestControlPlaneConversionCommitAndFailure(t *testing.T) {
 					controller.Kubeconfig = scenario.flagKubeconfig
 					selected = append(selected, "route-controller-kubeconfig")
 					expectedKubeconfig = scenario.flagKubeconfig
+				}
+				if scenario.flagEnabled != nil {
+					controller.Enabled = *scenario.flagEnabled
+					selected = append(selected, "route-controller-enabled")
+					expectedEnabled = *scenario.flagEnabled
+					expectEnabledFlag = true
 				}
 				options.RouteController = &controller
 				options.ControllerFields = selected
@@ -235,7 +251,8 @@ func TestControlPlaneConversionCommitAndFailure(t *testing.T) {
 				t.Fatal(err)
 			}
 			assertControllerSelection(t, ssh.commands[0], string(data),
-				expectedImage, expectedKubeconfig, scenario.table)
+				expectedImage, expectedKubeconfig, scenario.table,
+				expectedEnabled, expectEnabledFlag)
 			if strings.Contains(
 				string(data),
 				"controlPlaneMode: standalone",
@@ -290,6 +307,7 @@ func assertControllerSelection(
 	command, data string,
 	image, kubeconfig string,
 	table int,
+	enabled, enabledSelected bool,
 ) {
 	t.Helper()
 	if image != "" {
@@ -315,6 +333,15 @@ func assertControllerSelection(
 		}
 		if !strings.Contains(data, "table: "+tableValue) {
 			t.Fatalf("route table was not committed: %s", data)
+		}
+	}
+	if enabledSelected {
+		value := strconv.FormatBool(enabled)
+		if !strings.Contains(command, "--route-controller-enabled="+value) {
+			t.Fatalf("incorrect controller enabled selection: %s", command)
+		}
+		if !strings.Contains(data, "enabled: "+value) {
+			t.Fatalf("controller enabled was not committed: %s", data)
 		}
 	}
 }

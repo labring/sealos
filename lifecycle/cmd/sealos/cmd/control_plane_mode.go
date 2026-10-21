@@ -143,6 +143,8 @@ func newControlPlaneModeCmdWithConfirm(ask func(string, string) (bool, error)) *
 			controller := standalone.DefaultRouteControllerOptions()
 			options.RouteController = &controller
 			subcommand.Flags().
+				BoolVar(&controller.Enabled, "route-controller-enabled", controller.Enabled, "Deploy the route-controller static pod on every control-plane host")
+			subcommand.Flags().
 				StringVar(&controller.Image, "route-controller-image", controller.Image, "Route-controller image; a pinned version or digest is recommended")
 			subcommand.Flags().
 				StringVar(&controller.Kubeconfig, "route-controller-kubeconfig", controller.Kubeconfig, "Custom controller kubeconfig on every master; omitted to generate managed credentials")

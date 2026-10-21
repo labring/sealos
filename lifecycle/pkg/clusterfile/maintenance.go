@@ -127,6 +127,9 @@ func replaceControlPlaneMode(
 					saved = make(map[string]any)
 				}
 				// Only selected fields are rewritten; unknown keys are kept.
+				if controller.Enabled != nil {
+					saved["enabled"] = *controller.Enabled
+				}
 				if controller.Image != "" {
 					saved["image"] = controller.Image
 				}

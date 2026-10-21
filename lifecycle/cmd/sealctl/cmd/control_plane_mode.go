@@ -57,6 +57,8 @@ func newControlPlaneModeCmd() *cobra.Command {
 			controller := standalone.DefaultRouteControllerOptions()
 			options.RouteController = &controller
 			subcommand.Flags().
+				BoolVar(&controller.Enabled, "route-controller-enabled", controller.Enabled, "Deploy the route-controller static pod on this host")
+			subcommand.Flags().
 				StringVar(&controller.Image, "route-controller-image", controller.Image, "Route-controller image")
 			subcommand.Flags().
 				StringVar(&controller.Kubeconfig, "route-controller-kubeconfig", controller.Kubeconfig, "Custom controller kubeconfig on this host; omitted to generate managed credentials")

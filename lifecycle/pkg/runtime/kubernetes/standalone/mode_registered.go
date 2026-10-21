@@ -64,7 +64,8 @@ func (m *modeSwitch) toRegistered(ctx context.Context) error {
 	if err := m.stopController(ctx); err != nil {
 		return err
 	}
-	if m.controller.Annotations[controllerCredentialsAnnotation] == "managed" {
+	if m.controller != nil &&
+		m.controller.Annotations[controllerCredentialsAnnotation] == "managed" {
 		if err := os.Remove(DefaultRouteControllerKubeconfig); err != nil && !os.IsNotExist(err) {
 			return err
 		}

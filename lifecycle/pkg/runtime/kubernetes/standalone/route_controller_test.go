@@ -124,3 +124,51 @@ func TestRouteControllerRejectsInvalidOptions(t *testing.T) {
 		})
 	}
 }
+
+func TestRouteControllerDisabled(t *testing.T) {
+	disabled := DefaultRouteControllerOptions()
+	disabled.Enabled = false
+	disabled.Image = ""
+	if err := disabled.Validate(); err != nil {
+		t.Fatalf("rejected a disabled controller: %v", err)
+	}
+	manifest, err := prepareRouteController(disabled)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(manifest) != 0 {
+		t.Fatalf("disabled controller produced a manifest: %s", manifest)
+	}
+
+	state := &modeState{ControllerDisabled: true}
+	options, err := routeOptionsFromState(state)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if options.Enabled || options.Table != DefaultRouteControllerOptions().Table ||
+		options.Protocol != DefaultRouteControllerOptions().Protocol {
+		t.Fatalf("incorrect disabled baseline: %+v", options)
+	}
+	state.RouteTable = 200
+	state.RouteProtocol = 111
+	options, err = routeOptionsFromState(state)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if options.Enabled || options.Table != 200 || options.Protocol != 111 {
+		t.Fatalf("disabled baseline lost the reserved route pair: %+v", options)
+	}
+
+	reenabled, err := mergeControllerOptions(
+		options,
+		RouteControllerOptions{Enabled: true, Image: "example.com/controller:v2"},
+		[]string{"route-controller-enabled", "route-controller-image"},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reenabled.Enabled || reenabled.Image != "example.com/controller:v2" ||
+		reenabled.Table != 200 || reenabled.Protocol != 111 {
+		t.Fatalf("re-enable merge lost settings: %+v", reenabled)
+	}
+}

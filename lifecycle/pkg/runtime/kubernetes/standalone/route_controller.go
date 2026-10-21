@@ -47,6 +47,20 @@ func SavedRouteControllerOptions() (RouteControllerOptions, error) {
 }
 
 func routeOptionsFromState(state *modeState) (RouteControllerOptions, error) {
+	options := RouteControllerOptions{
+		Enabled:  !state.ControllerDisabled,
+		Table:    state.RouteTable,
+		Protocol: state.RouteProtocol,
+	}
+	if state.ControllerDisabled {
+		if options.Table == 0 {
+			options.Table = DefaultRouteControllerOptions().Table
+		}
+		if options.Protocol == 0 {
+			options.Protocol = DefaultRouteControllerOptions().Protocol
+		}
+		return options, nil
+	}
 	var pod v1.Pod
 	if err := yaml.Unmarshal(state.RouteManifest, &pod); err != nil {
 		return RouteControllerOptions{}, err
@@ -54,11 +68,7 @@ func routeOptionsFromState(state *modeState) (RouteControllerOptions, error) {
 	if len(pod.Spec.Containers) != 1 {
 		return RouteControllerOptions{}, errors.New("invalid controller baseline")
 	}
-	options := RouteControllerOptions{
-		Image:    pod.Spec.Containers[0].Image,
-		Table:    state.RouteTable,
-		Protocol: state.RouteProtocol,
-	}
+	options.Image = pod.Spec.Containers[0].Image
 	for _, volume := range pod.Spec.Volumes {
 		if volume.HostPath == nil {
 			continue
@@ -85,6 +95,7 @@ const (
 )
 
 type RouteControllerOptions struct {
+	Enabled    bool   `json:"Enabled"`
 	Image      string `json:"Image"`
 	Kubeconfig string `json:"Kubeconfig"`
 	Config     string `json:"Config"`
@@ -94,6 +105,7 @@ type RouteControllerOptions struct {
 
 func DefaultRouteControllerOptions() RouteControllerOptions {
 	return RouteControllerOptions{
+		Enabled:  true,
 		Image:    DefaultRouteControllerImage,
 		Table:    254,
 		Protocol: 99,
@@ -101,6 +113,9 @@ func DefaultRouteControllerOptions() RouteControllerOptions {
 }
 
 func (o RouteControllerOptions) Validate() error {
+	if !o.Enabled {
+		return nil
+	}
 	if o.Image == "" || (o.Kubeconfig != "" && !filepath.IsAbs(o.Kubeconfig)) {
 		return errors.New(
 			"route-controller requires an image and an absolute custom kubeconfig path",
@@ -233,8 +248,12 @@ func routeControllerPod(options RouteControllerOptions) (*v1.Pod, error) {
 }
 
 // Custom host files must exist; managed credentials are admission-checked with
-// a server-side dry-run during preflight and created after it.
+// a server-side dry-run during preflight and created after it. A disabled
+// controller renders no manifest and owns no host files.
 func prepareRouteController(options RouteControllerOptions) ([]byte, error) {
+	if !options.Enabled {
+		return nil, nil
+	}
 	pod, err := routeControllerPod(options)
 	if err != nil {
 		return nil, err

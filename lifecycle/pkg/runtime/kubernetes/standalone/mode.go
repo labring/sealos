@@ -49,22 +49,23 @@ type ModeOptions struct {
 }
 
 type modeState struct {
-	Version          int                        `json:"Version"`
-	Mode             string                     `json:"Mode"`
-	Target           string                     `json:"Target"`
-	Node             *v1.Node                   `json:"Node"`
-	RegisteredUID    types.UID                  `json:"RegisteredUID"`
-	Args             []string                   `json:"Args"`
-	ConfigPath       string                     `json:"ConfigPath"`
-	KubeconfigPath   string                     `json:"KubeconfigPath"`
-	Kubeconfig       []byte                     `json:"Kubeconfig"`
-	Settings         map[string]json.RawMessage `json:"Settings"`
-	Endpoint         string                     `json:"Endpoint"`
-	RouteManifest    []byte                     `json:"RouteManifest"`
-	RouteTable       int                        `json:"RouteTable"`
-	RouteProtocol    int                        `json:"RouteProtocol"`
-	ManagedService   bool                       `json:"ManagedService"`
-	ControllerUpdate *controllerUpdate          `json:"ControllerUpdate"`
+	Version            int                        `json:"Version"`
+	Mode               string                     `json:"Mode"`
+	Target             string                     `json:"Target"`
+	Node               *v1.Node                   `json:"Node"`
+	RegisteredUID      types.UID                  `json:"RegisteredUID"`
+	Args               []string                   `json:"Args"`
+	ConfigPath         string                     `json:"ConfigPath"`
+	KubeconfigPath     string                     `json:"KubeconfigPath"`
+	Kubeconfig         []byte                     `json:"Kubeconfig"`
+	Settings           map[string]json.RawMessage `json:"Settings"`
+	Endpoint           string                     `json:"Endpoint"`
+	RouteManifest      []byte                     `json:"RouteManifest"`
+	RouteTable         int                        `json:"RouteTable"`
+	RouteProtocol      int                        `json:"RouteProtocol"`
+	ControllerDisabled bool                       `json:"ControllerDisabled"`
+	ManagedService     bool                       `json:"ManagedService"`
+	ControllerUpdate   *controllerUpdate          `json:"ControllerUpdate"`
 }
 
 type modeSwitch struct {
@@ -299,6 +300,9 @@ func (m *modeSwitch) prepare(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	if m.state.ControllerDisabled {
+		return nil
+	}
 	m.controller = &v1.Pod{}
 	if err := yaml.Unmarshal(m.state.RouteManifest, m.controller); err != nil {
 		return err
@@ -362,12 +366,6 @@ func (m *modeSwitch) capture(ctx context.Context) error {
 	if _, err := os.Stat(modeDropin); !os.IsNotExist(err) {
 		return fmt.Errorf("unmanaged standalone systemd override already exists: %s", modeDropin)
 	}
-	if _, err := os.Stat(routeManifestPath); !os.IsNotExist(err) {
-		return fmt.Errorf(
-			"unmanaged route-controller manifest already exists: %s",
-			routeManifestPath,
-		)
-	}
 	configPath := flagValue(args, "config")
 	data, err := os.ReadFile(configPath)
 	if err != nil {
@@ -413,12 +411,22 @@ func (m *modeSwitch) capture(ctx context.Context) error {
 			return err
 		}
 	}
+	// A disabled deployment removes the manifest below; only an enabled one
+	// must refuse to adopt a manifest it does not own.
+	if _, err := os.Stat(routeManifestPath); !os.IsNotExist(err) && controller.Enabled {
+		return fmt.Errorf(
+			"unmanaged route-controller manifest already exists: %s",
+			routeManifestPath,
+		)
+	}
 	manifest, err := prepareRouteController(controller)
 	if err != nil {
 		return err
 	}
-	if err := reservedRoutesEmpty(controller.Table, controller.Protocol); err != nil {
-		return err
+	if controller.Enabled {
+		if err := reservedRoutesEmpty(controller.Table, controller.Protocol); err != nil {
+			return err
+		}
 	}
 	kubeconfigPath := flagValue(args, "kubeconfig")
 	kubeconfig, err := os.ReadFile(kubeconfigPath)
@@ -426,20 +434,21 @@ func (m *modeSwitch) capture(ctx context.Context) error {
 		return err
 	}
 	m.state = &modeState{
-		Version:        1,
-		Mode:           ModeRegistered,
-		Target:         ModeStandalone,
-		Node:           node,
-		RegisteredUID:  node.UID,
-		Args:           args,
-		ConfigPath:     configPath,
-		KubeconfigPath: kubeconfigPath,
-		Kubeconfig:     kubeconfig,
-		Settings:       settings,
-		Endpoint:       endpoint,
-		RouteManifest:  manifest,
-		RouteTable:     controller.Table,
-		RouteProtocol:  controller.Protocol,
+		Version:            1,
+		Mode:               ModeRegistered,
+		Target:             ModeStandalone,
+		Node:               node,
+		RegisteredUID:      node.UID,
+		Args:               args,
+		ConfigPath:         configPath,
+		KubeconfigPath:     kubeconfigPath,
+		Kubeconfig:         kubeconfig,
+		Settings:           settings,
+		Endpoint:           endpoint,
+		RouteManifest:      manifest,
+		RouteTable:         controller.Table,
+		RouteProtocol:      controller.Protocol,
+		ControllerDisabled: !controller.Enabled,
 	}
 	return nil
 }
@@ -452,7 +461,16 @@ func (m *modeSwitch) command(ctx context.Context, args ...string) error {
 // Restarting kubelet applies standalone configuration without issuing evictions
 // or deleting registrations. The administrator must still clean up and reboot.
 func (m *modeSwitch) toStandalone(ctx context.Context) error {
-	if err := ensureControllerCredentials(ctx, m.controller); err != nil {
+	if m.state.ControllerDisabled {
+		// No credentials are needed, and any deployment from an enabled
+		// period must be stopped and its routes dropped.
+		if err := m.stopController(ctx); err != nil {
+			return err
+		}
+		if err := removeReservedRoutes(m.state.RouteTable, m.state.RouteProtocol); err != nil {
+			return err
+		}
+	} else if err := ensureControllerCredentials(ctx, m.controller); err != nil {
 		return err
 	}
 	data, err := os.ReadFile(m.state.ConfigPath)
@@ -473,8 +491,10 @@ func (m *modeSwitch) toStandalone(ctx context.Context) error {
 	if err := atomicModeFile(modeDropin, []byte(serviceOverride(args)), 0o644); err != nil {
 		return err
 	}
-	if err := atomicModeFile(routeManifestPath, m.state.RouteManifest, 0o600); err != nil {
-		return err
+	if len(m.state.RouteManifest) != 0 {
+		if err := atomicModeFile(routeManifestPath, m.state.RouteManifest, 0o600); err != nil {
+			return err
+		}
 	}
 	if err := m.command(ctx, "daemon-reload"); err != nil {
 		return err
@@ -508,7 +528,7 @@ func (m *modeSwitch) ready(ctx context.Context, waitForController bool) error {
 		if _, err := standaloneArgs(args); err != nil {
 			return err
 		}
-		if waitForController {
+		if waitForController && !m.state.ControllerDisabled {
 			if err := m.podReady(ctx, m.controller); err != nil {
 				return err
 			}

@@ -291,6 +291,10 @@ func (k *KubeadmRuntime) standaloneControllerCommand(
 			func() { controller.Table = saved.Table })
 		fields = inheritControllerField(fields, "route-protocol", saved.Protocol != 0,
 			func() { controller.Protocol = saved.Protocol })
+		if saved.Enabled != nil && !slices.Contains(fields, "route-controller-enabled") {
+			controller.Enabled = *saved.Enabled
+			fields = append(fields, "route-controller-enabled")
+		}
 	}
 	var command strings.Builder
 	if options.UpdateController {
@@ -300,6 +304,7 @@ func (k *KubeadmRuntime) standaloneControllerCommand(
 		command.WriteString(" --delete-master-nodes")
 	}
 	values := map[string]string{
+		"route-controller-enabled":    strconv.FormatBool(controller.Enabled),
 		"route-controller-image":      controller.Image,
 		"route-controller-kubeconfig": controller.Kubeconfig,
 		"route-controller-config":     controller.Config,
@@ -311,6 +316,11 @@ func (k *KubeadmRuntime) standaloneControllerCommand(
 		if !ok {
 			return "", nil, fmt.Errorf("unknown controller flag %q", field)
 		}
+		if field == "route-controller-enabled" {
+			// pflag boolean flags accept only the --flag=value form.
+			command.WriteString(" --" + field + "=" + value)
+			continue
+		}
 		command.WriteString(" --" + field + " " + shellArgument(value))
 	}
 	if len(fields) == 0 {
@@ -319,6 +329,8 @@ func (k *KubeadmRuntime) standaloneControllerCommand(
 	settings := v1beta1.RouteControllerConfig{}
 	for _, field := range fields {
 		switch field {
+		case "route-controller-enabled":
+			settings.Enabled = &controller.Enabled
 		case "route-controller-image":
 			settings.Image = controller.Image
 		case "route-controller-kubeconfig":

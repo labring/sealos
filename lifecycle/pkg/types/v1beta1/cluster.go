@@ -270,7 +270,9 @@ type ClusterSpec struct {
 }
 
 // RouteControllerConfig contains only CNI-independent deployment settings.
+// A nil Enabled keeps the controller on; false deploys no controller at all.
 type RouteControllerConfig struct {
+	Enabled    *bool  `json:"enabled,omitempty"`
 	Image      string `json:"image,omitempty"`
 	Kubeconfig string `json:"kubeconfig,omitempty"`
 	Config     string `json:"config,omitempty"`
