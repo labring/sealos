@@ -12,6 +12,11 @@ on:
         required: false
         type: boolean
         default: false
+      skip_component_cluster_images:
+        description: "Skip component cluster images when building the combined image"
+        required: false
+        type: boolean
+        default: false
       push_image_tag:
         description: "Push image tag"
         default: "latest"
@@ -30,6 +35,11 @@ on:
         type: string
       push_image:
         description: "Push image"
+        required: false
+        type: boolean
+        default: false
+      skip_component_cluster_images:
+        description: "Skip component cluster images when building the combined image"
         required: false
         type: boolean
         default: false
@@ -253,7 +263,7 @@ jobs:
   cluster-image-build:
     needs:
       - image-release
-    if: ${{ inputs.push_image }}
+    if: ${{ inputs.push_image && !inputs.skip_component_cluster_images }}
     runs-on: ubuntu-24.04
     permissions:
       contents: read

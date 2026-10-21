@@ -8,6 +8,11 @@ on:
         required: false
         default: ""
         type: string
+      skip_component_cluster_images:
+        description: "Skip component cluster images when building the combined image"
+        required: false
+        default: true
+        type: boolean
   workflow_dispatch:
     inputs:
       tag:
@@ -15,6 +20,11 @@ on:
         required: false
         default: ""
         type: string
+      skip_component_cluster_images:
+        description: "Skip component cluster images when building the combined image"
+        required: false
+        default: true
+        type: boolean
 
 env:
   # Common versions
@@ -34,6 +44,7 @@ jobs:
       push_image_tag: ${{ inputs.tag }}
       disable_cilint: true
       force_all: true
+      skip_component_cluster_images: ${{ inputs.skip_component_cluster_images }}
     secrets: inherit
 
   release-frontends:
@@ -42,6 +53,7 @@ jobs:
       push_image: true
       push_image_tag: ${{ inputs.tag }}
       force_all: true
+      skip_component_cluster_images: ${{ inputs.skip_component_cluster_images }}
     secrets: inherit
 
   release-service:
@@ -51,6 +63,7 @@ jobs:
       push_image_tag: ${{ inputs.tag }}
       disable_cilint: true
       force_all: true
+      skip_component_cluster_images: ${{ inputs.skip_component_cluster_images }}
     secrets: inherit
 
   release-webhook:
@@ -59,6 +72,7 @@ jobs:
       push_image: true
       push_image_tag: ${{ inputs.tag }}
       disable_cilint: true
+      skip_component_cluster_images: ${{ inputs.skip_component_cluster_images }}
     secrets: inherit
 
   release-components:

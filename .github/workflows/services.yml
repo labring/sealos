@@ -8,6 +8,11 @@ on:
         required: false
         type: boolean
         default: false
+      skip_component_cluster_images:
+        description: "Skip component cluster images when building the combined image"
+        required: false
+        type: boolean
+        default: false
       push_image_tag:
         description: "Push image tag"
         default: "latest"
@@ -27,6 +32,11 @@ on:
     inputs:
       push_image:
         description: "Push image"
+        required: false
+        type: boolean
+        default: false
+      skip_component_cluster_images:
+        description: "Skip component cluster images when building the combined image"
         required: false
         type: boolean
         default: false
@@ -109,5 +119,6 @@ jobs:
       module: ${{ matrix.module.name }}
       push_image: ${{ (github.event_name == 'push') || (github.event_name == 'create') || (inputs.push_image == true) }}
       push_image_tag: ${{ inputs.push_image_tag || 'latest' }}
+      skip_component_cluster_images: ${{ inputs.skip_component_cluster_images || false }}
       disable_cilint: ${{ inputs.disable_cilint || false }}
     secrets: inherit
