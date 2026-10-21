@@ -19,7 +19,7 @@ kubeAPI:
 # When disabled, the admin namespace uses Pod Security Admission labels and
 # any sealos-cloudadmin ClusterRoleBinding is removed.
 adminClusterAdmin:
-  enabled: false
+  enabled: true
 
 strictNamespacePodSecurity:
   enabled: true
