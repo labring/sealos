@@ -64,6 +64,9 @@ desktopConfig:
   communityEnabled: true
   communityQRCodeImage: ""
   communityLink: ""
+  # Desktop acquisition rewards (invite friends + first-login gift).
+  # Only effective when version is "cn"; set to false to close the activity.
+  activityEnabled: true
 
   # Common URLs (default values)
   realNameReward: 0

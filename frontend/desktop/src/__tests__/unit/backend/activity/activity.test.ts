@@ -29,8 +29,12 @@ vi.mock('@/services/backend/db/init', () => ({
   }
 }));
 
-// Activity switches read global.AppConfig; pin it to the CN version for unit tests
-vi.mock('@/services/enable', () => ({ getVersion: vi.fn(() => 'cn') }));
+// Activity switches read global.AppConfig; pin them to an open CN deployment for unit tests
+// (the switch rule itself is covered by availability.test.ts)
+vi.mock('@/services/enable', () => ({
+  getVersion: vi.fn(() => 'cn'),
+  isActivityAvailable: vi.fn(() => true)
+}));
 
 // Redemption goes through the internal billing service; intercept it to assert no double redemption
 vi.mock('@/services/backend/auth', () => ({ callBillingService: vi.fn() }));

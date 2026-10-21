@@ -7,6 +7,12 @@ export const enableGithub = () => global.AppConfig.desktop.auth.idp.github?.enab
 export const enableSms = () => global.AppConfig.desktop.auth.idp.sms?.enabled || false;
 export const enablePhoneSms = () => enableSms() && !!global.AppConfig.desktop.auth.idp.sms?.enabled;
 export const getVersion = () => global.AppConfig.desktop.layout.version;
+// Desktop acquisition rewards switch (desktop.activity.enabled). A missing key keeps
+// the pre-flag behaviour (enabled) so existing CN deployments are not turned off by an upgrade.
+export const enableActivity = () => global.AppConfig.desktop.activity?.enabled ?? true;
+// The activity is only open to the CN deployment; the switch can turn it off there but
+// never turns it on for the international deployment.
+export const isActivityAvailable = () => enableActivity() && getVersion() !== 'en';
 export const enableEmailSms = () => !!global.AppConfig.desktop.auth.idp.email?.enabled;
 export const enableWechat = () => global.AppConfig.desktop.auth.idp.wechat?.enabled || false;
 export const enableGoogle = () => global.AppConfig.desktop.auth.idp.google?.enabled || false;

@@ -255,6 +255,11 @@ export type DesktopConfigType<T = AuthConfigType> = {
     maxTeamCount: number;
     maxTeamMemberCount: number;
   };
+  // Desktop acquisition rewards (invite friends + first-login gift). Server-only;
+  // getAppConfig never forwards it to the browser.
+  activity?: {
+    enabled?: boolean;
+  };
 };
 
 export type TrackingConfigType = {

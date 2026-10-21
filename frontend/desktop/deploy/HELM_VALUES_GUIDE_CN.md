@@ -112,6 +112,7 @@ desktopConfig:
   trackingEnabled: false # 启用追踪/统计
   realNameAuthEnabled: false # 启用实名认证
   licenseCheckEnabled: false # 启用 License 检查
+  activityEnabled: true # 桌面拉新奖励（邀请好友/首次登录礼）开关；仅 version "cn" 生效，false 关闭活动
 ```
 
 ### 9. Common URLs 配置

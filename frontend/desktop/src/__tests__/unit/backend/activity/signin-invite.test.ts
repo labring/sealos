@@ -162,6 +162,21 @@ describe('signin invitation SSR', () => {
     expect(responseCookies(res).some((cookie) => cookie.startsWith('sealos_invite='))).toBe(false);
   });
 
+  it('does not accept invitations when the activity is switched off', async () => {
+    vi.mocked(getCloudConfig).mockImplementation(async () => {
+      global.AppConfig = {
+        ...config,
+        desktop: { ...config.desktop, activity: { enabled: false } }
+      };
+      return config.cloud;
+    });
+    const { context, res } = request(CODE);
+    const result = await getServerSideProps(context);
+    expect(result.props.inviteIssue).toBe('unavailable');
+    expect(globalPrisma.registrationInviteCode.findUnique).not.toHaveBeenCalled();
+    expect(responseCookies(res).some((cookie) => cookie.startsWith('sealos_invite='))).toBe(false);
+  });
+
   it.each(['config', 'database'] as const)(
     'reports %s failure and succeeds on explicit retry',
     async (source) => {

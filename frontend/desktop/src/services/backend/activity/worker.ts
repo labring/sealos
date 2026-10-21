@@ -1,11 +1,7 @@
 import { globalPrisma } from '@/services/backend/db/init';
 import { ActivityRewardStatus, Prisma } from 'prisma/global/generated/client';
-import {
-  checkAndGrantUserRewards,
-  isActivityAvailable,
-  reconcileGrant,
-  redeemGrant
-} from './rewards';
+import { checkAndGrantUserRewards, reconcileGrant, redeemGrant } from './rewards';
+import { isActivityAvailable } from '@/services/enable';
 
 // Per-run cap so large tables cannot stall the cron cycle
 const BATCH_LIMIT = 50;
