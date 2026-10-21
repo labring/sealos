@@ -274,8 +274,10 @@ func (b *preparedBootstrap) execute(ctx context.Context, options BootstrapOption
 		return err
 	}
 	defer runtime.close()
-	if err := runtime.ensureImage(ctx, state.Plan.Controller.Image, false); err != nil {
-		return fmt.Errorf("pull route-controller before bootstrap: %w", err)
+	if state.Plan.Controller.Enabled {
+		if err := runtime.ensureImage(ctx, state.Plan.Controller.Image, false); err != nil {
+			return fmt.Errorf("pull route-controller before bootstrap: %w", err)
+		}
 	}
 	if err := maintenanceCommand(ctx, options.Output, "systemctl", "stop", "kubelet"); err != nil {
 		return err
@@ -362,7 +364,10 @@ func (b *preparedBootstrap) execute(ctx context.Context, options BootstrapOption
 		RouteManifest:  manifest,
 		RouteTable:     state.Plan.Controller.Table,
 		RouteProtocol:  state.Plan.Controller.Protocol,
-		ManagedService: true,
+		// A disabled plan deploys no controller; record it so the baseline
+		// stays consistent with its empty manifest.
+		ControllerDisabled: !state.Plan.Controller.Enabled,
+		ManagedService:     true,
 	}
 	if state.Baseline != nil {
 		baseline = state.Baseline
