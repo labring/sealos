@@ -317,3 +317,78 @@ func TestPreflightControllerCredentialsSkipsCustomKubeconfig(t *testing.T) {
 		t.Fatalf("custom kubeconfig must skip the preflight: %v", err)
 	}
 }
+
+func TestRemoveControllerCredentials(t *testing.T) {
+	managed := map[string]string{controllerOwnerLabel: "managed"}
+	seed := []runtime.Object{
+		&corev1.Secret{ObjectMeta: metav1.ObjectMeta{
+			Name: controllerIdentity, Namespace: metav1.NamespaceSystem, Labels: managed,
+		}},
+		&corev1.ServiceAccount{ObjectMeta: metav1.ObjectMeta{
+			Name: controllerIdentity, Namespace: metav1.NamespaceSystem, Labels: managed,
+		}},
+		&rbacv1.ClusterRole{ObjectMeta: metav1.ObjectMeta{
+			Name: controllerIdentity, Labels: managed,
+		}},
+		&rbacv1.ClusterRoleBinding{ObjectMeta: metav1.ObjectMeta{
+			Name: controllerIdentity, Labels: managed,
+		}},
+		&rbacv1.Role{ObjectMeta: metav1.ObjectMeta{
+			Name: controllerIdentity, Namespace: metav1.NamespaceSystem, Labels: managed,
+		}},
+		&rbacv1.RoleBinding{ObjectMeta: metav1.ObjectMeta{
+			Name: controllerIdentity, Namespace: metav1.NamespaceSystem, Labels: managed,
+		}},
+	}
+	client := fake.NewSimpleClientset(seed...)
+	if err := RemoveControllerCredentials(context.Background(), client); err != nil {
+		t.Fatal(err)
+	}
+	if err := RemoveControllerCredentials(context.Background(), client); err != nil {
+		t.Fatalf("retry after removal must succeed: %v", err)
+	}
+	lookups := []func(context.Context, string) error{
+		func(ctx context.Context, name string) error {
+			_, err := client.CoreV1().Secrets(metav1.NamespaceSystem).
+				Get(ctx, name, metav1.GetOptions{})
+			return err
+		},
+		func(ctx context.Context, name string) error {
+			_, err := client.CoreV1().ServiceAccounts(metav1.NamespaceSystem).
+				Get(ctx, name, metav1.GetOptions{})
+			return err
+		},
+		func(ctx context.Context, name string) error {
+			_, err := client.RbacV1().ClusterRoles().Get(ctx, name, metav1.GetOptions{})
+			return err
+		},
+		func(ctx context.Context, name string) error {
+			_, err := client.RbacV1().ClusterRoleBindings().
+				Get(ctx, name, metav1.GetOptions{})
+			return err
+		},
+		func(ctx context.Context, name string) error {
+			_, err := client.RbacV1().Roles(metav1.NamespaceSystem).
+				Get(ctx, name, metav1.GetOptions{})
+			return err
+		},
+		func(ctx context.Context, name string) error {
+			_, err := client.RbacV1().RoleBindings(metav1.NamespaceSystem).
+				Get(ctx, name, metav1.GetOptions{})
+			return err
+		},
+	}
+	for _, lookup := range lookups {
+		if err := lookup(context.Background(), controllerIdentity); !apierrors.IsNotFound(err) {
+			t.Fatalf("managed identity was not removed: %v", err)
+		}
+	}
+
+	unmanaged := fake.NewSimpleClientset(&corev1.Secret{ObjectMeta: metav1.ObjectMeta{
+		Name: controllerIdentity, Namespace: metav1.NamespaceSystem,
+	}})
+	if err := RemoveControllerCredentials(context.Background(), unmanaged); err == nil ||
+		!strings.Contains(err.Error(), "refusing to delete unmanaged") {
+		t.Fatalf("deleted an administrator-owned token Secret: %v", err)
+	}
+}

@@ -21,7 +21,9 @@ import (
 	"os"
 	"time"
 
+	v1 "k8s.io/api/core/v1"
 	cri "k8s.io/cri-api/pkg/apis/runtime/v1"
+	"sigs.k8s.io/yaml"
 )
 
 var RouteControllerFlags = []string{
@@ -36,6 +38,9 @@ var RouteControllerFlags = []string{
 type controllerUpdate struct {
 	PreviousTable    int `json:"PreviousTable"`
 	PreviousProtocol int `json:"PreviousProtocol"`
+	// ManagedCredentials records whether the replaced deployment generated
+	// the managed kubeconfig, so a disable can drop the file.
+	ManagedCredentials bool `json:"ManagedCredentials"`
 }
 
 func mergeControllerOptions(
@@ -89,6 +94,14 @@ func (m *modeSwitch) prepareControllerUpdate() error {
 	if m.state.Target != "" {
 		return errors.New("finish the current mode conversion before updating route-controller")
 	}
+	var previous v1.Pod
+	managedCredentials := false
+	if len(m.state.RouteManifest) != 0 {
+		if err := yaml.Unmarshal(m.state.RouteManifest, &previous); err != nil {
+			return err
+		}
+		managedCredentials = previous.Annotations[controllerCredentialsAnnotation] == "managed"
+	}
 	manifest, err := prepareRouteController(desired)
 	if err != nil {
 		return err
@@ -100,8 +113,9 @@ func (m *modeSwitch) prepareControllerUpdate() error {
 		}
 	}
 	m.state.ControllerUpdate = &controllerUpdate{
-		PreviousTable:    current.Table,
-		PreviousProtocol: current.Protocol,
+		PreviousTable:      current.Table,
+		PreviousProtocol:   current.Protocol,
+		ManagedCredentials: managedCredentials,
 	}
 	m.state.ControllerDisabled = !desired.Enabled
 	m.state.RouteManifest = manifest
@@ -159,9 +173,16 @@ func (m *modeSwitch) updateController(ctx context.Context) (err error) {
 	}
 	if m.state.ControllerDisabled {
 		// Nothing reprograms the table once the controller is gone; drop the
-		// routes it owned under the requested pair as well.
+		// routes it owned under the requested pair, and the managed
+		// kubeconfig the disabled deployment generated.
 		if err := removeReservedRoutes(m.state.RouteTable, m.state.RouteProtocol); err != nil {
 			return err
+		}
+		if previous.ManagedCredentials {
+			err := os.Remove(DefaultRouteControllerKubeconfig)
+			if err != nil && !os.IsNotExist(err) {
+				return err
+			}
 		}
 	}
 	if len(m.state.RouteManifest) != 0 {

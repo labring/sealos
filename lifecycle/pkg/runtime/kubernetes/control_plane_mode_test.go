@@ -30,8 +30,10 @@ import (
 	"github.com/labring/sealos/pkg/runtime/kubernetes/standalone"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	v1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"
 )
 
@@ -156,10 +158,16 @@ func TestControlPlaneConversionCommitAndFailure(t *testing.T) {
 			if err := os.WriteFile(path, data, 0o600); err != nil {
 				t.Fatal(err)
 			}
-			client := fake.NewSimpleClientset(&v1.ConfigMap{
+			seed := []k8sruntime.Object{&v1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{Name: "kubeadm-config", Namespace: "kube-system"},
 				Data:       map[string]string{"ClusterConfiguration": "etcd:\n  local: {}\n"},
-			})
+			}}
+			scenarioDisables := scenario.flagEnabled != nil && !*scenario.flagEnabled ||
+				scenario.enabled != nil && !*scenario.enabled && scenario.flagEnabled == nil
+			if scenarioDisables {
+				seed = append(seed, managedControllerIdentity()...)
+			}
+			client := fake.NewSimpleClientset(seed...)
 			ssh := &modeSSH{
 				checkOnly: failure == "preflight",
 			}
@@ -253,6 +261,9 @@ func TestControlPlaneConversionCommitAndFailure(t *testing.T) {
 			assertControllerSelection(t, ssh.commands[0], string(data),
 				expectedImage, expectedKubeconfig, scenario.table,
 				expectedEnabled, expectEnabledFlag)
+			if failure == "none" && scenarioDisables {
+				assertControllerIdentityRemoved(t, client)
+			}
 			if strings.Contains(
 				string(data),
 				"controlPlaneMode: standalone",
@@ -269,34 +280,7 @@ func TestControlPlaneConversionCommitAndFailure(t *testing.T) {
 				t.Fatalf("unexpected pending journal: %v", err)
 			}
 			if failure == "host" {
-				for _, command := range ssh.commands {
-					if strings.HasPrefix(command, "master2|") &&
-						strings.Contains(command, "switch '") &&
-						!strings.Contains(command, "--check-only") {
-						t.Fatal("continued converting after a failed master")
-					}
-				}
-				ssh.failHost = ""
-				options.Mode = scenario.recover
-				if err := rt.SwitchControlPlaneMode(context.Background(), options); err != nil {
-					t.Fatalf(
-						"could not recover an interrupted conversion to %s: %v",
-						options.Mode,
-						err,
-					)
-				}
-				_, err = client.CoreV1().ConfigMaps("kube-system").Get(
-					context.Background(), clusterfile.ModeTransitionResource, metav1.GetOptions{},
-				)
-				if !apierrors.IsNotFound(err) {
-					t.Fatalf("recovered conversion retained its journal: %v", err)
-				}
-				for _, command := range ssh.commands {
-					if strings.Contains(command, "switch 'registered'") &&
-						strings.Contains(command, "--route-") {
-						t.Fatalf("registered command received standalone flags: %s", command)
-					}
-				}
+				recoverInterruptedConversion(t, rt, ssh, client, options, scenario.recover)
 			}
 		})
 	}
@@ -342,6 +326,106 @@ func assertControllerSelection(
 		}
 		if !strings.Contains(data, "enabled: "+value) {
 			t.Fatalf("controller enabled was not committed: %s", data)
+		}
+	}
+}
+
+func managedControllerIdentity() []k8sruntime.Object {
+	managed := map[string]string{"sealos.io/route-controller": "managed"}
+	return []k8sruntime.Object{
+		&v1.Secret{ObjectMeta: metav1.ObjectMeta{
+			Name: "sealos-route-controller", Namespace: "kube-system", Labels: managed,
+		}},
+		&v1.ServiceAccount{ObjectMeta: metav1.ObjectMeta{
+			Name: "sealos-route-controller", Namespace: "kube-system", Labels: managed,
+		}},
+		&rbacv1.ClusterRole{ObjectMeta: metav1.ObjectMeta{
+			Name: "sealos-route-controller", Labels: managed,
+		}},
+		&rbacv1.ClusterRoleBinding{ObjectMeta: metav1.ObjectMeta{
+			Name: "sealos-route-controller", Labels: managed,
+		}},
+		&rbacv1.Role{ObjectMeta: metav1.ObjectMeta{
+			Name: "sealos-route-controller", Namespace: "kube-system", Labels: managed,
+		}},
+		&rbacv1.RoleBinding{ObjectMeta: metav1.ObjectMeta{
+			Name: "sealos-route-controller", Namespace: "kube-system", Labels: managed,
+		}},
+	}
+}
+
+func assertControllerIdentityRemoved(t *testing.T, client *fake.Clientset) {
+	t.Helper()
+	lookups := []func() error{
+		func() error {
+			_, err := client.CoreV1().Secrets("kube-system").
+				Get(context.Background(), "sealos-route-controller", metav1.GetOptions{})
+			return err
+		},
+		func() error {
+			_, err := client.CoreV1().ServiceAccounts("kube-system").
+				Get(context.Background(), "sealos-route-controller", metav1.GetOptions{})
+			return err
+		},
+		func() error {
+			_, err := client.RbacV1().ClusterRoles().
+				Get(context.Background(), "sealos-route-controller", metav1.GetOptions{})
+			return err
+		},
+		func() error {
+			_, err := client.RbacV1().ClusterRoleBindings().
+				Get(context.Background(), "sealos-route-controller", metav1.GetOptions{})
+			return err
+		},
+		func() error {
+			_, err := client.RbacV1().Roles("kube-system").
+				Get(context.Background(), "sealos-route-controller", metav1.GetOptions{})
+			return err
+		},
+		func() error {
+			_, err := client.RbacV1().RoleBindings("kube-system").
+				Get(context.Background(), "sealos-route-controller", metav1.GetOptions{})
+			return err
+		},
+	}
+	for _, lookup := range lookups {
+		if err := lookup(); !apierrors.IsNotFound(err) {
+			t.Fatalf("managed controller identity survived a disable: %v", err)
+		}
+	}
+}
+
+func recoverInterruptedConversion(
+	t *testing.T,
+	rt *KubeadmRuntime,
+	ssh *modeSSH,
+	client *fake.Clientset,
+	options standalone.ModeOptions,
+	target string,
+) {
+	t.Helper()
+	for _, command := range ssh.commands {
+		if strings.HasPrefix(command, "master2|") &&
+			strings.Contains(command, "switch '") &&
+			!strings.Contains(command, "--check-only") {
+			t.Fatal("continued converting after a failed master")
+		}
+	}
+	ssh.failHost = ""
+	options.Mode = target
+	if err := rt.SwitchControlPlaneMode(context.Background(), options); err != nil {
+		t.Fatalf("could not recover an interrupted conversion to %s: %v", target, err)
+	}
+	_, err := client.CoreV1().ConfigMaps("kube-system").Get(
+		context.Background(), clusterfile.ModeTransitionResource, metav1.GetOptions{},
+	)
+	if !apierrors.IsNotFound(err) {
+		t.Fatalf("recovered conversion retained its journal: %v", err)
+	}
+	for _, command := range ssh.commands {
+		if strings.Contains(command, "switch 'registered'") &&
+			strings.Contains(command, "--route-") {
+			t.Fatalf("registered command received standalone flags: %s", command)
 		}
 	}
 }

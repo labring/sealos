@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	v1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/yaml"
 )
 
 func TestGeneratedRouteControllerContract(t *testing.T) {
@@ -170,5 +171,51 @@ func TestRouteControllerDisabled(t *testing.T) {
 	if !reenabled.Enabled || reenabled.Image != "example.com/controller:v2" ||
 		reenabled.Table != 200 || reenabled.Protocol != 111 {
 		t.Fatalf("re-enable merge lost settings: %+v", reenabled)
+	}
+}
+
+func TestControllerUpdateRecordsManagedCredentials(t *testing.T) {
+	for name, custom := range map[string]bool{"managed": false, "custom": true} {
+		t.Run(name, func(t *testing.T) {
+			options := DefaultRouteControllerOptions()
+			if custom {
+				options.Kubeconfig = "/etc/kubernetes/route-controller/custom.conf"
+			}
+			pod, err := routeControllerPod(options)
+			if err != nil {
+				t.Fatal(err)
+			}
+			manifest, err := yaml.Marshal(pod)
+			if err != nil {
+				t.Fatal(err)
+			}
+			state := &modeState{
+				Mode:          ModeStandalone,
+				RouteManifest: manifest,
+				RouteTable:    options.Table,
+				RouteProtocol: options.Protocol,
+			}
+			requested := RouteControllerOptions{}
+			m := &modeSwitch{
+				ModeOptions: ModeOptions{
+					RouteController:  &requested,
+					ControllerFields: []string{"route-controller-enabled"},
+				},
+				state: state,
+			}
+			if err := m.prepareControllerUpdate(); err != nil {
+				t.Fatal(err)
+			}
+			if state.ControllerUpdate == nil ||
+				state.ControllerUpdate.ManagedCredentials == custom {
+				t.Fatalf(
+					"credential provenance not recorded for %s deployment: %+v",
+					name, state.ControllerUpdate,
+				)
+			}
+			if !state.ControllerDisabled || len(state.RouteManifest) != 0 {
+				t.Fatalf("disable update did not clear the deployment: %+v", state)
+			}
+		})
 	}
 }

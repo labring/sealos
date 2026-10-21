@@ -221,6 +221,14 @@ func (k *KubeadmRuntime) switchControlPlaneMode(
 			return fmt.Errorf("mode conversion on %s paused: %w", host, err)
 		}
 	}
+	// Every host stopped its controller; drop the shared managed identity so a
+	// disabled cluster keeps no live credential. Re-enabling recreates it.
+	if controllerSettings != nil && controllerSettings.Enabled != nil &&
+		!*controllerSettings.Enabled {
+		if err := standalone.RemoveControllerCredentials(ctx, client); err != nil {
+			return fmt.Errorf("route-controller credential removal: %w", err)
+		}
+	}
 	path := constants.Clusterfile(k.cluster.Name)
 	if err := clusterfile.SetControlPlaneMode(path, options.Mode, controllerSettings); err != nil {
 		return err

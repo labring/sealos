@@ -267,6 +267,106 @@ func controllerAdminClient() (*rest.Config, clientset.Interface, dynamic.Interfa
 	return config, client, resources, nil
 }
 
+// RemoveControllerCredentials deletes the shared identity behind the managed
+// route-controller kubeconfig. Every host must already have stopped its
+// controller: deleting the token Secret revokes the credential running
+// instances still use. Objects without the managed label are refused, and
+// missing objects count as removed, so a retry after a partial cleanup is
+// safe. Re-enabling the controller recreates everything.
+func RemoveControllerCredentials(ctx context.Context, client clientset.Interface) error {
+	secrets := client.CoreV1().Secrets(metav1.NamespaceSystem)
+	secret, err := secrets.Get(ctx, controllerIdentity, metav1.GetOptions{})
+	switch {
+	case apierrors.IsNotFound(err):
+	case err != nil:
+		return err
+	case secret.Labels[controllerOwnerLabel] != "managed":
+		return fmt.Errorf("refusing to delete unmanaged token Secret %s", controllerIdentity)
+	default:
+		if err := secrets.Delete(ctx, controllerIdentity, metav1.DeleteOptions{}); err != nil &&
+			!apierrors.IsNotFound(err) {
+			return err
+		}
+	}
+	deletions := []struct {
+		kind string
+		get  func(ctx context.Context, name string) (metav1.Object, error)
+		drop func(ctx context.Context, name string) error
+	}{
+		{
+			"ServiceAccount",
+			func(ctx context.Context, name string) (metav1.Object, error) {
+				return client.CoreV1().ServiceAccounts(metav1.NamespaceSystem).
+					Get(ctx, name, metav1.GetOptions{})
+			},
+			func(ctx context.Context, name string) error {
+				return client.CoreV1().ServiceAccounts(metav1.NamespaceSystem).
+					Delete(ctx, name, metav1.DeleteOptions{})
+			},
+		},
+		{
+			"ClusterRole",
+			func(ctx context.Context, name string) (metav1.Object, error) {
+				return client.RbacV1().ClusterRoles().Get(ctx, name, metav1.GetOptions{})
+			},
+			func(ctx context.Context, name string) error {
+				return client.RbacV1().ClusterRoles().Delete(ctx, name, metav1.DeleteOptions{})
+			},
+		},
+		{
+			"ClusterRoleBinding",
+			func(ctx context.Context, name string) (metav1.Object, error) {
+				return client.RbacV1().ClusterRoleBindings().Get(ctx, name, metav1.GetOptions{})
+			},
+			func(ctx context.Context, name string) error {
+				return client.RbacV1().
+					ClusterRoleBindings().
+					Delete(ctx, name, metav1.DeleteOptions{})
+			},
+		},
+		{
+			"Role",
+			func(ctx context.Context, name string) (metav1.Object, error) {
+				return client.RbacV1().Roles(metav1.NamespaceSystem).
+					Get(ctx, name, metav1.GetOptions{})
+			},
+			func(ctx context.Context, name string) error {
+				return client.RbacV1().Roles(metav1.NamespaceSystem).
+					Delete(ctx, name, metav1.DeleteOptions{})
+			},
+		},
+		{
+			"RoleBinding",
+			func(ctx context.Context, name string) (metav1.Object, error) {
+				return client.RbacV1().RoleBindings(metav1.NamespaceSystem).
+					Get(ctx, name, metav1.GetOptions{})
+			},
+			func(ctx context.Context, name string) error {
+				return client.RbacV1().RoleBindings(metav1.NamespaceSystem).
+					Delete(ctx, name, metav1.DeleteOptions{})
+			},
+		},
+	}
+	for _, item := range deletions {
+		object, err := item.get(ctx, controllerIdentity)
+		if apierrors.IsNotFound(err) {
+			continue
+		}
+		if err != nil {
+			return err
+		}
+		if object.GetLabels()[controllerOwnerLabel] != "managed" {
+			return fmt.Errorf(
+				"refusing to delete unmanaged %s %s", item.kind, controllerIdentity,
+			)
+		}
+		if err := item.drop(ctx, controllerIdentity); err != nil && !apierrors.IsNotFound(err) {
+			return err
+		}
+	}
+	return nil
+}
+
 func ensureControllerCredentials(ctx context.Context, pod *corev1.Pod) error {
 	if pod.Annotations[controllerCredentialsAnnotation] != "managed" {
 		return nil
