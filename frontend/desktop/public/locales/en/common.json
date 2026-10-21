@@ -496,5 +496,18 @@
   "activity_invite_unavailable": "The invitation event is unavailable in this environment",
   "activity_invite_error": "We could not accept the invitation. Please try again.",
   "activity_invite_register_hint": "You can still sign up or sign in, but this invitation may not be attributed.",
-  "activity_invite_retry": "Retry invitation"
+  "activity_invite_retry": "Retry invitation",
+  "oauth_code_title": "Authorize application",
+  "oauth_code_loading": "Loading authorization request…",
+  "oauth_code_signed_in_as": "Signed in as",
+  "oauth_code_access_description": "This application will be able to access your Sealos account and resources with your existing permissions, and stay signed in. This authorization does not restrict access to selected workspaces.",
+  "oauth_code_trust_notice": "Approve only if you started this request and trust this application.",
+  "oauth_code_deny": "Deny",
+  "oauth_code_approve": "Approve",
+  "oauth_code_returning": "Returning to the application…",
+  "oauth_code_missing_request": "Missing authorization request. Start again in the app.",
+  "oauth_code_load_failed_retry": "Unable to load authorization. Start again in the app.",
+  "oauth_code_load_failed": "Unable to load authorization.",
+  "oauth_code_decision_failed_retry": "Authorization failed. Start again in the app.",
+  "oauth_code_decision_failed": "Authorization failed."
 }
