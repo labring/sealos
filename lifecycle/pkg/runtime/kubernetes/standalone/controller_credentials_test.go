@@ -16,14 +16,18 @@ package standalone
 
 import (
 	"context"
+	"errors"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	dynamicfake "k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/rest"
@@ -207,5 +211,101 @@ func TestControllerPreflightAllowsOnlyManagedCredentialsToBeMissing(t *testing.T
 	options.Config = filepath.Join(t.TempDir(), "missing.yaml")
 	if _, err := prepareRouteController(options); err == nil {
 		t.Fatal("accepted missing user-provided controller configuration")
+	}
+}
+
+func TestPreflightControllerIdentityChecksEveryManagedObject(t *testing.T) {
+	scheme := runtime.NewScheme()
+	if err := corev1.AddToScheme(scheme); err != nil {
+		t.Fatal(err)
+	}
+	if err := rbacv1.AddToScheme(scheme); err != nil {
+		t.Fatal(err)
+	}
+	// A managed installation already exists: every dry-run create returns
+	// AlreadyExists and the preflight must still pass.
+	resources := dynamicfake.NewSimpleDynamicClient(scheme,
+		&corev1.ServiceAccount{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      controllerIdentity,
+				Namespace: metav1.NamespaceSystem,
+				Labels:    map[string]string{controllerOwnerLabel: "managed"},
+			},
+		},
+	)
+	client := fake.NewSimpleClientset(&corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      controllerIdentity,
+			Namespace: metav1.NamespaceSystem,
+		},
+		Type: corev1.SecretTypeServiceAccountToken,
+	})
+	if err := preflightControllerIdentity(context.Background(), client, resources); err != nil {
+		t.Fatal(err)
+	}
+	managed := map[string]bool{
+		"serviceaccounts": true, "clusterroles": true, "clusterrolebindings": true,
+		"roles": true, "rolebindings": true,
+	}
+	creates := 0
+	for _, action := range resources.Actions() {
+		create, ok := action.(clienttesting.CreateAction)
+		if !ok {
+			t.Fatalf("preflight issued a non-create action: %v", action)
+		}
+		if !managed[create.GetResource().Resource] {
+			t.Fatalf("preflight created an unmanaged object: %v", action)
+		}
+		creates++
+	}
+	if creates != len(controllerIdentityResources()) {
+		t.Fatalf("expected %d identity creates, got %d", len(controllerIdentityResources()), creates)
+	}
+	secrets := 0
+	for _, action := range client.Actions() {
+		if _, ok := action.(clienttesting.CreateAction); !ok {
+			t.Fatalf("preflight issued a non-create action: %v", action)
+		}
+		secrets++
+	}
+	if secrets != 1 {
+		t.Fatalf("expected one token secret create, got %d", secrets)
+	}
+}
+
+func TestPreflightControllerIdentitySurfacesAdmissionDenial(t *testing.T) {
+	scheme := runtime.NewScheme()
+	if err := corev1.AddToScheme(scheme); err != nil {
+		t.Fatal(err)
+	}
+	if err := rbacv1.AddToScheme(scheme); err != nil {
+		t.Fatal(err)
+	}
+	resources := dynamicfake.NewSimpleDynamicClient(scheme)
+	denied := apierrors.NewForbidden(
+		schema.GroupResource{Resource: "clusterroles"}, controllerIdentity,
+		errors.New("name is not in the allowlist"),
+	)
+	resources.PrependReactor("create", "clusterroles", func(clienttesting.Action) (bool, runtime.Object, error) {
+		return true, nil, denied
+	})
+	err := preflightControllerIdentity(
+		context.Background(), fake.NewSimpleClientset(), resources,
+	)
+	if err == nil || !strings.Contains(err.Error(), "admission preflight") ||
+		!strings.Contains(err.Error(), "not in the allowlist") {
+		t.Fatalf("admission denial was not surfaced: %v", err)
+	}
+}
+
+func TestPreflightControllerCredentialsSkipsCustomKubeconfig(t *testing.T) {
+	if err := preflightControllerCredentials(context.Background(), nil); err != nil {
+		t.Fatalf("nil controller pod must skip the preflight: %v", err)
+	}
+	custom := &corev1.Pod{}
+	// A controller rendered with a custom kubeconfig carries no managed
+	// annotation, so no admission preflight applies.
+	if err := preflightControllerCredentials(context.Background(), custom); err != nil {
+		t.Fatalf("custom kubeconfig must skip the preflight: %v", err)
 	}
 }

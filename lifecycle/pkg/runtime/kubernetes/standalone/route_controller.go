@@ -232,7 +232,8 @@ func routeControllerPod(options RouteControllerOptions) (*v1.Pod, error) {
 	return pod, nil
 }
 
-// Custom host files must exist; managed credentials are created after preflight.
+// Custom host files must exist; managed credentials are admission-checked with
+// a server-side dry-run during preflight and created after it.
 func prepareRouteController(options RouteControllerOptions) ([]byte, error) {
 	pod, err := routeControllerPod(options)
 	if err != nil {

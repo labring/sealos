@@ -127,6 +127,13 @@ func switchMode(ctx context.Context, options ModeOptions) error {
 		return fmt.Errorf("mode conversion preflight: %w", err)
 	}
 	if options.CheckOnly || m.state == nil {
+		if options.CheckOnly && m.state != nil && options.Mode == ModeStandalone {
+			// Admission policies that would deny the managed credentials must
+			// surface here, before any conversion has started.
+			if err := preflightControllerCredentials(ctx, m.controller); err != nil {
+				return fmt.Errorf("mode conversion preflight: %w", err)
+			}
+		}
 		return nil
 	}
 	if m.state.Mode == options.Mode && m.state.Target == "" {

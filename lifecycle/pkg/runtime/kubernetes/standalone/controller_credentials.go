@@ -28,6 +28,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -249,16 +250,28 @@ func controllerKubeconfig(config *rest.Config, token []byte) ([]byte, error) {
 	})
 }
 
+func controllerAdminClient() (*rest.Config, clientset.Interface, dynamic.Interface, error) {
+	config, err := clientcmd.BuildConfigFromFlags("", "/etc/kubernetes/admin.conf")
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	config.Timeout = 10 * time.Second
+	client, err := clientset.NewForConfig(config)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	resources, err := dynamic.NewForConfig(config)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	return config, client, resources, nil
+}
+
 func ensureControllerCredentials(ctx context.Context, pod *corev1.Pod) error {
 	if pod.Annotations[controllerCredentialsAnnotation] != "managed" {
 		return nil
 	}
-	config, err := clientcmd.BuildConfigFromFlags("", "/etc/kubernetes/admin.conf")
-	if err != nil {
-		return err
-	}
-	config.Timeout = 10 * time.Second
-	client, err := clientset.NewForConfig(config)
+	config, client, resources, err := controllerAdminClient()
 	if err != nil {
 		return err
 	}
@@ -279,10 +292,6 @@ func ensureControllerCredentials(ctx context.Context, pod *corev1.Pod) error {
 	); err != nil {
 		return err
 	}
-	resources, err := dynamic.NewForConfig(config)
-	if err != nil {
-		return err
-	}
 	if err := ensureControllerIdentity(ctx, resources); err != nil {
 		return err
 	}
@@ -299,4 +308,68 @@ func ensureControllerCredentials(ctx context.Context, pod *corev1.Pod) error {
 		return os.Chmod(DefaultRouteControllerKubeconfig, 0o600)
 	}
 	return atomicModeFile(DefaultRouteControllerKubeconfig, data, 0o600)
+}
+
+// preflightControllerCredentials server-side dry-runs every object the managed
+// credential flow creates. Validating admission sees dry-run requests, so
+// policies that would deny the conversion surface during --check-only instead
+// of pausing the conversion after it started. Existing objects are accepted:
+// admission still runs for them, and the real flow updates in place.
+func preflightControllerCredentials(ctx context.Context, pod *corev1.Pod) error {
+	if pod == nil || pod.Annotations[controllerCredentialsAnnotation] != "managed" {
+		return nil
+	}
+	_, client, resources, err := controllerAdminClient()
+	if err != nil {
+		return err
+	}
+	return preflightControllerIdentity(ctx, client, resources)
+}
+
+func preflightControllerIdentity(
+	ctx context.Context,
+	client clientset.Interface,
+	resources dynamic.Interface,
+) error {
+	dryRun := metav1.CreateOptions{DryRun: []string{metav1.DryRunAll}}
+	for _, item := range controllerIdentityResources() {
+		metadata, err := meta.Accessor(item.object)
+		if err != nil {
+			return err
+		}
+		metadata.SetName(controllerIdentity)
+		data, err := json.Marshal(item.object)
+		if err != nil {
+			return err
+		}
+		var object unstructured.Unstructured
+		if err := json.Unmarshal(data, &object.Object); err != nil {
+			return err
+		}
+		_, err = resources.Resource(item.resource).Namespace(metadata.GetNamespace()).
+			Create(ctx, &object, dryRun)
+		if err != nil && !apierrors.IsAlreadyExists(err) {
+			return fmt.Errorf(
+				"admission preflight for %s %s: %w",
+				item.resource.Resource, controllerIdentity, err,
+			)
+		}
+	}
+	_, err := client.CoreV1().Secrets(metav1.NamespaceSystem).Create(ctx, &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      controllerIdentity,
+			Namespace: metav1.NamespaceSystem,
+			Labels:    map[string]string{controllerOwnerLabel: "managed"},
+			// API validation requires the owning ServiceAccount name on
+			// token secrets; the UID is only known once the account exists.
+			Annotations: map[string]string{
+				corev1.ServiceAccountNameKey: controllerIdentity,
+			},
+		},
+		Type: corev1.SecretTypeServiceAccountToken,
+	}, dryRun)
+	if err != nil && !apierrors.IsAlreadyExists(err) {
+		return fmt.Errorf("admission preflight for token secret: %w", err)
+	}
+	return nil
 }
