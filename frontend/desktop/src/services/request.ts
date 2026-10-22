@@ -1,6 +1,5 @@
 import useSessionStore from '@/stores/session';
 import { clearPersistedMarketingQuery } from '@/utils/marketing-attribution';
-import { clearSharedAuthCookie } from '@/utils/cookieUtils';
 import type { ApiResp } from '@/types';
 import axios, { AxiosHeaders, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 const request = axios.create({
@@ -8,16 +7,6 @@ const request = axios.create({
   withCredentials: true,
   timeout: 20000
 });
-
-const expireSession = () => {
-  clearPersistedMarketingQuery();
-  const store = useSessionStore.getState();
-  store.delSession();
-  store.setGlobalToken('');
-  store.setToken('');
-  clearSharedAuthCookie();
-  window.location.replace('/signin');
-};
 
 // request interceptor
 request.interceptors.request.use(
@@ -50,8 +39,12 @@ request.interceptors.response.use(
     const isGuest = useSessionStore.getState().isGuest();
     // console.log(data, 'data', isGuest);
     if (data.code === 401 && !isGuest) {
-      expireSession();
-      return Promise.reject({ code: 401, message: data.message });
+      console.log('鉴权失败');
+      console.log(data.message);
+      clearPersistedMarketingQuery();
+      useSessionStore.getState().delSession();
+      useSessionStore.getState().setToken('');
+      return window.location.replace('/signin');
     }
     if (status < 200 || status >= 300) {
       return Promise.reject(new Error(data?.code + ':' + data?.message));
@@ -65,9 +58,6 @@ request.interceptors.response.use(
     return data;
   },
   (error) => {
-    if (error.response?.status === 401 && !useSessionStore.getState().isGuest()) {
-      expireSession();
-    }
     if (axios.isCancel(error)) {
       return Promise.reject('cancel request' + String(error));
     } else {

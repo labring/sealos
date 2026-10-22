@@ -19,7 +19,10 @@ import { USER_MERGE_STATUS } from '@/types/response/merge';
 import { UNBIND_STATUS } from '@/types/response/unbind';
 import { SemData } from '@/types/sem';
 import { ValueOf } from '@/types/tools';
-import { type AxiosInstance } from 'axios';
+import axios, { type AxiosInstance } from 'axios';
+import useSessionStore from '@/stores/session';
+import { clearSharedAuthCookie } from '@/utils/cookieUtils';
+import { clearPersistedMarketingQuery } from '@/utils/marketing-attribution';
 import { ProviderType } from 'prisma/global/generated/client';
 import { SubscriptionInfoResponse, WorkspacesPlansResponse } from '@/types/plan';
 
@@ -35,8 +38,33 @@ export const _getRegionToken = (request: AxiosInstance) => () =>
 
 export const getRegionToken = _getRegionToken(request);
 
-export const checkSessionStatus = (kubeconfig: string) =>
-  request.post<never, ApiResp<null>>('/api/auth/checkStatus', { kubeconfig });
+export const checkSessionStatus = async (kubeconfig: string) => {
+  try {
+    const { data } = await axios.post<ApiResp<null>>(
+      '/api/auth/checkStatus',
+      { kubeconfig },
+      {
+        headers: { Authorization: encodeURIComponent(useSessionStore.getState().token) },
+        withCredentials: true,
+        timeout: 20000
+      }
+    );
+    if (data.code !== 200) throw { code: data.code, message: data.message };
+    return data;
+  } catch (error) {
+    const authError = error as { code?: number; response?: { status?: number } };
+    const store = useSessionStore.getState();
+    if ((authError.code === 401 || authError.response?.status === 401) && !store.isGuest()) {
+      clearPersistedMarketingQuery();
+      store.delSession();
+      store.setGlobalToken('');
+      store.setToken('');
+      clearSharedAuthCookie();
+      window.location.replace('/signin');
+    }
+    throw error;
+  }
+};
 
 export const _passwordLoginRequest =
   (request: AxiosInstance) =>
