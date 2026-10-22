@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestPromServerHealth(t *testing.T) {
+func TestServeHealth(t *testing.T) {
 	t.Parallel()
 
 	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, HealthPath, nil)
@@ -17,7 +17,7 @@ func TestPromServerHealth(t *testing.T) {
 	}
 	rw := httptest.NewRecorder()
 
-	(&PromServer{}).ServeHTTP(rw, req)
+	ServeHealth(rw, req)
 
 	if rw.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d", http.StatusOK, rw.Code)

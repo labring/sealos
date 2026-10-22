@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       module:
-        description: "Service module name (e.g., database, pay)"
+        description: "Service module name (account or vlogs)"
         required: true
         type: string
       push_image:
@@ -30,7 +30,7 @@ on:
   workflow_dispatch:
     inputs:
       module:
-        description: "Service module name (e.g., database, pay, account)"
+        description: "Service module name (account or vlogs)"
         required: true
         type: string
       push_image:
