@@ -39,12 +39,12 @@ env:
 # ============================================================================
 # Auto-configured values (from sealos-system/sealos-config ConfigMap)
 # ============================================================================
-# The following accountEnv values are automatically fetched from the
-# sealos-system/sealos-config ConfigMap by the entrypoint script and will
-# override any values set here. These are provided as reference defaults.
+# The following accountEnv values are automatically fetched from the relevant
+# ConfigMaps in sealos-system by the entrypoint script and override these
+# reference defaults.
 #
 # To override these auto-configured values, use HELM_OPTIONS or modify the
-# sealos-config ConfigMap directly.
+# corresponding ConfigMap directly.
 # ============================================================================
 
 accountEnv:
@@ -52,6 +52,7 @@ accountEnv:
   cloudDomain: "cloud.sealos.io"  # Auto-fetched from sealos-config.cloudDomain
   cloudPort: ""                   # Auto-fetched from sealos-config.cloudPort
   localRegion: ""                 # Auto-fetched from sealos-config.regionUID
+  certMode: ""                    # Auto-fetched from sealos-system/cert-config.CERT_MODE
 
   # Database connections (auto-configured from sealos-config)
   mongoURI: "mongodb://mongo:27017/resources"  # Auto-fetched from sealos-config.databaseMongodbURI

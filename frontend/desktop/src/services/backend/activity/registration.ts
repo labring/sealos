@@ -1,6 +1,6 @@
 import { globalPrisma } from '@/services/backend/db/init';
 import { getCloudConfig } from '@/pages/api/platform/getCloudConfig';
-import { getVersion } from '@/services/enable';
+import { isActivityAvailable } from '@/services/enable';
 import type { ServerResponse } from 'http';
 import type { NextApiRequest } from 'next';
 import type { PrismaClient } from 'prisma/global/generated/client';
@@ -55,7 +55,7 @@ export const prepareInviteForSignin = async ({
     // SSR may be the process's first request, so it cannot rely on AppConfig
     // loaded later by the browser.
     await getCloudConfig();
-    if (getVersion() === 'en') return 'unavailable';
+    if (!isActivityAvailable()) return 'unavailable';
 
     const code = invite.trim();
     const inviteCode = await globalPrisma.registrationInviteCode.findUnique({

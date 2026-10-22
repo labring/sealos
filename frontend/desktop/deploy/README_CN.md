@@ -288,6 +288,8 @@ desktop:
   teamManagement:
     maxTeamCount: 0
     maxTeamMemberCount: 0
+  activity:
+    enabled: true
 
 tracking:
   websiteId: ''

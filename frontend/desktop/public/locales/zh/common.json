@@ -488,5 +488,18 @@
   "activity_invite_unavailable": "当前环境不支持邀请活动",
   "activity_invite_error": "邀请接收失败，请重试",
   "activity_invite_register_hint": "你仍可正常注册和登录，本次邀请奖励可能无法关联。",
-  "activity_invite_retry": "重新接收邀请"
+  "activity_invite_retry": "重新接收邀请",
+  "oauth_code_title": "授权应用",
+  "oauth_code_loading": "正在加载授权请求…",
+  "oauth_code_signed_in_as": "当前登录账号：",
+  "oauth_code_access_description": "此应用将能够使用您现有的权限访问您的 Sealos 账号和资源，并保持登录状态。本次授权不会将访问范围限制在指定的工作空间内。",
+  "oauth_code_trust_notice": "请仅在您本人发起此请求且信任此应用时同意授权。",
+  "oauth_code_deny": "拒绝",
+  "oauth_code_approve": "同意授权",
+  "oauth_code_returning": "正在返回应用…",
+  "oauth_code_missing_request": "缺少授权请求，请返回应用重新发起授权。",
+  "oauth_code_load_failed_retry": "无法加载授权请求，请返回应用重新发起授权。",
+  "oauth_code_load_failed": "无法加载授权请求。",
+  "oauth_code_decision_failed_retry": "授权失败，请返回应用重新发起授权。",
+  "oauth_code_decision_failed": "授权失败。"
 }
