@@ -1127,7 +1127,7 @@ func (r *DebtReconciler) sendFlushDebtResourceStatusRequestWithContext(
 		}
 
 		prefix := "https://"
-		if os.Getenv("CERT_MODE") == "self-signed" {
+		if os.Getenv("CERT_MODE") == "self-signed" || os.Getenv("CERT_MODE") == "offline" {
 			prefix = "http://"
 		}
 		url := fmt.Sprintf(
