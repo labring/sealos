@@ -112,3 +112,44 @@ Refer to other apps to add some configuration.
 In order to support multiple namespaces, the method of obtaining 'namespace' in the
 backend should be replaced with the method of obtaining it from 'kubeconfig' instead
 of adding 'ns-' to 'user' for generation purpose.
+
+## Health probes
+
+Desktop, Costcenter and License expose root `GET /healthz` (and `HEAD`). A ready
+process returns HTTP 200; missing local configuration returns HTTP 503. Responses
+are not cached. These routes require no user credentials and do not query databases,
+Kubernetes, billing APIs or other external services. They are not business-health checks.
+
+- Desktop checks `/app/data/config.yaml` in production, or `CONFIG_PATH` (default
+  `data/config.local.yaml`) in development: cloud domain/region, database URI strings
+  and internal/regional/global JWT keys must be present.
+- Costcenter checks that instrumentation has installed its validated `__APP_CONFIG__`.
+  It does not reload configuration or terminate the process from the health route.
+- License requires nonempty `SEALOS_DOMAIN`, `LICENSE_DOMAIN` and `MONGODB_URI`.
+  These existing variables are injected from chart configuration and the generated Secret.
+
+All three charts expose `startupProbe`, `readinessProbe`, `livenessProbe` and
+`tests.path` in both `values.yaml` and the installation `*-values.yaml`. Defaults:
+
+| App | Startup (period / timeout / failures) | Readiness | Liveness |
+| --- | --- | --- | --- |
+| Desktop | 2s / 3s / 60 | delay 5s, period 3s, timeout 2s, successes 3, failures 3 | delay 15s, period 20s, timeout 1s, failures 3 |
+| Costcenter | 2s / 3s / 30 | period 10s, timeout 3s, failures 6 | period 20s, timeout 3s, failures 3 |
+| License | 5s / 5s / 30 | period 5s, timeout 5s, failures 3 | period 20s, timeout 5s, failures 3 |
+
+Startup success enables readiness/liveness checks. Readiness gates Service traffic;
+liveness failure restarts the container. Override the objects in the installation
+values file or with Helm `-f` / `--set startupProbe.failureThreshold=90`. There are
+no new probe environment variables. Keep the path `/healthz` and the container port
+3000 unless changing the application's actual listener. `tests.image` defaults to
+`busybox:1.36.1`; `tests.path` defaults to `/healthz`. Run `helm test <release> -n
+<namespace> --logs` to check the Service endpoint.
+
+Release the application image and updated chart together: older images do not have
+`/healthz`. Roll back both image and probe configuration together. Existing Helm
+releases with retained values must explicitly update their old probe paths. Desktop's
+migration init container does not receive HTTP probes; do not run migrations as part
+of health verification.
+
+Run `node --test frontend/scripts/healthz.test.cjs` from the repository root for
+isolated endpoint and local-configuration regression tests.
