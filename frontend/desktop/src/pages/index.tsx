@@ -95,10 +95,16 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
   useQuery({
     queryKey: ['sessionCheck'],
     queryFn: () =>
-      checkSessionStatus(session?.kubeconfig || '').catch((error) => {
-        // Query logs errors by default; do not expose Axios configs containing kc.
-        throw { code: error?.code, status: error?.response?.status };
-      }),
+      checkSessionStatus(session?.kubeconfig || '')
+        .then((data) => {
+          // The shared interceptor already redirects on 401 and returns undefined.
+          if (!data) throw { code: 401 };
+          return data;
+        })
+        .catch((error) => {
+          // Query logs errors by default; do not expose Axios configs containing kc.
+          throw { code: error?.code, status: error?.response?.status };
+        }),
     // Keep the result outside the cache: workspace switches clear QueryClient.
     enabled: isUserLogin() && sessionCheckResult === undefined,
     onSettled(_data, error) {

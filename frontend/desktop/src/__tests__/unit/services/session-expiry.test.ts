@@ -1,4 +1,4 @@
-import axios from 'axios';
+import type { InternalAxiosRequestConfig } from 'axios';
 import { checkSessionStatus } from '@/api/auth';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -20,67 +20,74 @@ vi.mock('@/utils/marketing-attribution', () => ({ clearPersistedMarketingQuery }
 
 import request from '@/services/request';
 
-describe('session expiry scoped to the kubeconfig check', () => {
+const originalAdapter = request.defaults.adapter;
+const respond = (data: unknown) => {
+  const adapter = vi.fn(async (config: InternalAxiosRequestConfig) => ({
+    data,
+    status: 200,
+    statusText: 'OK',
+    headers: {},
+    config
+  }));
+  request.defaults.adapter = adapter;
+  return adapter;
+};
+
+describe('kubeconfig check through the original shared interceptor', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubGlobal('window', { location: { replace } });
     state.isGuest.mockReturnValue(false);
   });
   afterEach(() => {
+    request.defaults.adapter = originalAdapter;
     vi.unstubAllGlobals();
-    vi.restoreAllMocks();
   });
 
-  it('sends current kubeconfig and regional JWT without using the shared interceptor', async () => {
-    const post = vi.spyOn(axios, 'post').mockResolvedValue({ data: { code: 200 } });
+  it('sends current kubeconfig and regional JWT through the shared client', async () => {
+    const adapter = respond({ code: 200 });
     await expect(checkSessionStatus('browser-kc')).resolves.toEqual({ code: 200 });
-    expect(post).toHaveBeenCalledWith(
-      '/api/auth/checkStatus',
-      { kubeconfig: 'browser-kc' },
-      { headers: { Authorization: 'regional-token' }, withCredentials: true, timeout: 20000 }
-    );
+    const config = adapter.mock.calls[0][0];
+    expect(config.url).toBe('/api/auth/checkStatus');
+    expect(JSON.parse(config.data)).toEqual({ kubeconfig: 'browser-kc' });
+    expect(config.headers.Authorization).toBe('regional-token');
+    expect(config.withCredentials).toBe(true);
+    expect(config.timeout).toBe(20000);
     expect(state.delSession).not.toHaveBeenCalled();
   });
 
-  it('clears auth state and rejects a business 401 only for the kubeconfig check', async () => {
-    vi.spyOn(axios, 'post').mockResolvedValue({ data: { code: 401, message: 'Expired' } });
-    await expect(checkSessionStatus('browser-kc')).rejects.toMatchObject({ code: 401 });
+  it('uses the existing business 401 redirect and undefined return value', async () => {
+    respond({ code: 401, message: 'Expired' });
+    await expect(checkSessionStatus('browser-kc')).resolves.toBeUndefined();
     expect(state.delSession).toHaveBeenCalledOnce();
     expect(state.setToken).toHaveBeenCalledWith('');
-    expect(state.setGlobalToken).toHaveBeenCalledWith('');
-    expect(clearSharedAuthCookie).toHaveBeenCalledOnce();
     expect(clearPersistedMarketingQuery).toHaveBeenCalledOnce();
+    expect(state.setGlobalToken).not.toHaveBeenCalled();
+    expect(clearSharedAuthCookie).not.toHaveBeenCalled();
     expect(replace).toHaveBeenCalledWith('/signin');
   });
 
-  it('handles an HTTP 401 from the kubeconfig check', async () => {
+  it('retains the original HTTP 401 rejection without adding logout behavior', async () => {
     const error = { response: { status: 401 } };
-    vi.spyOn(axios, 'post').mockRejectedValue(error);
+    request.defaults.adapter = async () => {
+      throw error;
+    };
     await expect(checkSessionStatus('browser-kc')).rejects.toBe(error);
-    expect(clearSharedAuthCookie).toHaveBeenCalledOnce();
-    expect(replace).toHaveBeenCalledWith('/signin');
+    expect(state.delSession).not.toHaveBeenCalled();
+    expect(replace).not.toHaveBeenCalled();
   });
 
   it('does not clear auth state for an unavailable cluster', async () => {
-    vi.spyOn(axios, 'post').mockResolvedValue({ data: { code: 503 } });
+    respond({ code: 503 });
     await expect(checkSessionStatus('browser-kc')).rejects.toMatchObject({ code: 503 });
     expect(state.delSession).not.toHaveBeenCalled();
     expect(clearSharedAuthCookie).not.toHaveBeenCalled();
     expect(replace).not.toHaveBeenCalled();
   });
 
-  it('preserves the shared interceptor original business 401 behavior', async () => {
-    await expect(
-      request.get('/api/auth/userInfo', {
-        adapter: async (config) => ({
-          data: { code: 401, message: 'Expired' },
-          status: 200,
-          statusText: 'OK',
-          headers: {},
-          config
-        })
-      })
-    ).resolves.toBeUndefined();
+  it('preserves other API calls original business 401 behavior', async () => {
+    respond({ code: 401, message: 'Expired' });
+    await expect(request.get('/api/auth/userInfo')).resolves.toBeUndefined();
     expect(state.delSession).toHaveBeenCalledOnce();
     expect(state.setToken).toHaveBeenCalledWith('');
     expect(state.setGlobalToken).not.toHaveBeenCalled();
@@ -88,15 +95,12 @@ describe('session expiry scoped to the kubeconfig check', () => {
     expect(replace).toHaveBeenCalledWith('/signin');
   });
 
-  it('preserves the shared interceptor original HTTP 401 behavior', async () => {
+  it('preserves other API calls original HTTP 401 behavior', async () => {
     const error = { response: { status: 401 } };
-    await expect(
-      request.get('/api/auth/userInfo', {
-        adapter: async () => {
-          throw error;
-        }
-      })
-    ).rejects.toBe(error);
+    request.defaults.adapter = async () => {
+      throw error;
+    };
+    await expect(request.get('/api/auth/userInfo')).rejects.toBe(error);
     expect(state.delSession).not.toHaveBeenCalled();
     expect(clearSharedAuthCookie).not.toHaveBeenCalled();
     expect(replace).not.toHaveBeenCalled();

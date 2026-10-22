@@ -217,6 +217,18 @@ describe('desktop session query on opening', () => {
     }
   );
 
+  it('blocks initialization after the shared interceptor redirects and resolves undefined', async () => {
+    checkSessionStatus.mockImplementation(async () => {
+      state.session = undefined;
+      state.token = '';
+      return undefined;
+    });
+    openDesktop();
+    await waitFor(() => expect(client.getQueryState(['sessionCheck'])?.status).toBe('error'));
+    expect(client.getQueryState(['sessionCheck'])?.error).toMatchObject({ code: 401 });
+    expect(init).not.toHaveBeenCalled();
+  });
+
   it.each([{ code: 503 }, { code: 'ECONNABORTED', config: { data: 'private-kubeconfig' } }])(
     'continues initialization on a transient failure without retrying',
     async (error) => {
