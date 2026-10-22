@@ -18,6 +18,11 @@ on:
         default: false
         required: false
         type: boolean
+      skip_component_cluster_images:
+        description: "Skip webhook cluster images included in the combined image"
+        required: false
+        type: boolean
+        default: false
   workflow_dispatch:
     inputs:
       push_image:
@@ -35,6 +40,11 @@ on:
         default: false
         required: false
         type: boolean
+      skip_component_cluster_images:
+        description: "Skip webhook cluster images included in the combined image"
+        required: false
+        type: boolean
+        default: false
   push:
     branches: ["*"]
     paths:
@@ -56,7 +66,7 @@ concurrency:
 
 env:
   # Common versions
-  GO_VERSION: "1.25"
+  GO_VERSION: "1.26.10"
   DEFAULT_OWNER: "labring"
   IMAGE_SOURCE: https://github.com/${{ github.repository }}
   ALIYUN_REGISTRY: ${{ secrets.ALIYUN_REGISTRY }}
@@ -310,7 +320,7 @@ jobs:
           done
 
   build-cluster-image:
-    if: ${{ (github.event_name == 'push') ||(github.event_name == 'create') || (inputs.push_image == true)  }}
+    if: ${{ (github.event_name == 'push') || (github.event_name == 'create') || (inputs.push_image == true) }}
     needs:
       - image-release
     runs-on: ${{ matrix.runner }}
@@ -320,7 +330,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        module: [admission, stargz]
+        module: ${{ fromJSON(inputs.skip_component_cluster_images && '["stargz"]' || '["admission", "stargz"]') }}
         arch: [amd64, arm64]
         include:
           - arch: amd64
@@ -429,7 +439,7 @@ jobs:
       packages: write
     strategy:
       matrix:
-        module: [admission, stargz]
+        module: ${{ fromJSON(inputs.skip_component_cluster_images && '["stargz"]' || '["admission", "stargz"]') }}
     steps:
       - uses: actions/checkout@v4
       - name: Set image repo

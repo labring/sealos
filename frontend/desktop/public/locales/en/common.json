@@ -441,5 +441,18 @@
   "kubeconfig_rotate_confirm_title": "Notice",
   "kubeconfig_rotate_confirm_desc": "After refreshing, the old Kubeconfig will be invalidated and may affect your existing functionality. Other shared users in the workspace will be temporarily logged out and need to log in again. Confirm refresh?",
   "session_expired": "Your session has expired. Please log in again.",
-  "kubeconfig_validate_failed": "Failed to validate Kubeconfig, please refresh and try again"
+  "kubeconfig_validate_failed": "Failed to validate Kubeconfig, please refresh and try again",
+  "oauth_code_title": "Authorize application",
+  "oauth_code_loading": "Loading authorization request…",
+  "oauth_code_signed_in_as": "Signed in as",
+  "oauth_code_access_description": "This application will be able to access your Sealos account and resources with your existing permissions, and stay signed in. This authorization does not restrict access to selected workspaces.",
+  "oauth_code_trust_notice": "Approve only if you started this request and trust this application.",
+  "oauth_code_deny": "Deny",
+  "oauth_code_approve": "Approve",
+  "oauth_code_returning": "Returning to the application…",
+  "oauth_code_missing_request": "Missing authorization request. Start again in the app.",
+  "oauth_code_load_failed_retry": "Unable to load authorization. Start again in the app.",
+  "oauth_code_load_failed": "Unable to load authorization.",
+  "oauth_code_decision_failed_retry": "Authorization failed. Start again in the app.",
+  "oauth_code_decision_failed": "Authorization failed."
 }

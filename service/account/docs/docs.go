@@ -2274,6 +2274,11 @@ const docTemplate = `{
         "helper.NamespaceBillingHistoryReq": {
             "type": "object",
             "properties": {
+                "activeOnly": {
+                    "description": "Return only current IN_WORKSPACE memberships; excludes historical and subscription workspaces. Defaults to false.",
+                    "type": "boolean",
+                    "default": false
+                },
                 "endTime": {
                     "type": "string",
                     "example": "2021-12-01T00:00:00Z"

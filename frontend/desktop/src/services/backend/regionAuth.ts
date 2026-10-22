@@ -11,6 +11,7 @@ import { withEncodedKubeconfig } from '@/services/backend/kubeconfigEncoding';
 import { v4 } from 'uuid';
 import { getDefaultPrivateWorkspaceName } from '@/services/backend/svc/workspaceDefaults';
 import { retryPrismaTransactionConflict, withAuthStage } from '@/services/backend/authDiagnostics';
+import { ensureWorkspaceRegistrySecret } from '@/services/backend/registrySecret';
 
 const LetterBytes = 'abcdefghijklmnopqrstuvwxyz0123456789';
 const HostnameLength = 8;
@@ -335,6 +336,7 @@ export async function getRegionToken({
   }, 3);
   if (!result) return null;
   const { kubeconfig, payload } = result;
+  await ensureWorkspaceRegistrySecret(payload);
   return withEncodedKubeconfig({
     kubeconfig,
     token: generateRegionalToken(payload),
@@ -594,6 +596,7 @@ export async function initRegionToken({
   }
 
   const { kubeconfig, payload } = result;
+  await ensureWorkspaceRegistrySecret(payload);
   return withEncodedKubeconfig({
     kubeconfig,
     token: generateRegionalToken(payload),

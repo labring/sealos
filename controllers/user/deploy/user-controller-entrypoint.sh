@@ -24,7 +24,7 @@ add_set_string() {
 }
 
 # Clean up old resources
-kubectl delete -f ./drop/ --ignore-not-found
+kubectl delete -f "${DROP_DIR:-./drop/}" --ignore-not-found
 
 # Auto configure from sealos-config, then fall back to chart defaults.
 DEFAULT_SEALOS_CLOUD_DOMAIN="127.0.0.1.nip.io"

@@ -433,5 +433,18 @@
   "kubeconfig_rotate_confirm_title": "提示",
   "kubeconfig_rotate_confirm_desc": "刷新后旧的 Kubeconfig 将失效，可能会影响到您已有的功能。且空间内其他共享用户会暂时退出账号，需手动重新登录。确认刷新吗？",
   "session_expired": "当前登录状态已过期，请重新登录。",
-  "kubeconfig_validate_failed": "Kubeconfig 验证失败，请刷新重试"
+  "kubeconfig_validate_failed": "Kubeconfig 验证失败，请刷新重试",
+  "oauth_code_title": "授权应用",
+  "oauth_code_loading": "正在加载授权请求…",
+  "oauth_code_signed_in_as": "当前登录账号：",
+  "oauth_code_access_description": "此应用将能够使用您现有的权限访问您的 Sealos 账号和资源，并保持登录状态。本次授权不会将访问范围限制在指定的工作空间内。",
+  "oauth_code_trust_notice": "请仅在您本人发起此请求且信任此应用时同意授权。",
+  "oauth_code_deny": "拒绝",
+  "oauth_code_approve": "同意授权",
+  "oauth_code_returning": "正在返回应用…",
+  "oauth_code_missing_request": "缺少授权请求，请返回应用重新发起授权。",
+  "oauth_code_load_failed_retry": "无法加载授权请求，请返回应用重新发起授权。",
+  "oauth_code_load_failed": "无法加载授权请求。",
+  "oauth_code_decision_failed_retry": "授权失败，请返回应用重新发起授权。",
+  "oauth_code_decision_failed": "授权失败。"
 }

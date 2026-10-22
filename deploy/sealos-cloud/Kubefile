@@ -1,0 +1,10 @@
+FROM scratch
+
+COPY registry registry
+COPY charts charts
+COPY scripts scripts
+COPY assets assets
+COPY manifests manifests
+COPY entrypoint.sh entrypoint.sh
+
+CMD ["bash entrypoint.sh"]

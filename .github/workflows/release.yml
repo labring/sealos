@@ -2,7 +2,7 @@ name: Release
 
 env:
   # Common versions
-  GO_VERSION: "1.25"
+  GO_VERSION: "1.26.10"
   DEFAULT_OWNER: "labring"
 
 on:
@@ -62,4 +62,3 @@ jobs:
     secrets: inherit
     with:
       tag: ${{ github.ref_name }}
-      build_offline_tar_only: false

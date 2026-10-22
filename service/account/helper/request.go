@@ -34,6 +34,10 @@ type NamespaceBillingHistoryReq struct {
 	// @Description Type of the request (optional)
 	// @JSONSchema
 	Type int `json:"type" bson:"type"`
+
+	// ActiveOnly excludes historical/subscription workspaces and returns only
+	// current IN_WORKSPACE memberships. Defaults to false for billing history.
+	ActiveOnly bool `json:"activeOnly,omitempty" bson:"-"`
 }
 
 type SetPaymentInvoiceReq struct {

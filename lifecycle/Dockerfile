@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM --platform=$BUILDPLATFORM golang:1-bullseye as builder
+FROM --platform=$BUILDPLATFORM golang:1.26.10-bookworm as builder
 ARG GITHUB_TOKEN=$GITHUB_TOKEN
 ARG TARGETARCH
 ARG ACTION=build-pack

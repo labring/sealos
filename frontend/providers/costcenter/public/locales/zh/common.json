@@ -260,5 +260,7 @@
   "first_recharge_title": "首充折扣优惠!",
   "credit_purchase": "余额充值",
   "remaining_balance": "当前余额",
-  "custom_amount": "输入金额"
+  "custom_amount": "输入金额",
+  "quota_load_failed": "资源配额加载失败，请稍后重试。",
+  "quota_no_data": "暂无资源配额。"
 }

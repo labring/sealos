@@ -16,6 +16,11 @@ on:
         required: false
         type: boolean
         default: false
+      skip_component_cluster_images:
+        description: "Skip component cluster images when building the combined image"
+        required: false
+        type: boolean
+        default: false
       push_image_tag:
         description: "Push image tag"
         default: "latest"
@@ -41,6 +46,11 @@ on:
         required: false
         type: boolean
         default: false
+      skip_component_cluster_images:
+        description: "Skip component cluster images when building the combined image"
+        required: false
+        type: boolean
+        default: false
       push_image_tag:
         description: "Push image tag"
         default: "latest"
@@ -53,7 +63,7 @@ on:
         type: boolean
 
 env:
-  GO_VERSION: "1.24"
+  GO_VERSION: "1.26.10"
   ALIYUN_REGISTRY: ${{ secrets.ALIYUN_REGISTRY }}
   ALIYUN_REPO_PREFIX: ${{ secrets.ALIYUN_REPO_PREFIX && secrets.ALIYUN_REPO_PREFIX || secrets.ALIYUN_USERNAME && format('{0}/{1}', secrets.ALIYUN_REGISTRY, secrets.ALIYUN_USERNAME) || '' }}
   LICENSE_KEY: ${{ secrets.LICENSE_KEY }}
@@ -205,7 +215,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
 
   cluster-image-build:
-    if: ${{ inputs.push_image }}
+    if: ${{ inputs.push_image && !inputs.skip_component_cluster_images }}
     needs: [image-build]
     runs-on: ubuntu-24.04
     permissions:

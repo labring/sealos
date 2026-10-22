@@ -89,7 +89,7 @@ export default function Resource() {
             <Text fontSize={'12px'} width={'80px'}>
               {t('workspace')}
             </Text>
-            <NamespaceMenu isDisabled={isFetching} defaultToPrivateTeam />
+            <NamespaceMenu isDisabled={isFetching} defaultToPrivateTeam activeOnly />
           </Flex>
           <Refresh
             onRefresh={() => {

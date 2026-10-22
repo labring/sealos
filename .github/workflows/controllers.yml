@@ -8,6 +8,11 @@ on:
         required: false
         type: boolean
         default: false
+      skip_component_cluster_images:
+        description: "Skip component cluster images when building the combined image"
+        required: false
+        type: boolean
+        default: false
       push_image_tag:
         description: "Push image tag"
         default: "latest"
@@ -27,6 +32,11 @@ on:
     inputs:
       push_image:
         description: "Push image"
+        required: false
+        type: boolean
+        default: false
+      skip_component_cluster_images:
+        description: "Skip component cluster images when building the combined image"
         required: false
         type: boolean
         default: false
@@ -60,7 +70,7 @@ on:
       - "!**/*.yaml"
 
 env:
-  GO_VERSION: "1.24"
+  GO_VERSION: "1.26.10"
   DEFAULT_OWNER: "labring"
   LICENSE_KEY: ${{ secrets.LICENSE_KEY }}
 
@@ -84,7 +94,7 @@ jobs:
       - name: Setup Golang with cache
         uses: magnetikonline/action-golang-cache@v5
         with:
-          go-version-file: controllers/pkg/go.mod
+          go-version: ${{ env.GO_VERSION }}
 
       - name: Install Dependencies
         run: sudo apt update && sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
@@ -112,5 +122,6 @@ jobs:
       module_path: ${{ matrix.module.path }}
       push_image: ${{ (github.event_name == 'push') || (github.event_name == 'create') || (inputs.push_image == true) }}
       push_image_tag: ${{ inputs.push_image_tag || 'latest' }}
+      skip_component_cluster_images: ${{ inputs.skip_component_cluster_images || false }}
       disable_cilint: ${{ inputs.disable_cilint || false }}
     secrets: inherit

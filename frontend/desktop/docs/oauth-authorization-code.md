@@ -18,7 +18,16 @@ desktopConfig:
 
 The deployment entrypoint reads user overrides from `/root/.sealos/cloud/values/core/desktop-values.yaml`. Existing files are preserved: explicit `false` overrides remain disabled on upgrade, while omitted flags inherit the chart defaults. Set either flag to `false` there to disable the corresponding capability. Alternatively, pass `HELM_OPTIONS="--set desktopConfig.oauth2IdpEnabled=true --set desktopConfig.oauth2IdpAuthorizationCodeEnabled=true"`. The chart maps these values to the server configuration above; `callbackURL` is generated from `desktopConfig.cloudDomain` and `cloudPort`. These flags are separate from `oauth2Enabled` / `oauth2Pkce`, which configure third-party login providers. Restart Desktop after configuration changes because its configuration is mounted using `subPath`. Enabling the flags does not register OAuth clients.
 
-Register one PUBLIC OAuthClient per native app. Set `allowedGrantTypes` to include `authorization_code` and `refresh_token`, and populate `redirectUris`. No client secret is required. Existing device clients need no changes. A client may explicitly allow both device and code grants.
+The `20261020000000_register_sealox_client` global database migration registers the built-in Sealox client for both database providers:
+
+- Client ID: `sealox` (enter this in the client's existing client ID field).
+- Display name: `Sealox`; type: `PUBLIC`; no client secret.
+- Grants: device authorization (`urn:ietf:params:oauth:grant-type:device_code`), `authorization_code`, and `refresh_token`.
+- Registered callback: `http://127.0.0.1/callback`; the desktop app supplies its temporary local port at runtime.
+
+Apply this migration on existing installations as well; enabling Helm flags alone does not create the record. If `sealox` is already registered, the migration preserves that record unchanged, so verify its grant types and callback before using it. User login, consent, and PKCE validation remain required as before. No native client changes are included.
+
+For other apps, register one PUBLIC OAuthClient per native app. Set `allowedGrantTypes` to include `authorization_code` and `refresh_token`, and populate `redirectUris`. No client secret is required. Existing device clients need no changes. A client may explicitly allow both device and code grants.
 
 Allowed callbacks: exact registered HTTPS URIs; private schemes with reverse-domain naming, such as `io.sealos.mobile:/oauth/callback`; or HTTP loopback IPs `127.0.0.1` / `[::1]`. Only a loopback callback's port may vary. Wildcards, fragments, userinfo and non-loopback HTTP callbacks are not supported. Register loopback without a port, for example `http://127.0.0.1/callback`. Configure mobile OS callback routing separately; verified HTTPS app links require domain association.
 

@@ -11,6 +11,7 @@ import {
 import { get_k8s_username } from '@/services/backend/regionAuth';
 import { jsonRes } from '@/services/backend/response';
 import { bindingRole, modifyWorkspaceRole } from '@/services/backend/team';
+import { ensureWorkspaceRegistrySecret } from '@/services/backend/registrySecret';
 import { getRegionUid, getTeamLimit } from '@/services/enable';
 import { NSType, NamespaceDto, UserRole } from '@/types/team';
 import { UserRoleToRole } from '@/utils/tools';
@@ -138,6 +139,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         })
       ]);
       const workspace = result[0];
+      await ensureWorkspaceRegistrySecret({ ...payload, workspaceId, workspaceUid });
       return jsonRes<{ namespace: NamespaceDto }>(res, {
         code: 200,
         message: 'Successfully',
