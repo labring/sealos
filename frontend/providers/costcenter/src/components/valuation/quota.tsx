@@ -2,6 +2,8 @@ import objectStorageIcon from '@/assert/objectstorage.svg';
 import { UserQuotaItemType } from '@/pages/api/getQuota';
 import request from '@/service/request';
 import useEnvStore from '@/stores/env';
+import useBillingStore from '@/stores/billing';
+import useOverviewStore from '@/stores/overview';
 import { ApiResp } from '@/types';
 import { Box, Divider, HStack, Img, Stack, StackProps, Text } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
@@ -58,16 +60,36 @@ export default function Quota({
   namespace?: string;
 }) {
   const { t } = useTranslation();
-  const { data } = useQuery(['quota', namespace], () =>
-    request<any, ApiResp<{ quota: UserQuotaItemType[] }>>('/api/getQuota', {
-      method: 'POST',
-      data: {
-        namespace
-      }
-    })
+  const regionUid = useBillingStore((s) => s.getRegion()?.uid || '');
+  const { startTime, endTime } = useOverviewStore();
+  const queryBody = { startTime, endTime, regionUid };
+  // Share the menu's query, so all-workspace quota waits for the matching region's list.
+  const workspaces = useQuery({
+    queryKey: ['nsList', 'menu', queryBody],
+    queryFn: () =>
+      request.post<any, ApiResp<[string, string][]>>('/api/billing/getNamespaceList', queryBody),
+    enabled: namespace === ''
+  });
+  const namespaces =
+    namespace === ''
+      ? [...new Set((workspaces.data?.data || []).map(([id]) => id).filter(Boolean))]
+      : undefined;
+  const { data, isError } = useQuery(
+    ['quota', regionUid, namespace, namespaces],
+    () =>
+      request<any, ApiResp<{ quota: UserQuotaItemType[] }>>('/api/getQuota', {
+        method: 'POST',
+        data: {
+          namespace,
+          namespaces,
+          regionUid
+        }
+      }),
+    { enabled: namespace !== '' || (workspaces.isSuccess && !workspaces.isFetching) }
   );
   const { gpuEnabled } = useEnvStore();
-  const quota = (data?.data?.quota || [])
+  const failed = isError || (namespace === '' && workspaces.isError);
+  const quota = (failed ? [] : data?.data?.quota || [])
     .filter((d) => gpuEnabled || d.type !== 'gpu')
     .flatMap((d) => {
       const entity = quotaMeta[d.type];
@@ -91,6 +113,7 @@ export default function Quota({
     });
   return (
     <Stack {...props}>
+      {failed && <Text role="alert">{t('No Data Available')}</Text>}
       {quota.map((item) => (
         <HStack key={item.type} gap={'30px'}>
           <QuotaPie data={item} color={item.bg} />
