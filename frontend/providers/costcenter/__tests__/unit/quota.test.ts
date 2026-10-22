@@ -2,11 +2,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import handler from '../../src/pages/api/getQuota';
 
-const { readQuota, authSession } = vi.hoisted(() => ({
+const { readQuota, authSession, verifyInternalToken } = vi.hoisted(() => ({
   readQuota: vi.fn(),
-  authSession: vi.fn()
+  authSession: vi.fn(),
+  verifyInternalToken: vi.fn()
 }));
 vi.mock('../../src/service/backend/auth', () => ({ authSession }));
+vi.mock('../../src/service/auth', () => ({ verifyInternalToken }));
 
 const invoke = async (body: object) => {
   const json = vi.fn();
@@ -16,6 +18,7 @@ const invoke = async (body: object) => {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  verifyInternalToken.mockResolvedValue(null);
   (global as any).AppConfig = { cloud: { regionUID: 'local' } };
   authSession.mockResolvedValue({
     getCurrentUser: () => ({ name: 'user' }),
@@ -93,6 +96,33 @@ describe('resource quota workspace selection', () => {
 
   it('does not query the local cluster for a different region', async () => {
     expect((await invoke({ namespace: 'ns-team', regionUid: 'remote' })).code).toBe(400);
+    expect(readQuota).not.toHaveBeenCalled();
+  });
+
+  it('uses the signed session region when older chart configurations omit cloud.regionUID', async () => {
+    (global as any).AppConfig.cloud.regionUID = '';
+    verifyInternalToken.mockResolvedValue({ regionUid: 'local' });
+    expect(
+      (await invoke({ namespace: 'ns-team', regionUid: 'local', internalToken: 'signed-token' }))
+        .code
+    ).toBe(200);
+    expect(verifyInternalToken).toHaveBeenCalledWith('signed-token');
+    expect(readQuota).toHaveBeenCalledWith('quota-ns-team', 'ns-team');
+  });
+
+  it('rejects another region even when using the signed session fallback', async () => {
+    (global as any).AppConfig.cloud.regionUID = '';
+    verifyInternalToken.mockResolvedValue({ regionUid: 'local' });
+    expect(
+      (await invoke({ namespace: 'ns-team', regionUid: 'remote', internalToken: 'signed-token' }))
+        .code
+    ).toBe(400);
+    expect(readQuota).not.toHaveBeenCalled();
+  });
+
+  it('does not trust the requested region without configuration or a valid signed session', async () => {
+    (global as any).AppConfig.cloud.regionUID = '';
+    expect((await invoke({ namespace: 'ns-team', regionUid: 'local' })).code).toBe(400);
     expect(readQuota).not.toHaveBeenCalled();
   });
 });

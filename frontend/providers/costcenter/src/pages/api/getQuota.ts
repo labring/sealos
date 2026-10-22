@@ -1,4 +1,5 @@
 import { authSession } from '@/service/backend/auth';
+import { verifyInternalToken } from '@/service/auth';
 import { GetUserDefaultNameSpace } from '@/service/backend/kubernetes';
 import { jsonRes } from '@/service/backend/response';
 import * as k8s from '@kubernetes/client-node';
@@ -13,7 +14,13 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     }
     // The user's kubeconfig is regional; never display local quota for another region.
     const { namespace, namespaces, regionUid } = req.body || {};
-    if (regionUid && regionUid !== global.AppConfig.cloud.regionUID) {
+    // Older chart configurations omit cloud.regionUID. The signed desktop session
+    // still identifies the region associated with the user's kubeconfig.
+    const currentRegionUid = regionUid
+      ? global.AppConfig.cloud.regionUID ||
+        (await verifyInternalToken(req.body?.internalToken))?.regionUid
+      : undefined;
+    if (regionUid && regionUid !== currentRegionUid) {
       return jsonRes(resp, {
         code: 400,
         message: 'quota is only available for the current region'
