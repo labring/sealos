@@ -1,11 +1,10 @@
-import { getPlanInfo, issueMarketingConsentToken, UserInfo } from '@/api/auth';
+import { checkSessionStatus, getPlanInfo, issueMarketingConsentToken, UserInfo } from '@/api/auth';
 import { nsListRequest, switchRequest } from '@/api/namespace';
 import DesktopContent from '@/components/desktop_content';
 import { PhoneBindingModal } from '@/components/account/AccountCenter/PhoneBindingModal';
 import { trackEventName } from '@/constants/account';
 import { useSemParams } from '@/hooks/useSemParams';
 import { useLicenseCheck } from '@/hooks/useLicenseCheck';
-import { useSessionCheck } from '@/hooks/useSessionCheck';
 import useAppStore, { BRAIN_APP_KEY, SESSION_RESTORE_APP_KEY } from '@/stores/app';
 import useCallbackStore from '@/stores/callback';
 import { useConfigStore } from '@/stores/config';
@@ -90,7 +89,30 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
   const initialLaunchResolvedRef = useRef(false);
   const initialLaunchInFlightRef = useRef(false);
   const attemptedFallbackWorkspaceRef = useRef<string | null>(null);
-  const sessionChecked = useSessionCheck();
+  const [sessionCheckResult, setSessionCheckResult] = useState<boolean>();
+  const sessionChecked = sessionCheckResult ?? !isUserLogin();
+
+  useQuery({
+    queryKey: ['sessionCheck'],
+    queryFn: () =>
+      checkSessionStatus(session?.kubeconfig || '').catch((error) => {
+        // Query logs errors by default; do not expose Axios configs containing kc.
+        throw { code: error?.code, status: error?.response?.status };
+      }),
+    // Keep the result outside the cache: workspace switches clear QueryClient.
+    enabled: isUserLogin() && sessionCheckResult === undefined,
+    onSettled(_data, error) {
+      const authError = error as { code?: number; status?: number } | null;
+      setSessionCheckResult(authError?.code !== 401 && authError?.status !== 401);
+    },
+    staleTime: Infinity,
+    cacheTime: 0,
+    retry: false,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchInterval: false
+  });
 
   const handleInitialAppLoaded = useCallback((appKey: string) => {
     setInitialAppLaunch((current) =>
@@ -113,7 +135,7 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
   const { data: userInfo } = useQuery({
     queryKey: [token, 'UserInfo'],
     queryFn: UserInfo,
-    enabled: isUserLogin() && !!token,
+    enabled: sessionChecked && isUserLogin() && !!token,
     select: (data) => data.data?.info
   });
 
@@ -166,7 +188,7 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
   const workspaceQuery = useQuery({
     queryKey: ['teamList', 'teamGroup'],
     queryFn: nsListRequest,
-    enabled: isUserLogin()
+    enabled: sessionChecked && isUserLogin()
   });
   const workspaces = useMemo(
     () => workspaceQuery?.data?.data?.namespaces || [],
