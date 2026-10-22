@@ -114,6 +114,7 @@ describe('desktop session query on opening', () => {
     cleanup();
     client.clear();
     vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 
   it('waits for authentication before initializing the actual desktop page', async () => {
@@ -131,7 +132,7 @@ describe('desktop session query on opening', () => {
     await waitFor(() => expect(init).toHaveBeenCalledOnce());
   });
 
-  it('does not repeat checks on StrictMode, workspace changes, focus, reconnect or timers', async () => {
+  it('does not repeat checks on StrictMode or workspace changes without cache clearing', async () => {
     const page = openDesktop(true);
     await waitFor(() => expect(init).toHaveBeenCalledOnce());
     state.session = { ...state.session, kubeconfig: 'same-credentials-different-namespace' };
@@ -143,17 +144,67 @@ describe('desktop session query on opening', () => {
         </QueryClientProvider>
       </StrictMode>
     );
+    expect(checkSessionStatus).toHaveBeenCalledTimes(1);
+  });
+
+  it('checks the current kubeconfig again when the window regains focus', async () => {
+    const page = openDesktop();
+    await waitFor(() => expect(init).toHaveBeenCalledOnce());
+    state.session = { ...state.session, kubeconfig: 'current-workspace-kc' };
+    page.rerender(
+      <QueryClientProvider client={client}>
+        <Home sealos_cloud_domain="cloud.example.com" />
+      </QueryClientProvider>
+    );
+    await act(async () => window.dispatchEvent(new Event('focus')));
+    await waitFor(() => expect(checkSessionStatus).toHaveBeenCalledTimes(2));
+    expect(checkSessionStatus).toHaveBeenLastCalledWith('current-workspace-kc');
+    expect(init).toHaveBeenCalledOnce();
+  });
+
+  it('checks when a hidden browser tab becomes visible again', async () => {
+    openDesktop();
+    await waitFor(() => expect(init).toHaveBeenCalledOnce());
+    const visibility = vi.spyOn(document, 'visibilityState', 'get');
+    visibility.mockReturnValue('hidden');
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange', { bubbles: true }));
+    });
+    expect(checkSessionStatus).toHaveBeenCalledTimes(1);
+    visibility.mockReturnValue('visible');
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange', { bubbles: true }));
+    });
+    await waitFor(() => expect(checkSessionStatus).toHaveBeenCalledTimes(2));
+    expect(init).toHaveBeenCalledOnce();
+  });
+
+  it.each([{ code: 401 }, { code: 503 }])(
+    'handles a focus check failure without initializing desktop again: %o',
+    async (error) => {
+      openDesktop();
+      await waitFor(() => expect(init).toHaveBeenCalledOnce());
+      checkSessionStatus.mockRejectedValue(error);
+      await act(async () => window.dispatchEvent(new Event('focus')));
+      await waitFor(() => expect(client.getQueryState(['sessionCheck'])?.status).toBe('error'));
+      expect(checkSessionStatus).toHaveBeenCalledTimes(2);
+      expect(client.getQueryState(['sessionCheck'])?.error).toMatchObject(error);
+      expect(init).toHaveBeenCalledOnce();
+    }
+  );
+
+  it('does not poll or recheck on network reconnect', async () => {
+    openDesktop();
+    await waitFor(() => expect(init).toHaveBeenCalledOnce());
     vi.useFakeTimers();
-    window.dispatchEvent(new Event('focus'));
     window.dispatchEvent(new Event('online'));
-    document.dispatchEvent(new Event('visibilitychange'));
     await act(async () => {
       await vi.advanceTimersByTimeAsync(10 * 60 * 1000);
     });
     expect(checkSessionStatus).toHaveBeenCalledTimes(1);
   });
 
-  it('does not recheck when workspace switching clears the query cache', async () => {
+  it('allows a fresh check when workspace switching clears the query cache', async () => {
     const page = openDesktop();
     await waitFor(() => expect(init).toHaveBeenCalledOnce());
     await act(async () => {
@@ -168,7 +219,9 @@ describe('desktop session query on opening', () => {
     await act(async () => {
       await Promise.resolve();
     });
-    expect(checkSessionStatus).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(checkSessionStatus).toHaveBeenCalledTimes(2));
+    expect(checkSessionStatus).toHaveBeenLastCalledWith('another-workspace');
+    expect(init).toHaveBeenCalledOnce();
   });
 
   it.each([undefined, { isGuest: true, user: null, kubeconfig: '' }])(

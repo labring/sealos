@@ -89,10 +89,7 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
   const initialLaunchResolvedRef = useRef(false);
   const initialLaunchInFlightRef = useRef(false);
   const attemptedFallbackWorkspaceRef = useRef<string | null>(null);
-  const [sessionCheckResult, setSessionCheckResult] = useState<boolean>();
-  const sessionChecked = sessionCheckResult ?? !isUserLogin();
-
-  useQuery({
+  const sessionCheck = useQuery({
     queryKey: ['sessionCheck'],
     queryFn: () =>
       checkSessionStatus(session?.kubeconfig || '')
@@ -105,20 +102,19 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
           // Query logs errors by default; do not expose Axios configs containing kc.
           throw { code: error?.code, status: error?.response?.status };
         }),
-    // Keep the result outside the cache: workspace switches clear QueryClient.
-    enabled: isUserLogin() && sessionCheckResult === undefined,
-    onSettled(_data, error) {
-      const authError = error as { code?: number; status?: number } | null;
-      setSessionCheckResult(authError?.code !== 401 && authError?.status !== 401);
-    },
+    enabled: isUserLogin(),
     staleTime: Infinity,
     cacheTime: 0,
     retry: false,
     refetchOnMount: 'always',
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: 'always',
     refetchOnReconnect: false,
     refetchInterval: false
   });
+  const sessionAuthError = sessionCheck.error as { code?: number; status?: number } | null;
+  const sessionChecked = sessionCheck.isFetchedAfterMount
+    ? sessionAuthError?.code !== 401 && sessionAuthError?.status !== 401
+    : !isUserLogin();
 
   const handleInitialAppLoaded = useCallback((appKey: string) => {
     setInitialAppLaunch((current) =>
