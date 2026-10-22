@@ -143,9 +143,9 @@ func (k *KubeadmRuntime) joinMasters(masters []string) error {
 	if err = k.copyStaticFiles(masters); err != nil {
 		return err
 	}
-	// setKubernetesToken uploads control-plane shared certs through kubeadm
-	// and embeds the matching certificateKey into the join config.
-	if err = k.setKubernetesToken(); err != nil {
+	// Refresh shared certificates even when the cached bootstrap token is valid:
+	// kubeadm-certs has its own lifetime and may have already been removed.
+	if err = k.setKubernetesToken(true); err != nil {
 		return err
 	}
 	if err = k.sendJoinCPConfig(masters); err != nil {
