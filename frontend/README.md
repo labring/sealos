@@ -12,7 +12,7 @@ App Launchpad, Database (formerly DBProvider), and the Template app store are ma
 - [Database](https://github.com/sealos-apps/database)
 - [Template app store](https://github.com/sealos-apps/template)
 
-Build and install these apps using their respective repositories. This repository's frontend builds and `scripts/cloud/install-v2.sh` no longer include them. Desktop retains their service URLs and integrations; `service/database`, `service/launchpad`, and `service/vlogs` still provide monitoring and logs for the extracted apps.
+Build and install these apps using their respective repositories. This repository's frontend builds and `scripts/cloud/install-v2.sh` no longer include them. Desktop retains their service URLs and integrations. The legacy Database and Launchpad monitoring services have been removed from this repository and its cloud installer; `service/vlogs` continues to provide logs for the extracted apps.
 
 ### Install dependencies
 
