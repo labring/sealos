@@ -181,50 +181,36 @@ describe('SelfSubjectReview using the browser kubeconfig', () => {
     }
   );
 
-  it('expires a stale CA only after the latest user kubeconfig succeeds', async () => {
-    fail('UNABLE_TO_VERIFY_LEAF_SIGNATURE');
-    respond(200, { status: { kubeConfig: kubeconfig({ token: 'new-token' }, 'bmV3LWNh') } });
-    respond(201, identity());
+  it.each([
+    'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
+    'UNABLE_TO_GET_ISSUER_CERT_LOCALLY',
+    'SELF_SIGNED_CERT_IN_CHAIN',
+    'DEPTH_ZERO_SELF_SIGNED_CERT',
+    'CERT_HAS_EXPIRED',
+    'CERT_NOT_YET_VALID',
+    'ERR_TLS_CERT_ALTNAME_INVALID',
+    'ERR_SSL_TLSV1_ALERT_UNKNOWN_CA',
+    'ERR_SSL_SSLV3_ALERT_BAD_CERTIFICATE',
+    'ERR_SSL_SSLV3_ALERT_CERTIFICATE_EXPIRED',
+    'ERR_OSSL_PEM_NO_START_LINE',
+    'ERR_INVALID_CHAR'
+  ])('expires the current kubeconfig on %s without fetching User CR', async (code) => {
+    fail(code);
     expect((await checkKubeconfig(kubeconfig(), 'alice')).code).toBe(401);
-    expect(httpsRequest.mock.calls[2][1].headers.Authorization).toBe('Bearer new-token');
-    expect(httpsRequest.mock.calls[1][1].headers.Authorization).toBe('Bearer admin-token');
-    expect(String(httpsRequest.mock.calls[1][0])).toBe(
-      'https://apiserver.cluster.local:6443/apis/user.sealos.io/v1/users/alice'
-    );
-    expect(httpsRequest.mock.calls[2][1].ca).toEqual(Buffer.from('new-ca'));
-  });
-
-  it('does not expire a still-valid token after normal refresh and a transient TLS failure', async () => {
-    fail('UNABLE_TO_VERIFY_LEAF_SIGNATURE');
-    respond(200, { status: { kubeConfig: kubeconfig({ token: 'refreshed-token' }) } });
-    respond(201, identity());
-    expect((await checkKubeconfig(kubeconfig(), 'alice')).code).toBe(503);
-  });
-
-  it('does not expire sessions when the latest kubeconfig also fails TLS', async () => {
-    fail('UNABLE_TO_VERIFY_LEAF_SIGNATURE');
-    respond(200, { status: { kubeConfig: kubeconfig({ token: 'new-token' }, 'bmV3LWNh') } });
-    fail('UNABLE_TO_VERIFY_LEAF_SIGNATURE');
-    expect((await checkKubeconfig(kubeconfig(), 'alice')).code).toBe(503);
-  });
-
-  it('does not expire a session if the latest config has identical credentials', async () => {
-    fail('UNABLE_TO_VERIFY_LEAF_SIGNATURE');
-    respond(200, { status: { kubeConfig: kubeconfig() } });
-    expect((await checkKubeconfig(kubeconfig(), 'alice')).code).toBe(503);
-    expect(httpsRequest).toHaveBeenCalledTimes(2);
+    expect(httpsRequest).toHaveBeenCalledTimes(1);
+    expect(httpsRequest.mock.calls[0][1].headers.Authorization).toBe('Bearer old-token');
   });
 
   it.each([{ 'token-file': '/server-secret' }, { exec: { command: 'must-never-run' } }])(
     'rejects configs without inline credentials',
     async (user) => {
-      expect((await checkKubeconfig(kubeconfig(user), 'alice')).code).toBe(400);
+      expect((await checkKubeconfig(kubeconfig(user), 'alice')).code).toBe(401);
       expect(httpsRequest).not.toHaveBeenCalled();
     }
   );
 
   it('rejects malformed config without making a request', async () => {
-    expect((await checkKubeconfig('invalid: [', 'alice')).code).toBe(400);
+    expect((await checkKubeconfig('invalid: [', 'alice')).code).toBe(401);
     expect(httpsRequest).not.toHaveBeenCalled();
   });
 
@@ -251,35 +237,6 @@ describe('SelfSubjectReview using the browser kubeconfig', () => {
     expect(signal.aborted).toBe(false);
     await vi.advanceTimersByTimeAsync(1);
     expect(signal.aborted).toBe(true);
-    expect((await promise).code).toBe(503);
-  });
-
-  it('aborts a stalled latest-kubeconfig lookup without expiring the session', async () => {
-    vi.useFakeTimers();
-    vi.spyOn(AbortSignal, 'timeout').mockImplementation((delay) => {
-      const controller = new AbortController();
-      setTimeout(() => controller.abort(), delay);
-      return controller.signal;
-    });
-    fail('UNABLE_TO_VERIFY_LEAF_SIGNATURE');
-    const abort = vi.fn();
-    httpsRequest.mockImplementationOnce((_url, options) => {
-      const req = new EventEmitter() as any;
-      req.end = () =>
-        options.signal.addEventListener('abort', () => {
-          abort();
-          req.emit('error', Object.assign(new Error('Aborted'), { code: 'ABORT_ERR' }));
-        });
-      return req;
-    });
-    const promise = checkKubeconfig(kubeconfig(), 'alice');
-    await vi.advanceTimersByTimeAsync(0);
-    expect(httpsRequest).toHaveBeenCalledTimes(2);
-    expect(httpsRequest.mock.calls[1][1].method).toBe('GET');
-    await vi.advanceTimersByTimeAsync(4999);
-    expect(abort).not.toHaveBeenCalled();
-    await vi.advanceTimersByTimeAsync(1);
-    expect(abort).toHaveBeenCalledOnce();
     expect((await promise).code).toBe(503);
   });
 });

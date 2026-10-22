@@ -35,10 +35,8 @@ const unavailable = (): CheckResult => ({
 });
 const invalid = (): CheckResult => ({ code: 401, message: 'Kubeconfig is no longer valid' });
 
-// A failed TLS handshake alone can also mean a broken API server. Only expire
-// the session if its CA changed and the user's latest kubeconfig succeeds.
-// Token refresh alone does not revoke the old token or establish CA expiry.
-const tlsErrors = new Set([
+// Invalid credentials or certificate failures make the current kubeconfig unusable.
+const invalidKubeconfigErrors = new Set([
   'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
   'UNABLE_TO_GET_ISSUER_CERT_LOCALLY',
   'SELF_SIGNED_CERT_IN_CHAIN',
@@ -48,7 +46,9 @@ const tlsErrors = new Set([
   'ERR_TLS_CERT_ALTNAME_INVALID',
   'ERR_SSL_TLSV1_ALERT_UNKNOWN_CA',
   'ERR_SSL_SSLV3_ALERT_BAD_CERTIFICATE',
-  'ERR_SSL_SSLV3_ALERT_CERTIFICATE_EXPIRED'
+  'ERR_SSL_SSLV3_ALERT_CERTIFICATE_EXPIRED',
+  'ERR_OSSL_PEM_NO_START_LINE',
+  'ERR_INVALID_CHAR'
 ]);
 
 function inlineConfig(raw: string, server: string, tlsServerName?: string) {
@@ -85,19 +85,19 @@ function inlineConfig(raw: string, server: string, tlsServerName?: string) {
 async function requestJson(
   kc: KubeConfig,
   path: string,
-  payload?: Record<string, string>,
-  signal = AbortSignal.timeout(5000)
+  payload: Record<string, string>,
+  signal: AbortSignal
 ): Promise<{ statusCode?: number; body: any }> {
   const url = new URL(path, kc.getCurrentCluster()!.server);
-  const body = payload ? JSON.stringify(payload) : undefined;
+  const body = JSON.stringify(payload);
   const options: RequestOptions = {
-    method: payload ? 'POST' : 'GET',
+    method: 'POST',
     agent: false,
     rejectUnauthorized: true,
     signal,
     headers: {
       'Content-Type': 'application/json',
-      ...(body ? { 'Content-Length': Buffer.byteLength(body) } : {})
+      'Content-Length': Buffer.byteLength(body)
     }
   };
   await kc.applytoHTTPSOptions(options);
@@ -149,16 +149,6 @@ async function whoami(kc: KubeConfig, expectedUser: string): Promise<CheckResult
   return unavailable();
 }
 
-async function latestKubeconfig(expectedUser: string) {
-  // Use the same abortable transport as whoami: timing out a Promise alone
-  // leaves the underlying admin request connected to an unresponsive server.
-  const { statusCode, body } = await requestJson(
-    K8sApiDefault(),
-    `/apis/user.sealos.io/v1/users/${encodeURIComponent(expectedUser)}`
-  );
-  return statusCode === 200 ? (body?.status?.kubeConfig as string | undefined) : undefined;
-}
-
 export async function checkKubeconfig(raw: string, expectedUser: string): Promise<CheckResult> {
   let trustedCluster;
   try {
@@ -173,33 +163,13 @@ export async function checkKubeconfig(raw: string, expectedUser: string): Promis
   try {
     kc = inlineConfig(raw, trustedCluster.server, trustedCluster.tlsServerName);
   } catch {
-    return { code: 400, message: 'A kubeconfig with inline credentials is required' };
+    return invalid();
   }
 
   try {
     return await whoami(kc, expectedUser);
   } catch (error) {
-    if (tlsErrors.has((error as NodeJS.ErrnoException).code || '')) {
-      try {
-        const latest = await latestKubeconfig(expectedUser);
-        if (latest) {
-          const latestKc = inlineConfig(
-            latest,
-            trustedCluster.server,
-            trustedCluster.tlsServerName
-          );
-          if (
-            Buffer.from(latestKc.getCurrentCluster()?.caData || '', 'base64').toString('hex') !==
-              Buffer.from(kc.getCurrentCluster()?.caData || '', 'base64').toString('hex') &&
-            (await whoami(latestKc, expectedUser)).code === 200
-          ) {
-            return invalid();
-          }
-        }
-      } catch {
-        // Keep the session when the latest credentials cannot be verified.
-      }
-    }
+    if (invalidKubeconfigErrors.has((error as NodeJS.ErrnoException).code || '')) return invalid();
     // Do not log transport errors: HTTPS request options contain credentials.
     return unavailable();
   }
