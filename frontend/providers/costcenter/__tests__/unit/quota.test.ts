@@ -2,8 +2,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import handler from '../../src/pages/api/getQuota';
 
-const { readQuota, authSession, verifyInternalToken } = vi.hoisted(() => ({
+const { readQuota, readNamespace, authSession, verifyInternalToken } = vi.hoisted(() => ({
   readQuota: vi.fn(),
+  readNamespace: vi.fn(),
   authSession: vi.fn(),
   verifyInternalToken: vi.fn()
 }));
@@ -19,13 +20,14 @@ const invoke = async (body: object) => {
 beforeEach(() => {
   vi.clearAllMocks();
   verifyInternalToken.mockResolvedValue(null);
+  readNamespace.mockResolvedValue({ body: {} });
   (global as any).AppConfig = { cloud: { regionUID: 'local' } };
   authSession.mockResolvedValue({
     getCurrentUser: () => ({ name: 'user' }),
     contexts: [{ namespace: 'ns-current' }],
     getCurrentContext: () => 'current',
     getContextObject: () => ({ namespace: 'ns-current' }),
-    makeApiClient: () => ({ readNamespacedResourceQuota: readQuota })
+    makeApiClient: () => ({ readNamespacedResourceQuota: readQuota, readNamespace })
   });
   readQuota.mockImplementation(async (_name: string, namespace: string) => ({
     body: {
@@ -124,5 +126,33 @@ describe('resource quota workspace selection', () => {
     (global as any).AppConfig.cloud.regionUID = '';
     expect((await invoke({ namespace: 'ns-team', regionUid: 'local' })).code).toBe(400);
     expect(readQuota).not.toHaveBeenCalled();
+  });
+});
+
+describe('deleted workspaces in aggregate quota', () => {
+  it('keeps existing workspace quota when a listed namespace has been deleted', async () => {
+    readQuota.mockRejectedValueOnce({ statusCode: 404 });
+    readNamespace.mockRejectedValueOnce({ statusCode: 404 });
+    const result = await invoke({ namespace: '', namespaces: ['ns-deleted', 'ns-current'] });
+    expect(result.code).toBe(200);
+    expect(result.data.quota).toEqual([
+      { type: 'cpu', used: 0.5, limit: 4 },
+      { type: 'memory', used: 1, limit: 8 }
+    ]);
+    expect(readNamespace).toHaveBeenCalledWith('ns-deleted');
+    expect(readQuota).toHaveBeenCalledWith('quota-ns-current', 'ns-current');
+  });
+
+  it('does not hide missing quota on an existing workspace', async () => {
+    readQuota.mockRejectedValueOnce({ statusCode: 404 });
+    const result = await invoke({ namespace: '', namespaces: ['ns-current'] });
+    expect(result.code).toBe(500);
+    expect(readNamespace).toHaveBeenCalledWith('ns-current');
+  });
+
+  it('does not silently ignore a selected missing workspace', async () => {
+    readQuota.mockRejectedValueOnce({ statusCode: 404 });
+    expect((await invoke({ namespace: 'ns-deleted' })).code).toBe(500);
+    expect(readNamespace).not.toHaveBeenCalled();
   });
 });

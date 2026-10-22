@@ -260,5 +260,7 @@
   "first_recharge_title": "Earn Credits with Initial Purchase!",
   "credit_purchase": "Credit Purchase",
   "remaining_balance": "Remaining Balance",
-  "custom_amount": "Custom Amount"
+  "custom_amount": "Custom Amount",
+  "quota_load_failed": "Unable to load resource quotas. Please try again.",
+  "quota_no_data": "No resource quotas available."
 }

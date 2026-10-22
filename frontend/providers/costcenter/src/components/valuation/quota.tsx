@@ -62,7 +62,7 @@ export default function Quota({
   const { t } = useTranslation();
   const regionUid = useBillingStore((s) => s.getRegion()?.uid || '');
   const { startTime, endTime } = useOverviewStore();
-  const queryBody = { startTime, endTime, regionUid };
+  const queryBody = { startTime, endTime, regionUid, activeOnly: true };
   // Share the menu's query, so all-workspace quota waits for the matching region's list.
   const workspaces = useQuery({
     queryKey: ['nsList', 'menu', queryBody],
@@ -74,7 +74,7 @@ export default function Quota({
     namespace === ''
       ? [...new Set((workspaces.data?.data || []).map(([id]) => id).filter(Boolean))]
       : undefined;
-  const { data, isError } = useQuery(
+  const { data, isError, isFetching } = useQuery(
     ['quota', regionUid, namespace, namespaces],
     () =>
       request<any, ApiResp<{ quota: UserQuotaItemType[] }>>('/api/getQuota', {
@@ -113,7 +113,8 @@ export default function Quota({
     });
   return (
     <Stack {...props}>
-      {failed && <Text role="alert">{t('No Data Available')}</Text>}
+      {failed && <Text role="alert">{t('quota_load_failed')}</Text>}
+      {!failed && !isFetching && data && quota.length === 0 && <Text>{t('quota_no_data')}</Text>}
       {quota.map((item) => (
         <HStack key={item.type} gap={'30px'}>
           <QuotaPie data={item} color={item.bg} />

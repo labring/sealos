@@ -48,10 +48,25 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     }
     const totals = new Map<UserQuotaItemType['type'], UserQuotaItemType>();
     // Bound concurrency and keep Kubernetes RBAC enforcement on every workspace read.
-    // A failed read must fail the whole request instead of returning a partial total.
+    // A failed read must fail the whole request unless a workspace was deleted
+    // after listing. Keep permission failures and missing quota on live spaces visible.
     for (let offset = 0; offset < selectedNamespaces.length; offset += 5) {
       const results = await Promise.all(
-        selectedNamespaces.slice(offset, offset + 5).map((ns) => getUserQuota(kc, ns))
+        selectedNamespaces.slice(offset, offset + 5).map(async (ns) => {
+          try {
+            return await getUserQuota(kc, ns);
+          } catch (error: any) {
+            if (namespace === '' && error?.statusCode === 404) {
+              try {
+                await kc.makeApiClient(k8s.CoreV1Api).readNamespace(ns);
+              } catch (namespaceError: any) {
+                if (namespaceError?.statusCode === 404) return [];
+                throw namespaceError;
+              }
+            }
+            throw error;
+          }
+        })
       );
       for (const item of results.flat()) {
         const total = totals.get(item.type) || { type: item.type, used: 0, limit: 0 };
@@ -66,7 +81,8 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
       data: { quota }
     });
   } catch (error) {
-    console.log(error);
+    // Kubernetes errors may include the full request and its authentication headers.
+    console.error('get quota error', { statusCode: (error as any)?.statusCode });
     jsonRes(resp, { code: 500, message: 'get quota error' });
   }
 }

@@ -6,7 +6,9 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/labring/sealos/controllers/pkg/database/cockroach"
 	"github.com/labring/sealos/controllers/pkg/types"
+	"github.com/labring/sealos/service/account/helper"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -53,5 +55,36 @@ func TestBillingWorkspaceMembershipScope(t *testing.T) {
 				query,
 			)
 		}
+	}
+}
+
+// Resource analysis must not consult historical MongoDB records that may refer
+// to namespaces that have already been deleted.
+func TestActiveWorkspaceListDoesNotReadBillingHistory(t *testing.T) {
+	db, err := gorm.Open(postgres.New(postgres.Config{DSN: "host=unused"}), &gorm.Config{
+		DryRun: true, DisableAutomaticPing: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var query string
+	if err := db.Callback().Query().After("gorm:query").Register("capture_membership_query", func(tx *gorm.DB) {
+		query = tx.Statement.SQL.String()
+	}); err != nil {
+		t.Fatal(err)
+	}
+	account := &Account{Cockroach: &Cockroach{ck: &cockroach.Cockroach{Localdb: db}}}
+	rows, err := account.GetBillingHistoryNamespaceList(&helper.NamespaceBillingHistoryReq{
+		ActiveOnly: true,
+		AuthBase:   helper.AuthBase{Auth: &helper.Auth{UserUID: uuid.New()}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 0 {
+		t.Fatalf("unexpected workspaces: %v", rows)
+	}
+	if !strings.Contains(query, `"UserWorkspace".status = `) || strings.Contains(query, " OR id IN") {
+		t.Fatalf("active workspace query must exclude history: %s", query)
 	}
 }

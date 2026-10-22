@@ -111,6 +111,25 @@ it('waits for the new region list and does not reuse another region quota', asyn
 it('shows a contextual error if the workspace list fails', async () => {
   vi.mocked(request.post).mockRejectedValue(new Error('unavailable'));
   mount();
-  expect(await screen.findByRole('alert')).toBeTruthy();
+  expect((await screen.findByRole('alert')).textContent).toBe('quota_load_failed');
   expect(request).not.toHaveBeenCalled();
+});
+
+it('requests active workspaces independently from the billing-history list', async () => {
+  vi.mocked(request.post).mockResolvedValue({ data: [['ns-current', 'Current']] });
+  mount();
+  await waitFor(() =>
+    expect(request.post).toHaveBeenCalledWith(
+      '/api/billing/getNamespaceList',
+      expect.objectContaining({ activeOnly: true, regionUid: 'local' })
+    )
+  );
+});
+
+it('distinguishes successfully empty quota from a failed request', async () => {
+  vi.mocked(request.post).mockResolvedValue({ data: [] });
+  vi.mocked(request).mockResolvedValue({ data: { quota: [] } });
+  mount();
+  expect(await screen.findByText('quota_no_data')).toBeTruthy();
+  expect(screen.queryByRole('alert')).toBeNull();
 });
