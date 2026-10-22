@@ -11,8 +11,14 @@ export default function NamespaceMenu({
   isDisabled,
   innerWidth = '360px',
   defaultToPrivateTeam = false,
+  activeOnly = false,
   ...props
-}: { innerWidth?: string; isDisabled: boolean; defaultToPrivateTeam?: boolean } & FlexProps) {
+}: {
+  innerWidth?: string;
+  isDisabled: boolean;
+  defaultToPrivateTeam?: boolean;
+  activeOnly?: boolean;
+} & FlexProps) {
   const startTime = useOverviewStore((s) => s.startTime);
   const endTime = useOverviewStore((s) => s.endTime);
   const { setNamespace, setNamespaceList, namespaceList, namespaceIdx } = useBillingStore();
@@ -22,7 +28,8 @@ export default function NamespaceMenu({
   const queryBody = {
     startTime,
     endTime,
-    regionUid
+    regionUid,
+    ...(activeOnly ? { activeOnly: true } : {})
   };
   const { data: nsListData, isFetching } = useQuery({
     queryFn() {

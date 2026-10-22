@@ -2717,6 +2717,9 @@ func (m *MongoDB) getPropertiesCollection() *mongo.Collection {
 func (m *Account) GetBillingHistoryNamespaceList(
 	req *helper.NamespaceBillingHistoryReq,
 ) ([][]string, error) {
+	if req.ActiveOnly {
+		return m.getBillingWorkspaces(req.UserUID, nil)
+	}
 	filter := bson.M{
 		"owner": req.Owner,
 	}

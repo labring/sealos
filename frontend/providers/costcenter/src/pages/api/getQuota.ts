@@ -1,4 +1,5 @@
 import { authSession } from '@/service/backend/auth';
+import { verifyInternalToken } from '@/service/auth';
 import { GetUserDefaultNameSpace } from '@/service/backend/kubernetes';
 import { jsonRes } from '@/service/backend/response';
 import * as k8s from '@kubernetes/client-node';
@@ -7,22 +8,81 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
   try {
     const kc = await authSession(req.headers);
 
-    // get user account payment amount
     const user = kc.getCurrentUser();
     if (user === null) {
       return jsonRes(resp, { code: 403, message: 'user null' });
     }
-    const namespace =
-      (typeof req.body?.namespace === 'string' && req.body.namespace) ||
-      kc.contexts[0].namespace ||
-      GetUserDefaultNameSpace(user.name);
-    const quota = await getUserQuota(kc, namespace);
+    // The user's kubeconfig is regional; never display local quota for another region.
+    const { namespace, namespaces, regionUid } = req.body || {};
+    // Older chart configurations omit cloud.regionUID. The signed desktop session
+    // still identifies the region associated with the user's kubeconfig.
+    const currentRegionUid = regionUid
+      ? global.AppConfig.cloud.regionUID ||
+        (await verifyInternalToken(req.body?.internalToken))?.regionUid
+      : undefined;
+    if (regionUid && regionUid !== currentRegionUid) {
+      return jsonRes(resp, {
+        code: 400,
+        message: 'quota is only available for the current region'
+      });
+    }
+    let selectedNamespaces: string[];
+    if (namespace === '') {
+      // Empty string means all workspaces, not the kubeconfig's current workspace.
+      if (
+        !Array.isArray(namespaces) ||
+        namespaces.some((ns) => typeof ns !== 'string' || !ns.trim())
+      ) {
+        return jsonRes(resp, { code: 400, message: 'namespaces is invalid' });
+      }
+      selectedNamespaces = [...new Set<string>(namespaces)];
+    } else {
+      if (namespace !== undefined && typeof namespace !== 'string') {
+        return jsonRes(resp, { code: 400, message: 'namespace is invalid' });
+      }
+      selectedNamespaces = [
+        namespace ||
+          kc.getContextObject(kc.getCurrentContext())?.namespace ||
+          GetUserDefaultNameSpace(user.name)
+      ];
+    }
+    const totals = new Map<UserQuotaItemType['type'], UserQuotaItemType>();
+    // Bound concurrency and keep Kubernetes RBAC enforcement on every workspace read.
+    // A failed read must fail the whole request unless a workspace was deleted
+    // after listing. Keep permission failures and missing quota on live spaces visible.
+    for (let offset = 0; offset < selectedNamespaces.length; offset += 5) {
+      const results = await Promise.all(
+        selectedNamespaces.slice(offset, offset + 5).map(async (ns) => {
+          try {
+            return await getUserQuota(kc, ns);
+          } catch (error: any) {
+            if (namespace === '' && error?.statusCode === 404) {
+              try {
+                await kc.makeApiClient(k8s.CoreV1Api).readNamespace(ns);
+              } catch (namespaceError: any) {
+                if (namespaceError?.statusCode === 404) return [];
+                throw namespaceError;
+              }
+            }
+            throw error;
+          }
+        })
+      );
+      for (const item of results.flat()) {
+        const total = totals.get(item.type) || { type: item.type, used: 0, limit: 0 };
+        total.used += item.used;
+        total.limit += item.limit;
+        totals.set(item.type, total);
+      }
+    }
+    const quota = [...totals.values()];
     return jsonRes(resp, {
       code: 200,
       data: { quota }
     });
   } catch (error) {
-    console.log(error);
+    // Kubernetes errors may include the full request and its authentication headers.
+    console.error('get quota error', { statusCode: (error as any)?.statusCode });
     jsonRes(resp, { code: 500, message: 'get quota error' });
   }
 }
@@ -138,7 +198,11 @@ export async function getUserQuota(
   addQuota('cpu', 'limits.cpu', (value) => cpuFormatToM(value) / 1000);
   addQuota('memory', 'limits.memory', (value) => memoryFormatToMi(value) / 1024);
   addQuota('storage', 'requests.storage', (value) => storageQuantityToMi(value) / 1024);
-  addQuota('ephemeral-storage', 'limits.ephemeral-storage', (value) => storageQuantityToMi(value) / 1024);
+  addQuota(
+    'ephemeral-storage',
+    'limits.ephemeral-storage',
+    (value) => storageQuantityToMi(value) / 1024
+  );
 
   const gpuKey = hasQuota('requests.nvidia.com/gpu')
     ? 'requests.nvidia.com/gpu'
@@ -148,7 +212,11 @@ export async function getUserQuota(
   addQuota('pods', 'pods', countQuantityToNumber);
   addQuota('services.nodeports', 'services.nodeports', countQuantityToNumber);
   addQuota('objectstorage/bucket', 'objectstorage/bucket', countQuantityToNumber);
-  addQuota('objectstorage/size', 'objectstorage/size', (value) => storageQuantityToMi(value) / 1024);
+  addQuota(
+    'objectstorage/size',
+    'objectstorage/size',
+    (value) => storageQuantityToMi(value) / 1024
+  );
 
   return quota;
 }
