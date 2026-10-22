@@ -64,8 +64,8 @@ export default function Notification(props: NotificationProps) {
   const compareByTimestamp = (a: TNotification, b: TNotification) => b?.timestamp - a?.timestamp;
 
   const handleNotificationData = (data: TNotification[]) => {
-    const sortedMessages = data.sort(compareByTimestamp);
-    const unReadCount = data.filter((item) => !item.isRead).length;
+    const sortedMessages = data.filter((item) => !item.isRead).sort(compareByTimestamp);
+    const unReadCount = sortedMessages.length;
 
     if (
       sortedMessages?.[0]?.desktopPopup &&
@@ -147,6 +147,12 @@ export default function Notification(props: NotificationProps) {
     }
   }, [i18n.language, refetch]);
 
+  useEffect(() => {
+    if (disclosure.isOpen) {
+      refetch();
+    }
+  }, [disclosure.isOpen, refetch]);
+
   const getNotificationIcon = (from: string | undefined) => {
     switch (from) {
       case 'Debt-System':
@@ -177,7 +183,6 @@ export default function Notification(props: NotificationProps) {
         draft.popupMessage = undefined;
       })
     );
-    refetch();
   };
 
   const [expandedMessageId, setExpandedMessageId] = useState<string | null>(null);
