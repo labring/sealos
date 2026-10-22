@@ -1,5 +1,5 @@
 # Build stage - use native platform for faster builds
-FROM --platform=$BUILDPLATFORM golang:1.25-alpine AS builder
+FROM --platform=$BUILDPLATFORM golang:1.26.10-alpine AS builder
 
 # Install build dependencies
 RUN apk add --no-cache \
