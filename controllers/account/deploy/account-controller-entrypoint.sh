@@ -113,6 +113,7 @@ REGION_UID=$(get_cm_value sealos-system sealos-config regionUID)
 GLOBAL_COCKROACH_URI=$(get_cm_value sealos-system sealos-config databaseGlobalCockroachdbURI)
 LOCAL_COCKROACH_URI=$(get_cm_value sealos-system sealos-config databaseLocalCockroachdbURI)
 MONGODB_URI=$(get_cm_value sealos-system sealos-config databaseMongodbURI)
+CERT_MODE=$(get_cm_value sealos-system cert-config CERT_MODE)
 
 TRAFFIC_MONGO=$(get_cm_value sealos-system nm-agent-config MONGO_URI)
 if [ -z "${TRAFFIC_MONGO}" ] && [ -n "${MONGODB_URI}" ]; then
@@ -128,6 +129,7 @@ fi
 [ -n "${LOCAL_COCKROACH_URI}" ] && AUTO_CONFIG_HELM_OPTS="${AUTO_CONFIG_HELM_OPTS} --set-string accountEnv.localCockroachURI=${LOCAL_COCKROACH_URI}"
 [ -n "${MONGODB_URI}" ] && AUTO_CONFIG_HELM_OPTS="${AUTO_CONFIG_HELM_OPTS} --set-string accountEnv.mongoURI=${MONGODB_URI}"
 [ -n "${TRAFFIC_MONGO}" ] && AUTO_CONFIG_HELM_OPTS="${AUTO_CONFIG_HELM_OPTS} --set-string accountEnv.trafficMongoURI=${TRAFFIC_MONGO}"
+[ -n "${CERT_MODE}" ] && AUTO_CONFIG_HELM_OPTS="${AUTO_CONFIG_HELM_OPTS} --set-string accountEnv.certMode=${CERT_MODE}"
 
 
 if [ -n "${CLOUD_DOMAIN}" ]; then
