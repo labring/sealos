@@ -21,6 +21,7 @@ data:
       "GLOBAL_COCKROACH_URI" .Values.accountEnv.globalCockroachURI
       "TRAFFIC_MONGO_URI" .Values.accountEnv.trafficMongoURI
       "LOCAL_REGION" .Values.accountEnv.localRegion
+      "CERT_MODE" .Values.accountEnv.certMode
       "DOMAIN" .Values.accountEnv.cloudDomain
       "PORT" .Values.accountEnv.cloudPort
       "ACCOUNT_API_JWT_SECRET" .Values.accountEnv.accountApiJwtSecret
