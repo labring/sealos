@@ -68,9 +68,12 @@ func TestActiveWorkspaceListDoesNotReadBillingHistory(t *testing.T) {
 		t.Fatal(err)
 	}
 	var query string
-	if err := db.Callback().Query().After("gorm:query").Register("capture_membership_query", func(tx *gorm.DB) {
-		query = tx.Statement.SQL.String()
-	}); err != nil {
+	if err := db.Callback().
+		Query().
+		After("gorm:query").
+		Register("capture_membership_query", func(tx *gorm.DB) {
+			query = tx.Statement.SQL.String()
+		}); err != nil {
 		t.Fatal(err)
 	}
 	account := &Account{Cockroach: &Cockroach{ck: &cockroach.Cockroach{Localdb: db}}}
@@ -84,7 +87,8 @@ func TestActiveWorkspaceListDoesNotReadBillingHistory(t *testing.T) {
 	if len(rows) != 0 {
 		t.Fatalf("unexpected workspaces: %v", rows)
 	}
-	if !strings.Contains(query, `"UserWorkspace".status = `) || strings.Contains(query, " OR id IN") {
+	if !strings.Contains(query, `"UserWorkspace".status = `) ||
+		strings.Contains(query, " OR id IN") {
 		t.Fatalf("active workspace query must exclude history: %s", query)
 	}
 }
