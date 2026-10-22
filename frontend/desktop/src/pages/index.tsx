@@ -1,4 +1,4 @@
-import { getPlanInfo, issueMarketingConsentToken, UserInfo } from '@/api/auth';
+import { checkSessionStatus, getPlanInfo, issueMarketingConsentToken, UserInfo } from '@/api/auth';
 import { nsListRequest, switchRequest } from '@/api/namespace';
 import DesktopContent from '@/components/desktop_content';
 import { PhoneBindingModal } from '@/components/account/AccountCenter/PhoneBindingModal';
@@ -89,6 +89,32 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
   const initialLaunchResolvedRef = useRef(false);
   const initialLaunchInFlightRef = useRef(false);
   const attemptedFallbackWorkspaceRef = useRef<string | null>(null);
+  const sessionCheck = useQuery({
+    queryKey: ['sessionCheck'],
+    queryFn: () =>
+      checkSessionStatus(session?.kubeconfig || '')
+        .then((data) => {
+          // The shared interceptor already redirects on 401 and returns undefined.
+          if (!data) throw { code: 401 };
+          return data;
+        })
+        .catch((error) => {
+          // Query logs errors by default; do not expose Axios configs containing kc.
+          throw { code: error?.code, status: error?.response?.status };
+        }),
+    enabled: isUserLogin(),
+    staleTime: Infinity,
+    cacheTime: 0,
+    retry: false,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: 'always',
+    refetchOnReconnect: false,
+    refetchInterval: false
+  });
+  const sessionAuthError = sessionCheck.error as { code?: number; status?: number } | null;
+  const sessionChecked = sessionCheck.isFetchedAfterMount
+    ? sessionAuthError?.code !== 401 && sessionAuthError?.status !== 401
+    : !isUserLogin();
 
   const handleInitialAppLoaded = useCallback((appKey: string) => {
     setInitialAppLaunch((current) =>
@@ -111,7 +137,7 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
   const { data: userInfo } = useQuery({
     queryKey: [token, 'UserInfo'],
     queryFn: UserInfo,
-    enabled: isUserLogin() && !!token,
+    enabled: sessionChecked && isUserLogin() && !!token,
     select: (data) => data.data?.info
   });
 
@@ -164,7 +190,7 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
   const workspaceQuery = useQuery({
     queryKey: ['teamList', 'teamGroup'],
     queryFn: nsListRequest,
-    enabled: isUserLogin()
+    enabled: sessionChecked && isUserLogin()
   });
   const workspaces = useMemo(
     () => workspaceQuery?.data?.data?.namespaces || [],
@@ -173,7 +199,12 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
 
   // openApp by query && switch workspace
   useEffect(() => {
-    if (!router.isReady || initialLaunchResolvedRef.current || initialLaunchInFlightRef.current) {
+    if (
+      !router.isReady ||
+      !sessionChecked ||
+      initialLaunchResolvedRef.current ||
+      initialLaunchInFlightRef.current
+    ) {
       return;
     }
 
@@ -462,6 +493,7 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
     router,
     router.isReady,
     sealos_cloud_domain,
+    sessionChecked,
     setAutoLaunch,
     setCanShowGuide,
     setFirstUse,
