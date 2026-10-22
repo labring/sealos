@@ -5,6 +5,7 @@ import { PhoneBindingModal } from '@/components/account/AccountCenter/PhoneBindi
 import { trackEventName } from '@/constants/account';
 import { useSemParams } from '@/hooks/useSemParams';
 import { useLicenseCheck } from '@/hooks/useLicenseCheck';
+import { useSessionCheck } from '@/hooks/useSessionCheck';
 import useAppStore, { BRAIN_APP_KEY, SESSION_RESTORE_APP_KEY } from '@/stores/app';
 import useCallbackStore from '@/stores/callback';
 import { useConfigStore } from '@/stores/config';
@@ -89,6 +90,7 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
   const initialLaunchResolvedRef = useRef(false);
   const initialLaunchInFlightRef = useRef(false);
   const attemptedFallbackWorkspaceRef = useRef<string | null>(null);
+  const sessionChecked = useSessionCheck();
 
   const handleInitialAppLoaded = useCallback((appKey: string) => {
     setInitialAppLaunch((current) =>
@@ -173,7 +175,12 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
 
   // openApp by query && switch workspace
   useEffect(() => {
-    if (!router.isReady || initialLaunchResolvedRef.current || initialLaunchInFlightRef.current) {
+    if (
+      !router.isReady ||
+      !sessionChecked ||
+      initialLaunchResolvedRef.current ||
+      initialLaunchInFlightRef.current
+    ) {
       return;
     }
 
@@ -462,6 +469,7 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
     router,
     router.isReady,
     sealos_cloud_domain,
+    sessionChecked,
     setAutoLaunch,
     setCanShowGuide,
     setFirstUse,
