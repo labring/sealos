@@ -21,7 +21,7 @@ function sendHealthz(res: GetServerSidePropsContext['res'], head = false) {
   try {
     assertReady();
   } catch (error) {
-    console.error(`[healthz] ${HEALTHZ_SERVICE} is not ready`, error);
+    console.error('[healthz] %s is not ready', HEALTHZ_SERVICE, error);
     if (head) {
       res.statusCode = 503;
       res.end();
