@@ -29,13 +29,30 @@ To log out, POST form-urlencoded `client_id` and `token` to `/api/auth/oauth2/co
 
 - Device endpoints, device pages and device refresh logic are unchanged. No new scope enforcement is applied to them.
 - New endpoints share a database-backed limit of 120 requests per minute per client IP. IP extraction follows the existing trusted Higress convention: prevent callers bypassing the ingress and injecting trusted IP headers.
+- The database owns each IP/minute counter. Increment it in a Serializable transaction using the existing bounded conflict handling: retry only `P2034`, for at most five attempts. A failed attempt rolls back its increment; each successfully counted HTTP request increments once. Capture the bucket and expiry before retrying so a minute boundary cannot move the same call to another counter. The 121st counted request still returns HTTP 429. Other database errors and exhausted conflicts propagate to the existing error response; do not bypass the limit or retry the whole authorization request.
 - Expired new authorization requests, expired refresh families (including consumed token hashes) and limiter buckets are pruned opportunistically, at most once per minute per worker. Cleanup failure is retried on subsequent requests. Consumed refresh hashes are retained while their family is active so replay is detectable.
 - New schema changes are additive. To stop new adoption, disable the authorization-code flag rather than removing tables needed by active sessions.
 - OIDC, fine-grained scopes, workspace selection, a client-registration UI and an authorized-app management UI are deferred.
 
+```mermaid
+sequenceDiagram
+  participant H as OAuth HTTP handler
+  participant D as Database counter owner
+  H->>D: Begin Serializable transaction; increment IP/minute counter
+  alt P2034 conflict
+    D-->>H: Roll back increment
+    H->>D: Retry transaction, at most five total attempts
+  else Commit succeeds
+    D-->>H: Committed count
+    H->>H: Continue authorization, or return 429 when count exceeds 120
+  end
+```
+
 ## Verification
 
 Run the existing Desktop unit suite normally. The OAuth code integration suite uses `OAUTH_TEST_DATABASE_URL` exclusively and is skipped without it. Set `OAUTH_TEST_DB_PROVIDER=cockroachdb` to run the same contracts against a disposable CockroachDB database; the PostgreSQL-only failure-injection trigger test is skipped there. Prepare a disposable PostgreSQL database with this provider's migrations; do not point it at application data. The test creates uniquely named clients/users and deletes them afterward. Its API-boundary tests run actual services, JWT verification, PKCE checks and database transactions, including concurrent code/refresh requests and a real HTTP loopback callback.
+
+The rate-limit regression contract covers concurrent valid context requests from one IP, exact committed counts, rollback of an increment before a forced conflict, the 120/121 request boundary, five-attempt exhaustion, and immediate propagation of errors other than `P2034`. Run these contracts against both database providers; no schema migration or client configuration change is needed for this fix.
 
 From the frontend workspace, in fish:
 

@@ -89,11 +89,14 @@ export const limitCodeRequests = async (identity: string) => {
   const now = Date.now();
   const bucket = Math.floor(now / 60_000);
   const key = hash(`${identity}:${bucket}`);
-  const record = await globalPrisma.oAuthCodeRateLimit.upsert({
-    where: { key },
-    create: { key, count: 1, expiresAt: new Date((bucket + 2) * 60_000) },
-    update: { count: { increment: 1 } }
-  });
+  // 同 IP 并发会触发 CockroachDB 的 P2034；复用有界事务重试，回滚后再计数，避免授权接口直接报 500。
+  const record = await transaction((db) =>
+    db.oAuthCodeRateLimit.upsert({
+      where: { key },
+      create: { key, count: 1, expiresAt: new Date((bucket + 2) * 60_000) },
+      update: { count: { increment: 1 } }
+    })
+  );
   if (record.count > 120)
     throw new OAuth2HttpError(429, 'temporarily_unavailable', 'Too many requests');
   if (now >= nextCleanup) {

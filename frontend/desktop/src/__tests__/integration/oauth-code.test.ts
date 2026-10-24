@@ -1,5 +1,5 @@
 import { beforeAll, afterAll, describe, expect, it } from 'vitest';
-import { randomUUID } from 'crypto';
+import { createHash, randomUUID } from 'crypto';
 import { sign } from 'jsonwebtoken';
 import { PrismaClient } from '../../../prisma/providers/postgresql/global/generated/client';
 import { vi } from 'vitest';
@@ -19,6 +19,18 @@ const clientId = `pkce-${uid}`;
 const redirectUri = 'io.sealos.desktop:/callback';
 const verifier = 'dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk';
 const challenge = 'E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM'; // RFC 7636 vector
+const rateKeys = new Set<string>();
+const rateKey = (identity: string) => {
+  const key = createHash('sha256')
+    .update(`${identity}:${Math.floor(Date.now() / 60_000)}`)
+    .digest('hex');
+  rateKeys.add(key);
+  return key;
+};
+const freezeRateMinute = () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date('2026-01-15T12:00:30Z'));
+};
 let authorize: any;
 const call = async (handler: any, options: any = {}) => {
   const res: any = { statusCode: 200, headers: {}, body: undefined };
@@ -91,6 +103,7 @@ describe.skipIf(!databaseUrl)('authorization code HTTP contract', () => {
     await db.oAuthRefreshSession.deleteMany({ where: { clientId } });
     await db.oAuthClient.deleteMany({ where: { clientId } });
     await db.user.deleteMany({ where: { uid } });
+    await db.oAuthCodeRateLimit.deleteMany({ where: { key: { in: [...rateKeys] } } });
     await db.$disconnect();
   });
   it('opens a separate authorization page without issuing a token', async () => {
@@ -545,14 +558,107 @@ describe.skipIf(!databaseUrl)('authorization code HTTP contract', () => {
       await db.oAuthClient.delete({ where: { clientId: loopbackId } });
     }
   });
-  it('limits only new endpoints and does not create requests when throttled', async () => {
+  it('loads concurrent valid contexts from one IP and counts each request once', async () => {
+    freezeRateMinute();
+    try {
+      const req = await browserRequest();
+      const context = (await import('@/pages/api/auth/oauth2/code/context')).default;
+      const identity = randomUUID();
+      const key = rateKey(identity);
+      const input = {
+        ...req,
+        method: 'GET',
+        query: { request_id: req.body.request_id },
+        socket: { remoteAddress: identity }
+      };
+      const responses = [];
+      for (let pair = 0; pair < 20; pair++) {
+        responses.push(...(await Promise.all([call(context, input), call(context, input)])));
+      }
+      expect(responses.map((res) => res.statusCode)).toEqual(Array(40).fill(200));
+      expect(await db.oAuthCodeRateLimit.findUnique({ where: { key } })).toMatchObject({
+        count: 40
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+  it('rolls back a conflicted rate increment before retrying the context request', async () => {
+    freezeRateMinute();
+    let restoreTransaction: (() => void) | undefined;
+    try {
+      const req = await browserRequest();
+      const context = (await import('@/pages/api/auth/oauth2/code/context')).default;
+      const identity = randomUUID();
+      const key = rateKey(identity);
+      const conflict = Object.assign(new Error('test serialization conflict'), { code: 'P2034' });
+      const transact = db.$transaction.bind(db);
+      const transactionSpy = vi.spyOn(db, '$transaction').mockImplementationOnce((run, options) =>
+        transact(async (tx) => {
+          await run(tx);
+          throw conflict;
+        }, options)
+      );
+      restoreTransaction = () => transactionSpy.mockRestore();
+      const res = await call(context, {
+        ...req,
+        method: 'GET',
+        query: { request_id: req.body.request_id },
+        socket: { remoteAddress: identity }
+      });
+      expect(res.statusCode).toBe(200);
+      expect(transactionSpy).toHaveBeenCalledTimes(2);
+      expect(await db.oAuthCodeRateLimit.findUnique({ where: { key } })).toMatchObject({
+        count: 1
+      });
+    } finally {
+      restoreTransaction?.();
+      vi.useRealTimers();
+    }
+  });
+  it.each([
+    ['P2034', 5],
+    ['P2021', 1]
+  ])('stops rate-limit failures with %s after %i attempts', async (code, attempts) => {
+    freezeRateMinute();
     const identity = randomUUID();
-    const req = {
-      query: { ...query(), client_id: 'missing-client' },
-      socket: { remoteAddress: identity }
-    };
-    for (let i = 0; i < 120; i++) expect((await call(authorize, req)).statusCode).toBe(400);
-    expect((await call(authorize, req)).statusCode).toBe(429);
+    const key = rateKey(identity);
+    const failure = Object.assign(new Error('test database failure'), { code });
+    const transactionSpy = vi.spyOn(db, '$transaction').mockRejectedValue(failure);
+    try {
+      const context = (await import('@/pages/api/auth/oauth2/code/context')).default;
+      const res = await call(context, {
+        query: { request_id: randomUUID() },
+        socket: { remoteAddress: identity }
+      });
+      expect(res.statusCode).toBe(500);
+      expect(res.body).toEqual({ error: 'server_error' });
+      expect(transactionSpy).toHaveBeenCalledTimes(attempts);
+      expect(await db.oAuthCodeRateLimit.findUnique({ where: { key } })).toBeNull();
+    } finally {
+      transactionSpy.mockRestore();
+      vi.useRealTimers();
+    }
+  });
+  it('limits only new endpoints and does not create requests when throttled', async () => {
+    freezeRateMinute();
+    try {
+      const identity = randomUUID();
+      const key = rateKey(identity);
+      const req = {
+        query: { ...query(), client_id: 'missing-client' },
+        socket: { remoteAddress: identity }
+      };
+      for (let i = 0; i < 120; i++) expect((await call(authorize, req)).statusCode).toBe(400);
+      const before = await db.oAuthAuthorizationRequest.count({ where: { clientId } });
+      expect((await call(authorize, { ...req, query: query() })).statusCode).toBe(429);
+      expect(await db.oAuthAuthorizationRequest.count({ where: { clientId } })).toBe(before);
+      expect(await db.oAuthCodeRateLimit.findUnique({ where: { key } })).toMatchObject({
+        count: 121
+      });
+    } finally {
+      vi.useRealTimers();
+    }
   });
   it.skipIf(cockroach)(
     'rolls back code consumption when storing the refresh session fails',
