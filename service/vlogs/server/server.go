@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	commonserver "github.com/labring/sealos/service/pkg/server"
 	"github.com/labring/sealos/service/vlogs/config"
 )
 
@@ -25,6 +26,11 @@ func NewVLogsServer(config *config.Config) (*VLogsServer, error) {
 }
 
 func (vl *VLogsServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+	if req.URL.Path == commonserver.HealthPath {
+		commonserver.ServeHealth(rw, req)
+		return
+	}
+
 	query, err := vl.queryConvert(req)
 	if err != nil {
 		http.Error(
