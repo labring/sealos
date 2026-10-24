@@ -1,34 +1,29 @@
-# RESTServer
+# vlogs service
 
-## Description
+HTTP query gateway for VictoriaLogs. Business routes authenticate the caller's
+Kubernetes access; `GET /health` returns process health without authentication
+or calls to Kubernetes or VictoriaLogs.
 
-restserver for victoria logs
+## Build and deploy
 
-## Getting Started
-
-### Running on the cluster
-
-1. Build and push your image to the location specified by `IMG`:
+From this directory, build and publish both supported platforms:
 
 ```sh
-make docker-build docker-push IMG=<some-registry>/sealos-vlogs-service:latest
+make docker-buildx-push IMG=your-registry/sealos-vlogs-service:your-version
 ```
 
-2. Deploy the restserver:
+See [deployment instructions](deploy/README.md) for Helm configuration, migration
+from legacy manifests, probes, validation and rollback. The backend URL and
+credentials come from the YAML file passed to `/manager`; the Kubernetes host
+whitelist comes from `WHITELIST_KUBERNETES_HOSTS`. See [env.template](env.template).
+
+## Local verification
+
+From `service/`:
 
 ```sh
-kubectl apply -f deploy/manifests/
-```
-
-### How it works
-
-To enable the database frontend application to retrieve monitoring data, you need to modify the environment variable `MONITOR_URL` of the frontend deployment to the corresponding address of the restserver.
-
-Additionally, to configure the data source, you need to set the environment variable `VM_SERVICE_HOST` of the restserver deployment to the correct address.
-
-```
-e.g.
-http://prometheus.sealos.svc.cluster.local
+go test ./vlogs/... ./pkg/server/...
+go build ./vlogs/...
 ```
 
 ## License
