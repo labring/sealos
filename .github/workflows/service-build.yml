@@ -85,6 +85,10 @@ jobs:
         working-directory: service/${{ inputs.module }}
         run: go test -race ./... -count=1 -v
 
+      - name: Test vlogs deployment migration safety
+        if: ${{ inputs.module == 'vlogs' }}
+        run: python3 -m unittest discover -s service/vlogs/deploy/tests -p '*_test.py' -v
+
   image-build:
     strategy:
       matrix:
