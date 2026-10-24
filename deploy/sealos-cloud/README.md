@@ -31,3 +31,25 @@ The admission webhook uses its Helm chart. `drop/` and `remove/` files remain is
 
 The installer runs this component image. Database service and launchpad service
 deployments are intentionally excluded.
+
+## Wait timeouts
+
+The entrypoint uses these runtime environment variables when waiting for
+component workloads:
+
+```sh
+SEALOS_CLOUD_DEPLOY_TIMEOUT=10m
+SEALOS_CLOUD_JOB_TIMEOUT=15m
+```
+
+Override them when running the component image, for example:
+
+```sh
+sealos run \
+  --env SEALOS_CLOUD_DEPLOY_TIMEOUT=30m \
+  --env SEALOS_CLOUD_JOB_TIMEOUT=20m \
+  <sealos-cloud-image>
+```
+
+`SEALOS_CLOUD_DEPLOY_TIMEOUT` controls Deployment rollout checks. The job
+timeout applies to the initialization Job in `account-system`.

@@ -3,6 +3,8 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 COMPONENT_DIR="${ROOT_DIR}/scripts/components"
+DEPLOY_TIMEOUT="${SEALOS_CLOUD_DEPLOY_TIMEOUT:-10m}"
+JOB_TIMEOUT="${SEALOS_CLOUD_JOB_TIMEOUT:-15m}"
 
 run_component() {
   local name="$1"
@@ -18,12 +20,12 @@ run_component() {
 
 wait_deployment() {
   local namespace="$1" name="$2"
-  kubectl rollout status "deployment/${name}" -n "${namespace}" --timeout=10m
+  kubectl rollout status "deployment/${name}" -n "${namespace}" --timeout="${DEPLOY_TIMEOUT}"
 }
 
 wait_job() {
   local namespace="$1" name="$2"
-  kubectl wait --for=condition=complete "job/${name}" -n "${namespace}" --timeout=15m
+  kubectl wait --for=condition=complete "job/${name}" -n "${namespace}" --timeout="${JOB_TIMEOUT}"
 }
 
 run_component desktop-frontend
