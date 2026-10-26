@@ -59,3 +59,34 @@ affinity:
                 values:
                   - license-frontend
           topologyKey: "kubernetes.io/hostname"
+
+# App-local health checks; override these objects with Helm -f/--set.
+# Startup protects initialization; readiness gates traffic; liveness restarts hung containers.
+startupProbe:
+  httpGet:
+    path: /healthz
+    port: 3000
+  periodSeconds: 5
+  timeoutSeconds: 5
+  failureThreshold: 30
+
+readinessProbe:
+  httpGet:
+    path: /healthz
+    port: 3000
+  periodSeconds: 5
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: 3000
+  periodSeconds: 20
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+# helm test uses the same app-local health endpoint.
+tests:
+  image: busybox:1.36.1
+  path: /healthz

@@ -160,6 +160,12 @@ const MyApp = ({ Component, pageProps, dehydratedState }: AppProps & AppOwnProps
 );
 
 MyApp.getInitialProps = async (context: AppContext): Promise<AppOwnProps & AppInitialProps> => {
+  // Health probes must not prefetch business configuration or call Config(),
+  // which terminates the process when instrumentation has not initialized it.
+  if (context.ctx.pathname === '/healthz') {
+    return { pageProps: {} };
+  }
+
   const ctx = await App.getInitialProps(context);
 
   let dehydratedState: unknown;

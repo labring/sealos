@@ -35,6 +35,9 @@ export const _getRegionToken = (request: AxiosInstance) => () =>
 
 export const getRegionToken = _getRegionToken(request);
 
+export const checkSessionStatus = (kubeconfig: string) =>
+  request.post<never, ApiResp<null>>('/api/auth/checkStatus', { kubeconfig });
+
 export const _passwordLoginRequest =
   (request: AxiosInstance) =>
   (

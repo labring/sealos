@@ -70,11 +70,13 @@ spec:
               REGION_DATABASE_URL=$(cat /app/data/config.yaml | awk '/regionalCockroachdbURI:/ {print $2}' | tr -d '"') \
               GLOBAL_DATABASE_URL=$(cat /app/data/config.yaml | awk '/globalCockroachdbURI:/ {print $2}' | tr -d '"') \
               node /app/desktop/server.js
+          image: "{{ .Values.image }}"
+          startupProbe:
+            {{- toYaml .Values.startupProbe | nindent 12 }}
           readinessProbe:
             {{- toYaml .Values.readinessProbe | nindent 12 }}
           livenessProbe:
             {{- toYaml .Values.livenessProbe | nindent 12 }}
-          image: "{{ .Values.image }}"
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           volumeMounts:
             - mountPath: /app/data/config.yaml
