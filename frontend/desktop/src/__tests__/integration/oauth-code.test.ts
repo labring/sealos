@@ -558,7 +558,7 @@ describe.skipIf(!databaseUrl)('authorization code HTTP contract', () => {
       await db.oAuthClient.delete({ where: { clientId: loopbackId } });
     }
   });
-  it('loads concurrent valid contexts from one IP and counts each request once', async () => {
+  it.each([false, true])('counts 20 simultaneous contexts once (warm bucket=%s)', async (warm) => {
     freezeRateMinute();
     try {
       const req = await browserRequest();
@@ -571,35 +571,37 @@ describe.skipIf(!databaseUrl)('authorization code HTTP contract', () => {
         query: { request_id: req.body.request_id },
         socket: { remoteAddress: identity }
       };
-      const responses = [];
-      for (let pair = 0; pair < 20; pair++) {
-        responses.push(...(await Promise.all([call(context, input), call(context, input)])));
-      }
-      expect(responses.map((res) => res.statusCode)).toEqual(Array(40).fill(200));
+      if (warm) expect((await call(context, input)).statusCode).toBe(200);
+      const responses = await Promise.all(Array.from({ length: 20 }, () => call(context, input)));
+      expect(responses.map((res) => res.statusCode)).toEqual(Array(20).fill(200));
       expect(await db.oAuthCodeRateLimit.findUnique({ where: { key } })).toMatchObject({
-        count: 40
+        count: warm ? 21 : 20
       });
     } finally {
       vi.useRealTimers();
     }
   });
-  it('rolls back a conflicted rate increment before retrying the context request', async () => {
+  it.each([
+    { code: 'P2034', meta: undefined },
+    { code: 'P2010', meta: { code: '40001' } }
+  ])('rolls back a conflicted rate increment before retrying ($code)', async (failure) => {
     freezeRateMinute();
-    let restoreTransaction: (() => void) | undefined;
+    let restoreWrite: (() => void) | undefined;
     try {
       const req = await browserRequest();
       const context = (await import('@/pages/api/auth/oauth2/code/context')).default;
       const identity = randomUUID();
       const key = rateKey(identity);
-      const conflict = Object.assign(new Error('test serialization conflict'), { code: 'P2034' });
+      const conflict = Object.assign(new Error('test serialization conflict'), failure);
       const transact = db.$transaction.bind(db);
-      const transactionSpy = vi.spyOn(db, '$transaction').mockImplementationOnce((run, options) =>
-        transact(async (tx) => {
-          await run(tx);
-          throw conflict;
-        }, options)
+      const writeSpy = vi.spyOn(db, '$queryRaw').mockImplementationOnce(
+        (...args) =>
+          transact(async (tx) => {
+            await tx.$executeRaw(...args);
+            throw conflict;
+          }) as ReturnType<typeof db.$queryRaw>
       );
-      restoreTransaction = () => transactionSpy.mockRestore();
+      restoreWrite = () => writeSpy.mockRestore();
       const res = await call(context, {
         ...req,
         method: 'GET',
@@ -607,39 +609,47 @@ describe.skipIf(!databaseUrl)('authorization code HTTP contract', () => {
         socket: { remoteAddress: identity }
       });
       expect(res.statusCode).toBe(200);
-      expect(transactionSpy).toHaveBeenCalledTimes(2);
+      expect(writeSpy).toHaveBeenCalledTimes(2);
       expect(await db.oAuthCodeRateLimit.findUnique({ where: { key } })).toMatchObject({
         count: 1
       });
     } finally {
-      restoreTransaction?.();
+      restoreWrite?.();
       vi.useRealTimers();
     }
   });
   it.each([
-    ['P2034', 5],
-    ['P2021', 1]
-  ])('stops rate-limit failures with %s after %i attempts', async (code, attempts) => {
-    freezeRateMinute();
-    const identity = randomUUID();
-    const key = rateKey(identity);
-    const failure = Object.assign(new Error('test database failure'), { code });
-    const transactionSpy = vi.spyOn(db, '$transaction').mockRejectedValue(failure);
-    try {
-      const context = (await import('@/pages/api/auth/oauth2/code/context')).default;
-      const res = await call(context, {
-        query: { request_id: randomUUID() },
-        socket: { remoteAddress: identity }
+    { code: 'P2034', sqlState: undefined, attempts: 5 },
+    { code: 'P2010', sqlState: '40001', attempts: 5 },
+    { code: 'P2010', sqlState: '57014', attempts: 1 },
+    { code: 'P2021', sqlState: undefined, attempts: 1 }
+  ])(
+    'stops rate-limit failures with $code/$sqlState after $attempts attempts',
+    async ({ code, sqlState, attempts }) => {
+      freezeRateMinute();
+      const identity = randomUUID();
+      const key = rateKey(identity);
+      const failure = Object.assign(new Error('test database failure'), {
+        code,
+        meta: { code: sqlState }
       });
-      expect(res.statusCode).toBe(500);
-      expect(res.body).toEqual({ error: 'server_error' });
-      expect(transactionSpy).toHaveBeenCalledTimes(attempts);
-      expect(await db.oAuthCodeRateLimit.findUnique({ where: { key } })).toBeNull();
-    } finally {
-      transactionSpy.mockRestore();
-      vi.useRealTimers();
+      const writeSpy = vi.spyOn(db, '$queryRaw').mockRejectedValue(failure);
+      try {
+        const context = (await import('@/pages/api/auth/oauth2/code/context')).default;
+        const res = await call(context, {
+          query: { request_id: randomUUID() },
+          socket: { remoteAddress: identity }
+        });
+        expect(res.statusCode).toBe(500);
+        expect(res.body).toEqual({ error: 'server_error' });
+        expect(writeSpy).toHaveBeenCalledTimes(attempts);
+        expect(await db.oAuthCodeRateLimit.findUnique({ where: { key } })).toBeNull();
+      } finally {
+        writeSpy.mockRestore();
+        vi.useRealTimers();
+      }
     }
-  });
+  );
   it('limits only new endpoints and does not create requests when throttled', async () => {
     freezeRateMinute();
     try {

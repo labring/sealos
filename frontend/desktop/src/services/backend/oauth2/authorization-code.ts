@@ -84,19 +84,38 @@ export const codeRedirect = (uri: string, fields: Record<string, string>) => {
   return target.toString();
 };
 
+const incrementRateLimit = async (key: string, expiresAt: Date) => {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      // Prisma may emulate upsert with SELECT + INSERT/UPDATE. Use one database
+      // statement so both providers handle same-bucket bursts atomically.
+      const [record] = await globalPrisma.$queryRaw<{ count: number | bigint }[]>(Prisma.sql`
+        INSERT INTO "OAuthCodeRateLimit" ("key", "count", "expiresAt")
+        VALUES (${key}, 1, ${expiresAt})
+        ON CONFLICT ("key") DO UPDATE
+        SET "count" = "OAuthCodeRateLimit"."count" + 1
+        RETURNING "count"
+      `);
+      return record;
+    } catch (error) {
+      const failure = error as { code?: string; meta?: { code?: string } } | null;
+      const serializationFailure =
+        failure?.code === 'P2034' || (failure?.code === 'P2010' && failure.meta?.code === '40001');
+      if (!serializationFailure || attempt >= 4) throw error;
+      const delayMs = 25 * 2 ** attempt;
+      await new Promise<void>((resolve) =>
+        setTimeout(resolve, delayMs + Math.floor(Math.random() * delayMs))
+      );
+    }
+  }
+};
+
 let nextCleanup = 0;
 export const limitCodeRequests = async (identity: string) => {
   const now = Date.now();
   const bucket = Math.floor(now / 60_000);
   const key = hash(`${identity}:${bucket}`);
-  // 同 IP 并发会触发 CockroachDB 的 P2034；复用有界事务重试，回滚后再计数，避免授权接口直接报 500。
-  const record = await transaction((db) =>
-    db.oAuthCodeRateLimit.upsert({
-      where: { key },
-      create: { key, count: 1, expiresAt: new Date((bucket + 2) * 60_000) },
-      update: { count: { increment: 1 } }
-    })
-  );
+  const record = await incrementRateLimit(key, new Date((bucket + 2) * 60_000));
   if (record.count > 120)
     throw new OAuth2HttpError(429, 'temporarily_unavailable', 'Too many requests');
   if (now >= nextCleanup) {
