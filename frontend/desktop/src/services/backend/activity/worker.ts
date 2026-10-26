@@ -8,6 +8,7 @@ const BATCH_LIMIT = 50;
 // A grant stuck in REDEEMING past this window is treated as an interrupted
 // redemption: reconcile first, then record success or roll back
 const REDEEMING_STUCK_MS = 5 * 60 * 1000;
+const FIRST_LOGIN_SCAN_WRITE_ATTEMPTS = 3;
 const retryBackoffMs = (attemptCount: number) =>
   Math.min(2 ** attemptCount * 60 * 1000, 30 * 60 * 1000);
 
@@ -125,6 +126,36 @@ const MISSING_FIRST_LOGIN_REWARDS_SQL = Prisma.sql`
   LIMIT 20
 `;
 
+// Retry only the rotation write, never reward redemption or billing calls.
+const advanceFirstLoginScan = async (userUid: string): Promise<boolean> => {
+  const rewardCheckedAt = new Date();
+  for (let attempts = 1; ; attempts++) {
+    try {
+      await globalPrisma.desktopLoginRecord.updateMany({
+        where: { userUid },
+        data: { rewardCheckedAt }
+      });
+      return true;
+    } catch (error) {
+      const code = error && typeof error === 'object' && 'code' in error ? error.code : undefined;
+      if (code !== 'P2034' || attempts >= FIRST_LOGIN_SCAN_WRITE_ATTEMPTS) {
+        console.error('[activityRewardJob] advance first-login scan failed', {
+          userUid,
+          code,
+          attempts,
+          error
+        });
+        return false;
+      }
+      // 100–200ms, then 200–400ms; jitter separates competing replicas.
+      const baseDelayMs = 100 * 2 ** (attempts - 1);
+      await new Promise<void>((resolve) =>
+        setTimeout(resolve, baseDelayMs + Math.floor(Math.random() * baseDelayMs))
+      );
+    }
+  }
+};
+
 const scanMissingFirstLoginRewards = async () => {
   const users: { userUid: string }[] = await globalPrisma.$queryRaw(
     MISSING_FIRST_LOGIN_REWARDS_SQL
@@ -132,10 +163,8 @@ const scanMissingFirstLoginRewards = async () => {
   for (const { userUid } of users) {
     // Advance the rotation even when no identity key was obtained or it is held
     // by another account, so records cannot pin the LIMIT forever.
-    await globalPrisma.desktopLoginRecord.updateMany({
-      where: { userUid },
-      data: { rewardCheckedAt: new Date() }
-    });
+    // A failed row remains eligible next round without blocking the batch.
+    if (!(await advanceFirstLoginScan(userUid))) continue;
     await checkAndGrantUserRewards(userUid).catch((error) => {
       console.error('[activityRewardJob] rebuild missing first-login rewards failed', {
         userUid,
