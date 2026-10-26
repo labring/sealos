@@ -16,27 +16,17 @@ import {
   Box,
   Flex,
   HStack,
-  Spinner,
   ModalCloseButton
 } from '@chakra-ui/react';
 import { useState, useCallback } from 'react';
 import { useTranslation } from 'next-i18next';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { getSmsBindCodeRequest, verifySmsBindRequest, mergeUserRequest } from '@/api/auth';
+import { getSmsBindCodeRequest, verifySmsBindRequest } from '@/api/auth';
 import { ApiResp } from '@/types';
 import { MERGE_USER_READY } from '@/types/response/utils';
-import { ProviderType } from 'prisma/global/generated/client';
 import { WarnTriangeIcon } from '@sealos/ui';
-import { ValueOf } from '@/types';
-import { I18nErrorKey } from '@/types/i18next';
-import { USER_MERGE_STATUS } from '@/types/response/merge';
 
-type ModalStep = 'BINDING' | 'MERGE_CONFLICT' | 'MERGE_CONFIRM';
-
-type MergeData = {
-  code: string;
-  providerType: ProviderType;
-};
+type ModalStep = 'BINDING' | 'MERGE_CONFLICT';
 
 interface PhoneBindingModalProps {
   isOpen: boolean;
@@ -49,7 +39,6 @@ export function PhoneBindingModal({ isOpen, onClose }: PhoneBindingModalProps) {
   const queryClient = useQueryClient();
 
   const [currentStep, setCurrentStep] = useState<ModalStep>('BINDING');
-  const [mergeData, setMergeData] = useState<MergeData | null>(null);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [verifyCode, setVerifyCode] = useState('');
   const [challengeId, setChallengeId] = useState('');
@@ -101,23 +90,6 @@ export function PhoneBindingModal({ isOpen, onClose }: PhoneBindingModalProps) {
     }
   });
 
-  // Merge user mutation
-  const mergeMutation = useMutation({
-    mutationFn: mergeUserRequest,
-    onSuccess() {
-      queryClient.clear();
-      onClose();
-    },
-    onError(err: { message: ValueOf<USER_MERGE_STATUS> }) {
-      toast({
-        position: 'top',
-        title: t(err.message as I18nErrorKey, { ns: 'error' }),
-        status: 'error',
-        duration: 3000
-      });
-    }
-  });
-
   // Verify and bind phone
   const verifyMutation = useMutation({
     mutationFn: () =>
@@ -141,18 +113,7 @@ export function PhoneBindingModal({ isOpen, onClose }: PhoneBindingModalProps) {
         // Close modal
         onClose();
       } else if (Object.values(MERGE_USER_READY).includes(status as MERGE_USER_READY)) {
-        // Handle merge user scenario - stay in same modal with different step
-        if (status === MERGE_USER_READY.MERGE_USER_CONTINUE) {
-          const code = data.data?.code;
-          if (!code) return;
-          setMergeData({
-            code,
-            providerType: ProviderType.PHONE
-          });
-          setCurrentStep('MERGE_CONFIRM');
-        } else {
-          setCurrentStep('MERGE_CONFLICT');
-        }
+        setCurrentStep('MERGE_CONFLICT');
       } else {
         toast({
           position: 'top',
@@ -220,22 +181,8 @@ export function PhoneBindingModal({ isOpen, onClose }: PhoneBindingModalProps) {
     verifyMutation.mutate();
   };
 
-  const handleMerge = () => {
-    if (!mergeData) {
-      toast({
-        position: 'top',
-        title: 'Unknown Error',
-        status: 'error',
-        duration: 3000
-      });
-      return;
-    }
-    mergeMutation.mutate(mergeData);
-  };
-
   const handleBackToBinding = () => {
     setCurrentStep('BINDING');
-    setMergeData(null);
   };
 
   // Get modal title based on current step
@@ -244,7 +191,6 @@ export function PhoneBindingModal({ isOpen, onClose }: PhoneBindingModalProps) {
       case 'BINDING':
         return t('common:phone_binding_required');
       case 'MERGE_CONFLICT':
-      case 'MERGE_CONFIRM':
         return (
           <Flex alignItems="center" gap="10px">
             <WarnTriangeIcon boxSize="24px" fill="yellow.500" />
@@ -285,143 +231,101 @@ export function PhoneBindingModal({ isOpen, onClose }: PhoneBindingModalProps) {
           px={currentStep === 'BINDING' ? '24px' : '36px'}
           fontSize={currentStep === 'BINDING' ? undefined : '14px'}
         >
-          {mergeMutation.isLoading ? (
-            <Flex justifyContent="center" py="40px">
-              <Spinner />
-            </Flex>
-          ) : (
-            <>
-              {/* BINDING Step */}
-              {currentStep === 'BINDING' && (
-                <Box>
-                  <Box bg={'#F4F4F5'} p="16px" borderRadius="8px" mb={'16px'}>
-                    <Text fontSize="14px" color="grayModern.600">
-                      {t('common:phone_binding_description')}
-                    </Text>
-                  </Box>
+          {/* BINDING Step */}
+          {currentStep === 'BINDING' && (
+            <Box>
+              <Box bg={'#F4F4F5'} p="16px" borderRadius="8px" mb={'16px'}>
+                <Text fontSize="14px" color="grayModern.600">
+                  {t('common:phone_binding_description')}
+                </Text>
+              </Box>
 
-                  <FormControl isRequired mb={'16px'}>
-                    <FormLabel fontSize="14px" fontWeight={500}>
-                      {t('common:phone')}
-                    </FormLabel>
-                    <InputGroup>
-                      <Input
-                        height={'40px'}
-                        width={'100%'}
-                        type="tel"
-                        placeholder={t('common:enter_phone_number')}
-                        value={phoneNumber}
-                        onChange={(e) => setPhoneNumber(e.target.value)}
-                        maxLength={11}
-                        disabled={verifyMutation.isLoading}
-                        pr="110px"
-                      />
-                      <InputRightElement width="100px" height={'40px'}>
-                        <Button
-                          size="sm"
-                          variant="link"
-                          fontSize="12px"
-                          color={countdown > 0 || isSending ? 'gray.400' : 'brightBlue.600'}
-                          onClick={handleSendCode}
-                          isDisabled={countdown > 0 || isSending}
-                          _hover={{ textDecoration: 'none' }}
-                        >
-                          {countdown > 0
-                            ? `${countdown}s`
-                            : isSending
-                            ? t('common:sending')
-                            : t('common:get_code')}
-                        </Button>
-                      </InputRightElement>
-                    </InputGroup>
-                  </FormControl>
-
-                  <FormControl isRequired mb={'16px'}>
-                    <FormLabel fontSize="14px" fontWeight={500}>
-                      {t('common:verifycode')}
-                    </FormLabel>
-                    <Input
-                      height={'40px'}
-                      width={'100%'}
-                      type="text"
-                      placeholder={t('common:enter_verify_code')}
-                      value={verifyCode}
-                      onChange={(e) => setVerifyCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                      maxLength={6}
-                      disabled={verifyMutation.isLoading}
-                    />
-                  </FormControl>
-
-                  <Flex justifyContent={'flex-end'}>
+              <FormControl isRequired mb={'16px'}>
+                <FormLabel fontSize="14px" fontWeight={500}>
+                  {t('common:phone')}
+                </FormLabel>
+                <InputGroup>
+                  <Input
+                    height={'40px'}
+                    width={'100%'}
+                    type="tel"
+                    placeholder={t('common:enter_phone_number')}
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    maxLength={11}
+                    disabled={verifyMutation.isLoading}
+                    pr="110px"
+                  />
+                  <InputRightElement width="100px" height={'40px'}>
                     <Button
-                      minW={'110px'}
-                      colorScheme="blue"
-                      onClick={handleSubmit}
-                      isLoading={verifyMutation.isLoading}
-                      isDisabled={!phoneNumber || verifyCode.length !== 6}
-                      size="md"
+                      size="sm"
+                      variant="link"
+                      fontSize="12px"
+                      color={countdown > 0 || isSending ? 'gray.400' : 'brightBlue.600'}
+                      onClick={handleSendCode}
+                      isDisabled={countdown > 0 || isSending}
+                      _hover={{ textDecoration: 'none' }}
                     >
-                      {t('common:complete_binding')}
+                      {countdown > 0
+                        ? `${countdown}s`
+                        : isSending
+                        ? t('common:sending')
+                        : t('common:get_code')}
                     </Button>
-                  </Flex>
-                </Box>
-              )}
+                  </InputRightElement>
+                </InputGroup>
+              </FormControl>
 
-              {/* MERGE_CONFLICT Step */}
-              {currentStep === 'MERGE_CONFLICT' && (
-                <VStack alignItems={'stretch'} gap={'0'}>
-                  <Text mb={'12px'}>{t('common:merge_account_tips1')}</Text>
-                  <HStack gap={'12px'} justifyContent={'flex-end'} mt={'24px'}>
-                    <Button
-                      onClick={handleBackToBinding}
-                      variant={'unstyled'}
-                      border={'1px'}
-                      borderColor={'grayModern.250'}
-                      p={'8px 19px'}
-                      fontSize={'12px'}
-                      fontWeight={'500'}
-                      color={'grayModern.600'}
-                    >
-                      {t('common:confirm')}
-                    </Button>
-                  </HStack>
-                </VStack>
-              )}
+              <FormControl isRequired mb={'16px'}>
+                <FormLabel fontSize="14px" fontWeight={500}>
+                  {t('common:verifycode')}
+                </FormLabel>
+                <Input
+                  height={'40px'}
+                  width={'100%'}
+                  type="text"
+                  placeholder={t('common:enter_verify_code')}
+                  value={verifyCode}
+                  onChange={(e) => setVerifyCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  maxLength={6}
+                  disabled={verifyMutation.isLoading}
+                />
+              </FormControl>
 
-              {/* MERGE_CONFIRM Step */}
-              {currentStep === 'MERGE_CONFIRM' && (
-                <VStack alignItems={'stretch'} gap={'0'}>
-                  <Text mb={'12px'}>{t('common:merge_account_tips2')}</Text>
-                  <HStack gap={'12px'} justifyContent={'flex-end'} mt={'24px'}>
-                    <Button
-                      cursor={'pointer'}
-                      onClick={handleBackToBinding}
-                      variant={'unstyled'}
-                      border={'1px'}
-                      borderColor={'grayModern.250'}
-                      p={'8px 19px'}
-                      fontSize={'12px'}
-                      fontWeight={'500'}
-                      color={'grayModern.600'}
-                    >
-                      {t('common:go_back' as any)}
-                    </Button>
-                    <Button
-                      cursor={'pointer'}
-                      onClick={handleMerge}
-                      variant={'unstyled'}
-                      bgColor={'grayModern.900'}
-                      fontSize={'12px'}
-                      fontWeight={'500'}
-                      p={'8px 19px'}
-                      color={'white'}
-                    >
-                      {t('common:merge')}
-                    </Button>
-                  </HStack>
-                </VStack>
-              )}
-            </>
+              <Flex justifyContent={'flex-end'}>
+                <Button
+                  minW={'110px'}
+                  colorScheme="blue"
+                  onClick={handleSubmit}
+                  isLoading={verifyMutation.isLoading}
+                  isDisabled={!phoneNumber || verifyCode.length !== 6}
+                  size="md"
+                >
+                  {t('common:complete_binding')}
+                </Button>
+              </Flex>
+            </Box>
+          )}
+
+          {/* MERGE_CONFLICT Step */}
+          {currentStep === 'MERGE_CONFLICT' && (
+            <VStack alignItems={'stretch'} gap={'0'}>
+              <Text mb={'12px'}>{t('common:account_already_bound')}</Text>
+              <HStack gap={'12px'} justifyContent={'flex-end'} mt={'24px'}>
+                <Button
+                  onClick={handleBackToBinding}
+                  variant={'unstyled'}
+                  border={'1px'}
+                  borderColor={'grayModern.250'}
+                  p={'8px 19px'}
+                  fontSize={'12px'}
+                  fontWeight={'500'}
+                  color={'grayModern.600'}
+                >
+                  {t('common:confirm')}
+                </Button>
+              </HStack>
+            </VStack>
           )}
         </ModalBody>
       </ModalContent>
