@@ -1,82 +1,125 @@
-#!/usr/bin/env bash
+#!/bin/bash
 set -euo pipefail
-umask 077
 
-RELEASE_NAME=${RELEASE_NAME:-vlogs}
-RELEASE_NAMESPACE=${RELEASE_NAMESPACE:-sealos}
-CHART_PATH=${CHART_PATH:-./charts/vlogs}
-USER_VALUES_PATH=${USER_VALUES_PATH:-/root/.sealos/cloud/values/core/vlogs-values.yaml}
-BACKUP_DIR=${BACKUP_DIR:-/root/.sealos/cloud/backups/vlogs-$(date +%Y%m%d%H%M%S)}
+HELM_OPTS=${HELM_OPTS:-""}
+HELM_OPTIONS=${HELM_OPTIONS:-""}
+RELEASE_NAME=${RELEASE_NAME:-"vlogs"}
+RELEASE_NAMESPACE=${RELEASE_NAMESPACE:-"sealos"}
+CHART_PATH=${CHART_PATH:-"./charts/vlogs"}
+LEGACY_MANIFEST=${LEGACY_MANIFEST:-"./remove/deploy.yaml"}
+SERVICE_NAME="vlogs"
+USER_VALUES_PATH="/root/.sealos/cloud/values/core/${SERVICE_NAME}-values.yaml"
+TOOLS_FILE=${TOOLS_FILE:-"/root/.sealos/cloud/scripts/tools.sh"}
 
-# Positional arguments are passed intact to Helm (including values with spaces).
-# KUBECONFIG selects the same cluster for both kubectl and helm.
-# Limit arguments to values overrides: --dry-run must not adopt real resources,
-# and --atomic/--force must not delete or replace an existing installation.
-args=(-f "$USER_VALUES_PATH" "$@")
-while [[ $# -gt 0 ]]; do
-  case "$1" in
-    -f|--values|--set|--set-string|--set-file|--set-json)
-      [[ $# -ge 2 ]] || { echo "Missing value for $1" >&2; exit 1; }
-      shift 2 ;;
-    --values=*|--set=*|--set-string=*|--set-file=*|--set-json=*) shift ;;
-    *) echo "Only Helm values overrides are supported; render with helm template for a dry run." >&2; exit 1 ;;
-  esac
-done
-if [[ ! -f "$USER_VALUES_PATH" ]]; then
-  mkdir -p "$(dirname "$USER_VALUES_PATH")"
-  cp "$CHART_PATH/vlogs-values.yaml" "$USER_VALUES_PATH"
-  echo "Configure $USER_VALUES_PATH with the backend, credentials and Kubernetes host whitelist, then rerun." >&2
+get_cm_value() {
+  local namespace="$1"
+  local name="$2"
+  local key="$3"
+  kubectl get configmap "${name}" -n "${namespace}" -o "jsonpath={.data.${key}}" 2>/dev/null || true
+}
+
+load_cloud_tools_or_exit() {
+  local required_functions=(
+    ensure_global_values_ready_for_component
+    global_http_effective_port
+    global_http_scheme
+  )
+  local missing_functions=()
+  local function_name
+
+  if [ ! -f "${TOOLS_FILE}" ]; then
+    cat >&2 <<EOF
+错误：未找到 ${TOOLS_FILE}，当前组件镜像无法继续执行。
+
+请先回到当前安装包目录，执行对应命令同步 values + tools：
+  Pro 安装包：./sealos-pro.sh sync-config
+EOF
+    exit 1
+  fi
+
+  if [ "${TOOLS_FILE}" = "/root/.sealos/cloud/scripts/tools.sh" ]; then
+    # shellcheck source=/root/.sealos/cloud/scripts/tools.sh
+    source /root/.sealos/cloud/scripts/tools.sh
+  else
+    # shellcheck source=/dev/null
+    source "${TOOLS_FILE}"
+  fi
+
+  for function_name in "${required_functions[@]}"; do
+    if ! declare -f "${function_name}" >/dev/null 2>&1; then
+      missing_functions+=("${function_name}")
+    fi
+  done
+
+  if [ "${#missing_functions[@]}" -gt 0 ]; then
+    cat >&2 <<EOF
+错误：${TOOLS_FILE} 版本过旧，缺少配置检测函数，当前组件镜像无法继续执行。
+
+缺少函数：${missing_functions[*]}
+
+请先回到当前安装包目录，执行对应命令同步 values + tools：
+  Pro 安装包：./sealos-pro.sh sync-config
+EOF
+    exit 1
+  fi
+
+  ensure_global_values_ready_for_component
+}
+
+HELM_EXTRA_ARGS=()
+
+if [ -n "${HELM_OPTIONS}" ]; then
+  read -r -a PARSED_HELM_OPTIONS <<< "${HELM_OPTIONS}"
+  HELM_EXTRA_ARGS+=("${PARSED_HELM_OPTIONS[@]}")
+fi
+
+if [ -n "${HELM_OPTS}" ]; then
+  read -r -a PARSED_HELM_OPTS <<< "${HELM_OPTS}"
+  HELM_EXTRA_ARGS+=("${PARSED_HELM_OPTS[@]}")
+fi
+
+load_cloud_tools_or_exit
+
+varCloudDomain=$(get_cm_value sealos-system sealos-config cloudDomain)
+varCloudScheme="$(global_http_scheme)"
+varCloudPort="$(global_http_effective_port)"
+varCloudScheme=${varCloudScheme:-https}
+varCloudScheme="${varCloudScheme%://}"
+varCloudPort="${varCloudPort#:}"
+varCloudUrl="${varCloudScheme}://${varCloudDomain}"
+
+if [ -n "${varCloudPort}" ]; then
+  varCloudUrl="${varCloudUrl}:${varCloudPort}"
+fi
+
+vlogs_usr_select_USER="$(get_cm_value sealos-system vlogs-config-user SELECT_USER)"
+vlogs_usr_select_PASSWORD="$(get_cm_value sealos-system vlogs-config-user SELECT_PASSWORD)"
+
+if [ -z "${varCloudDomain}" ] || [ -z "${vlogs_usr_select_USER}" ] || [ -z "${vlogs_usr_select_PASSWORD}" ]; then
+  echo "missing sealos-config or vlogs-config-user values" >&2
   exit 1
 fi
 
-# Fail on invalid values before touching any existing resources.
-helm template "$RELEASE_NAME" "$CHART_PATH" -n "$RELEASE_NAMESPACE" \
-  "${args[@]}" >/dev/null
+AUTO_CONFIG_HELM_OPTS=(
+  --set-string "serviceVlogsConfig.path=http://usr-vlc-victoria-logs-cluster-vmauth.vlc.svc:8427"
+  --set-string "serviceVlogsConfig.username=${vlogs_usr_select_USER}"
+  --set-string "serviceVlogsConfig.password=${vlogs_usr_select_PASSWORD}"
+  --set-string "serviceVlogsConfig.whitelistKubernetesHosts=${varCloudUrl}"
+)
 
-resources=(configmap/service-vlogs-config service/service-vlogs deployment/service-vlogs-deployment)
-existing=()
-# Check ALL ownership before adopting ANY resource; never steal another release.
-for resource in "${resources[@]}"; do
-  name=$(kubectl get "$resource" -n "$RELEASE_NAMESPACE" --ignore-not-found -o name)
-  [[ -n "$name" ]] || continue
-  owner=$(kubectl get "$resource" -n "$RELEASE_NAMESPACE" -o 'jsonpath={.metadata.annotations.meta\.helm\.sh/release-name}')
-  owner_namespace=$(kubectl get "$resource" -n "$RELEASE_NAMESPACE" -o 'jsonpath={.metadata.annotations.meta\.helm\.sh/release-namespace}')
-  manager=$(kubectl get "$resource" -n "$RELEASE_NAMESPACE" -o 'jsonpath={.metadata.labels.app\.kubernetes\.io/managed-by}')
-  if [[ -n "$owner" && "$owner" != "$RELEASE_NAME" ]] ||
-     [[ -n "$owner_namespace" && "$owner_namespace" != "$RELEASE_NAMESPACE" ]] ||
-     [[ -n "$manager" && "$manager" != Helm ]]; then
-    echo "Refusing to adopt $resource: it is managed by another owner." >&2
-    exit 1
-  fi
-  existing+=("$resource")
-done
-
-if [[ " ${existing[*]-} " == *" deployment/service-vlogs-deployment "* ]]; then
-  selector=$(kubectl get deployment/service-vlogs-deployment -n "$RELEASE_NAMESPACE" -o 'jsonpath={.spec.selector}')
-  if [[ "$selector" != '{"matchLabels":{"app":"service-vlogs"}}' ]]; then
-    echo "Existing Deployment selector differs from the chart; refusing an incompatible migration." >&2
-    exit 1
+if ! helm status "${RELEASE_NAME}" -n "${RELEASE_NAMESPACE}" >/dev/null 2>&1; then
+  if [ -f "${LEGACY_MANIFEST}" ]; then
+    kubectl delete -f "${LEGACY_MANIFEST}" --ignore-not-found=true >/dev/null 2>&1 || true
   fi
 fi
 
-if [[ ${#existing[@]} -gt 0 ]]; then
-  if [[ -e "$BACKUP_DIR/resources.yaml" || -e "$BACKUP_DIR/values.yaml" ]]; then
-    echo "Backup already exists in $BACKUP_DIR; select a new BACKUP_DIR to preserve the recovery snapshot." >&2
-    exit 1
-  fi
-  mkdir -p "$BACKUP_DIR"
-  kubectl get "${existing[@]}" -n "$RELEASE_NAMESPACE" -o yaml > "$BACKUP_DIR/resources.yaml"
-  cp "$USER_VALUES_PATH" "$BACKUP_DIR/values.yaml"
-  echo "Saved pre-upgrade resources and values to $BACKUP_DIR"
-  for resource in "${existing[@]}"; do
-    kubectl label "$resource" -n "$RELEASE_NAMESPACE" app.kubernetes.io/managed-by=Helm --overwrite
-    kubectl annotate "$resource" -n "$RELEASE_NAMESPACE" \
-      "meta.helm.sh/release-name=$RELEASE_NAME" \
-      "meta.helm.sh/release-namespace=$RELEASE_NAMESPACE" --overwrite
-  done
+if [ ! -f "${USER_VALUES_PATH}" ]; then
+  mkdir -p "$(dirname "${USER_VALUES_PATH}")"
+  cp "./charts/${SERVICE_NAME}/${SERVICE_NAME}-monitor-values.yaml" "${USER_VALUES_PATH}"
 fi
 
-# Do not use --atomic on initial adoption: a failed install must not delete the
-# pre-existing Service/Deployment/ConfigMap. Keep them available for recovery.
-helm upgrade --install "$RELEASE_NAME" "$CHART_PATH" -n "$RELEASE_NAMESPACE" \
-  --create-namespace --wait --timeout 5m "${args[@]}"
+helm upgrade -i "${RELEASE_NAME}" -n "${RELEASE_NAMESPACE}" --create-namespace "${CHART_PATH}" \
+  -f "./charts/${SERVICE_NAME}/values.yaml" \
+  -f "${USER_VALUES_PATH}" \
+  "${AUTO_CONFIG_HELM_OPTS[@]}" \
+  "${HELM_EXTRA_ARGS[@]}"

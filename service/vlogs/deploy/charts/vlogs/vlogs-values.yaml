@@ -1,8 +1,0 @@
-# Operator overrides. Keep credentials in this file private (chmod 600).
-# Existing installations: copy the current config.yml fields and the Deployment's
-# WHITELIST_KUBERNETES_HOSTS here before running entrypoint.sh.
-serviceVlogsConfig:
-  path: "http://usr-vlc-victoria-logs-cluster-vmauth.vlc.svc:8427"
-  username: ""
-  password: ""
-  whitelistKubernetesHosts: ""

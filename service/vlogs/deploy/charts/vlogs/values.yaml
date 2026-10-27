@@ -2,8 +2,6 @@ replicaCount: 1
 
 image: ghcr.io/labring/sealos-vlogs-service:latest
 imagePullPolicy: Always
-imagePullSecrets: []
-podAnnotations: {}
 
 resources:
   limits:
@@ -19,7 +17,7 @@ service:
 startupProbe:
   httpGet:
     path: /health
-    port: http
+    port: 8428
   periodSeconds: 5
   timeoutSeconds: 3
   failureThreshold: 30
@@ -27,20 +25,18 @@ startupProbe:
 livenessProbe:
   httpGet:
     path: /health
-    port: http
+    port: 8428
   initialDelaySeconds: 3
   periodSeconds: 10
 
 readinessProbe:
   httpGet:
     path: /health
-    port: http
+    port: 8428
   initialDelaySeconds: 3
   periodSeconds: 5
   failureThreshold: 6
 
-# Backend authentication is optional; configure it when vmauth requires it.
-# Override these settings in vlogs-values.yaml before installing.
 serviceVlogsConfig:
   path: "http://usr-vlc-victoria-logs-cluster-vmauth.vlc.svc:8427"
   username: ""

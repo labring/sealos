@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: service-vlogs-config
+  name: {{ .Release.Name }}-config
   labels:
     {{- include "service-vlogs.labels" . | nindent 4 }}
-    app: service-vlogs
+    app: {{ .Release.Name }}
 data:
   config.yml: |
     server:

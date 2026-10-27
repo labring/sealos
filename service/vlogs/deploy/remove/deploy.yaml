@@ -1,3 +1,4 @@
+# Legacy raw-manifest install. Kept only for first-run cleanup during Helm migration.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -40,24 +41,6 @@ spec:
           ports:
             - containerPort: 8428
               protocol: TCP
-          startupProbe:
-            httpGet:
-              path: /health
-              port: 8428
-            periodSeconds: 5
-            timeoutSeconds: 3
-            failureThreshold: 30
-          livenessProbe:
-            httpGet:
-              path: /health
-              port: 8428
-            periodSeconds: 10
-          readinessProbe:
-            httpGet:
-              path: /health
-              port: 8428
-            periodSeconds: 5
-            failureThreshold: 6
           resources:
             limits:
               cpu: 500m

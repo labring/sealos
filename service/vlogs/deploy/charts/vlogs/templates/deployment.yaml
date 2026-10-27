@@ -1,15 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: service-vlogs-deployment
+  name: {{ .Release.Name }}-deployment
   labels:
     {{- include "service-vlogs.labels" . | nindent 4 }}
-    app: service-vlogs
+    app: {{ .Release.Name }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: service-vlogs
+      app: {{ .Release.Name }}
   strategy:
     type: Recreate
   template:
@@ -20,13 +20,9 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
       labels:
-        app: service-vlogs
+        app: {{ .Release.Name }}
         {{- include "service-vlogs.labels" . | nindent 8 }}
     spec:
-      {{- with .Values.imagePullSecrets }}
-      imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
       containers:
         - name: service-vlogs
           image: {{ .Values.image | quote }}
@@ -39,8 +35,7 @@ spec:
             - name: WHITELIST_KUBERNETES_HOSTS
               value: {{ .Values.serviceVlogsConfig.whitelistKubernetesHosts | quote }}
           ports:
-            - name: http
-              containerPort: {{ .Values.service.port }}
+            - containerPort: {{ .Values.service.port }}
               protocol: TCP
           startupProbe:
             {{- toYaml .Values.startupProbe | nindent 12 }}
@@ -66,5 +61,5 @@ spec:
       volumes:
         - configMap:
             defaultMode: 420
-            name: service-vlogs-config
+            name: {{ .Release.Name }}-config
           name: config-vol
