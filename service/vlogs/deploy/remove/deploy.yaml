@@ -1,3 +1,4 @@
+# Legacy raw-manifest install. Kept only for first-run cleanup during Helm migration.
 apiVersion: v1
 kind: ConfigMap
 metadata:
