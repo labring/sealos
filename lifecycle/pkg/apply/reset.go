@@ -17,19 +17,20 @@ package apply
 import (
 	"errors"
 	"fmt"
-
-	"github.com/spf13/cobra"
+	"os"
+	"path/filepath"
 
 	"github.com/labring/sealos/pkg/apply/applydrivers"
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/spf13/cobra"
 )
 
 func NewApplierFromResetArgs(cmd *cobra.Command, args *ResetArgs) (applydrivers.Interface, error) {
 	clusterPath := constants.Clusterfile(args.ClusterName.ClusterName)
-	cf := clusterfile.NewClusterFile(clusterPath)
+	cf := clusterfile.NewClusterFile(clusterPath, clusterfile.WithLifecycleReset())
 	err := cf.Process()
 	// incase we want to reset force
 	if err != nil && err != clusterfile.ErrClusterFileNotExists {
@@ -59,7 +60,12 @@ func (r *ClusterArgs) resetArgs(cmd *cobra.Command, args *ResetArgs) error {
 	}
 
 	if r.cluster.ObjectMeta.CreationTimestamp.IsZero() {
-		return errors.New("creation time must be specified in clusterfile")
+		_, pending := os.Stat(
+			filepath.Join(constants.ClusterDir(r.cluster.Name), clusterfile.LifecycleFilename),
+		)
+		if !r.cluster.IsStandaloneControlPlane() || pending != nil {
+			return errors.New("creation time must be specified in clusterfile")
+		}
 	}
 	if len(r.cluster.Spec.Hosts) == 0 {
 		return errors.New("host must not be empty in clusterfile")

@@ -183,6 +183,12 @@ func getRenderCommand(binary string, target string) string {
 		}, " "))
 }
 
+// SyncLocalSealctl copies the local sealctl into an existing rootfs when available
+// and compatible with the target architecture. Missing local binaries are skipped.
+func SyncLocalSealctl(execer exec.Interface, host, remoteSealctlPath string) error {
+	return syncSealctlToRootfs(execer, host, findLocalSealctl(), remoteSealctlPath)
+}
+
 func findLocalSealctl() string {
 	if runtime.GOOS != "linux" {
 		return ""
