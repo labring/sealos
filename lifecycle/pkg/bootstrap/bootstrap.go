@@ -18,10 +18,10 @@ import (
 	"context"
 	"fmt"
 
-	"golang.org/x/sync/errgroup"
-
+	"github.com/labring/sealos/pkg/clusterfile"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"golang.org/x/sync/errgroup"
 )
 
 type Phase string
@@ -45,8 +45,8 @@ type realBootstrap struct {
 	postflights  []Applier
 }
 
-func New(cluster *v2.Cluster) Interface {
-	ctx := NewContextFrom(cluster)
+func New(cluster *v2.Cluster, contexts ...context.Context) Interface {
+	ctx := NewContextFrom(cluster, contexts...)
 	bs := &realBootstrap{
 		ctx:          ctx,
 		preflights:   make([]Applier, 0),
@@ -68,13 +68,28 @@ func (bs *realBootstrap) Apply(hosts ...string) error {
 	logger.Debug("apply %+v on hosts %+v", appliers, hosts)
 	for i := range appliers {
 		applier := appliers[i]
-		if err := runParallel(hosts, func(host string) error {
-			if !applier.Filter(bs.ctx, host) {
-				return nil
+		applyHosts := func(hosts []string) error {
+			return runParallel(hosts, func(host string) error {
+				if !applier.Filter(bs.ctx, host) {
+					return nil
+				}
+				logger.Debug("apply %s on host %s", applier, host)
+				return applier.Apply(bs.ctx, host)
+			})
+		}
+		if _, rootfsCheck := applier.(*defaultChecker); rootfsCheck &&
+			bs.ctx.GetCluster().IsStandaloneControlPlane() {
+			// Keep journal writes outside the parallel host loop.
+			if err := clusterfile.WithRootfsPreflight(
+				bs.ctx.GetCluster().Name,
+				hosts,
+				applyHosts,
+			); err != nil {
+				return err
 			}
-			logger.Debug("apply %s on host %s", applier, host)
-			return applier.Apply(bs.ctx, host)
-		}); err != nil {
+			continue
+		}
+		if err := applyHosts(hosts); err != nil {
 			return err
 		}
 	}
@@ -154,7 +169,15 @@ func (initializer *defaultInitializer) Undo(ctx Context, host string) error {
 
 func init() {
 	defaultPreflights = append(defaultPreflights, &defaultChecker{})
-	defaultInitializers = append(defaultInitializers, &registryHostApplier{}, &registryApplier{}, &defaultCRIInitializer{}, &apiServerHostApplier{}, &lvscareHostApplier{}, &defaultInitializer{})
+	defaultInitializers = append(
+		defaultInitializers,
+		&registryHostApplier{},
+		&registryApplier{},
+		&defaultCRIInitializer{},
+		&apiServerHostApplier{},
+		&lvscareHostApplier{},
+		&defaultInitializer{},
+	)
 }
 
 func RegisterApplier(phase Phase, appliers ...Applier) error {

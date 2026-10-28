@@ -247,7 +247,9 @@ func getRegistryServeCommand(pathResolver constants.PathResolver, port string, f
 		args = append(args, "--disable-logging=true")
 	}
 	args = append(args, pathResolver.RootFSRegistryPath())
-	return strings.Join(args, " ") + " >/dev/null 2>&1"
+	// Replace the shell so cancellation also stops a registry that has not
+	// finished startup or written its PID file yet.
+	return "exec " + strings.Join(args, " ") + " >/dev/null 2>&1"
 }
 
 func getRegistryServeCleanupCommand(pathResolver constants.PathResolver) string {

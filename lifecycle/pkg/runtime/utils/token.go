@@ -55,11 +55,15 @@ func GenerateToken(config, certificateKey string) (*types.Token, error) {
 			uploadCertTemplate = fmt.Sprintf("kubeadm init phase upload-certs --config %s --upload-certs", config)
 		}
 		logger.Debug("token uploadCertTemplate cmd: %s", uploadCertTemplate)
-		_, _ = exec.RunBashCmd(uploadCertTemplate)
+		if _, err := exec.RunBashCmd(uploadCertTemplate); err != nil {
+			return nil, fmt.Errorf("upload control-plane certificates: %w", err)
+		}
 		tokens := ListToken()
 		const tokenTemplate = "kubeadm token create --print-join-command --certificate-key %s --ttl 2h"
 		logger.Debug("token tokenTemplate cmd: %s", tokenTemplate)
-		_, _ = exec.RunBashCmd(fmt.Sprintf(tokenTemplate, key))
+		if _, err := exec.RunBashCmd(fmt.Sprintf(tokenTemplate, key)); err != nil {
+			return nil, fmt.Errorf("create bootstrap token: %w", err)
+		}
 		afterTokens := ListToken()
 		diff := afterTokens.ToStrings().Difference(tokens.ToStrings())
 		if diff.Len() == 1 {

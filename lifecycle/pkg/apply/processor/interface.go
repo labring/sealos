@@ -178,6 +178,8 @@ func MountClusterImages(bdah buildah.Interface, cluster *v2.Cluster, skipApp boo
 		cluster.Status.Mounts = make([]v2.MountImage, 0)
 	}
 	var hasRootfsType bool
+	activeRootfs := cluster.GetRootfsImage()
+	var obsoleteRootfs []string
 	for _, img := range cluster.Spec.Image {
 		info, err := inspectImage(bdah, img)
 		if err != nil {
@@ -191,6 +193,13 @@ func MountClusterImages(bdah buildah.Interface, cluster *v2.Cluster, skipApp boo
 			imageType = maps.GetFromKeys(info.OCIv1.Config.Labels, v2.ImageTypeKeys...)
 			imageVersion := maps.GetFromKeys(info.OCIv1.Config.Labels, v2.ImageVersionKeys...)
 			if imageType == string(v2.RootfsImage) {
+				// Older inventories retained replaced rootfs names in spec.image.
+				// Scaling must distribute the committed rootfs, including when an
+				// old image happens to be inspected before the active image.
+				if skipApp && activeRootfs != nil && activeRootfs.ImageName != img {
+					obsoleteRootfs = append(obsoleteRootfs, img)
+					continue
+				}
 				if !slices.Contains(v2.ImageVersionList, imageVersion) {
 					return fmt.Errorf("can't apply rootfs type images and version %s not %+v",
 						imageVersion, v2.ImageVersionList)
@@ -239,5 +248,19 @@ func MountClusterImages(bdah buildah.Interface, cluster *v2.Cluster, skipApp boo
 	if !hasRootfsType {
 		return errors.New("can't apply application type images only since RootFS type image is not applied yet")
 	}
+	images := cluster.Spec.Image[:0]
+	for _, image := range cluster.Spec.Image {
+		if !slices.Contains(obsoleteRootfs, image) {
+			images = append(images, image)
+		}
+	}
+	cluster.Spec.Image = images
+	mounts := cluster.Status.Mounts[:0]
+	for _, mount := range cluster.Status.Mounts {
+		if !slices.Contains(obsoleteRootfs, mount.ImageName) {
+			mounts = append(mounts, mount)
+		}
+	}
+	cluster.Status.Mounts = mounts
 	return nil
 }

@@ -50,6 +50,9 @@ func (c *Client) wrapCommands(cmds ...string) string {
 }
 
 func (c *Client) CmdAsyncWithContext(ctx context.Context, host string, cmds ...string) error {
+	bound := *c
+	bound.ctx = ctx
+	c = &bound
 	cmd := c.wrapCommands(cmds...)
 	logger.Debug("start to exec `%s` on %s", cmd, host)
 	client, session, err := c.Connect(host)
@@ -85,10 +88,10 @@ func (c *Client) CmdAsyncWithContext(ctx context.Context, host string, cmds ...s
 			if err := session.Start(cmd); err != nil {
 				return fmt.Errorf("start command `%s` on %s: %v", cmd, host, err)
 			}
-			if err = eg.Wait(); err != nil {
+			if err := eg.Wait(); err != nil {
 				return err
 			}
-			if err = session.Wait(); err != nil {
+			if err := session.Wait(); err != nil {
 				return fmt.Errorf("run command `%s` on %s, output: %s, error: %v,", cmd, host, out.b.String(), err)
 			}
 			return nil
@@ -97,7 +100,7 @@ func (c *Client) CmdAsyncWithContext(ctx context.Context, host string, cmds ...s
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
-	case err = <-errCh:
+	case err := <-errCh:
 		return err
 	}
 }

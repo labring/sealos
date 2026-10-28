@@ -36,7 +36,8 @@ type ClusterFile struct {
 	configs       []v2.Config
 	runtimeConfig runtime.Config
 
-	once sync.Once
+	once          sync.Once
+	resetRecovery bool
 }
 
 type Interface interface {
@@ -59,6 +60,12 @@ func (c *ClusterFile) GetRuntimeConfig() runtime.Config {
 }
 
 type OptionFunc func(*ClusterFile)
+
+func WithLifecycleReset() OptionFunc {
+	return func(c *ClusterFile) {
+		c.resetRecovery = true
+	}
+}
 
 func WithCustomConfigFiles(files []string) OptionFunc {
 	return func(c *ClusterFile) {
