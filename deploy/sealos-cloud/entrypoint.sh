@@ -47,9 +47,9 @@ run_component license-controller
 run_component costcenter-frontend
 run_component license-frontend
 run_component vlogs-service LEGACY_MANIFEST="${ROOT_DIR}/assets/vlogs-service/remove/deploy.yaml"
-run_component admission-webhook HELM_WAIT=false "CHART_PATH=${ROOT_DIR}/charts/admission-webhook" apply
 run_component node-controller DROP_DIR="${ROOT_DIR}/assets/node-controller/drop"
 run_component resources-controller
+run_component admission-webhook "CHART_PATH=${ROOT_DIR}/charts/admission-webhook" apply
 
 wait_deployment user-system user-controller-manager
 wait_deployment app-system app-controller-manager
@@ -61,7 +61,7 @@ wait_deployment license-system license
 wait_deployment costcenter-frontend costcenter-frontend
 wait_deployment license-frontend license-frontend
 wait_deployment sealos vlogs-deployment
-wait_deployment sealos-system admission-webhook
 wait_deployment node-system node
 wait_deployment resources-system resources-controller-manager
+wait_deployment sealos-system admission-webhook
 echo "[sealos-cloud] Component deployment completed"

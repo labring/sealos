@@ -7,7 +7,6 @@ RELEASE_NAMESPACE="${RELEASE_NAMESPACE:-sealos-system}"
 CHART_PATH="${CHART_PATH:-${SCRIPT_DIR}/charts/admission-webhook}"
 USER_VALUES_FILE="${USER_VALUES_FILE:-/root/.sealos/cloud/values/core/admission-webhook-values.yaml}"
 HELM_TIMEOUT="${HELM_TIMEOUT:-5m}"
-HELM_WAIT="${HELM_WAIT:-true}"
 
 die() { echo "error: $*" >&2; exit 1; }
 ensure_values() {
@@ -54,11 +53,7 @@ apply() {
   cname_domains="$domain,hub.$domain,cloud.sealos.io,laf.dev,laf.run"
   ensure_values
   if ! release_exists; then delete_legacy_resources; fi
-  local -a helm_args=(upgrade --install "$RELEASE_NAME" "$CHART_PATH" --namespace "$RELEASE_NAMESPACE" --create-namespace --reset-values --values "$USER_VALUES_FILE" --set "config.cnameDomains=${cname_domains//,/\\,}")
-  if [[ "$HELM_WAIT" == "true" ]]; then
-    helm_args+=(--wait --timeout "$HELM_TIMEOUT")
-  fi
-  helm "${helm_args[@]}"
+  helm upgrade --install "$RELEASE_NAME" "$CHART_PATH" --namespace "$RELEASE_NAMESPACE" --create-namespace --reset-values --values "$USER_VALUES_FILE" --set "config.cnameDomains=${cname_domains//,/\\,}" --wait --timeout "$HELM_TIMEOUT"
 }
 delete_release() {
   if release_exists; then
