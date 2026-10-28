@@ -15,6 +15,8 @@
 package bootstrap
 
 import (
+	"context"
+
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/env"
 	"github.com/labring/sealos/pkg/exec"
@@ -60,10 +62,13 @@ func (ctx realContext) GetRemoter() *ssh.Remote {
 	return ctx.remoter
 }
 
-func NewContextFrom(cluster *v2.Cluster) Context {
+func NewContextFrom(cluster *v2.Cluster, contexts ...context.Context) Context {
 	execer := ssh.NewCacheClientFromCluster(cluster, true)
 	// if we can get this far, ignore error is ok
 	execer, _ = exec.New(execer)
+	if cluster.IsStandaloneControlPlane() && len(contexts) > 0 && contexts[0] != nil {
+		execer = ssh.WithContext(contexts[0], execer)
+	}
 	envProcessor := env.NewEnvProcessor(cluster)
 	remoter := ssh.NewRemoteFromSSH(cluster.GetName(), execer)
 
