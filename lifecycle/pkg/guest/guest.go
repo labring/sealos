@@ -54,9 +54,13 @@ func (d *Default) Apply(cluster *v2.Cluster, mounts []v2.MountImage, targetHosts
 			eg, ctx := errgroup.WithContext(context.Background())
 			for j := range targetHosts {
 				node := targetHosts[j]
-				// Standalone control-plane binaries and services are managed by
-				// the dedicated lifecycle. Image hooks can replace that service.
-				if cluster.IsStandaloneControlPlane() && isControlPlaneHost(cluster, node) {
+				// Standalone control-plane binaries and services are managed
+				// by the dedicated lifecycle, so the rootfs image hooks never
+				// run on those hosts. Patch images are the supported way to
+				// layer host-level changes and still execute everywhere; the
+				// patch scripts themselves decide what to do per host.
+				if m.IsRootFs() && cluster.IsStandaloneControlPlane() &&
+					isControlPlaneHost(cluster, node) {
 					continue
 				}
 				envs := maps.Merge(m.Env, envGetter.Getenv(node))
