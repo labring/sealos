@@ -91,14 +91,19 @@ with separate sink credentials, align Brain's receipt signing key, then run the 
 real cross-repository journeys. The synthetic website fixtures and App wire tests
 verify protocol compatibility; they are not a production end-to-end result.
 
-One explicit #584 gap remains: native App deployments bypass Brain (Rust applies to
-Kubernetes, while database/template operations use their respective providers).
-Brain's trusted deployment outbox cannot observe those operations. Do not re-label
-client `deploy_finished` as a trusted conversion. Completing that acceptance needs
-a pre-registered, authenticated server operation with independent resource UID,
-generation and readiness checks across the planned resources. Existing ready
-resources or a client success boolean alone are insufficient. Keep #584 open until
-this producer and both production journeys have been accepted; sGTM remains phase 2.
+The native deployment producer is implemented in this PR and App #588. Rust registers
+workload references through Main before applying; Main keeps the OAuth credential and
+contacts the resource region. The server records before snapshots, requires a scoped
+operation marker and real desired changes, then independently verifies readiness before
+atomically claiming receipts and creating deploy_success. See
+[native deployment proof](native-deployment-attribution.md) for the supported workload
+schemas, current-generation checks, leases and limitations. Client deploy_finished
+remains a behavior event and never becomes a trusted success by renaming it.
+
+Unknown workload kinds, unverifiable bucket controllers and plans over ten proof
+resources do not produce partial trusted successes. Production acceptance still needs
+actual cluster RBAC/controller behavior, the two real cross-repository journeys and
+real GA4 collection/report queries; sGTM remains phase 2.
 
 On 2026-10-29, Google's real `/debug/mp/collect` strict validator accepted a
 synthetic native screen and server payment payload with no validation messages after

@@ -347,3 +347,15 @@ it('resolves delayed payment identity through the trusted account merge ledger o
   expect(stored.subjectId).toBe(target);
   expect(stored.payload.event.subject_id).toBe(userUid);
 });
+
+it('does not trust a browser to redact unconsented click IDs from an opaque sea_attr', async () => {
+  const raw = Buffer.from(
+    JSON.stringify({
+      version: 2,
+      first_touch: { click_id_type: 'gclid', click_id_value: 'test-click-only' }
+    })
+  ).toString('base64url');
+  await issueAcquisition({ ...context, sea_attr: raw }, 'https://sealos.io');
+  expect(db.acquisitionHandoff.create.mock.calls[0][0].data.payload).not.toHaveProperty('sea_attr');
+  expect(db.acquisitionHandoff.create.mock.calls[0][0].data.payload.source).toEqual(context.source);
+});

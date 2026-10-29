@@ -738,3 +738,36 @@ model ProductAnalyticsEvent {
 
   @@index([status, leaseUntil, createdAt])
 }
+
+// Native deployment proof stores only references and hashes, never credentials/manifests.
+model NativeDeploymentOperation {
+  operationId  String   @id @db.Uuid
+  userUid      String   @db.Uuid
+  realm        String
+  regionUid    String   @db.Uuid
+  regionDomain String
+  workspaceId  String
+  marker       String
+  planHash     String
+  baselines    Json
+  status       String   @default("REGISTERED")
+  eventId      String?
+  lastCheck    String?
+  registeredAt DateTime @default(now())
+  expiresAt    DateTime
+  completedAt  DateTime?
+  completionRequestedAt DateTime?
+  leaseUntil DateTime?
+
+  @@index([realm, regionUid, status, expiresAt])
+}
+
+model NativeDeploymentReceipt {
+  proofId     String   @id
+  operationId String   @db.Uuid
+  userUid     String   @db.Uuid
+  eventId     String
+  confirmedAt DateTime @default(now())
+
+  @@index([operationId])
+}

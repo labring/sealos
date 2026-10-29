@@ -275,21 +275,25 @@ async function removeUser(kc: k8s.KubeConfig, k8s_username: string) {
   );
   return k8s_username;
 }
-export const getUserCr = async (kc: KubeConfig, name: string) => {
+export const getUserCr = async (kc: KubeConfig, name: string, timeoutMs?: number) => {
   const resourceKind = 'User';
   const group = 'user.sealos.io';
   const version = 'v1';
   const plural = 'users';
   const client = kc.makeApiClient(k8s.CustomObjectsApi);
+  if (timeoutMs != null)
+    client.addInterceptor((options) => {
+      options.timeout = timeoutMs;
+    });
   return await client
     .getClusterCustomObject(group, version, plural, name)
     .then((res) => res.body as UserCR);
 };
 // for enter user state
-export const getUserKubeconfigNotPatch = async (name: string) => {
+export const getUserKubeconfigNotPatch = async (name: string, timeoutMs?: number) => {
   const kc = K8sApiDefault();
   try {
-    const userCr = await getUserCr(kc, name);
+    const userCr = await getUserCr(kc, name, timeoutMs);
     if (userCr?.status?.kubeConfig) return userCr.status.kubeConfig;
     else return null;
   } catch (e) {

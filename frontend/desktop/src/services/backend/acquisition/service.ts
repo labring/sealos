@@ -32,6 +32,28 @@ const parseContext = (input: unknown) => {
       version: 1 as const,
       consent: context.consent
     };
+  if (context.sea_attr) {
+    try {
+      const raw = JSON.parse(Buffer.from(context.sea_attr, 'base64url').toString('utf8'));
+      const adFields =
+        /^(click_id_value|click_value|gclid|gbraid|wbraid|msclkid|fbclid|ttclid|rdt_cid|li_fat_id|twclid|email|phone|user_data|hashed_user_data|email_sha256|phone_sha256)$/i;
+      const hasAdData = (value: unknown): boolean => {
+        if (!value || typeof value !== 'object') return false;
+        return Object.entries(value).some(
+          ([key, entry]) => (adFields.test(key) && !!entry) || hasAdData(entry)
+        );
+      };
+      if (
+        ![2, 3].includes(raw?.version) ||
+        ((context.consent.ad_storage !== 'granted' || context.consent.ad_user_data !== 'granted') &&
+          hasAdData(raw))
+      )
+        delete context.sea_attr;
+    } catch {
+      delete context.sea_attr;
+    }
+    // Omit a forbidden opaque snapshot; never silently mutate bytes bound to its hash.
+  }
   return context;
 };
 
