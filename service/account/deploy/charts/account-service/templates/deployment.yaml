@@ -34,6 +34,17 @@ spec:
         image: "{{ .Values.image }}"
         imagePullPolicy: {{ .Values.imagePullPolicy }}
         env:
+        {{- if .Values.acquisitionAnalytics.url }}
+        - name: ACQUISITION_ANALYTICS_URL
+          value: {{ .Values.acquisitionAnalytics.url | quote }}
+        - name: ACQUISITION_REALM
+          value: {{ required "acquisitionAnalytics.realm is required when forwarding is enabled" .Values.acquisitionAnalytics.realm | quote }}
+        - name: ACQUISITION_INGEST_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: {{ required "acquisitionAnalytics.existingSecret is required when forwarding is enabled" .Values.acquisitionAnalytics.existingSecret }}
+              key: ACQUISITION_INGEST_SECRET
+        {{- end }}
         - name: POD_NAME
           valueFrom:
             fieldRef:

@@ -102,3 +102,10 @@ ingress:
 # Cloud configuration
 cloudDomain: "cloud.sealos.io"
 cloudPort: ""
+
+# Optional server-side acquisition lifecycle forwarding. The existing Secret
+# must contain ACQUISITION_INGEST_SECRET; credentials are never chart literals.
+acquisitionAnalytics:
+  url: ""
+  realm: ""
+  existingSecret: ""

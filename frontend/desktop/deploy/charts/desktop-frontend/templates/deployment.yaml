@@ -64,6 +64,17 @@ spec:
           env:
             - name: PRISMA_DB_PROVIDER
               value: "{{ .Values.global.featureConfigs.database.type }}"
+            {{- if .Values.acquisition.enabled }}
+            - name: ACQUISITION_REALM
+              value: {{ required "acquisition.realm is required" .Values.acquisition.realm | quote }}
+            - name: ACQUISITION_WEBSITE_ORIGINS
+              value: {{ .Values.acquisition.websiteOrigins | quote }}
+            {{- end }}
+          {{- if .Values.acquisition.enabled }}
+          envFrom:
+            - secretRef:
+                name: {{ required "acquisition.existingSecret is required" .Values.acquisition.existingSecret }}
+          {{- end }}
           command: ["/bin/sh", "-c"]
           args:
             - |

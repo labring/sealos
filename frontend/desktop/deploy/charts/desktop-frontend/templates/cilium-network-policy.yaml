@@ -14,6 +14,16 @@ spec:
     matchLabels:
       app: {{ include "desktop.name" . }}
   ingress:
+    {{- if .Values.acquisition.enabled }}
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: {{ .Release.Namespace | quote }}
+            io.cilium.k8s.policy.serviceaccount: {{ printf "%s-analytics-flush" (include "desktop.fullname" .) | quote }}
+      toPorts:
+        - ports:
+            - port: "3000"
+              protocol: TCP
+    {{- end }}
     - fromEntities:
         - host
         - remote-node
