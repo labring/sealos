@@ -1,0 +1,74 @@
+[
+  {
+    "realm": "global",
+    "website_commit": "cb75176",
+    "origin": "https://sealos.io",
+    "context": {
+      "version": 1,
+      "consent": {
+        "analytics_storage": "granted",
+        "ad_storage": "unspecified",
+        "ad_user_data": "unspecified",
+        "ad_personalization": "unspecified"
+      },
+      "visitor_id": "8f02ba11-12cc-4e10-a864-52a28f853ee3",
+      "source": {
+        "source": "first",
+        "landing_page": "https://sealos.io/downloads",
+        "timestamp": "2026-10-29T03:00:00.000Z",
+        "campaign": "A"
+      },
+      "last_source": {
+        "source": "second",
+        "campaign": "B",
+        "landing_page": "https://sealos.io/downloads",
+        "timestamp": "2026-10-29T03:00:00.000Z"
+      },
+      "activation_source": {
+        "source": "second",
+        "campaign": "B",
+        "landing_page": "https://sealos.io/downloads",
+        "timestamp": "2026-10-29T03:00:00.000Z"
+      },
+      "platform_ids": {
+        "ga_client_id": "12345.67890"
+      }
+    }
+  },
+  {
+    "realm": "china",
+    "website_commit": "ac5d48f",
+    "origin": "https://sealos.run",
+    "context": {
+      "version": 1,
+      "consent": {
+        "analytics_storage": "granted",
+        "ad_storage": "unspecified",
+        "ad_user_data": "unspecified",
+        "ad_personalization": "unspecified"
+      },
+      "visitor_id": "8f02ba11-12cc-4e10-a864-52a28f853ee3",
+      "source": {
+        "source": "first",
+        "landing_page": "https://sealos.run/downloads",
+        "timestamp": "2026-10-29T03:00:00.000Z",
+        "campaign": "A"
+      },
+      "last_source": {
+        "source": "second",
+        "campaign": "B",
+        "landing_page": "https://sealos.run/downloads",
+        "timestamp": "2026-10-29T03:00:00.000Z"
+      },
+      "activation_source": {
+        "source": "second",
+        "campaign": "B",
+        "landing_page": "https://sealos.run/downloads",
+        "timestamp": "2026-10-29T03:00:00.000Z"
+      },
+      "platform_ids": {
+        "ga_client_id": "12345.67890"
+      }
+    }
+  }
+]

@@ -1,0 +1,52 @@
+{{- if .Values.acquisition.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "desktop.fullname" . }}-analytics-flush
+  namespace: {{ .Release.Namespace }}
+spec:
+  schedule: {{ .Values.acquisition.flushSchedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 120
+      template:
+        spec:
+          restartPolicy: Never
+          serviceAccountName: {{ include "desktop.fullname" . }}-analytics-flush
+          automountServiceAccountToken: false
+          {{- with .Values.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          containers:
+            - name: flush
+              image: {{ .Values.image | quote }}
+              imagePullPolicy: {{ .Values.imagePullPolicy }}
+              command: ["node", "-e"]
+              args:
+                - >-
+                  fetch(process.env.COLLECTOR_URL, {method:'POST',
+                  headers:{Authorization:'Bearer '+process.env.ACQUISITION_INGEST_SECRET},
+                  signal:AbortSignal.timeout(110000)})
+                  .then(r=>{if(!r.ok)process.exitCode=1})
+                  .catch(()=>{process.exitCode=1})
+              env:
+                - name: COLLECTOR_URL
+                  value: "http://{{ include "desktop.fullname" . }}:{{ .Values.service.port }}/api/analytics/flush"
+                - name: ACQUISITION_INGEST_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ required "acquisition.existingSecret is required" .Values.acquisition.existingSecret }}
+                      key: ACQUISITION_INGEST_SECRET
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "desktop.fullname" . }}-analytics-flush
+  namespace: {{ .Release.Namespace }}
+automountServiceAccountToken: false
+{{- end }}

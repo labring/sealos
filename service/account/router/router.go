@@ -13,6 +13,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/controllers/pkg/utils/env"
+	"github.com/labring/sealos/service/account/acquisition"
 	"github.com/labring/sealos/service/account/api"
 	"github.com/labring/sealos/service/account/dao"
 	"github.com/labring/sealos/service/account/docs"
@@ -169,6 +170,18 @@ func RegisterPayRouter() {
 	// Create a buffered channel interrupt and use the signal.
 	rootCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+
+	// 埋点只消费已提交的账单事实；独立 worker 故障不能改变支付处理结果。
+	if cfg, err := acquisition.ConfigFromEnv(
+		os.Getenv,
+		dao.DBClient.GetLocalRegion().UID.String(),
+		dao.PaymentCurrency,
+	); err != nil {
+		logrus.Warn("acquisition billing configuration is invalid; forwarding disabled")
+	} else if cfg != nil {
+		go acquisition.NewPublisher(dao.DBClient.GetGlobalDB(), *cfg).
+			Run(rootCtx, func(message string) { logrus.Warn(message) })
+	}
 
 	// Start the HTTP server to listen on port 2333.
 	srv := &http.Server{

@@ -34,6 +34,18 @@ export const mergeUserSvc =
     });
     // add task ( catch by outer )
     await globalPrisma.$transaction(async (tx) => {
+      // Only this authenticated merge operation may re-key acquisition identities;
+      // matching email or reusing a machine never merges account histories.
+      if (process.env.ACQUISITION_REALM) {
+        await tx.acquisitionIdentity.updateMany({
+          where: { userUid: mergeUserUid },
+          data: { userUid }
+        });
+        await tx.productAnalyticsEvent.updateMany({
+          where: { subjectId: mergeUserUid },
+          data: { subjectId: userUid }
+        });
+      }
       // optimistic
       for await (const oauthProvider of oauthProviderList) {
         await tx.oauthProvider.findUniqueOrThrow({

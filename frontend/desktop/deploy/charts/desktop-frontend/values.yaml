@@ -9,6 +9,14 @@ image: ghcr.io/labring/sealos-desktop-frontend:latest
 imagePullPolicy: IfNotPresent
 
 imagePullSecrets: []
+
+# Phase-1 native analytics. Secret keys are environment variables (never values.yaml secrets).
+acquisition:
+  enabled: false
+  realm: "" # china or global; never inferred from a client's request
+  websiteOrigins: "" # optional exact HTTPS root/www website origins
+  existingSecret: "" # ACQUISITION_INGEST_SECRET plus the configured realm's sink credentials
+  flushSchedule: "* * * * *"
 fullnameOverride: "sealos-desktop"
 
 serviceAccount:

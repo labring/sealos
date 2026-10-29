@@ -689,3 +689,87 @@ model ActivityRewardIdentityConfig {
   id     String @id
   pepper String
 }
+
+// Short-lived acquisition capabilities have no account privileges.
+model AcquisitionHandoff {
+  tokenHash             String    @id
+  installationTokenHash String?   @unique
+  requestId             String?   @unique @db.Uuid
+  installationId        String?
+  websiteOrigin         String
+  realm                 String
+  payload               Json?
+  postedAt              DateTime?
+  redeemedAt            DateTime?
+  linkedAt              DateTime?
+  expiresAt             DateTime
+  createdAt             DateTime  @default(now())
+
+  @@index([expiresAt])
+}
+
+// Immutable account/journey ledger; subsequent logins do not rewrite history.
+model AcquisitionIdentity {
+  id             String   @id @default(uuid()) @db.Uuid
+  requestId      String   @unique @db.Uuid
+  userUid        String   @db.Uuid
+  realm          String
+  installationId String
+  visitorId      String?
+  websiteOrigin  String
+  payload        Json
+  journeyStartedAt DateTime @default(now())
+  linkedAt       DateTime @default(now())
+
+  @@index([realm, userUid, linkedAt])
+  @@index([installationId, linkedAt])
+}
+
+model ProductAnalyticsEvent {
+  eventId        String    @id
+  subjectId      String?   @db.Uuid
+  realm          String
+  installationId String?
+  occurredAt     DateTime
+  payload        Json
+  status         String    @default("PENDING")
+  attempts       Int       @default(0)
+  leaseUntil     DateTime?
+  deliveredAt    DateTime?
+  createdAt      DateTime  @default(now())
+
+  @@index([status, leaseUntil, createdAt])
+}
+
+// Native deployment proof stores only references and hashes, never credentials/manifests.
+model NativeDeploymentOperation {
+  operationId  String   @id @db.Uuid
+  userUid      String   @db.Uuid
+  realm        String
+  regionUid    String   @db.Uuid
+  regionDomain String
+  workspaceId  String
+  marker       String
+  planHash     String
+  baselines    Json
+  status       String   @default("REGISTERED")
+  eventId      String?
+  lastCheck    String?
+  registeredAt DateTime @default(now())
+  expiresAt    DateTime
+  completedAt  DateTime?
+  completionRequestedAt DateTime?
+  leaseUntil DateTime?
+
+  @@index([realm, regionUid, status, expiresAt])
+}
+
+model NativeDeploymentReceipt {
+  proofId     String   @id
+  operationId String   @db.Uuid
+  userUid     String   @db.Uuid
+  eventId     String
+  confirmedAt DateTime @default(now())
+
+  @@index([operationId])
+}
