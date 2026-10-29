@@ -172,10 +172,15 @@ func RegisterPayRouter() {
 	defer stop()
 
 	// 埋点只消费已提交的账单事实；独立 worker 故障不能改变支付处理结果。
-	if cfg, err := acquisition.ConfigFromEnv(os.Getenv, dao.DBClient.GetLocalRegion().UID.String(), dao.PaymentCurrency); err != nil {
+	if cfg, err := acquisition.ConfigFromEnv(
+		os.Getenv,
+		dao.DBClient.GetLocalRegion().UID.String(),
+		dao.PaymentCurrency,
+	); err != nil {
 		logrus.Warn("acquisition billing configuration is invalid; forwarding disabled")
 	} else if cfg != nil {
-		go acquisition.NewPublisher(dao.DBClient.GetGlobalDB(), *cfg).Run(rootCtx, func(message string) { logrus.Warn(message) })
+		go acquisition.NewPublisher(dao.DBClient.GetGlobalDB(), *cfg).
+			Run(rootCtx, func(message string) { logrus.Warn(message) })
 	}
 
 	// Start the HTTP server to listen on port 2333.

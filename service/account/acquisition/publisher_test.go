@@ -27,12 +27,32 @@ func TestAcquisitionConfig(t *testing.T) {
 		t.Fatalf("disabled config = %v, %v", cfg, err)
 	}
 	for _, endpoint := range []string{"http://remote.example/api/analytics/lifecycle", "https://user:secret@example/api/analytics/lifecycle", "https://example/api/wrong", "https://example/api/analytics/lifecycle?secret=bad"} {
-		_, err := ConfigFromEnv(lookup(map[string]string{"ACQUISITION_ANALYTICS_URL": endpoint, "ACQUISITION_INGEST_SECRET": "test-secret", "ACQUISITION_REALM": "global"}), "region", "USD")
+		_, err := ConfigFromEnv(
+			lookup(
+				map[string]string{
+					"ACQUISITION_ANALYTICS_URL": endpoint,
+					"ACQUISITION_INGEST_SECRET": "test-secret",
+					"ACQUISITION_REALM":         "global",
+				},
+			),
+			"region",
+			"USD",
+		)
 		if err == nil {
 			t.Fatalf("unsafe endpoint accepted: %s", endpoint)
 		}
 	}
-	cfg, err := ConfigFromEnv(lookup(map[string]string{"ACQUISITION_ANALYTICS_URL": "https://collector.example/api/analytics/lifecycle", "ACQUISITION_INGEST_SECRET": "test-secret", "ACQUISITION_REALM": "china"}), "region", "cny")
+	cfg, err := ConfigFromEnv(
+		lookup(
+			map[string]string{
+				"ACQUISITION_ANALYTICS_URL": "https://collector.example/api/analytics/lifecycle",
+				"ACQUISITION_INGEST_SECRET": "test-secret",
+				"ACQUISITION_REALM":         "china",
+			},
+		),
+		"region",
+		"cny",
+	)
 	if err != nil || cfg.Currency != "CNY" || cfg.Realm != "china" {
 		t.Fatalf("valid config = %+v, %v", cfg, err)
 	}
@@ -40,10 +60,19 @@ func TestAcquisitionConfig(t *testing.T) {
 
 func TestAcquisitionBillingFactEligibility(t *testing.T) {
 	now := time.Now().UTC()
-	fact := paymentFact{ID: "payment", UserUID: uuid.NewString(), CreatedAt: now.Add(-time.Hour), Method: "wechat", Amount: 12_500_000, TradeNO: "verified-trade", Status: "PAID"}
+	fact := paymentFact{
+		ID:        "payment",
+		UserUID:   uuid.NewString(),
+		CreatedAt: now.Add(-time.Hour),
+		Method:    "wechat",
+		Amount:    12_500_000,
+		TradeNO:   "verified-trade",
+		Status:    "PAID",
+	}
 	cfg := Config{Realm: "china", Currency: "CNY"}
 	event, ok := billingEvent(fact, cfg, now)
-	if !ok || event.EventName != "topup_success" || event.Properties["value"] != 12.5 || !event.OccurredAt.Equal(now) {
+	if !ok || event.EventName != "topup_success" || event.Properties["value"] != 12.5 ||
+		!event.OccurredAt.Equal(now) {
 		t.Fatalf("legacy domestic payment = %+v, %v", event, ok)
 	}
 	same, _ := billingEvent(fact, cfg, now.Add(time.Minute))
@@ -67,7 +96,9 @@ func TestAcquisitionBillingFactEligibility(t *testing.T) {
 	}
 	fact.Type, fact.Method, fact.Workspace = "SUBSCRIPTION", "balance", "paid-team-workspace"
 	event, ok = billingEvent(fact, cfg, now)
-	if !ok || event.EventName != "subscribe_success" || event.WorkspaceID != "paid-team-workspace" || event.SubjectID != fact.UserUID {
+	if !ok || event.EventName != "subscribe_success" ||
+		event.WorkspaceID != "paid-team-workspace" ||
+		event.SubjectID != fact.UserUID {
 		t.Fatalf("workspace subscription = %+v, %v", event, ok)
 	}
 }
@@ -79,7 +110,18 @@ func acquisitionTestDB(t *testing.T) *gorm.DB {
 	}
 	ctx := context.Background()
 	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
-		ContainerRequest: testcontainers.ContainerRequest{Image: "postgres:16", ExposedPorts: []string{"5432/tcp"}, Env: map[string]string{"POSTGRES_PASSWORD": "acquisition-test-only", "POSTGRES_DB": "acquisition"}, WaitingFor: wait.ForLog("database system is ready to accept connections").WithOccurrence(2).WithStartupTimeout(90 * time.Second)}, Started: true,
+		ContainerRequest: testcontainers.ContainerRequest{
+			Image:        "postgres:16",
+			ExposedPorts: []string{"5432/tcp"},
+			Env: map[string]string{
+				"POSTGRES_PASSWORD": "acquisition-test-only",
+				"POSTGRES_DB":       "acquisition",
+			},
+			WaitingFor: wait.ForLog("database system is ready to accept connections").
+				WithOccurrence(2).
+				WithStartupTimeout(90 * time.Second),
+		},
+		Started: true,
 	})
 	if err != nil {
 		t.Fatalf("start isolated test database: %v", err)
@@ -93,7 +135,11 @@ func acquisitionTestDB(t *testing.T) *gorm.DB {
 	if err != nil {
 		t.Fatal(err)
 	}
-	dsn := fmt.Sprintf("host=%s port=%s user=postgres password=acquisition-test-only dbname=acquisition sslmode=disable", host, port.Port())
+	dsn := fmt.Sprintf(
+		"host=%s port=%s user=postgres password=acquisition-test-only dbname=acquisition sslmode=disable",
+		host,
+		port.Port(),
+	)
 	var db *gorm.DB
 	for range 30 {
 		db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
@@ -129,7 +175,19 @@ func TestAcquisitionCommittedBillingOutbox(t *testing.T) {
 	now := time.Now().UTC()
 	insert := func(id, status, kind, method string, created time.Time, amount int64, workspace any) {
 		t.Helper()
-		if err := db.Exec(`INSERT INTO "Payment" (id,"userUid","regionUid",created_at,method,amount,trade_no,type,status,workspace_subscription_id) VALUES (?,?,?,?,?,?,?,?,?,?)`, id, userID, regionID, created, method, amount, "trade-"+id, kind, status, workspace).Error; err != nil {
+		if err := db.Exec(
+			`INSERT INTO "Payment" (id,"userUid","regionUid",created_at,method,amount,trade_no,type,status,workspace_subscription_id) VALUES (?,?,?,?,?,?,?,?,?,?)`,
+			id,
+			userID,
+			regionID,
+			created,
+			method,
+			amount,
+			"trade-"+id,
+			kind,
+			status,
+			workspace,
+		).Error; err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -140,15 +198,16 @@ func TestAcquisitionCommittedBillingOutbox(t *testing.T) {
 	var received []lifecycleEvent
 	accept := false
 	receiver := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/analytics/lifecycle" || r.Header.Get("Authorization") != "Bearer test-shared-secret" {
+		if r.URL.Path != "/api/analytics/lifecycle" ||
+			r.Header.Get("Authorization") != "Bearer test-shared-secret" {
 			t.Errorf("unexpected collector request")
-			w.WriteHeader(401)
+			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 		var event lifecycleEvent
 		if err := json.NewDecoder(r.Body).Decode(&event); err != nil {
 			t.Error(err)
-			w.WriteHeader(400)
+			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 		lock.Lock()
@@ -156,20 +215,29 @@ func TestAcquisitionCommittedBillingOutbox(t *testing.T) {
 		accepted := accept
 		lock.Unlock()
 		if accepted {
-			w.WriteHeader(202)
+			w.WriteHeader(http.StatusAccepted)
 		} else {
-			w.WriteHeader(503)
+			w.WriteHeader(http.StatusServiceUnavailable)
 		}
 	}))
 	defer receiver.Close()
-	cfg := Config{URL: receiver.URL + "/api/analytics/lifecycle", Secret: "test-shared-secret", Realm: "china", RegionID: regionID, Currency: "CNY"}
+	cfg := Config{
+		URL:      receiver.URL + "/api/analytics/lifecycle",
+		Secret:   "test-shared-secret",
+		Realm:    "china",
+		RegionID: regionID,
+		Currency: "CNY",
+	}
 	publisher := NewPublisher(db, cfg)
 	publisher.now = func() time.Time { return now }
 	if err := publisher.Initialize(ctx); err != nil {
 		t.Fatal(err)
 	}
 	var prematurelySeeded int64
-	if err := db.Model(&delivery{}).Where("payment_id = ?", "pending").Count(&prematurelySeeded).Error; err != nil {
+	if err := db.Model(&delivery{}).
+		Where("payment_id = ?", "pending").
+		Count(&prematurelySeeded).
+		Error; err != nil {
 		t.Fatal(err)
 	}
 	if prematurelySeeded != 0 {
@@ -178,12 +246,19 @@ func TestAcquisitionCommittedBillingOutbox(t *testing.T) {
 	// A controller can settle after activation using an older order timestamp.
 	insert("late-settlement", "PAID", "", "wechat", now.Add(-2*time.Hour), 12_500_000, nil)
 	insert("free", "PAID", "SUBSCRIPTION", "balance", now, 0, nil)
-	if err := db.Exec(`INSERT INTO "WorkspaceSubscription" (id,workspace) VALUES (?,?)`, workspaceID, "workspace-a").Error; err != nil {
+	if err := db.Exec(
+		`INSERT INTO "WorkspaceSubscription" (id,workspace) VALUES (?,?)`,
+		workspaceID,
+		"workspace-a",
+	).Error; err != nil {
 		t.Fatal(err)
 	}
 	insert("subscription", "PAID", "SUBSCRIPTION", "balance", now, 2_000_000, workspaceID)
 	insert("admin-grant", "PAID", "SUBSCRIPTION", "balance", now, 2_000_000, workspaceID)
-	if err := db.Exec(`INSERT INTO "WorkspaceSubscriptionTransaction" (id,pay_id,"from",created_at) VALUES ('admin-transaction','admin-grant','admin',?)`, now).Error; err != nil {
+	if err := db.Exec(
+		`INSERT INTO "WorkspaceSubscriptionTransaction" (id,pay_id,"from",created_at) VALUES ('admin-transaction','admin-grant','admin',?)`,
+		now,
+	).Error; err != nil {
 		t.Fatal(err)
 	}
 	if err := publisher.Capture(ctx); err != nil {
@@ -197,7 +272,10 @@ func TestAcquisitionCommittedBillingOutbox(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(rows) != 5 {
-		t.Fatalf("ledger rows=%d, want historical + 2 real + ignored free + ignored admin", len(rows))
+		t.Fatalf(
+			"ledger rows=%d, want historical + 2 real + ignored free + ignored admin",
+			len(rows),
+		)
 	}
 	if err := publisher.Flush(ctx); err != nil {
 		t.Fatal(err)
@@ -231,7 +309,8 @@ func TestAcquisitionCommittedBillingOutbox(t *testing.T) {
 		t.Fatalf("retry mutated or duplicated payloads: %v", after)
 	}
 	for _, event := range after {
-		if event.SubjectID != userID || event.Realm != "china" || event.Properties["currency"] != "CNY" {
+		if event.SubjectID != userID || event.Realm != "china" ||
+			event.Properties["currency"] != "CNY" {
 			t.Fatalf("identity/currency changed: %+v", event)
 		}
 		if event.EventName == "subscribe_success" && event.WorkspaceID != "workspace-a" {

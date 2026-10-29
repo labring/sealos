@@ -66,7 +66,9 @@ type lifecycleEvent struct {
 
 func billingEvent(f paymentFact, cfg Config, observedAt time.Time) (lifecycleEvent, bool) {
 	uid, err := uuid.Parse(f.UserUID)
-	if err != nil || uid == uuid.Nil || f.ID == "" || f.TradeNO == "" || f.Status != "PAID" || f.Amount <= 0 || f.CreatedAt.IsZero() {
+	if err != nil || uid == uuid.Nil || f.ID == "" || f.TradeNO == "" || f.Status != "PAID" ||
+		f.Amount <= 0 ||
+		f.CreatedAt.IsZero() {
 		return lifecycleEvent{}, false
 	}
 	// 管理员赠送和邀请赠送不代表用户付费，即使账本写了正数也不回传成功转化。
@@ -91,10 +93,20 @@ func billingEvent(f paymentFact, cfg Config, observedAt time.Time) (lifecycleEve
 	}
 	hash := sha256.Sum256([]byte(cfg.Realm + "\x00" + name + "\x00" + f.TradeNO))
 	return lifecycleEvent{
-		Version: 1, EventID: "billing:" + hex.EncodeToString(hash[:]), EventName: name,
-		OccurredAt: observedAt.UTC(), SubjectID: uid.String(), WorkspaceID: f.Workspace,
-		TransactionID: f.TradeNO, Realm: cfg.Realm,
-		Properties: map[string]any{"value": float64(f.Amount) / 1_000_000, "currency": cfg.Currency, "method": f.Method, "paying_account_id": uid.String()},
+		Version:       1,
+		EventID:       "billing:" + hex.EncodeToString(hash[:]),
+		EventName:     name,
+		OccurredAt:    observedAt.UTC(),
+		SubjectID:     uid.String(),
+		WorkspaceID:   f.Workspace,
+		TransactionID: f.TradeNO,
+		Realm:         cfg.Realm,
+		Properties: map[string]any{
+			"value":             float64(f.Amount) / 1_000_000,
+			"currency":          cfg.Currency,
+			"method":            f.Method,
+			"paying_account_id": uid.String(),
+		},
 	}, true
 }
 
@@ -122,7 +134,8 @@ func (p *Publisher) Initialize(ctx context.Context) error {
 		return err
 	}
 	return db.Transaction(func(tx *gorm.DB) error {
-		inserted := tx.Clauses(clause.OnConflict{DoNothing: true}).Create(&activation{SourceKey: p.config.sourceKey(), CreatedAt: p.now().UTC()})
+		inserted := tx.Clauses(clause.OnConflict{DoNothing: true}).
+			Create(&activation{SourceKey: p.config.sourceKey(), CreatedAt: p.now().UTC()})
 		if inserted.Error != nil || inserted.RowsAffected == 0 {
 			return inserted.Error
 		}
@@ -138,7 +151,10 @@ func (p *Publisher) Initialize(ctx context.Context) error {
 func (p *Publisher) Capture(ctx context.Context) error {
 	return p.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var owner activation
-		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("source_key = ?", p.config.sourceKey()).First(&owner).Error; err != nil {
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where("source_key = ?", p.config.sourceKey()).
+			First(&owner).
+			Error; err != nil {
 			return err
 		}
 		var facts []paymentFact
@@ -150,20 +166,33 @@ func (p *Publisher) Capture(ctx context.Context) error {
 			LEFT JOIN "WorkspaceSubscription" w ON w.id = p.workspace_subscription_id
 			LEFT JOIN acquisition_billing_deliveries d ON d.source_key = ? AND d.payment_id = p.id
 			WHERE p."regionUid" = ? AND p.status = 'PAID' AND d.event_id IS NULL
-			ORDER BY p.created_at, p.id LIMIT 100`, p.config.sourceKey(), p.config.RegionID).Scan(&facts).Error; err != nil {
+			ORDER BY p.created_at, p.id LIMIT 100`, p.config.sourceKey(), p.config.RegionID).
+			Scan(&facts).
+			Error; err != nil {
 			return err
 		}
 		for _, fact := range facts {
 			event, allowed := billingEvent(fact, p.config, p.now())
-			row := delivery{SourceKey: p.config.sourceKey(), PaymentID: fact.ID, NextAttemptAt: p.now().UTC(), State: "ignored", EventID: "ignored:" + p.config.sourceKey() + ":" + fact.ID, LastError: "unsupported_payment_fact"}
+			row := delivery{
+				SourceKey:     p.config.sourceKey(),
+				PaymentID:     fact.ID,
+				NextAttemptAt: p.now().UTC(),
+				State:         "ignored",
+				EventID:       "ignored:" + p.config.sourceKey() + ":" + fact.ID,
+				LastError:     "unsupported_payment_fact",
+			}
 			if allowed {
 				body, err := json.Marshal(event)
 				if err != nil {
 					return err
 				}
-				row.EventID, row.Payload, row.State, row.LastError = event.EventID, string(body), "pending", ""
+				row.EventID, row.Payload, row.State, row.LastError = event.EventID, string(
+					body,
+				), "pending", ""
 			}
-			if err := tx.Clauses(clause.OnConflict{DoNothing: true}).Create(&row).Error; err != nil {
+			if err := tx.Clauses(clause.OnConflict{DoNothing: true}).
+				Create(&row).
+				Error; err != nil {
 				return err
 			}
 		}
@@ -172,7 +201,12 @@ func (p *Publisher) Capture(ctx context.Context) error {
 }
 
 func (p *Publisher) deliver(ctx context.Context, row delivery) bool {
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, p.config.URL, bytes.NewBufferString(row.Payload))
+	req, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodPost,
+		p.config.URL,
+		bytes.NewBufferString(row.Payload),
+	)
 	if err != nil {
 		return false
 	}
@@ -203,10 +237,15 @@ func (p *Publisher) Flush(ctx context.Context) error {
 			processed = true
 			updates := map[string]any{"attempts": row.Attempts + 1}
 			if p.deliver(ctx, row) {
-				updates["state"], updates["delivered_at"], updates["last_error"] = "delivered", p.now().UTC(), ""
+				updates["state"], updates["delivered_at"], updates["last_error"] = "delivered", p.now().
+					UTC(),
+					""
 			} else {
 				delay := min(time.Hour, time.Minute*time.Duration(1<<row.Attempts))
-				updates["next_attempt_at"], updates["last_error"] = p.now().Add(delay).UTC(), "collector_unavailable"
+				updates["next_attempt_at"], updates["last_error"] = p.now().
+					Add(delay).
+					UTC(),
+					"collector_unavailable"
 				if row.Attempts+1 >= maxAttempts {
 					updates["state"] = "exhausted"
 				}
