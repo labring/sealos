@@ -8,18 +8,6 @@ metadata:
     {{- include "user.labels" . | nindent 4 }}
 rules:
   - apiGroups:
-      - ""
-    resources:
-      - configmaps
-    verbs:
-      - get
-      - list
-      - watch
-      - create
-      - update
-      - patch
-      - delete
-  - apiGroups:
       - coordination.k8s.io
     resources:
       - leases
@@ -45,11 +33,187 @@ metadata:
   name: {{ include "user.fullname" . }}-manager-role
 rules:
   - apiGroups:
-      - "*"
+      - user.sealos.io
     resources:
-      - "*"
+      - users
     verbs:
-      - "*"
+      - get
+      - list
+      - watch
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - user.sealos.io
+    resources:
+      - users/status
+    verbs:
+      - get
+      - update
+      - patch
+  - apiGroups:
+      - user.sealos.io
+    resources:
+      - users/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - user.sealos.io
+    resources:
+      - operationrequests
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - user.sealos.io
+    resources:
+      - operationrequests/status
+    verbs:
+      - get
+      - update
+      - patch
+  - apiGroups:
+      - user.sealos.io
+    resources:
+      - operationrequests/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - user.sealos.io
+    resources:
+      - deleterequests
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - user.sealos.io
+    resources:
+      - deleterequests/status
+    verbs:
+      - get
+      - update
+      - patch
+  - apiGroups:
+      - user.sealos.io
+    resources:
+      - deleterequests/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - license.sealos.io
+    resources:
+      - licenses
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - namespaces
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - ""
+    resources:
+      - serviceaccounts
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - ""
+    resources:
+      - serviceaccounts/token
+    verbs:
+      - create
+  - apiGroups:
+      - authentication.k8s.io
+    resources:
+      - tokenreviews
+    verbs:
+      - create
+  - apiGroups:
+      - authorization.k8s.io
+    resources:
+      - subjectaccessreviews
+    verbs:
+      - create
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - roles
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - rolebindings
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - clusterrolebindings
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
