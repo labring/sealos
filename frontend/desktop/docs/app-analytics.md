@@ -1,8 +1,11 @@
 # App analytics and website Cookie handoff
 
-The App uses existing China Rybbit and Global Web GTM `GTM-5DTRN2V3` → GA4
-`G-YF5VHZSTE0`. Its isolated local HTTP analytics page hosts Web GTM; the main
-UI stays `file://`. No sGTM service, Measurement Protocol endpoint or API secret.
+The App uses existing China Rybbit and a Global Web GTM container selected at build
+time through `SEALOS_PRODUCT_ANALYTICS_GTM_ID`, with no default container or App
+GA4 ID setting. Configure the existing `GTM-5DTRN2V3` container, which owns the
+GA4 destination `G-YF5VHZSTE0`. Its isolated local HTTP analytics page hosts Web
+GTM; the main UI stays `file://`. No sGTM service, Measurement Protocol endpoint
+or API secret.
 
 ```text
 Consented website visit → sealos_acquisition_v1 shared-domain Cookie
@@ -61,8 +64,11 @@ is not guaranteed across origins/devices. No fingerprint/probabilistic fallback.
 The incremental GTM import is in `packages/gtm/integrations/desktop-app/`.
 Review/import/publish it into the existing Web container for the new App events;
 existing Web triggers are preserved. No live GTM configuration was changed.
-The App blocks unrelated analytics destinations. Existing advertising conversion
-tags are not enabled for native traffic by this change.
+The App permits fixed Google script and GA4 collector domains/paths; GA4 property
+selection belongs to the configured container, so review every GA4 destination
+when publishing it. Other analytics and advertising endpoints remain blocked.
+Existing advertising conversion tags are not enabled for native traffic by this
+change.
 
 Unit tests cover malformed/oversized Cookie, consent withdrawal, client/realm/
 request/state/subject binding, expiry, tampering, denial, PKCE, code replay,

@@ -12,7 +12,7 @@
 | App GA4 event | `sealos_app_event` | 同上，且事件名在白名单中 |
 | Web visitor linked GA4 | `web_visitor_linked` | HTTPS `*.sealos.io` 控制台（排除根域和 `www`）、global、granted、有效访客和账号 UUID |
 
-App 主界面继续使用 `file://`；统计页是 App 主进程启动的本地 HTTP 服务提供的隔离页面，不是公网服务。触发器读取真正的 `location`，不使用可覆盖的 GA `page_location`。App 主进程还必须拦截非目标 GA4 的数据请求；GTM 触发器不是网络权限控制。当前公开 Google tag 还观察到过另一目的地 `G-CBY1489EF6`，归属未核对，必须阻断。
+App 主界面继续使用 `file://`；统计页是 App 主进程启动的本地 HTTP 服务提供的隔离页面，不是公网服务。触发器读取真正的 `location`，不使用可覆盖的 GA `page_location`。App 通过构建环境变量 `SEALOS_PRODUCT_ANALYTICS_GTM_ID` 选择容器，无默认容器、不配置 GA4 ID。主进程限制固定 Google 脚本及 GA4 采集域名/路径，但不按单个 GA4 属性 ID 过滤；具体 GA4 目的地由该容器管理，GTM 触发器不是网络权限控制。发布时须审阅容器与关联 Google tag 的全部 GA4 目的地，移除非预期目标，不能再依赖 App 屏蔽额外 GA4 属性。
 
 ## 与代码的契约
 
