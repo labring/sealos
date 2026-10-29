@@ -52,13 +52,27 @@ export async function acceptLifecycle(input: unknown) {
   if (event.realm && event.realm !== selectedRealm)
     throw new AcquisitionError(403, 'Wrong account realm');
   const occurredAt = eventTime(event.occurred_at, true);
+  // A delayed trusted billing event can still name the account that was merged.
+  // Only the authentication service's immutable merge ledger may resolve it.
+  let canonicalSubject = event.subject_id;
+  const seen = new Set<string>();
+  for (;;) {
+    if (seen.has(canonicalSubject) || seen.size >= 10)
+      throw new AcquisitionError(409, 'Account merge chain is invalid');
+    seen.add(canonicalSubject);
+    const merged = await globalPrisma.mergeUserTransactionInfo.findUnique({
+      where: { mergeUserUid: canonicalSubject }
+    });
+    if (!merged) break;
+    canonicalSubject = merged.userUid;
+  }
   const record = await globalPrisma.productAnalyticsEvent.upsert({
     where: { eventId: `lifecycle:${event.event_id}` },
     update: {},
     create: {
       eventId: `lifecycle:${event.event_id}`,
       realm: selectedRealm,
-      subjectId: event.subject_id,
+      subjectId: canonicalSubject,
       occurredAt,
       payload: { kind: 'lifecycle', event } as Prisma.InputJsonValue
     }

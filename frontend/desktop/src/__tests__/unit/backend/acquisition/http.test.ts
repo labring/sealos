@@ -1,6 +1,7 @@
 const { db } = vi.hoisted(() => ({
   db: {
     acquisitionHandoff: { create: vi.fn() },
+    mergeUserTransactionInfo: { findUnique: vi.fn() },
     productAnalyticsEvent: { upsert: vi.fn() }
   }
 }));
@@ -30,6 +31,7 @@ function response() {
 }
 beforeEach(() => {
   vi.resetAllMocks();
+  db.mergeUserTransactionInfo.findUnique.mockResolvedValue(null);
   vi.stubEnv('ACQUISITION_REALM', 'global');
   vi.stubEnv('ACQUISITION_INGEST_SECRET', 'test-shared-secret');
   global.AppConfig = { desktop: { auth: { jwt: { global: 'global-http-test-secret' } } } } as any;

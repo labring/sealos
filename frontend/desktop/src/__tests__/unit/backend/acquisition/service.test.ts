@@ -7,6 +7,7 @@ const { db } = vi.hoisted(() => {
       update: vi.fn()
     },
     acquisitionIdentity: { upsert: vi.fn(), findFirst: vi.fn() },
+    mergeUserTransactionInfo: { findUnique: vi.fn() },
     oAuthAuthorizationRequest: { findUnique: vi.fn() },
     productAnalyticsEvent: {
       upsert: vi.fn(),
@@ -52,6 +53,7 @@ const context = {
 const now = new Date('2026-10-29T01:00:00Z');
 beforeEach(() => {
   vi.resetAllMocks();
+  db.mergeUserTransactionInfo.findUnique.mockResolvedValue(null);
   vi.useFakeTimers();
   vi.setSystemTime(now);
   vi.stubEnv('ACQUISITION_REALM', 'global');
@@ -325,4 +327,23 @@ it.each([
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, text: async () => receipt }));
   expect(await flushAnalytics()).toMatchObject({ delivered: 0 });
   expect(db.productAnalyticsEvent.update.mock.calls.at(-1)[0].data.status).toBe('FILTERED');
+});
+
+it('resolves delayed payment identity through the trusted account merge ledger only', async () => {
+  const target = '3f450c0e-4bfe-46ff-968a-35502b853f2f';
+  db.mergeUserTransactionInfo.findUnique
+    .mockResolvedValueOnce({ userUid: target })
+    .mockResolvedValueOnce(null);
+  await acceptLifecycle({
+    version: 1,
+    event_id: 'after-merge',
+    event_name: 'topup_success',
+    subject_id: userUid,
+    occurred_at: now.toISOString(),
+    transaction_id: 'paid-order',
+    properties: { currency: 'USD', value: 20 }
+  });
+  const stored = db.productAnalyticsEvent.upsert.mock.calls[0][0].create;
+  expect(stored.subjectId).toBe(target);
+  expect(stored.payload.event.subject_id).toBe(userUid);
 });
