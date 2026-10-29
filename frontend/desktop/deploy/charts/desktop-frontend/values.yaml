@@ -102,6 +102,8 @@ desktopConfig:
       zh: https://sealos.io/zh-Hans/docs/msa/privacy-policy
       en: https://sealos.io/docs/msa/privacy-policy
   workspaceResourceHeaderEnabled: false
+  # Show Kubeconfig download, copy and refresh actions in the account menu.
+  kubeconfigEnabled: true
 
 # End of auto-configured values
 # ============================================================================
