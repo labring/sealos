@@ -1,7 +1,8 @@
 import {
   acquisitionContextSchema,
   appEventSchema,
-  toMeasurementEvent
+  toMeasurementEvent,
+  installationClientId
 } from '@/services/backend/acquisition/protocol';
 import websiteFixtures from './website-wire-fixtures.json';
 
@@ -20,6 +21,13 @@ const event = {
 };
 
 describe('native analytics wire contract', () => {
+  it('keeps restart-stable numeric GA client IDs separate from account and raw install IDs', () => {
+    expect(installationClientId('install-example')).toBe('450568525.1366422082');
+    expect(installationClientId('another-install')).not.toBe(
+      installationClientId('install-example')
+    );
+    expect(installationClientId('install-example')).toMatch(/^\d+\.\d+$/);
+  });
   it.each(websiteFixtures)(
     'accepts the actual $realm website handoff with separate first/activation sources',
     (fixture) => {
@@ -33,7 +41,7 @@ describe('native analytics wire contract', () => {
   it('maps a real App screen without impersonating a web page', () => {
     const result = toMeasurementEvent(appEventSchema.parse(event), 'trusted-user');
     expect(result).toMatchObject({
-      client_id: 'install-example',
+      client_id: '450568525.1366422082',
       user_id: 'trusted-user',
       events: [
         {

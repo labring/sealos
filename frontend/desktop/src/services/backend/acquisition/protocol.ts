@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { z } from 'zod';
 
 const id = z
@@ -146,7 +146,7 @@ export function toMeasurementEvent(event: AppEvent, userUid?: string) {
     ...minimalProperties
   } = event.properties;
   return {
-    client_id: detailed ? event.installation_id : randomUUID(),
+    client_id: installationClientId(detailed ? event.installation_id : randomUUID()),
     ...(detailed && userUid ? { user_id: userUid } : {}),
     timestamp_micros: new Date(event.occurred_at).getTime() * 1000,
     consent: { ad_user_data: 'DENIED', ad_personalization: 'DENIED' },
@@ -164,4 +164,10 @@ export function toMeasurementEvent(event: AppEvent, userUid?: string) {
       }
     ]
   };
+}
+
+/** MP's strict validator requires two decimal components, not a raw installation UUID. */
+export function installationClientId(installationId: string): string {
+  const digest = createHash('sha256').update(`sealos-native-v1:${installationId}`).digest();
+  return `${digest.readUInt32BE(0) || 1}.${digest.readUInt32BE(4) || 1}`;
 }

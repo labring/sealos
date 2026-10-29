@@ -128,3 +128,16 @@ it('requires the server ingest secret before accepting any revenue fact', async 
   expect(accepted.code).toBe(202);
   expect(accepted.body.accepted).toBe(true);
 });
+
+it.each([
+  ['global', 'https://www.sealos.io'],
+  ['china', 'https://sealos.run'],
+  ['china', 'https://www.sealos.run']
+])('returns only reviewed literal CORS origins for %s %s', async (selectedRealm, origin) => {
+  vi.stubEnv('ACQUISITION_REALM', selectedRealm);
+  vi.stubEnv('ACQUISITION_WEBSITE_ORIGINS', '');
+  const res = response();
+  await issue({ method: 'OPTIONS', headers: { origin } } as any, res);
+  expect(res.code).toBe(204);
+  expect(res.headers['Access-Control-Allow-Origin']).toBe(origin);
+});

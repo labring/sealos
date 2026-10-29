@@ -5,6 +5,7 @@ import {
   acquisitionContextSchema,
   appEventSchema,
   lifecycleSchema,
+  installationClientId,
   toMeasurementEvent
 } from './protocol';
 
@@ -104,7 +105,7 @@ async function sendMeasurementPayload(record: ProductAnalyticsEvent) {
     )
       throw new Error('No permitted attribution at event time');
     measurement = {
-      client_id: link.installationId,
+      client_id: installationClientId(link.installationId),
       user_id: record.subjectId || event.subject_id,
       timestamp_micros: record.occurredAt.getTime() * 1000,
       consent: { ad_user_data: 'DENIED', ad_personalization: 'DENIED' },

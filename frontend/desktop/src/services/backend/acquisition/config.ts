@@ -62,7 +62,23 @@ export async function respond(res: NextApiResponse, run: () => Promise<unknown>)
 }
 export function websiteCors(req: NextApiRequest, res: NextApiResponse) {
   const origin = requireWebsiteOrigin(req.headers.origin);
-  res.setHeader('Access-Control-Allow-Origin', origin);
+  // Emit only literal reviewed origins, never reflect a request-controlled header.
+  switch (origin) {
+    case 'https://sealos.io':
+      res.setHeader('Access-Control-Allow-Origin', 'https://sealos.io');
+      break;
+    case 'https://www.sealos.io':
+      res.setHeader('Access-Control-Allow-Origin', 'https://www.sealos.io');
+      break;
+    case 'https://sealos.run':
+      res.setHeader('Access-Control-Allow-Origin', 'https://sealos.run');
+      break;
+    case 'https://www.sealos.run':
+      res.setHeader('Access-Control-Allow-Origin', 'https://www.sealos.run');
+      break;
+    default:
+      throw new AcquisitionError(403, 'Website origin is not allowed');
+  }
   res.setHeader('Vary', 'Origin');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');

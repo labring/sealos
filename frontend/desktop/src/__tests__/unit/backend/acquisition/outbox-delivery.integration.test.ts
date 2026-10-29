@@ -115,7 +115,7 @@ it('attributes a deployment to the account link effective at the event, not a la
         where: expect.objectContaining({ userUid, linkedAt: { lte: occurredAt } })
       })
     );
-    expect(JSON.parse(fetcher.mock.calls[0][1].body).client_id).toBe('install-b');
+    expect(JSON.parse(fetcher.mock.calls[0][1].body).client_id).toBe('4280999480.4064935641');
   } finally {
     vi.useRealTimers();
   }

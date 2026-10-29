@@ -6,7 +6,8 @@ changing native event or identity contracts. No browser GTM tag is executed by M
 
 ## Ownership and sequence
 
-1. Main chooses China/Global and owns installation, session and collection permission.
+1. Main chooses China/Global and owns installation, session and collection permission. The server maps installation IDs
+   deterministically to GA4 decimal.decimal client IDs; raw UUIDs are not MP client IDs.
 2. OAuth creates its existing PKCE request and browser cookie. An optional ten-minute
    capability sends that browser to the allowed original website `/app-attribution`.
 3. The website posts its own origin context, then navigates to the fixed OAuth
@@ -98,3 +99,10 @@ a pre-registered, authenticated server operation with independent resource UID,
 generation and readiness checks across the planned resources. Existing ready
 resources or a client success boolean alone are insufficient. Keep #584 open until
 this producer and both production journeys have been accepted; sGTM remains phase 2.
+
+On 2026-10-29, Google's real `/debug/mp/collect` strict validator accepted a
+synthetic native screen and server payment payload with no validation messages after
+mapping the install ID to decimal.decimal. The debug call used a placeholder secret,
+which the validation endpoint does not verify, and did not deliver events to reports.
+This validates the protocol shape only; the real destination secret, collection and
+reporting identity still require production acceptance.
