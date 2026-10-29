@@ -71,6 +71,7 @@ export type LayoutConfigType = {
   logo: string;
   backgroundImage: string;
   workspaceResourceHeaderEnabled?: boolean;
+  kubeconfigEnabled?: boolean;
   authTitle?: {
     zh: string;
     en: string;
@@ -313,6 +314,7 @@ export const DefaultLayoutConfig: LayoutConfigType = {
   logo: '/logo.svg',
   backgroundImage: '/images/bg-light.svg',
   workspaceResourceHeaderEnabled: false,
+  kubeconfigEnabled: false,
   protocol: {
     enabled: true,
     serviceProtocol: {

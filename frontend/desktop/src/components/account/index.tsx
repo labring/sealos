@@ -393,67 +393,69 @@ export default function Account() {
                     </Flex>
                   </Flex>
                 </MenuItem> */}
-                <MenuItem
-                  py="6px"
-                  px="8px"
-                  borderRadius="8px"
-                  _hover={{ bg: '#F4F4F5' }}
-                  onClick={() => kubeconfig && download('kubeconfig.yaml', kubeconfig)}
-                >
-                  <Flex alignItems="center" gap="8px" justifyContent="space-between" width="100%">
-                    <Flex alignItems="center" gap="8px">
-                      <Center w="20px" h="20px">
-                        <FileCode size={16} color="#737373" />
-                      </Center>
-                      <Text fontSize="14px" fontWeight="400">
-                        Kubeconfig
-                      </Text>
-                    </Flex>
-                    <Flex alignItems="center" gap="4px">
-                      <Box
-                        p="2px"
-                        cursor={isRotatingKubeconfig ? 'not-allowed' : 'pointer'}
-                        onClick={handleRotateKubeconfig}
-                        opacity={isRotatingKubeconfig ? 0.5 : 1}
-                        transition="opacity 0.2s"
-                        title={t('refresh_kubeconfig')}
-                        _hover={{
-                          color: 'blue.600'
-                        }}
-                        color="#737373"
-                        sx={
-                          isRotatingKubeconfig
-                            ? {
-                                '& svg': {
-                                  animation: 'spin 1s linear infinite'
-                                },
-                                '@keyframes spin': {
-                                  from: { transform: 'rotate(0deg)' },
-                                  to: { transform: 'rotate(360deg)' }
+                {layoutConfig?.kubeconfigEnabled === true && (
+                  <MenuItem
+                    py="6px"
+                    px="8px"
+                    borderRadius="8px"
+                    _hover={{ bg: '#F4F4F5' }}
+                    onClick={() => kubeconfig && download('kubeconfig.yaml', kubeconfig)}
+                  >
+                    <Flex alignItems="center" gap="8px" justifyContent="space-between" width="100%">
+                      <Flex alignItems="center" gap="8px">
+                        <Center w="20px" h="20px">
+                          <FileCode size={16} color="#737373" />
+                        </Center>
+                        <Text fontSize="14px" fontWeight="400">
+                          Kubeconfig
+                        </Text>
+                      </Flex>
+                      <Flex alignItems="center" gap="4px">
+                        <Box
+                          p="2px"
+                          cursor={isRotatingKubeconfig ? 'not-allowed' : 'pointer'}
+                          onClick={handleRotateKubeconfig}
+                          opacity={isRotatingKubeconfig ? 0.5 : 1}
+                          transition="opacity 0.2s"
+                          title={t('refresh_kubeconfig')}
+                          _hover={{
+                            color: 'blue.600'
+                          }}
+                          color="#737373"
+                          sx={
+                            isRotatingKubeconfig
+                              ? {
+                                  '& svg': {
+                                    animation: 'spin 1s linear infinite'
+                                  },
+                                  '@keyframes spin': {
+                                    from: { transform: 'rotate(0deg)' },
+                                    to: { transform: 'rotate(360deg)' }
+                                  }
                                 }
-                              }
-                            : {}
-                        }
-                      >
-                        <RefreshCw size={16} />
-                      </Box>
-                      <Box
-                        p="2px"
-                        cursor="pointer"
-                        onClick={(e: React.MouseEvent<HTMLDivElement>) => {
-                          e.stopPropagation();
-                          kubeconfig && copyData(kubeconfig);
-                        }}
-                        _hover={{
-                          color: 'blue.600'
-                        }}
-                        color="#737373"
-                      >
-                        <Copy size={16} />
-                      </Box>
+                              : {}
+                          }
+                        >
+                          <RefreshCw size={16} />
+                        </Box>
+                        <Box
+                          p="2px"
+                          cursor="pointer"
+                          onClick={(e: React.MouseEvent<HTMLDivElement>) => {
+                            e.stopPropagation();
+                            kubeconfig && copyData(kubeconfig);
+                          }}
+                          _hover={{
+                            color: 'blue.600'
+                          }}
+                          color="#737373"
+                        >
+                          <Copy size={16} />
+                        </Box>
+                      </Flex>
                     </Flex>
-                  </Flex>
-                </MenuItem>
+                  </MenuItem>
+                )}
 
                 {layoutConfig?.version === 'cn' && (
                   <MenuItem

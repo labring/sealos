@@ -49,6 +49,7 @@ data:
         title: "{{ .Values.desktopConfig.layoutTitle }}"
         logo: "{{ .Values.desktopConfig.layoutLogo }}"
         backgroundImage: "{{ .Values.desktopConfig.layoutBackgroundImage }}"
+        kubeconfigEnabled: {{ .Values.desktopConfig.kubeconfigEnabled | default false }}
         workspaceResourceHeaderEnabled: {{ .Values.desktopConfig.workspaceResourceHeaderEnabled }}
         customerServiceURL: "{{ .Values.desktopConfig.customerServiceURL }}"
         discordInviteLink: {{ if eq .Values.desktopConfig.version "en" }}"{{ .Values.desktopConfig.discordInviteLink }}"{{ else }}""{{ end }}

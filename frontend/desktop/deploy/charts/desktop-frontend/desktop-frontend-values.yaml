@@ -77,6 +77,8 @@ desktopConfig:
   layoutLogo: "/logo.svg"
   layoutBackgroundImage: "/images/bg-light.svg"
   workspaceResourceHeaderEnabled: true
+  # Show Kubeconfig download, copy and refresh actions in the account menu.
+  kubeconfigEnabled: false
   customerServiceURL: ""
   layoutDocsUseDocs: false
   layoutDocsUrl: "https://sealos.run/docs/Intro/"

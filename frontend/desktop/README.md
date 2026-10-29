@@ -175,6 +175,13 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 - `desktopConfig.workspaceResourceHeaderEnabled` 控制右上角头部使用资源模式还是旧余额模式，默认关闭，也就是默认显示余额。
 - `sealos-desktop-sdk` 的 `getWorkspaceQuotaApi` 复用同一个接口，子应用通过 master bridge 获取到的 workspace quota 与桌面右上角展示保持同源。
 
+### Kubeconfig 菜单开关
+
+- 默认隐藏个人菜单中的 Kubeconfig 下载、复制和刷新入口；仅显式配置为布尔值 `true` 时显示。
+- Helm 部署：使用 `--set desktopConfig.kubeconfigEnabled=true` 开启，设为 `false` 关闭；通过部署脚本可传入 `HELM_OPTIONS="--set desktopConfig.kubeconfigEnabled=true"`。
+- 本地开发：在 `data/config.local.yaml` 中设置 `desktop.layout.kubeconfigEnabled: true`；直接部署则修改 `/app/data/config.yaml` 中的同名字段并重启桌面服务。Helm 会将该值注入 ConfigMap，配置校验和变化会触发 Pod 更新。
+- 该配置仅控制菜单可见性，不改变 kubeconfig API 或权限。
+
 ### 密码登录初始化契约
 
 - `/api/auth/password` 只完成全局身份认证，返回 global token 和 `needInit`，不在登录接口里同步创建 Region DB workspace/UserCR 或获取 kubeconfig。
