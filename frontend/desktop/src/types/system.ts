@@ -314,7 +314,7 @@ export const DefaultLayoutConfig: LayoutConfigType = {
   logo: '/logo.svg',
   backgroundImage: '/images/bg-light.svg',
   workspaceResourceHeaderEnabled: false,
-  kubeconfigEnabled: false,
+  kubeconfigEnabled: true,
   protocol: {
     enabled: true,
     serviceProtocol: {

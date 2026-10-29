@@ -177,7 +177,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 ### Kubeconfig 菜单开关
 
-- 默认隐藏个人菜单中的 Kubeconfig 下载、复制和刷新入口；仅显式配置为布尔值 `true` 时显示。
+- 默认显示个人菜单中的 Kubeconfig 下载、复制和刷新入口；未配置时保持显示，仅显式配置为布尔值 `false` 时隐藏。
 - Helm 部署：使用 `--set desktopConfig.kubeconfigEnabled=true` 开启，设为 `false` 关闭；通过部署脚本可传入 `HELM_OPTIONS="--set desktopConfig.kubeconfigEnabled=true"`。
 - 本地开发：在 `data/config.local.yaml` 中设置 `desktop.layout.kubeconfigEnabled: true`；直接部署则修改 `/app/data/config.yaml` 中的同名字段并重启桌面服务。Helm 会将该值注入 ConfigMap，配置校验和变化会触发 Pod 更新。
 - 该配置仅控制菜单可见性，不改变 kubeconfig API 或权限。

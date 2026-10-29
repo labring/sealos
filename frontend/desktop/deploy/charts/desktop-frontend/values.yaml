@@ -103,7 +103,7 @@ desktopConfig:
       en: https://sealos.io/docs/msa/privacy-policy
   workspaceResourceHeaderEnabled: false
   # Show Kubeconfig download, copy and refresh actions in the account menu.
-  kubeconfigEnabled: false
+  kubeconfigEnabled: true
 
 # End of auto-configured values
 # ============================================================================

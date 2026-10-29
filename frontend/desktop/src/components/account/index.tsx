@@ -393,7 +393,7 @@ export default function Account() {
                     </Flex>
                   </Flex>
                 </MenuItem> */}
-                {layoutConfig?.kubeconfigEnabled === true && (
+                {layoutConfig?.kubeconfigEnabled !== false && (
                   <MenuItem
                     py="6px"
                     px="8px"

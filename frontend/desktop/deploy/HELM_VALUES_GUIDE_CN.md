@@ -105,7 +105,7 @@ desktopConfig:
   trackingEnabled: false                      # 启用追踪/统计
   realNameAuthEnabled: false                  # 启用实名认证
   workspaceResourceHeaderEnabled: false       # 默认显示余额；设为 true 时使用资源头部
-  kubeconfigEnabled: false # 默认隐藏 Kubeconfig 菜单；设为 true 显示下载、复制和刷新入口
+  kubeconfigEnabled: true # 默认显示 Kubeconfig 菜单；设为 false 隐藏下载、复制和刷新入口
   licenseCheckEnabled: false                  # 启用 License 检查
 ```
 
