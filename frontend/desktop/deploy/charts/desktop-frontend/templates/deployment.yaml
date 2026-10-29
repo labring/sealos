@@ -64,15 +64,6 @@ spec:
           env:
             - name: PRISMA_DB_PROVIDER
               value: "{{ .Values.global.featureConfigs.database.type }}"
-            {{- if .Values.appAnalytics.enabled }}
-            - name: APP_ANALYTICS_REALM
-              value: "global"
-            {{- end }}
-          {{- if .Values.appAnalytics.enabled }}
-          envFrom:
-            - secretRef:
-                name: {{ required "appAnalytics.existingSecret is required" .Values.appAnalytics.existingSecret | quote }}
-          {{- end }}
           command: ["/bin/sh", "-c"]
           args:
             - |

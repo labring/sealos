@@ -1,0 +1,1453 @@
+{
+  "exportFormatVersion": 2,
+  "containerVersion": {
+    "container": {
+      "accountId": "6299222375",
+      "containerId": "222308200",
+      "name": "sealos.io",
+      "publicId": "GTM-5DTRN2V3",
+      "usageContext": [
+        "WEB"
+      ]
+    },
+    "folder": [
+      {
+        "folderId": "800000",
+        "name": "Sealos Desktop App | Integration v1"
+      }
+    ],
+    "variable": [
+      {
+        "variableId": "800100",
+        "name": "Sealos Desktop App | DLV - app_event_name",
+        "type": "v",
+        "parentFolderId": "800000",
+        "parameter": [
+          {
+            "type": "integer",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "boolean",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "template",
+            "key": "name",
+            "value": "app_event_name"
+          }
+        ]
+      },
+      {
+        "variableId": "800101",
+        "name": "Sealos Desktop App | DLV - surface",
+        "type": "v",
+        "parentFolderId": "800000",
+        "parameter": [
+          {
+            "type": "integer",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "boolean",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "template",
+            "key": "name",
+            "value": "surface"
+          }
+        ]
+      },
+      {
+        "variableId": "800102",
+        "name": "Sealos Desktop App | DLV - product_edition",
+        "type": "v",
+        "parentFolderId": "800000",
+        "parameter": [
+          {
+            "type": "integer",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "boolean",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "template",
+            "key": "name",
+            "value": "product_edition"
+          }
+        ]
+      },
+      {
+        "variableId": "800103",
+        "name": "Sealos Desktop App | DLV - analytics_consent",
+        "type": "v",
+        "parentFolderId": "800000",
+        "parameter": [
+          {
+            "type": "integer",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "boolean",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "template",
+            "key": "name",
+            "value": "analytics_consent"
+          }
+        ]
+      },
+      {
+        "variableId": "800104",
+        "name": "Sealos Desktop App | DLV - client_id",
+        "type": "v",
+        "parentFolderId": "800000",
+        "parameter": [
+          {
+            "type": "integer",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "boolean",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "template",
+            "key": "name",
+            "value": "client_id"
+          }
+        ]
+      },
+      {
+        "variableId": "800105",
+        "name": "Sealos Desktop App | DLV - user_id",
+        "type": "v",
+        "parentFolderId": "800000",
+        "parameter": [
+          {
+            "type": "integer",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "boolean",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "template",
+            "key": "name",
+            "value": "user_id"
+          }
+        ]
+      },
+      {
+        "variableId": "800106",
+        "name": "Sealos Desktop App | DLV - session_id",
+        "type": "v",
+        "parentFolderId": "800000",
+        "parameter": [
+          {
+            "type": "integer",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "boolean",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "template",
+            "key": "name",
+            "value": "session_id"
+          }
+        ]
+      },
+      {
+        "variableId": "800107",
+        "name": "Sealos Desktop App | DLV - event_id",
+        "type": "v",
+        "parentFolderId": "800000",
+        "parameter": [
+          {
+            "type": "integer",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "boolean",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "template",
+            "key": "name",
+            "value": "event_id"
+          }
+        ]
+      },
+      {
+        "variableId": "800108",
+        "name": "Sealos Desktop App | DLV - detailed",
+        "type": "v",
+        "parentFolderId": "800000",
+        "parameter": [
+          {
+            "type": "integer",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "boolean",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "template",
+            "key": "name",
+            "value": "detailed"
+          }
+        ]
+      },
+      {
+        "variableId": "800109",
+        "name": "Sealos Desktop App | DLV - visitor_id",
+        "type": "v",
+        "parentFolderId": "800000",
+        "parameter": [
+          {
+            "type": "integer",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "boolean",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "template",
+            "key": "name",
+            "value": "visitor_id"
+          }
+        ]
+      },
+      {
+        "variableId": "800110",
+        "name": "Sealos Desktop App | DLV - web_client_id",
+        "type": "v",
+        "parentFolderId": "800000",
+        "parameter": [
+          {
+            "type": "integer",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "boolean",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "template",
+            "key": "name",
+            "value": "web_client_id"
+          }
+        ]
+      },
+      {
+        "variableId": "800111",
+        "name": "Sealos Desktop App | DLV - ga_client_id",
+        "type": "v",
+        "parentFolderId": "800000",
+        "parameter": [
+          {
+            "type": "integer",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "boolean",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "template",
+            "key": "name",
+            "value": "ga_client_id"
+          }
+        ]
+      },
+      {
+        "variableId": "800112",
+        "name": "Sealos Desktop App | DLV - source.source",
+        "type": "v",
+        "parentFolderId": "800000",
+        "parameter": [
+          {
+            "type": "integer",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "boolean",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "template",
+            "key": "name",
+            "value": "source.source"
+          }
+        ]
+      },
+      {
+        "variableId": "800113",
+        "name": "Sealos Desktop App | DLV - source.medium",
+        "type": "v",
+        "parentFolderId": "800000",
+        "parameter": [
+          {
+            "type": "integer",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "boolean",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "template",
+            "key": "name",
+            "value": "source.medium"
+          }
+        ]
+      },
+      {
+        "variableId": "800114",
+        "name": "Sealos Desktop App | DLV - source.campaign",
+        "type": "v",
+        "parentFolderId": "800000",
+        "parameter": [
+          {
+            "type": "integer",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "boolean",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "template",
+            "key": "name",
+            "value": "source.campaign"
+          }
+        ]
+      },
+      {
+        "variableId": "800115",
+        "name": "Sealos Desktop App | DLV - analytics_properties.screen_name",
+        "type": "v",
+        "parentFolderId": "800000",
+        "parameter": [
+          {
+            "type": "integer",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "boolean",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "template",
+            "key": "name",
+            "value": "analytics_properties.screen_name"
+          }
+        ]
+      },
+      {
+        "variableId": "800116",
+        "name": "Sealos Desktop App | DLV - analytics_properties.outcome",
+        "type": "v",
+        "parentFolderId": "800000",
+        "parameter": [
+          {
+            "type": "integer",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "boolean",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "template",
+            "key": "name",
+            "value": "analytics_properties.outcome"
+          }
+        ]
+      },
+      {
+        "variableId": "800117",
+        "name": "Sealos Desktop App | DLV - analytics_properties.reason",
+        "type": "v",
+        "parentFolderId": "800000",
+        "parameter": [
+          {
+            "type": "integer",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "boolean",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "template",
+            "key": "name",
+            "value": "analytics_properties.reason"
+          }
+        ]
+      },
+      {
+        "variableId": "800118",
+        "name": "Sealos Desktop App | DLV - analytics_properties.duration_ms",
+        "type": "v",
+        "parentFolderId": "800000",
+        "parameter": [
+          {
+            "type": "integer",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "boolean",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "template",
+            "key": "name",
+            "value": "analytics_properties.duration_ms"
+          }
+        ]
+      },
+      {
+        "variableId": "800119",
+        "name": "Sealos Desktop App | DLV - analytics_properties.app_version",
+        "type": "v",
+        "parentFolderId": "800000",
+        "parameter": [
+          {
+            "type": "integer",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "boolean",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "template",
+            "key": "name",
+            "value": "analytics_properties.app_version"
+          }
+        ]
+      },
+      {
+        "variableId": "800120",
+        "name": "Sealos Desktop App | DLV - analytics_properties.os",
+        "type": "v",
+        "parentFolderId": "800000",
+        "parameter": [
+          {
+            "type": "integer",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "boolean",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "template",
+            "key": "name",
+            "value": "analytics_properties.os"
+          }
+        ]
+      },
+      {
+        "variableId": "800121",
+        "name": "Sealos Desktop App | DLV - analytics_properties.arch",
+        "type": "v",
+        "parentFolderId": "800000",
+        "parameter": [
+          {
+            "type": "integer",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "boolean",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "template",
+            "key": "name",
+            "value": "analytics_properties.arch"
+          }
+        ]
+      },
+      {
+        "variableId": "800122",
+        "name": "Sealos Desktop App | DLV - analytics_properties.env",
+        "type": "v",
+        "parentFolderId": "800000",
+        "parameter": [
+          {
+            "type": "integer",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "boolean",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "template",
+            "key": "name",
+            "value": "analytics_properties.env"
+          }
+        ]
+      },
+      {
+        "variableId": "800123",
+        "name": "Sealos Desktop App | DLV - analytics_properties.packaged",
+        "type": "v",
+        "parentFolderId": "800000",
+        "parameter": [
+          {
+            "type": "integer",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "boolean",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "template",
+            "key": "name",
+            "value": "analytics_properties.packaged"
+          }
+        ]
+      },
+      {
+        "variableId": "800124",
+        "name": "Sealos Desktop App | DLV - analytics_properties.flow",
+        "type": "v",
+        "parentFolderId": "800000",
+        "parameter": [
+          {
+            "type": "integer",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "boolean",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "template",
+            "key": "name",
+            "value": "analytics_properties.flow"
+          }
+        ]
+      },
+      {
+        "variableId": "800125",
+        "name": "Sealos Desktop App | DLV - analytics_properties.method",
+        "type": "v",
+        "parentFolderId": "800000",
+        "parameter": [
+          {
+            "type": "integer",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "boolean",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "template",
+            "key": "name",
+            "value": "analytics_properties.method"
+          }
+        ]
+      },
+      {
+        "variableId": "800126",
+        "name": "Sealos Desktop App | DLV - analytics_properties.service_kind",
+        "type": "v",
+        "parentFolderId": "800000",
+        "parameter": [
+          {
+            "type": "integer",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "boolean",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "template",
+            "key": "name",
+            "value": "analytics_properties.service_kind"
+          }
+        ]
+      },
+      {
+        "variableId": "800127",
+        "name": "Sealos Desktop App | DLV - analytics_properties.template_id",
+        "type": "v",
+        "parentFolderId": "800000",
+        "parameter": [
+          {
+            "type": "integer",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "boolean",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "template",
+            "key": "name",
+            "value": "analytics_properties.template_id"
+          }
+        ]
+      },
+      {
+        "variableId": "800128",
+        "name": "Sealos Desktop App | DLV - analytics_properties.workspace_id",
+        "type": "v",
+        "parentFolderId": "800000",
+        "parameter": [
+          {
+            "type": "integer",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "boolean",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "template",
+            "key": "name",
+            "value": "analytics_properties.workspace_id"
+          }
+        ]
+      },
+      {
+        "variableId": "800129",
+        "name": "Sealos Desktop App | DLV - analytics_properties.engagement_time_msec",
+        "type": "v",
+        "parentFolderId": "800000",
+        "parameter": [
+          {
+            "type": "integer",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "boolean",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "template",
+            "key": "name",
+            "value": "analytics_properties.engagement_time_msec"
+          }
+        ]
+      },
+      {
+        "variableId": "800130",
+        "name": "Sealos Desktop App | App scope",
+        "type": "jsm",
+        "parentFolderId": "800000",
+        "parameter": [
+          {
+            "type": "template",
+            "key": "javascript",
+            "value": "function() {\n  return location.protocol === 'http:' && location.hostname === '127.0.0.1' &&\n    /^\\/desktop-app-analytics\\/[a-f0-9]{32}\\/index\\.html$/.test(location.pathname) &&\n    {{Sealos Desktop App | DLV - surface}} === 'desktop_app' &&\n    {{Sealos Desktop App | DLV - product_edition}} === 'global' &&\n    {{Sealos Desktop App | DLV - analytics_consent}} === 'granted';\n}"
+          }
+        ]
+      },
+      {
+        "variableId": "800131",
+        "name": "Sealos Desktop App | App event allowed",
+        "type": "jsm",
+        "parentFolderId": "800000",
+        "parameter": [
+          {
+            "type": "template",
+            "key": "javascript",
+            "value": "function() {\n  return /^(?:app_launch|app_first_open|app_screen_view|login_required|login_started|login_succeeded|login_failed|task_created|task_opened|deploy_finished|visitor_linked)$/.test({{Sealos Desktop App | DLV - app_event_name}});\n}"
+          }
+        ]
+      },
+      {
+        "variableId": "800132",
+        "name": "Sealos Desktop App | Web link scope",
+        "type": "jsm",
+        "parentFolderId": "800000",
+        "parameter": [
+          {
+            "type": "template",
+            "key": "javascript",
+            "value": "function() {\n  var uuid = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;\n  return location.protocol === 'https:' &&\n    /^(?:[a-z0-9-]+\\.)+sealos\\.io$/.test(location.hostname) && location.hostname !== 'www.sealos.io' &&\n    {{Sealos Desktop App | DLV - product_edition}} === 'global' &&\n    {{Sealos Desktop App | DLV - analytics_consent}} === 'granted' &&\n    uuid.test({{Sealos Desktop App | DLV - user_id}}) && uuid.test({{Sealos Desktop App | DLV - visitor_id}});\n}"
+          }
+        ]
+      }
+    ],
+    "trigger": [
+      {
+        "triggerId": "800001",
+        "name": "Sealos Desktop App | App init",
+        "type": "CUSTOM_EVENT",
+        "parentFolderId": "800000",
+        "customEventFilter": [
+          {
+            "type": "equals",
+            "parameter": [
+              {
+                "type": "template",
+                "key": "arg0",
+                "value": "{{_event}}"
+              },
+              {
+                "type": "template",
+                "key": "arg1",
+                "value": "sealos_app_init"
+              }
+            ]
+          }
+        ],
+        "filter": [
+          {
+            "type": "equals",
+            "parameter": [
+              {
+                "type": "template",
+                "key": "arg0",
+                "value": "{{Sealos Desktop App | App scope}}"
+              },
+              {
+                "type": "template",
+                "key": "arg1",
+                "value": "true"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "triggerId": "800002",
+        "name": "Sealos Desktop App | App event",
+        "type": "CUSTOM_EVENT",
+        "parentFolderId": "800000",
+        "customEventFilter": [
+          {
+            "type": "equals",
+            "parameter": [
+              {
+                "type": "template",
+                "key": "arg0",
+                "value": "{{_event}}"
+              },
+              {
+                "type": "template",
+                "key": "arg1",
+                "value": "sealos_app_event"
+              }
+            ]
+          }
+        ],
+        "filter": [
+          {
+            "type": "equals",
+            "parameter": [
+              {
+                "type": "template",
+                "key": "arg0",
+                "value": "{{Sealos Desktop App | App scope}}"
+              },
+              {
+                "type": "template",
+                "key": "arg1",
+                "value": "true"
+              }
+            ]
+          },
+          {
+            "type": "equals",
+            "parameter": [
+              {
+                "type": "template",
+                "key": "arg0",
+                "value": "{{Sealos Desktop App | App event allowed}}"
+              },
+              {
+                "type": "template",
+                "key": "arg1",
+                "value": "true"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "triggerId": "800003",
+        "name": "Sealos Desktop App | Web visitor linked",
+        "type": "CUSTOM_EVENT",
+        "parentFolderId": "800000",
+        "customEventFilter": [
+          {
+            "type": "equals",
+            "parameter": [
+              {
+                "type": "template",
+                "key": "arg0",
+                "value": "{{_event}}"
+              },
+              {
+                "type": "template",
+                "key": "arg1",
+                "value": "web_visitor_linked"
+              }
+            ]
+          }
+        ],
+        "filter": [
+          {
+            "type": "equals",
+            "parameter": [
+              {
+                "type": "template",
+                "key": "arg0",
+                "value": "{{Sealos Desktop App | Web link scope}}"
+              },
+              {
+                "type": "template",
+                "key": "arg1",
+                "value": "true"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "tag": [
+      {
+        "tagId": "800010",
+        "name": "Sealos Desktop App | App Google tag",
+        "type": "googtag",
+        "parentFolderId": "800000",
+        "parameter": [
+          {
+            "type": "template",
+            "key": "tagId",
+            "value": "G-YF5VHZSTE0"
+          }
+        ],
+        "firingTriggerId": [
+          "800001"
+        ],
+        "tagFiringOption": "oncePerLoad"
+      },
+      {
+        "tagId": "800011",
+        "name": "Sealos Desktop App | App GA4 event",
+        "type": "gaawe",
+        "parentFolderId": "800000",
+        "parameter": [
+          {
+            "type": "boolean",
+            "key": "sendEcommerceData",
+            "value": "false"
+          },
+          {
+            "type": "template",
+            "key": "eventName",
+            "value": "{{Sealos Desktop App | DLV - app_event_name}}"
+          },
+          {
+            "type": "template",
+            "key": "measurementIdOverride",
+            "value": "G-YF5VHZSTE0"
+          },
+          {
+            "type": "list",
+            "key": "eventSettingsTable",
+            "list": [
+              {
+                "type": "map",
+                "map": [
+                  {
+                    "type": "template",
+                    "key": "parameter",
+                    "value": "screen_name"
+                  },
+                  {
+                    "type": "template",
+                    "key": "parameterValue",
+                    "value": "{{Sealos Desktop App | DLV - analytics_properties.screen_name}}"
+                  }
+                ]
+              },
+              {
+                "type": "map",
+                "map": [
+                  {
+                    "type": "template",
+                    "key": "parameter",
+                    "value": "outcome"
+                  },
+                  {
+                    "type": "template",
+                    "key": "parameterValue",
+                    "value": "{{Sealos Desktop App | DLV - analytics_properties.outcome}}"
+                  }
+                ]
+              },
+              {
+                "type": "map",
+                "map": [
+                  {
+                    "type": "template",
+                    "key": "parameter",
+                    "value": "reason"
+                  },
+                  {
+                    "type": "template",
+                    "key": "parameterValue",
+                    "value": "{{Sealos Desktop App | DLV - analytics_properties.reason}}"
+                  }
+                ]
+              },
+              {
+                "type": "map",
+                "map": [
+                  {
+                    "type": "template",
+                    "key": "parameter",
+                    "value": "duration_ms"
+                  },
+                  {
+                    "type": "template",
+                    "key": "parameterValue",
+                    "value": "{{Sealos Desktop App | DLV - analytics_properties.duration_ms}}"
+                  }
+                ]
+              },
+              {
+                "type": "map",
+                "map": [
+                  {
+                    "type": "template",
+                    "key": "parameter",
+                    "value": "app_version"
+                  },
+                  {
+                    "type": "template",
+                    "key": "parameterValue",
+                    "value": "{{Sealos Desktop App | DLV - analytics_properties.app_version}}"
+                  }
+                ]
+              },
+              {
+                "type": "map",
+                "map": [
+                  {
+                    "type": "template",
+                    "key": "parameter",
+                    "value": "os"
+                  },
+                  {
+                    "type": "template",
+                    "key": "parameterValue",
+                    "value": "{{Sealos Desktop App | DLV - analytics_properties.os}}"
+                  }
+                ]
+              },
+              {
+                "type": "map",
+                "map": [
+                  {
+                    "type": "template",
+                    "key": "parameter",
+                    "value": "arch"
+                  },
+                  {
+                    "type": "template",
+                    "key": "parameterValue",
+                    "value": "{{Sealos Desktop App | DLV - analytics_properties.arch}}"
+                  }
+                ]
+              },
+              {
+                "type": "map",
+                "map": [
+                  {
+                    "type": "template",
+                    "key": "parameter",
+                    "value": "env"
+                  },
+                  {
+                    "type": "template",
+                    "key": "parameterValue",
+                    "value": "{{Sealos Desktop App | DLV - analytics_properties.env}}"
+                  }
+                ]
+              },
+              {
+                "type": "map",
+                "map": [
+                  {
+                    "type": "template",
+                    "key": "parameter",
+                    "value": "packaged"
+                  },
+                  {
+                    "type": "template",
+                    "key": "parameterValue",
+                    "value": "{{Sealos Desktop App | DLV - analytics_properties.packaged}}"
+                  }
+                ]
+              },
+              {
+                "type": "map",
+                "map": [
+                  {
+                    "type": "template",
+                    "key": "parameter",
+                    "value": "flow"
+                  },
+                  {
+                    "type": "template",
+                    "key": "parameterValue",
+                    "value": "{{Sealos Desktop App | DLV - analytics_properties.flow}}"
+                  }
+                ]
+              },
+              {
+                "type": "map",
+                "map": [
+                  {
+                    "type": "template",
+                    "key": "parameter",
+                    "value": "method"
+                  },
+                  {
+                    "type": "template",
+                    "key": "parameterValue",
+                    "value": "{{Sealos Desktop App | DLV - analytics_properties.method}}"
+                  }
+                ]
+              },
+              {
+                "type": "map",
+                "map": [
+                  {
+                    "type": "template",
+                    "key": "parameter",
+                    "value": "service_kind"
+                  },
+                  {
+                    "type": "template",
+                    "key": "parameterValue",
+                    "value": "{{Sealos Desktop App | DLV - analytics_properties.service_kind}}"
+                  }
+                ]
+              },
+              {
+                "type": "map",
+                "map": [
+                  {
+                    "type": "template",
+                    "key": "parameter",
+                    "value": "template_id"
+                  },
+                  {
+                    "type": "template",
+                    "key": "parameterValue",
+                    "value": "{{Sealos Desktop App | DLV - analytics_properties.template_id}}"
+                  }
+                ]
+              },
+              {
+                "type": "map",
+                "map": [
+                  {
+                    "type": "template",
+                    "key": "parameter",
+                    "value": "workspace_id"
+                  },
+                  {
+                    "type": "template",
+                    "key": "parameterValue",
+                    "value": "{{Sealos Desktop App | DLV - analytics_properties.workspace_id}}"
+                  }
+                ]
+              },
+              {
+                "type": "map",
+                "map": [
+                  {
+                    "type": "template",
+                    "key": "parameter",
+                    "value": "engagement_time_msec"
+                  },
+                  {
+                    "type": "template",
+                    "key": "parameterValue",
+                    "value": "{{Sealos Desktop App | DLV - analytics_properties.engagement_time_msec}}"
+                  }
+                ]
+              },
+              {
+                "type": "map",
+                "map": [
+                  {
+                    "type": "template",
+                    "key": "parameter",
+                    "value": "session_id"
+                  },
+                  {
+                    "type": "template",
+                    "key": "parameterValue",
+                    "value": "{{Sealos Desktop App | DLV - session_id}}"
+                  }
+                ]
+              },
+              {
+                "type": "map",
+                "map": [
+                  {
+                    "type": "template",
+                    "key": "parameter",
+                    "value": "event_id"
+                  },
+                  {
+                    "type": "template",
+                    "key": "parameterValue",
+                    "value": "{{Sealos Desktop App | DLV - event_id}}"
+                  }
+                ]
+              },
+              {
+                "type": "map",
+                "map": [
+                  {
+                    "type": "template",
+                    "key": "parameter",
+                    "value": "surface"
+                  },
+                  {
+                    "type": "template",
+                    "key": "parameterValue",
+                    "value": "{{Sealos Desktop App | DLV - surface}}"
+                  }
+                ]
+              },
+              {
+                "type": "map",
+                "map": [
+                  {
+                    "type": "template",
+                    "key": "parameter",
+                    "value": "detailed"
+                  },
+                  {
+                    "type": "template",
+                    "key": "parameterValue",
+                    "value": "{{Sealos Desktop App | DLV - detailed}}"
+                  }
+                ]
+              },
+              {
+                "type": "map",
+                "map": [
+                  {
+                    "type": "template",
+                    "key": "parameter",
+                    "value": "web_client_id"
+                  },
+                  {
+                    "type": "template",
+                    "key": "parameterValue",
+                    "value": "{{Sealos Desktop App | DLV - web_client_id}}"
+                  }
+                ]
+              },
+              {
+                "type": "map",
+                "map": [
+                  {
+                    "type": "template",
+                    "key": "parameter",
+                    "value": "visitor_id"
+                  },
+                  {
+                    "type": "template",
+                    "key": "parameterValue",
+                    "value": "{{Sealos Desktop App | DLV - visitor_id}}"
+                  }
+                ]
+              },
+              {
+                "type": "map",
+                "map": [
+                  {
+                    "type": "template",
+                    "key": "parameter",
+                    "value": "product_edition"
+                  },
+                  {
+                    "type": "template",
+                    "key": "parameterValue",
+                    "value": "{{Sealos Desktop App | DLV - product_edition}}"
+                  }
+                ]
+              },
+              {
+                "type": "map",
+                "map": [
+                  {
+                    "type": "template",
+                    "key": "parameter",
+                    "value": "acquisition_source"
+                  },
+                  {
+                    "type": "template",
+                    "key": "parameterValue",
+                    "value": "{{Sealos Desktop App | DLV - source.source}}"
+                  }
+                ]
+              },
+              {
+                "type": "map",
+                "map": [
+                  {
+                    "type": "template",
+                    "key": "parameter",
+                    "value": "acquisition_medium"
+                  },
+                  {
+                    "type": "template",
+                    "key": "parameterValue",
+                    "value": "{{Sealos Desktop App | DLV - source.medium}}"
+                  }
+                ]
+              },
+              {
+                "type": "map",
+                "map": [
+                  {
+                    "type": "template",
+                    "key": "parameter",
+                    "value": "acquisition_campaign"
+                  },
+                  {
+                    "type": "template",
+                    "key": "parameterValue",
+                    "value": "{{Sealos Desktop App | DLV - source.campaign}}"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "firingTriggerId": [
+          "800002"
+        ],
+        "tagFiringOption": "oncePerEvent"
+      },
+      {
+        "tagId": "800012",
+        "name": "Sealos Desktop App | Web visitor linked GA4",
+        "type": "gaawe",
+        "parentFolderId": "800000",
+        "parameter": [
+          {
+            "type": "boolean",
+            "key": "sendEcommerceData",
+            "value": "false"
+          },
+          {
+            "type": "template",
+            "key": "eventName",
+            "value": "visitor_linked"
+          },
+          {
+            "type": "template",
+            "key": "measurementIdOverride",
+            "value": "G-YF5VHZSTE0"
+          },
+          {
+            "type": "list",
+            "key": "eventSettingsTable",
+            "list": [
+              {
+                "type": "map",
+                "map": [
+                  {
+                    "type": "template",
+                    "key": "parameter",
+                    "value": "visitor_id"
+                  },
+                  {
+                    "type": "template",
+                    "key": "parameterValue",
+                    "value": "{{Sealos Desktop App | DLV - visitor_id}}"
+                  }
+                ]
+              },
+              {
+                "type": "map",
+                "map": [
+                  {
+                    "type": "template",
+                    "key": "parameter",
+                    "value": "product_edition"
+                  },
+                  {
+                    "type": "template",
+                    "key": "parameterValue",
+                    "value": "{{Sealos Desktop App | DLV - product_edition}}"
+                  }
+                ]
+              },
+              {
+                "type": "map",
+                "map": [
+                  {
+                    "type": "template",
+                    "key": "parameter",
+                    "value": "acquisition_source"
+                  },
+                  {
+                    "type": "template",
+                    "key": "parameterValue",
+                    "value": "{{Sealos Desktop App | DLV - source.source}}"
+                  }
+                ]
+              },
+              {
+                "type": "map",
+                "map": [
+                  {
+                    "type": "template",
+                    "key": "parameter",
+                    "value": "acquisition_medium"
+                  },
+                  {
+                    "type": "template",
+                    "key": "parameterValue",
+                    "value": "{{Sealos Desktop App | DLV - source.medium}}"
+                  }
+                ]
+              },
+              {
+                "type": "map",
+                "map": [
+                  {
+                    "type": "template",
+                    "key": "parameter",
+                    "value": "acquisition_campaign"
+                  },
+                  {
+                    "type": "template",
+                    "key": "parameterValue",
+                    "value": "{{Sealos Desktop App | DLV - source.campaign}}"
+                  }
+                ]
+              },
+              {
+                "type": "map",
+                "map": [
+                  {
+                    "type": "template",
+                    "key": "parameter",
+                    "value": "surface"
+                  },
+                  {
+                    "type": "template",
+                    "key": "parameterValue",
+                    "value": "desktop_web"
+                  }
+                ]
+              },
+              {
+                "type": "map",
+                "map": [
+                  {
+                    "type": "template",
+                    "key": "parameter",
+                    "value": "web_client_id"
+                  },
+                  {
+                    "type": "template",
+                    "key": "parameterValue",
+                    "value": "{{Sealos Desktop App | DLV - ga_client_id}}"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "firingTriggerId": [
+          "800003"
+        ],
+        "tagFiringOption": "oncePerEvent"
+      }
+    ]
+  }
+}

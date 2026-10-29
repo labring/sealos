@@ -1,5 +1,10 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { decideCodeAuthorization } from '@/services/backend/oauth2/authorization-code';
+import { codeOrigin, decideCodeAuthorization } from '@/services/backend/oauth2/authorization-code';
+import { ACQUISITION_COOKIE } from '@/schema/app-attribution';
+import {
+  analyticsCookieHeader,
+  analyticsCookieName
+} from '@/services/backend/oauth2/analytics-cookie';
 import {
   codeBrowserUser,
   codeParameters,
@@ -16,6 +21,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!['approve', 'deny'].includes(params.decision))
       throw new OAuth2HttpError(400, 'invalid_request');
     const auth = await codeBrowserUser(req, params);
+    res.setHeader('Set-Cookie', analyticsCookieHeader(params.request_id, '', codeOrigin()));
     return res
       .status(200)
       .json(
@@ -23,7 +29,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           params.request_id,
           auth.secret,
           auth.userUid,
-          params.decision === 'approve'
+          params.decision === 'approve',
+          {
+            token: req.cookies[analyticsCookieName(params.request_id)],
+            cookie: req.cookies[ACQUISITION_COOKIE]
+          }
         )
       );
   });

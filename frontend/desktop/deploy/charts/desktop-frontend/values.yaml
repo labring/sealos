@@ -9,11 +9,6 @@ image: ghcr.io/labring/sealos-desktop-frontend:latest
 imagePullPolicy: IfNotPresent
 
 imagePullSecrets: []
-# Native Global analytics, disabled by default. No acquisition database or worker.
-appAnalytics:
-  enabled: false
-  existingSecret: "" # GOOGLE_ANALYTICS_MEASUREMENT_ID and GOOGLE_ANALYTICS_MP_API_SECRET
-
 fullnameOverride: "sealos-desktop"
 
 serviceAccount:

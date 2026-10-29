@@ -1,82 +1,78 @@
-# Native App analytics — phase 1
+# App analytics and website Cookie handoff
 
-This phase makes existing App events usable in China (the existing controlled
-Rybbit transport) and Global (Main → Desktop API → GA4 Measurement Protocol).
-It adds no database tables, migrations, durable event queue, scheduled worker,
-website visitor handoff, OAuth changes, billing producer or deployment proof.
-The complete attribution drafts are separate follow-up work.
-
-## Ownership and contract
+The App uses existing China Rybbit and Global Web GTM `GTM-5DTRN2V3` → GA4
+`G-YF5VHZSTE0`. Its isolated local HTTP analytics page hosts Web GTM; the main
+UI stays `file://`. No sGTM service, Measurement Protocol endpoint or API secret.
 
 ```text
-App Main owns Cloud, installation ID, session and detailed-statistics setting
-  China  → existing Rybbit proxy
-  Global → POST /api/analytics/events → GA4 Web stream /mp/collect
-                      server owns MP secret and verifies optional OAuth identity
+Consented website visit → sealos_acquisition_v1 shared-domain Cookie
+ → ordinary installer download → App opens console OAuth in system browser
+ → console reads Cookie + verifies logged-in userUid + approved authorization
+ → signed analytics_token through existing redirect and PKCE code exchange
+ → optional analytics_context in token response → App stores in local auth JSON
+ → Web / App emit visitor_linked to their existing statistics destination
 ```
 
-The native POST contract is version 1, surface `desktop_app`, edition `global`,
-an event UUID/time, installation ID, optional session ID, analytics permission,
-detailed flag and allowlisted event/properties. No caller-selected destination,
-client `user_id`, email, local path or website attribution payload is accepted.
-The event list covers launch/first open, screen, login, task and client-observed
-`deploy_finished`; it cannot assert signup, payment or trusted deployment success.
+`visitor_id` is a website-generated UUID, not a built-in GA identifier. The App
+installation ID / GA client ID remains separate from the website CID. Both sides
+use raw verified `userUid`; realm and workspace are separate dimensions. This
+does not merge China and Global accounts. No new table, column, migration,
+attribution service or durable queue is added. Existing OAuth tables retain
+their original authentication role. The previous MP endpoint and Helm settings
+have been removed from this PR.
 
-Detailed events map the random App installation to a stable GA4 `client_id`.
-A verified native OAuth access token supplies GA4 `user_id` (`sub`); Workspace
-is a separate event dimension. Anonymous pre-login events need no access token.
-An invalid supplied token is rejected, never silently accepted anonymously.
-With detailed statistics off, the server creates a fresh event identifier and
-omits user ID, session, Workspace and engagement fields; task events are rejected.
-Explicit analytics denial results in no outbound request. This preserves the
-App's existing basic-versus-detailed collection policy.
+## Optional, bounded handoff
 
-The API accepts only native calls without Origin and JSON bodies up to 8 KiB.
-It uses bounded per-process minute rate limits, not the OAuth database limiter.
-These are best effort across replicas; configure gateway abuse limits for public
-traffic. Client IP is used only for the short-lived local limit and is not sent
-to Google. Only the fixed Google HTTPS endpoint is contacted, with redirects
-disabled and a five-second timeout. No request headers or secrets are reflected.
+- Official root/www websites write the Cookie only with analytics permission:
+  Domain=sealos.io or sealos.run, Path=/, Secure, SameSite=Lax, 30 days. No auth
+  token or user UID enters that wide Cookie. JSON is UTF-8 base64url without
+  padding, at most 1800 decoded bytes. Source URLs exclude query/fragment and
+  credentials. sea_attr retains original bytes, at most 512 chars, only with all
+  three ad permissions granted; existing website sea_attr URLs are unchanged.
+- Official native clients `sealos-io` / `sealox-desktop-bja`, configured HTTPS
+  sealos.io/sealos.run authority and `analytics_consent=granted` opt in. Optional
+  `analytics_installation_id` is validated; absence never blocks login.
+- Authorize sets a host-only, HttpOnly request Cookie lasting 10 minutes.
+  Approval rechecks current website Cookie and authenticates through normal
+  OAuth. The 5-minute receipt binds request ID, client, state hash, realm and
+  verified subject with HS256, a purpose-derived signing key and distinct issuer/audience. Missing/default
+  signing keys disable only attribution.
+- Exchange still requires the original one-use code and PKCE. A receipt has no
+  authentication privileges. Missing, invalid, expired metadata leaves login
+  successful and unmatched. Denial never links. Refresh does not mint new
+  attribution; App retains metadata only for the same account/realm, clearing
+  on fresh unmatched login, account change or detailed-statistics withdrawal.
+- Cookie fields and consent are browser observations, not proof of acquisition
+  or verified ad consent. They cannot authorize accounts, rewards or billing.
+  App advertising permissions remain denied.
 
-Success is `{ accepted: true, event_id }` after upstream HTTP 2xx. It means
-transport acceptance, not proof that GA4 reports contain the event. Failures are
-returned to the App's existing bounded memory queue. No persistent deduplication
-or exactly-once delivery is claimed: offline/exit can lose events and lost
-acknowledgements can cause duplicates. Nothing here changes login/deployment.
+The approved Web event preserves browser CID; App preserves its own CID. Both
+carry the verified UID and visitor_id. This supplies join keys and post-login
+User-ID, not a guarantee of historical GA4 session rewrites or default ad
+attribution. Configure GA4 reporting identity/custom dimensions separately.
+Rybbit historical identity merging must be checked against the deployed version.
 
-## Configuration and rollout
+Different browser/profile/device, private mode, expiry, denied consent or blocked
+storage remains unmatched. Root/www localStorage is origin-specific; withdrawal
+is not guaranteed across origins/devices. No fingerprint/probabilistic fallback.
 
-Disabled by default. On the Global Desktop deployment only, set:
+## Review and rollout
 
-- `APP_ANALYTICS_REALM=global` (China and missing/invalid values stay disabled).
-- `GOOGLE_ANALYTICS_MEASUREMENT_ID` for a GA4 **Web** stream.
-- `GOOGLE_ANALYTICS_MP_API_SECRET` for that stream; server Secret only.
-- Optional `APP_ANALYTICS_NATIVE_CLIENT_IDS`: comma-separated native OAuth
-  client allowlist; defaults to `sealos-io`.
+The incremental GTM import is in `packages/gtm/integrations/desktop-app/`.
+Review/import/publish it into the existing Web container for the new App events;
+existing Web triggers are preserved. No live GTM configuration was changed.
+The App blocks unrelated analytics destinations. Existing advertising conversion
+tags are not enabled for native traffic by this change.
 
-The existing Helm chart exposes `appAnalytics.enabled` and
-`appAnalytics.existingSecret`. The referenced Secret contains the two Google
-keys above (and optional client allowlist); the chart sets the realm explicitly.
-Do not place API secrets in App bundles, public config, Git or Helm values.
-No acquisition flags, migrations or flush schedule are required. Deploy this
-endpoint before releasing the matching App change. China retains existing
-Rybbit deployment/configuration. No website or Brain PR is required.
+Unit tests cover malformed/oversized Cookie, consent withdrawal, client/realm/
+request/state/subject binding, expiry, tampering, denial, PKCE, code replay,
+old App compatibility and successful login with invalid metadata. Database
+integration tests require an explicitly isolated `OAUTH_TEST_DATABASE_URL`;
+never use production. There are no new database settings or Secrets to deploy.
 
-## Acceptance
-
-Run unit HTTP/protocol tests, Desktop TypeScript checking, and Helm rendering.
-In the App exercise production `file://`, China/Global separation, logged-out
-then logged-in identity, Workspace/account/Cloud switching, detailed opt-out,
-retry/timeout and missing endpoint. Confirm actual test events in the intended
-Rybbit/GA4 destination using authorized production configuration before rollout.
-Configure GA4 User-ID reporting and any desired custom event dimensions.
-
-MP bypasses the Web GTM container: it does not trigger its Google Ads, Reddit,
-LinkedIn or Twitter tags. It does not join website client IDs or recreate all
-automatic Web/session/acquisition reports. These are phase-2 topics; sGTM can
-later replace the server transport behind the same native event contract.
-
-Official references: [MP reference](https://developers.google.com/analytics/devguides/collection/protocol/ga4/reference),
-[validation](https://developers.google.com/analytics/devguides/collection/protocol/ga4/validating-events).
-Google HTTP 2xx alone is not report validation; the debug validation endpoint
-also does not collect events or verify the API secret.
+Release acceptance still requires actual browser + packaged App journeys in both
+editions after code/GTM publication: visit/download/login, matching visitor ID,
+separate CIDs, matching UID, account/realm switching and negative cases. Inspect
+actual Rybbit/GA4 reports; script loading/HTTP success does not prove reporting.
+Client deployment events are activity, not authoritative signup/payment facts.
+Brain changes are not required for this scope.
