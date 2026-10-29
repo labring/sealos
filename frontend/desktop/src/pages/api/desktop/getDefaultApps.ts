@@ -42,7 +42,7 @@ export default async function handler(_req: NextApiRequest, res: NextApiResponse
     });
 
     const getRawAppList = async (meta: CRDMeta) =>
-      ((await ListCRD(kc, meta)).body as TAppCRList).items || [];
+      ((await ListCRD(kc, meta)) as TAppCRList).items || [];
 
     const defaultArr = (await getRawAppList(getMeta()))
       .map<TAppConfig>((item) => {

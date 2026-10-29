@@ -9,6 +9,21 @@ export function K8sApiDefault(): k8s.KubeConfig {
   return kc;
 }
 
+// the object-args API sends patches as application/json; patch requests need
+// an explicit content type for the apiserver to accept them
+const patchContentTypeMiddleware = (contentType: string) => ({
+  pre: (context: k8s.RequestContext) =>
+    new k8s.Observable(
+      Promise.resolve(context).then((ctx) => {
+        ctx.setHeaderParam('Content-Type', contentType);
+        return ctx;
+      })
+    ),
+  post: (context: k8s.ResponseContext) => new k8s.Observable(Promise.resolve(context))
+});
+
+const jsonPatchMiddleware = () => patchContentTypeMiddleware(k8s.PatchStrategy.JsonPatch);
+
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
@@ -52,10 +67,10 @@ async function watchClusterObject({
     try {
       const remainingTime = deadline - Date.now();
       const data = await withTimeout(
-        client.getClusterCustomObjectStatus(group, version, plural, name),
+        client.getClusterCustomObjectStatus({ group, version, plural, name }),
         remainingTime
       );
-      body = data.body;
+      body = data;
       if (
         'status' in body &&
         // @ts-ignore
@@ -103,8 +118,8 @@ async function watchCustomClusterObject({
     await new Promise((resolve) => setTimeout(resolve, interval));
     let body = null;
     try {
-      const data = await client.getClusterCustomObjectStatus(group, version, plural, name);
-      body = data.body;
+      const data = await client.getClusterCustomObjectStatus({ group, version, plural, name });
+      body = data;
       if (fn(lastbody as any, body as any)) {
         lastbody = body;
         return body;
@@ -133,8 +148,8 @@ async function setUserKubeconfig(
   const updateTime = k8sFormatTime(new Date());
   const client = kc.makeApiClient(k8s.CustomObjectsApi);
   const body = await client
-    .getClusterCustomObject(group, version, plural, k8s_username)
-    .then((res) => res.body as UserCR)
+    .getClusterCustomObject({ group, version, plural, name: k8s_username })
+    .then((res) => res as UserCR)
     .catch((res) => {
       const body = res.body as StatusCR;
       if (
@@ -164,7 +179,7 @@ async function setUserKubeconfig(
         }
       }
     };
-    await client.createClusterCustomObject(group, version, plural, resourceObj);
+    await client.createClusterCustomObject({ group, version, plural, body: resourceObj });
   } else {
     body.metadata.labels = {
       uid,
@@ -172,19 +187,8 @@ async function setUserKubeconfig(
     };
     const patchs = [{ op: 'replace', path: '/metadata/labels/updateTime', value: updateTime }];
     await client.patchClusterCustomObject(
-      group,
-      version,
-      plural,
-      k8s_username,
-      patchs,
-      undefined,
-      undefined,
-      undefined,
-      {
-        headers: {
-          'Content-Type': 'application/json-patch+json'
-        }
-      }
+      { group, version, plural, name: k8s_username, body: patchs },
+      { middleware: [jsonPatchMiddleware()] }
     );
   }
   return k8s_username;
@@ -217,7 +221,7 @@ async function setUserTeamCreate(
       }
     }
   };
-  await client.createClusterCustomObject(group, version, plural, resourceObj);
+  await client.createClusterCustomObject({ group, version, plural, body: resourceObj });
   return k8s_username;
 }
 
@@ -232,19 +236,8 @@ async function removeUserTeam(kc: k8s.KubeConfig, k8s_username: string) {
     { op: 'replace', path: '/metadata/labels/updateTime', value: updateTime }
   ];
   await client.patchClusterCustomObject(
-    group,
-    version,
-    plural,
-    k8s_username,
-    patchs,
-    undefined,
-    undefined,
-    undefined,
-    {
-      headers: {
-        'Content-Type': 'application/json-patch+json'
-      }
-    }
+    { group, version, plural, name: k8s_username, body: patchs },
+    { middleware: [jsonPatchMiddleware()] }
   );
   return k8s_username;
 }
@@ -259,31 +252,19 @@ async function removeUser(kc: k8s.KubeConfig, k8s_username: string) {
     { op: 'replace', path: '/metadata/labels/updateTime', value: updateTime }
   ];
   await client.patchClusterCustomObject(
-    group,
-    version,
-    plural,
-    k8s_username,
-    patchs,
-    undefined,
-    undefined,
-    undefined,
-    {
-      headers: {
-        'Content-Type': 'application/json-patch+json'
-      }
-    }
+    { group, version, plural, name: k8s_username, body: patchs },
+    { middleware: [jsonPatchMiddleware()] }
   );
   return k8s_username;
 }
 export const getUserCr = async (kc: KubeConfig, name: string) => {
-  const resourceKind = 'User';
   const group = 'user.sealos.io';
   const version = 'v1';
   const plural = 'users';
   const client = kc.makeApiClient(k8s.CustomObjectsApi);
   return await client
-    .getClusterCustomObject(group, version, plural, name)
-    .then((res) => res.body as UserCR);
+    .getClusterCustomObject({ group, version, plural, name })
+    .then((res) => res as UserCR);
 };
 // for enter user state
 export const getUserKubeconfigNotPatch = async (name: string) => {
@@ -399,26 +380,26 @@ export const setUserWorkspaceLock = async (namespace: string) => {
     const client = kc.makeApiClient(k8s.CoreV1Api);
 
     try {
-      const currentNamespace = await client.readNamespace(namespace);
-      const currentStatus = currentNamespace.body.metadata?.annotations?.['debt.sealos/status'];
+      const currentNamespace = await client.readNamespace({ name: namespace });
+      const currentStatus = currentNamespace.metadata?.annotations?.['debt.sealos/status'];
       if (currentStatus === WorkspaceDebtStatus.TerminateSuspendCompleted) {
         return true;
       }
     } catch (readError) {
       if (
-        readError instanceof k8s.HttpError &&
-        (readError.statusCode === 404 ||
+        readError instanceof k8s.ApiException &&
+        (readError.code === 404 ||
           (readError.body && (readError.body.code === 404 || readError.body.code === '404')))
       ) {
         console.log('setUserWorkspaceLock error: namespace not found');
         return true;
       }
       if (
-        readError instanceof k8s.HttpError &&
+        readError instanceof k8s.ApiException &&
         readError.body &&
         typeof readError.body.message === 'string' &&
         readError.body.message.includes('not found') &&
-        (readError.statusCode === 404 ||
+        (readError.code === 404 ||
           readError.body.code === 404 ||
           readError.body.code === '404')
       ) {
@@ -428,43 +409,39 @@ export const setUserWorkspaceLock = async (namespace: string) => {
     }
 
     const res = await client.patchNamespace(
-      namespace,
       {
-        metadata: {
-          annotations: {
-            'debt.sealos/status': WorkspaceDebtStatus.TerminateSuspend
+        name: namespace,
+        body: {
+          metadata: {
+            annotations: {
+              'debt.sealos/status': WorkspaceDebtStatus.TerminateSuspend
+            }
           }
         }
       },
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
       {
-        headers: {
-          'Content-Type': 'application/strategic-merge-patch+json'
-        }
+        middleware: [
+          patchContentTypeMiddleware(k8s.PatchStrategy.StrategicMergePatch)
+        ]
       }
     );
     return (
-      res.body.metadata?.annotations?.['debt.sealos/status'] ===
-      WorkspaceDebtStatus.TerminateSuspend
+      res.metadata?.annotations?.['debt.sealos/status'] === WorkspaceDebtStatus.TerminateSuspend
     );
   } catch (e) {
     if (
-      e instanceof k8s.HttpError &&
-      (e.statusCode === 404 || (e.body && (e.body.code === 404 || e.body.code === '404')))
+      e instanceof k8s.ApiException &&
+      (e.code === 404 || (e.body && (e.body.code === 404 || e.body.code === '404')))
     ) {
       console.log('setUserWorkspaceLock error: namespace not found');
       return true;
     }
     if (
-      e instanceof k8s.HttpError &&
+      e instanceof k8s.ApiException &&
       e.body &&
       typeof e.body.message === 'string' &&
       e.body.message.includes('not found') &&
-      (e.statusCode === 404 || e.body.code === 404 || e.body.code === '404')
+      (e.code === 404 || e.body.code === 404 || e.body.code === '404')
     ) {
       console.log('setUserWorkspaceLock error: namespace not found');
       return true;

@@ -48,10 +48,10 @@
     "dayjs": "^1.11.10"
   },
   "peerDependencies": {
-    "@kubernetes/client-node": "^0.18.1 || ^0.21.0"
+    "@kubernetes/client-node": ">=1.0.0 <2.0.0"
   },
   "devDependencies": {
-    "@kubernetes/client-node": "^0.21.0",
+    "@kubernetes/client-node": "^1.4.0",
     "@rollup/plugin-typescript": "12.3.0",
     "@types/node": "^20.7.1",
     "dotenv": "^16.3.1",

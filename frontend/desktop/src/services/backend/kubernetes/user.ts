@@ -1,5 +1,4 @@
 import * as k8s from '@kubernetes/client-node';
-import http from 'http';
 import * as yaml from 'js-yaml';
 
 export function K8sApi(config: string): k8s.KubeConfig {
@@ -26,14 +25,8 @@ export function K8sApi(config: string): k8s.KubeConfig {
 
   return kc;
 }
-export async function ListPods(
-  kc: k8s.KubeConfig,
-  ns: string
-): Promise<{
-  response: http.IncomingMessage;
-  body: k8s.V1PodList;
-}> {
-  return kc.makeApiClient(k8s.CoreV1Api).listNamespacedPod(ns);
+export async function ListPods(kc: k8s.KubeConfig, ns: string): Promise<k8s.V1PodList> {
+  return kc.makeApiClient(k8s.CoreV1Api).listNamespacedPod({ namespace: ns });
 }
 
 export type CRDMeta = {
@@ -43,34 +36,25 @@ export type CRDMeta = {
   plural: string; // type
 };
 
-export async function GetCRD(
-  kc: k8s.KubeConfig,
-  meta: CRDMeta,
-  name: string
-): Promise<{
-  response: http.IncomingMessage;
-  body: k8s.V1ResourceQuota;
-}> {
-  return kc.makeApiClient(k8s.CustomObjectsApi).getNamespacedCustomObject(
-    meta.group,
-    meta.version,
-    meta.namespace,
-    meta.plural,
+export async function GetCRD(kc: k8s.KubeConfig, meta: CRDMeta, name: string): Promise<any> {
+  return kc.makeApiClient(k8s.CustomObjectsApi).getNamespacedCustomObject({
+    group: meta.group,
+    version: meta.version,
+    namespace: meta.namespace,
+    plural: meta.plural,
     name // resource name
-  );
+  });
 }
 
-export async function ListCRD(
-  kc: k8s.KubeConfig,
-  meta: CRDMeta
-): Promise<{
-  response: http.IncomingMessage;
-  body: object;
-}> {
-  const data = await kc
+export async function ListCRD(kc: k8s.KubeConfig, meta: CRDMeta): Promise<any> {
+  return kc
     .makeApiClient(k8s.CustomObjectsApi)
-    .listNamespacedCustomObject(meta.group, meta.version, meta.namespace, meta.plural);
-  return data;
+    .listNamespacedCustomObject({
+      group: meta.group,
+      version: meta.version,
+      namespace: meta.namespace,
+      plural: meta.plural
+    });
 }
 
 export async function ApplyYaml(
@@ -103,11 +87,11 @@ export async function ApplyYaml(
       //
       // See: https://github.com/kubernetes/kubernetes/issues/97423
       const response = await client.patch(spec);
-      created.push(response.body);
+      created.push(response);
     } catch (e) {
       // we did not get the resource, so it does not exist, so create it
       const response = await client.create(spec);
-      created.push(response.body);
+      created.push(response);
     }
   }
   return created;
@@ -136,17 +120,14 @@ export async function DeleteCRD(
   kc: k8s.KubeConfig,
   meta: CRDMeta,
   name: string
-): Promise<{
-  response: http.IncomingMessage;
-  body: k8s.V1ResourceQuota;
-}> {
-  return kc.makeApiClient(k8s.CustomObjectsApi).deleteNamespacedCustomObject(
-    meta.group,
-    meta.version,
-    meta.namespace,
-    meta.plural,
+): Promise<any> {
+  return kc.makeApiClient(k8s.CustomObjectsApi).deleteNamespacedCustomObject({
+    group: meta.group,
+    version: meta.version,
+    namespace: meta.namespace,
+    plural: meta.plural,
     name // resource name
-  );
+  });
 }
 
 export async function UpdateCRD(
@@ -154,23 +135,32 @@ export async function UpdateCRD(
   meta: CRDMeta,
   name: string,
   patch: any[]
-): Promise<{
-  response: http.IncomingMessage;
-  body: k8s.V1ResourceQuota;
-}> {
-  const options = { headers: { 'Content-type': k8s.PatchUtils.PATCH_FORMAT_JSON_PATCH } };
-
+): Promise<any> {
   return kc.makeApiClient(k8s.CustomObjectsApi).patchNamespacedCustomObject(
-    meta.group,
-    meta.version,
-    meta.namespace,
-    meta.plural,
-    name, // resource name
-    patch, // json patch
-    undefined,
-    undefined,
-    undefined,
-    options
+    {
+      group: meta.group,
+      version: meta.version,
+      namespace: meta.namespace,
+      plural: meta.plural,
+      name, // resource name
+      body: patch // json patch
+    },
+    {
+      // the object-args API sends patches as application/json; JSON patches
+      // need the json-patch content type for the apiserver to accept them
+      middleware: [
+        {
+          pre: (context) =>
+            new k8s.Observable(
+              Promise.resolve(context).then((ctx) => {
+                ctx.setHeaderParam('Content-Type', k8s.PatchStrategy.JsonPatch);
+                return ctx;
+              })
+            ),
+          post: (context) => new k8s.Observable(Promise.resolve(context))
+        }
+      ]
+    }
   );
 }
 
@@ -178,35 +168,26 @@ export async function GetService(
   kc: k8s.KubeConfig,
   name: string,
   namespace: string
-): Promise<{
-  response: http.IncomingMessage;
-  body: k8s.V1Service;
-}> {
-  return kc.makeApiClient(k8s.CoreV1Api).readNamespacedService(name, namespace);
+): Promise<k8s.V1Service> {
+  return kc.makeApiClient(k8s.CoreV1Api).readNamespacedService({ name, namespace });
 }
 
 export async function GetSecret(
   kc: k8s.KubeConfig,
   name: string,
   namespace: string
-): Promise<{
-  response: http.IncomingMessage;
-  body: k8s.V1Secret;
-}> {
-  return kc.makeApiClient(k8s.CoreV1Api).readNamespacedSecret(name, namespace);
+): Promise<k8s.V1Secret> {
+  return kc.makeApiClient(k8s.CoreV1Api).readNamespacedSecret({ name, namespace });
 }
 
 export async function ListSecret(
   kc: k8s.KubeConfig,
   namespace: string,
   fieldSelector: string
-): Promise<{
-  response: http.IncomingMessage;
-  body: k8s.V1Secret;
-}> {
+): Promise<k8s.V1SecretList> {
   return kc
     .makeApiClient(k8s.CoreV1Api)
-    .listNamespacedSecret(namespace, undefined, undefined, undefined, fieldSelector);
+    .listNamespacedSecret({ namespace, fieldSelector });
 }
 
 export async function ListClusterObject(
@@ -215,42 +196,32 @@ export async function ListClusterObject(
   labelSelector: string,
   limit: number,
   _continue: string
-): Promise<{
-  response: http.IncomingMessage;
-  body: object;
-}> {
+): Promise<any> {
   return kc
     .makeApiClient(k8s.CustomObjectsApi)
-    .listClusterCustomObject(
-      meta.group,
-      meta.version,
-      meta.plural,
-      undefined,
-      undefined,
-      _continue,
-      undefined,
+    .listClusterCustomObject({
+      group: meta.group,
+      version: meta.version,
+      plural: meta.plural,
       labelSelector,
-      limit
-    );
+      limit,
+      _continue
+    });
 }
 
 export async function GetClusterObject(
   kc: k8s.KubeConfig,
   meta: CRDMeta,
   name: string
-): Promise<{
-  response: http.IncomingMessage;
-  body: k8s.V1ResourceQuota;
-}> {
-  return kc.makeApiClient(k8s.CustomObjectsApi).getClusterCustomObject(
-    meta.group,
-    meta.version,
-    meta.plural,
+): Promise<any> {
+  return kc.makeApiClient(k8s.CustomObjectsApi).getClusterCustomObject({
+    group: meta.group,
+    version: meta.version,
+    plural: meta.plural,
     name // resource name
-  );
+  });
 }
 export async function GetConfigMap(kc: k8s.KubeConfig, namespace: string, name: string) {
   const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
-  const response = await k8sApi.readNamespacedConfigMap(name, namespace);
-  return response;
+  return k8sApi.readNamespacedConfigMap({ name, namespace });
 }

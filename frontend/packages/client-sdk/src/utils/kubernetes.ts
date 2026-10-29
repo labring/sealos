@@ -64,7 +64,7 @@ async function CreateYaml(
 
       infoLog('create yaml: ', { kind: spec.kind });
       const response = await client.create(spec);
-      created.push(response.body);
+      created.push(response);
     }
   } catch (error: any) {
     errLog('create yaml error: ', error);
@@ -99,17 +99,17 @@ async function replaceYaml(
 
     try {
       // @ts-ignore
-      const { body } = await client.read(spec);
+      const existing = await client.read(spec);
       infoLog('replace yaml: ', { kind: spec.kind });
       // update resource
       const response = await client.replace({
         ...spec,
         metadata: {
           ...spec.metadata,
-          resourceVersion: body.metadata?.resourceVersion
+          resourceVersion: existing.metadata?.resourceVersion
         }
       });
-      succeed.push(response.body);
+      succeed.push(response);
     } catch (e: any) {
       errLog('replace yaml error: ', e);
       // no yaml, create it
@@ -117,7 +117,7 @@ async function replaceYaml(
         try {
           infoLog('create yaml: ', { kind: spec.kind });
           const response = await client.create(spec);
-          succeed.push(response.body);
+          succeed.push(response);
         } catch (error: any) {
           return Promise.reject(error);
         }
@@ -165,16 +165,16 @@ async function getUserBalance(kc: k8s.KubeConfig) {
 
   const k8sApi = kc.makeApiClient(k8s.CustomObjectsApi);
 
-  const { body } = (await k8sApi.getNamespacedCustomObject(
-    'account.sealos.io',
-    'v1',
-    'sealos-system',
-    'accounts',
-    user.name
-  )) as { body: { status: { balance: number; deductionBalance: number } } };
+  const account = (await k8sApi.getNamespacedCustomObject({
+    group: 'account.sealos.io',
+    version: 'v1',
+    namespace: 'sealos-system',
+    plural: 'accounts',
+    name: user.name
+  })) as { status: { balance: number; deductionBalance: number } };
 
-  if (body?.status?.balance !== undefined && body?.status?.deductionBalance !== undefined) {
-    return (body.status.balance - body.status.deductionBalance) / 1000000;
+  if (account?.status?.balance !== undefined && account?.status?.deductionBalance !== undefined) {
+    return (account.status.balance - account.status.deductionBalance) / 1000000;
   }
 
   return 5;
@@ -205,13 +205,13 @@ async function getDeployApp({
   let app: V1Deployment | V1StatefulSet | null = null;
 
   try {
-    app = (await k8sApp.readNamespacedDeployment(appName, namespace)).body;
+    app = await k8sApp.readNamespacedDeployment({ name: appName, namespace });
   } catch (error: any) {
     error;
   }
 
   try {
-    app = (await k8sApp.readNamespacedStatefulSet(appName, namespace)).body;
+    app = await k8sApp.readNamespacedStatefulSet({ name: appName, namespace });
   } catch (error: any) {
     error;
   }

@@ -34,9 +34,9 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     };
     const paymentDesc = await GetCRD(kc, paymentM, id);
     //@ts-ignore
-    if (paymentDesc?.body?.status) {
+    if (paymentDesc?.status) {
       // @ts-ignore
-      const paymentStatusResp = paymentDesc.body.status as paymentStatus;
+      const paymentStatusResp = paymentDesc.status as paymentStatus;
       return jsonRes(resp, { data: paymentStatusResp });
     } else {
       throw new Error('payment not found');
