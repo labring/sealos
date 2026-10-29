@@ -85,10 +85,9 @@ test('mapping stays within 25 event parameters, leaves identity at Google config
     assert.ok(!names.includes('gclid'));
     assert.ok(names.includes('acquisition_source'));
   }
-  assert.equal(native.parameter.find((p) => p.key === 'eventSettingsTable').list.length, 25);
-  const webFields = web.parameter.find((p) => p.key === 'eventSettingsTable').list;
-  const cid = webFields.find((item) => item.map[0].value === 'web_client_id');
-  assert.equal(cid.map[1].value, '{{' + PREFIX + 'DLV - ga_client_id}}');
+  assert.equal(native.parameter.find((p) => p.key === 'eventSettingsTable').list.length, 24);
+  assert.ok(!JSON.stringify(patch).includes('web_client_id'));
+  assert.ok(!JSON.stringify(patch).includes('ga_client_id'));
 });
 
 test('all acquisition source variables read the current v2 object without defaults', () => {

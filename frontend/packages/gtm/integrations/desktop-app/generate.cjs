@@ -33,18 +33,22 @@ function generate() {
   let variableId = 800100;
   const keys = [
     'app_event_name', 'surface', 'product_edition', 'analytics_consent', 'client_id',
-    'user_id', 'session_id', 'event_id', 'detailed', 'visitor_id', 'web_client_id',
-    'ga_client_id', 'source.source', 'source.medium', 'source.campaign',
+    'user_id', 'session_id', 'event_id', 'detailed', 'visitor_id',
+    // Retired browser-ID DLV slots stay reserved so all later import IDs remain stable.
+    null, null, 'source.source', 'source.medium', 'source.campaign',
     ...PROPERTIES.map((key) => 'analytics_properties.' + key)
   ];
-  const variable = keys.map((key) => ({
-    variableId: String(variableId++), name: PREFIX + variableName(key), type: 'v', parentFolderId: folderId,
-    parameter: [
-      { type: 'integer', key: 'dataLayerVersion', value: '2' },
-      { type: 'boolean', key: 'setDefaultValue', value: 'false' },
-      template('name', key)
-    ]
-  }));
+  const variable = keys.flatMap((key) => {
+    const id = String(variableId++);
+    return key === null ? [] : [{
+      variableId: id, name: PREFIX + variableName(key), type: 'v', parentFolderId: folderId,
+      parameter: [
+        { type: 'integer', key: 'dataLayerVersion', value: '2' },
+        { type: 'boolean', key: 'setDefaultValue', value: 'false' },
+        template('name', key)
+      ]
+    }];
+  });
   function custom(name, code) {
     variable.push({ variableId: String(variableId++), name: PREFIX + name,
       type: 'jsm', parentFolderId: folderId, parameter: [template('javascript', code)] });
@@ -88,7 +92,7 @@ function generate() {
     ...PROPERTIES.map((key) => [key, dlv('analytics_properties.' + key)]),
     ['session_id', dlv('session_id')], ['event_id', dlv('event_id')],
     ['surface', dlv('surface')], ['detailed', dlv('detailed')],
-    ['web_client_id', dlv('web_client_id')], ...common
+    ...common
   ];
   function eventTag(id, name, eventName, triggerId, parameters) {
     return {
@@ -115,7 +119,7 @@ function generate() {
         },
         eventTag('800011', 'App GA4 event', dlv('app_event_name'), '800002', appParameters),
         eventTag('800012', 'Web visitor linked GA4', 'visitor_linked', '800003', [
-          ...common, ['surface', 'desktop_web'], ['web_client_id', dlv('ga_client_id')]
+          ...common, ['surface', 'desktop_web']
         ])
       ]
     }

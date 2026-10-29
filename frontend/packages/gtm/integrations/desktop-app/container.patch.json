@@ -248,52 +248,6 @@
         ]
       },
       {
-        "variableId": "800110",
-        "name": "Sealos Desktop App | DLV - web_client_id",
-        "type": "v",
-        "parentFolderId": "800000",
-        "parameter": [
-          {
-            "type": "integer",
-            "key": "dataLayerVersion",
-            "value": "2"
-          },
-          {
-            "type": "boolean",
-            "key": "setDefaultValue",
-            "value": "false"
-          },
-          {
-            "type": "template",
-            "key": "name",
-            "value": "web_client_id"
-          }
-        ]
-      },
-      {
-        "variableId": "800111",
-        "name": "Sealos Desktop App | DLV - ga_client_id",
-        "type": "v",
-        "parentFolderId": "800000",
-        "parameter": [
-          {
-            "type": "integer",
-            "key": "dataLayerVersion",
-            "value": "2"
-          },
-          {
-            "type": "boolean",
-            "key": "setDefaultValue",
-            "value": "false"
-          },
-          {
-            "type": "template",
-            "key": "name",
-            "value": "ga_client_id"
-          }
-        ]
-      },
-      {
         "variableId": "800112",
         "name": "Sealos Desktop App | DLV - source.source",
         "type": "v",
@@ -1218,21 +1172,6 @@
                   {
                     "type": "template",
                     "key": "parameter",
-                    "value": "web_client_id"
-                  },
-                  {
-                    "type": "template",
-                    "key": "parameterValue",
-                    "value": "{{Sealos Desktop App | DLV - web_client_id}}"
-                  }
-                ]
-              },
-              {
-                "type": "map",
-                "map": [
-                  {
-                    "type": "template",
-                    "key": "parameter",
                     "value": "visitor_id"
                   },
                   {
@@ -1422,21 +1361,6 @@
                     "type": "template",
                     "key": "parameterValue",
                     "value": "desktop_web"
-                  }
-                ]
-              },
-              {
-                "type": "map",
-                "map": [
-                  {
-                    "type": "template",
-                    "key": "parameter",
-                    "value": "web_client_id"
-                  },
-                  {
-                    "type": "template",
-                    "key": "parameterValue",
-                    "value": "{{Sealos Desktop App | DLV - ga_client_id}}"
                   }
                 ]
               }

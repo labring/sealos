@@ -45,19 +45,6 @@ export const AcquisitionSchema = z.object({
         .optional()
     })
     .optional(),
-  platform_ids: z
-    .object({
-      ga_client_id: z
-        .string()
-        .regex(/^\d{1,20}\.\d{1,20}$/)
-        .optional(),
-      rybbit_user_id: z
-        .string()
-        .max(128)
-        .regex(/^[A-Za-z0-9_.:-]+$/)
-        .optional()
-    })
-    .optional(),
   sea_attr: z
     .string()
     .max(512)

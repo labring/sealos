@@ -34,8 +34,7 @@ const data = {
     campaign: 'developers',
     landing_page: 'https://sealos.io/download',
     timestamp: '2026-10-29T10:00:00.000Z'
-  },
-  platform_ids: { ga_client_id: '1234.5678' }
+  }
 };
 const cookie = (value: unknown = data) => Buffer.from(JSON.stringify(value)).toString('base64url');
 const requestToken = () => beginAnalyticsHandoff(params, binding.id, cookie(), origin)!;
@@ -68,7 +67,20 @@ describe('stateless App Cookie handoff', () => {
     )!;
     const approved = approveAnalyticsHandoff(token, binding, uid, cookie(), origin)!;
     expect(approved.context.installation_id).toBeUndefined();
-    expect(approved.context.platform_ids?.ga_client_id).toBe('1234.5678');
+    expect(approved.context).not.toHaveProperty('platform_ids');
+  });
+  it('discards legacy platform IDs before signing or returning OAuth metadata', () => {
+    const legacy = cookie({
+      ...data,
+      platform_ids: { ga_client_id: '1234.5678', rybbit_user_id: 'legacy-visitor' }
+    });
+    expect(readAcquisitionCookie(legacy, 'global')).not.toHaveProperty('platform_ids');
+    const request = beginAnalyticsHandoff(params, binding.id, legacy, origin)!;
+    const approved = approveAnalyticsHandoff(request, binding, uid, legacy, origin)!;
+    expect(approved.context).not.toHaveProperty('platform_ids');
+    expect(redeemAnalyticsHandoff(approved.token, binding, uid, origin)).not.toHaveProperty(
+      'platform_ids'
+    );
   });
   it.each([
     'http://usw-1.sealos.io',

@@ -51,10 +51,11 @@ it('sets verified UID before Web event, preserving browser CID and clearing stal
     event: 'web_visitor_linked',
     user_id: uid,
     visitor_id: visitor,
-    ga_client_id: '123.456',
     analytics_consent: 'granted'
   });
   expect(JSON.stringify(web.dataLayer)).not.toContain('analytics_token');
+  expect(JSON.stringify(web.dataLayer)).not.toContain('ga_client_id');
+  expect(JSON.stringify(web.dataLayer)).not.toContain('web_client_id');
   expect(web.dataLayer[0][1]).not.toHaveProperty('client_id');
   event.eventCallback();
   await delivery;

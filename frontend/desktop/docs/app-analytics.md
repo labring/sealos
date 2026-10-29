@@ -24,6 +24,12 @@ attribution service or durable queue is added. Existing OAuth tables retain
 their original authentication role. The previous MP endpoint and Helm settings
 have been removed from this PR.
 
+Visitor linkage uses `visitor_id` and verified `userUid`, not a copied browser
+GA client ID. The Cookie schema discards legacy `platform_ids`; OAuth responses
+and linkage events do not forward `ga_client_id` or `web_client_id`. The browser
+and App retain their own SDK/installation client IDs. GA4 measurement IDs belong
+only to the GTM import configuration, not the login or visitor-linkage code.
+
 ## Optional, bounded handoff
 
 - Official root/www websites write the Cookie only with analytics permission:

@@ -42,7 +42,6 @@ export function clearWebAnalyticsIdentity(): void {
       user_id: null,
       product_user_id: null,
       visitor_id: null,
-      ga_client_id: null,
       source: null
     });
   } catch {
@@ -73,10 +72,7 @@ export async function trackWebVisitorLink(value: unknown): Promise<void> {
     visitor_id: context.visitor_id,
     product_user_id: context.subject_id,
     product_edition: context.realm,
-    surface: 'desktop_web',
-    ...(context.platform_ids?.ga_client_id
-      ? { web_client_id: context.platform_ids.ga_client_id }
-      : {})
+    surface: 'desktop_web'
   };
   for (const key of ['source', 'medium', 'campaign'] as const) {
     if (context.source?.[key]) properties[`acquisition_${key}`] = context.source[key]!;
@@ -96,7 +92,6 @@ export async function trackWebVisitorLink(value: unknown): Promise<void> {
         analytics_consent: 'granted',
         ...properties,
         user_id: context.subject_id,
-        ga_client_id: context.platform_ids?.ga_client_id || null,
         source: context.source || null,
         eventTimeout: 400,
         eventCallback: () => {

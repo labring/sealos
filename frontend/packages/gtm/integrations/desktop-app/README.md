@@ -41,7 +41,6 @@ dataLayer.push({
   session_id: 1234567890, event_id: '<事件 ID>', detailed: true,
   analytics_properties: { method: 'oauth', outcome: 'success' },
   visitor_id: '<官网 Cookie UUID 或 null>',
-  web_client_id: '<官网原 GA client ID 或 null>',
   source: { source: 'google', medium: 'cpc', campaign: 'example' }
 });
 ```
@@ -50,9 +49,9 @@ dataLayer.push({
 
 允许的 App 事件：`app_launch`、`app_first_open`、`app_screen_view`、`login_required`、`login_started`、`login_succeeded`、`login_failed`、`task_created`、`task_opened`、`deploy_finished`、`visitor_linked`。GA4 事件名取自 `app_event_name`，不把 `sealos_app_event` 当业务事件发送。
 
-Main 白名单属性为：`screen_name`、`outcome`、`reason`、`duration_ms`、`app_version`、`os`、`arch`、`env`、`packaged`、`flow`、`method`、`service_kind`、`template_id`、`workspace_id`、`engagement_time_msec`。模板只映射这些字段及身份关联、会话、版本、事件字段，总共 25 个参数。`source.{source,medium,campaign}` 映射成自定义 `acquisition_*`，**不代表自动恢复 GA 默认广告归因**。
+Main 白名单属性为：`screen_name`、`outcome`、`reason`、`duration_ms`、`app_version`、`os`、`arch`、`env`、`packaged`、`flow`、`method`、`service_kind`、`template_id`、`workspace_id`、`engagement_time_msec`。模板只映射这些字段及身份关联、会话、版本、事件字段，总共 24 个参数。`source.{source,medium,campaign}` 映射成自定义 `acquisition_*`，**不代表自动恢复 GA 默认广告归因**。
 
-`user_id` 必须是 Google tag 的 `set/config` 设置，不是普通 GA4 事件参数；模板不重复映射它。`client_id` 由 App 设置，`web_client_id` 只用于关联，不覆盖 App 实例 ID。详见 [Google User-ID 文档](https://developers.google.com/analytics/devguides/collection/ga4/user-id?technology=tagmanager)。
+`user_id` 必须是 Google tag 的 `set/config` 设置，不是普通 GA4 事件参数；模板不重复映射它。`client_id` 由 App 设置，浏览器自己的 client ID 由已有 SDK 管理，不跨端复制。关联仅使用 `visitor_id` 与已验证账号。已删除两个旧浏览器 ID 的 DLV 及参数映射，保留其内部 ID 空位，避免后续变量 ID 改变。详见 [Google User-ID 文档](https://developers.google.com/analytics/devguides/collection/ga4/user-id?technology=tagmanager)。
 
 控制台完成服务端身份确认后，先执行 `gtag('set', { user_id: verifiedUserUid })`，再推送：
 
@@ -62,7 +61,7 @@ dataLayer.push({
   event: 'web_visitor_linked',
   user_id: '<服务端确认的 UUID>', visitor_id: '<Cookie UUID>',
   product_edition: 'global', analytics_consent: 'granted',
-  ga_client_id: '<浏览器原 GA client ID 或 null>', source: null
+  source: null
 });
 ```
 
