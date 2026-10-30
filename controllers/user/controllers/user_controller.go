@@ -114,8 +114,24 @@ func (s *userReconcileState) recordSyncError(err error) {
 	s.syncError = errors.Join(s.syncError, err)
 }
 
-// +kubebuilder:rbac:groups=*,resources=*,verbs=*
+// User workspaces and the shared user-system namespace.
+// +kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch;create;update;delete
+// +kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=get;list;watch;create;update
 // +kubebuilder:rbac:groups="",resources=serviceaccounts/token,verbs=create
+// +kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;delete
+// +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
+// +kubebuilder:rbac:groups=events.k8s.io,resources=events,verbs=create;patch
+// Workspace RBAC: Roles/RoleBindings in ns-* namespaces and the legacy admin
+// sealos-cloudadmin ClusterRoleBinding.
+// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles,verbs=get;list;watch;create;update
+// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;list;watch;create;update;delete
+// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterrolebindings,verbs=get;list;watch;create;update;delete
+// User resources, including Users deleted through DeleteRequests.
+// +kubebuilder:rbac:groups=user.sealos.io,resources=users,verbs=get;list;watch;update;patch;delete
+// +kubebuilder:rbac:groups=user.sealos.io,resources=users/status,verbs=get;patch;update
+// +kubebuilder:rbac:groups=user.sealos.io,resources=users/finalizers,verbs=update
+// Licensing.
+// +kubebuilder:rbac:groups=license.sealos.io,resources=licenses,verbs=get;list;watch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.

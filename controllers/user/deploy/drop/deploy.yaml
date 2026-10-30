@@ -49,11 +49,122 @@ metadata:
   name: user-manager-role
 rules:
 - apiGroups:
-  - '*'
+  - ''
   resources:
-  - '*'
+  - events
   verbs:
-  - '*'
+  - create
+  - patch
+- apiGroups:
+  - ''
+  resources:
+  - namespaces
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - ''
+  resources:
+  - secrets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - ''
+  resources:
+  - serviceaccounts
+  verbs:
+  - create
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - ''
+  resources:
+  - serviceaccounts/token
+  verbs:
+  - create
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - license.sealos.io
+  resources:
+  - licenses
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterrolebindings
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - rolebindings
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - roles
+  verbs:
+  - create
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - user.sealos.io
+  resources:
+  - users
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - user.sealos.io
+  resources:
+  - users/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - user.sealos.io
+  resources:
+  - users/status
+  verbs:
+  - get
+  - patch
+  - update
 - apiGroups:
   - user.sealos.io
   resources:
