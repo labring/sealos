@@ -5,6 +5,7 @@ import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { nanoid } from 'nanoid';
 import { setSharedAuthCookie } from '@/utils/cookieUtils';
+import { clearWebAnalyticsIdentity } from '@/utils/app-visitor-link';
 
 export type OauthAction = 'LOGIN' | 'BIND' | 'UNBIND' | 'PROXY';
 
@@ -66,8 +67,13 @@ const useSessionStore = create<SessionState>()(
       setLastSigninProvider(provider?: string) {
         set({ lastSigninProvier: provider });
       },
-      setSession: (ss: Session) => set({ session: ss }),
+      setSession: (ss: Session) => {
+        if (get().session?.user?.userUid !== ss.user?.userUid) clearWebAnalyticsIdentity();
+        set({ session: ss });
+      },
       setSessionProp: <T extends keyof Session>(key: T, value: Session[T]) => {
+        if (key === 'user' && get().session?.user?.userUid !== (value as Session['user'])?.userUid)
+          clearWebAnalyticsIdentity();
         set((state) => {
           if (state.session) {
             state.session[key] = value;
@@ -75,6 +81,7 @@ const useSessionStore = create<SessionState>()(
         });
       },
       delSession: () => {
+        clearWebAnalyticsIdentity();
         set({ session: undefined });
       },
       isUserLogin: () => {
@@ -119,6 +126,7 @@ const useSessionStore = create<SessionState>()(
         set({ lastWorkSpaceId: id });
       },
       setGuestSession: () => {
+        clearWebAnalyticsIdentity();
         const guestId = `guest_${nanoid()}`;
         set({
           session: {
