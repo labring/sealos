@@ -135,4 +135,19 @@ func TestValidateStandaloneRequestGuards(t *testing.T) {
 	if err := applier.validateStandaloneRequest(); err == nil {
 		t.Fatal("invalid image reference accepted")
 	}
+
+	// master0 must survive every entry point, including apply -f. The diff
+	// removes only master0, so the mixed-change guard does not fire first.
+	multiMaster := standaloneTestCluster("192.0.2.1:22", worker)
+	multiMaster.CreationTimestamp = metav1.Now()
+	multiMaster.Spec.Hosts = append(
+		multiMaster.Spec.Hosts,
+		v2.Host{IPS: []string{"192.0.2.3:22"}, Roles: []string{v2.MASTER}},
+	)
+	withoutMaster0 := standaloneTestCluster("192.0.2.3:22", worker)
+	withoutMaster0.CreationTimestamp = metav1.Now()
+	applier = &Applier{ClusterCurrent: multiMaster, ClusterDesired: withoutMaster0}
+	if err := applier.validateStandaloneRequest(); err == nil {
+		t.Fatal("master0 removal accepted")
+	}
 }

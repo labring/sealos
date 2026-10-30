@@ -20,9 +20,12 @@ import (
 	"fmt"
 	"net"
 	"net/url"
+	"os"
+	"slices"
 	"time"
 
 	"github.com/distribution/reference"
+	"github.com/labring/sealos/pkg/apply/processor"
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/exec"
@@ -87,6 +90,11 @@ func (c *Applier) validateStandaloneRequest() error {
 			"standalone addition and removal must be submitted as separate lifecycle operations",
 		)
 	}
+	if slices.Contains(md, c.ClusterCurrent.GetMaster0IPAndPort()) {
+		return errors.New(
+			"master0 machine cannot be deleted; the existing sealos inventory and registry restriction also applies in standalone mode",
+		)
+	}
 	return nil
 }
 
@@ -103,12 +111,100 @@ func (c *Applier) withStandaloneLease(run func() error) func() error {
 			return err
 		}
 		return clusterfile.WithModeLease(c.Context, client, func(ctx context.Context) error {
+			// A conversion interrupted on another inventory is recorded on
+			// the API and must be resumed before membership changes.
+			if err := clusterfile.CheckPendingModeTransition(ctx, client); err != nil {
+				return err
+			}
 			previous := c.Context
 			c.Context = ctx
 			defer func() { c.Context = previous }()
 			return run()
 		})
 	}
+}
+
+// runStandaloneMembership executes a membership change with the record layout
+// the recover model needs: the desired inventory is staged to every
+// control-plane host before any mutation, while the local Clusterfile keeps
+// the previous state until the reconcile has finished, so an interrupted
+// command retries exactly like a plain-mode one.
+func (c *Applier) runStandaloneMembership() error {
+	// The scale path constructs the applier with a lazy Clusterfile; loading
+	// it here keeps the staged record and the write-back complete.
+	if err := c.ClusterFile.Process(); err != nil {
+		return err
+	}
+	path := constants.Clusterfile(c.ClusterDesired.Name)
+	saved, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	desired, err := yaml.MarshalConfigs(c.getWriteBackObjects()...)
+	if err != nil {
+		return err
+	}
+	restore := func() {
+		if err := c.replicateInventoryFile(saved); err != nil {
+			logger.Error("failed to restore the inventory record: %v", err)
+		}
+	}
+	if err := c.replicateInventoryFile(desired); err != nil {
+		return err
+	}
+	// Keep the previous inventory locally while reconciling: the scale
+	// processors reload it, and a retry after an interruption must still see
+	// the hosts it has to join or delete.
+	if err := clusterfile.WriteMaintenanceFile(path, saved); err != nil {
+		restore()
+		return err
+	}
+	err = c.applyDesired()
+	if err != nil {
+		var checkError *processor.CheckError
+		var preProcessError *processor.PreProcessError
+		if errors.As(err, &checkError) || errors.As(err, &preProcessError) {
+			// Nothing was mutated: withdraw the staged record as well, so a
+			// recovery started from another control-plane host does not adopt
+			// hosts that never joined.
+			restore()
+		}
+	}
+	return err
+}
+
+// replicateInventoryFile stages data as the local Clusterfile and copies the
+// file to every control-plane host; the caller decides which state stays
+// local afterwards.
+func (c *Applier) replicateInventoryFile(data []byte) error {
+	if err := c.Err(); err != nil {
+		return err
+	}
+	path := constants.Clusterfile(c.ClusterDesired.Name)
+	if err := clusterfile.WriteMaintenanceFile(path, data); err != nil {
+		return err
+	}
+	execer, err := exec.New(ssh.NewCacheClientFromCluster(c.ClusterDesired, true))
+	if err != nil {
+		return err
+	}
+	group, ctx := errgroup.WithContext(c.Context)
+	copyExecer := ssh.WithContext(ctx, execer)
+	for _, host := range c.ClusterDesired.GetMasterIPAndPortList() {
+		group.Go(func() error {
+			if err := ctx.Err(); err != nil {
+				return err
+			}
+			return copyExecer.Copy(host, path, path)
+		})
+	}
+	if err := group.Wait(); err != nil {
+		return fmt.Errorf(
+			"inventory synchronization failed; repeat the lifecycle command: %w",
+			err,
+		)
+	}
+	return nil
 }
 
 // standaloneLifecycleConfig returns an admin client configuration pinned to a

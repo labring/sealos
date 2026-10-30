@@ -91,42 +91,18 @@ func (c *Applier) Apply() error {
 			return err
 		}
 		defer release()
-		// The Clusterfile is the authoritative record: journals left behind
-		// by older inventories are stale by definition and get discarded.
-		clusterfile.DiscardLifecycleJournal(c.Context, c.ClusterDesired.Name)
 		if err := c.validateStandaloneRequest(); err != nil {
 			return err
 		}
 		run := c.applyDesired
 		if c.standaloneMembership() {
-			// Replicate the desired inventory before mutating membership: any
-			// control-plane host can then recover by re-running the command.
-			// The local file keeps the desired record for the crash window;
-			// graceful pre-check failures restore the previous inventory so a
-			// host that never joined does not stay in the record.
-			saved, err := os.ReadFile(constants.Clusterfile(c.ClusterDesired.Name))
-			if err != nil {
-				return err
-			}
-			if err := c.syncStandaloneInventory(true); err != nil {
-				return err
-			}
-			run = func() error {
-				err := c.withStandaloneLease(c.applyDesired)()
-				if err != nil {
-					var checkError *processor.CheckError
-					var preProcessError *processor.PreProcessError
-					if errors.As(err, &checkError) || errors.As(err, &preProcessError) {
-						if restoreErr := clusterfile.WriteMaintenanceFile(
-							constants.Clusterfile(c.ClusterDesired.Name),
-							saved,
-						); restoreErr != nil {
-							logger.Error("failed to restore inventory: %v", restoreErr)
-						}
-					}
-				}
-				return err
-			}
+			// Membership changes are the only operations coordinated
+			// cluster-wide: the lease is taken before anything is published so
+			// a command from another inventory cannot overwrite the record of
+			// the active one, and the desired inventory is replicated to the
+			// control-plane hosts while the local Clusterfile keeps the
+			// previous state until the reconcile has finished.
+			run = c.withStandaloneLease(c.runStandaloneMembership)
 		}
 		return run()
 	}
@@ -389,7 +365,6 @@ func (c *Applier) Delete() error {
 			return err
 		}
 		defer release()
-		clusterfile.DiscardLifecycleJournal(c.Context, c.ClusterDesired.Name)
 		// Destruction removes the coordination API itself: replicate the
 		// inventory first so any surviving host can resume the reset.
 		_ = c.syncStandaloneInventory(false)

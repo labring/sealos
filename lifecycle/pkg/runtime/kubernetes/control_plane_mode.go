@@ -68,9 +68,6 @@ func (k *KubeadmRuntime) SwitchControlPlaneMode(
 		return err
 	}
 	return clusterfile.WithModeLease(ctx, client.Kubernetes(), func(ctx context.Context) error {
-		if err := clusterfile.CheckLifecycle(ctx, client.Kubernetes()); err != nil {
-			return err
-		}
 		return k.switchControlPlaneMode(ctx, client.Kubernetes(), options)
 	})
 }
