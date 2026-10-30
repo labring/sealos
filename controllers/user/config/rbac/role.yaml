@@ -76,6 +76,14 @@ rules:
   - update
 - apiGroups:
   - rbac.authorization.k8s.io
+  resourceNames:
+  - cluster-admin
+  resources:
+  - clusterroles
+  verbs:
+  - bind
+- apiGroups:
+  - rbac.authorization.k8s.io
   resources:
   - rolebindings
   verbs:
@@ -91,10 +99,21 @@ rules:
   - roles
   verbs:
   - create
+  - escalate
   - get
   - list
   - update
   - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resourceNames:
+  - Developer
+  - Manager
+  - Owner
+  resources:
+  - roles
+  verbs:
+  - bind
 - apiGroups:
   - user.sealos.io
   resources:

@@ -131,6 +131,15 @@ func (s *userReconcileState) recordSyncError(err error) {
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;list;watch;create;update;delete
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterrolebindings,verbs=get;list;watch;create
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterrolebindings,resourceNames=sealos-cloudadmin,verbs=update;delete
+// Workspace Roles carry wildcard rules the controller itself no longer holds,
+// so the API server requires an explicit escalate grant to create them. The
+// escalation check is issued without a resource name, so escalate cannot be
+// scoped by resourceNames. bind passes the referenced role name and is scoped
+// to the fixed workspace role names; cluster-admin bind backs the opt-in
+// legacy admin binding.
+// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles,verbs=escalate
+// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles,resourceNames=Owner;Manager;Developer,verbs=bind
+// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles,resourceNames=cluster-admin,verbs=bind
 // User resources, including Users deleted through DeleteRequests. Finalizers
 // are updated through the main resource, so no finalizers subresource rule.
 // +kubebuilder:rbac:groups=user.sealos.io,resources=users,verbs=get;list;watch;update;patch;delete
