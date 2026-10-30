@@ -102,7 +102,7 @@ func (c *Applier) validateStandaloneRequest() error {
 // through the short maintenance lease while the coordination API is alive.
 func (c *Applier) withStandaloneLease(run func() error) func() error {
 	return func() error {
-		config, _, err := standaloneLifecycleConfig(c.ClusterCurrent, c.ClusterDesired)
+		config, err := standaloneLifecycleConfig(c.ClusterCurrent, c.ClusterDesired)
 		if err != nil {
 			return err
 		}
@@ -210,17 +210,17 @@ func (c *Applier) replicateInventoryFile(data []byte) error {
 // standaloneLifecycleConfig returns an admin client configuration pinned to a
 // control-plane host present in both inventories; the survivor requirement
 // itself guards conversions against inventories that disagree.
-func standaloneLifecycleConfig(current, desired *v2.Cluster) (*rest.Config, string, error) {
+func standaloneLifecycleConfig(current, desired *v2.Cluster) (*rest.Config, error) {
 	config, err := clientcmd.BuildConfigFromFlags(
 		"",
 		constants.NewPathResolver(desired.Name).AdminFile(),
 	)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 	endpoint, err := url.Parse(config.Host)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 	port := endpoint.Port()
 	if port == "" {
@@ -238,14 +238,14 @@ func standaloneLifecycleConfig(current, desired *v2.Cluster) (*rest.Config, stri
 		}
 	}
 	if survivor == "" {
-		return nil, "", errors.New(
+		return nil, errors.New(
 			"standalone lifecycle requires an existing control plane in the desired inventory",
 		)
 	}
 	endpoint.Host = net.JoinHostPort(survivor, port)
 	config.Host = endpoint.String()
 	config.Timeout = 10 * time.Second
-	return config, endpoint.String(), nil
+	return config, nil
 }
 
 // syncStandaloneInventory replicates the inventory to every control-plane

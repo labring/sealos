@@ -15,9 +15,12 @@
 package applydrivers
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/labring/sealos/pkg/constants"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -149,5 +152,64 @@ func TestValidateStandaloneRequestGuards(t *testing.T) {
 	applier = &Applier{ClusterCurrent: multiMaster, ClusterDesired: withoutMaster0}
 	if err := applier.validateStandaloneRequest(); err == nil {
 		t.Fatal("master0 removal accepted")
+	}
+}
+
+const lifecycleTestKubeconfig = `apiVersion: v1
+kind: Config
+clusters:
+- cluster:
+    server: https://192.0.2.50:6443
+  name: test
+contexts:
+- context:
+    cluster: test
+    user: test
+  name: test
+current-context: test
+users:
+- name: test
+  user: {}
+`
+
+func TestStandaloneLifecycleConfigPinsSurvivor(t *testing.T) {
+	previousRoot := constants.DefaultRuntimeRootDir
+	constants.DefaultRuntimeRootDir = t.TempDir()
+	t.Cleanup(func() { constants.DefaultRuntimeRootDir = previousRoot })
+	dir := constants.NewPathResolver("standalone-test").EtcPath()
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(
+		filepath.Join(dir, "admin.conf"),
+		[]byte(lifecycleTestKubeconfig),
+		0o600,
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	current := standaloneTestCluster("192.0.2.1:22", "192.0.2.4:22")
+	desired := standaloneTestCluster("192.0.2.2:22", "192.0.2.4:22")
+	desired.Spec.Hosts = []v2.Host{
+		{IPS: []string{"192.0.2.2:22"}, Roles: []string{v2.MASTER}},
+		{IPS: []string{"192.0.2.1:22"}, Roles: []string{v2.MASTER}},
+		{IPS: []string{"192.0.2.4:22"}, Roles: []string{v2.NODE}},
+	}
+	config, err := standaloneLifecycleConfig(current, desired)
+	if err != nil {
+		t.Fatalf("overlapping inventories rejected: %v", err)
+	}
+	if !strings.HasSuffix(config.Host, "192.0.2.1:6443") {
+		t.Fatalf("client not pinned to the surviving control plane: %s", config.Host)
+	}
+
+	noOverlap := standaloneTestCluster("192.0.2.9:22", "192.0.2.4:22")
+	noOverlap.Spec.Hosts = []v2.Host{
+		{IPS: []string{"192.0.2.9:22"}, Roles: []string{v2.MASTER}},
+		{IPS: []string{"192.0.2.2:22"}, Roles: []string{v2.MASTER}},
+		{IPS: []string{"192.0.2.4:22"}, Roles: []string{v2.NODE}},
+	}
+	if _, err := standaloneLifecycleConfig(current, noOverlap); err == nil {
+		t.Fatal("disjoint control planes accepted")
 	}
 }
