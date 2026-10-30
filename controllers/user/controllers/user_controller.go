@@ -37,6 +37,7 @@ import (
 	"github.com/labring/sealos/controllers/user/controllers/helper/kubeconfig"
 	"github.com/labring/sealos/controllers/user/controllers/helper/ratelimiter"
 	"github.com/labring/sealos/controllers/user/pkg/licensegate"
+	"github.com/labring/sealos/controllers/user/pkg/reserved"
 	"github.com/labring/sealos/controllers/user/pkg/usercount"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -65,6 +66,7 @@ const (
 	userAnnotationOwnerKey           = userv1.UserAnnotationOwnerKey
 	userLabelOwnerKey                = userv1.UserLabelOwnerKey
 	licenseLimitedCondition          = userv1.ConditionType("LicenseLimited")
+	reservedNameCondition            = userv1.ConditionType("ReservedName")
 	adminUserName                    = "admin"
 	adminClusterRoleBindingName      = config.AdminClusterRoleBindingName
 	userFinalizerName                = "sealos.io/user.finalizers"
@@ -778,6 +780,12 @@ func (r *UserReconciler) reconcile(ctx context.Context, obj client.Object) (ctrl
 	}
 
 	originalStatus := user.Status.DeepCopy()
+	if reserved.IsReserved(user.Name) {
+		// Defense in depth: the webhook rejects reserved names on create, but
+		// the controller must also refuse Users that predate that check or were
+		// created with webhooks disabled.
+		return r.rejectReservedName(ctx, user, originalStatus)
+	}
 	blocked, err := r.handleLicenseLimit(ctx, user, originalStatus)
 	if err != nil {
 		return ctrl.Result{}, err
@@ -1409,8 +1417,21 @@ func (r *UserReconciler) syncServiceAccount(
 		if err = r.Get(ctx, client.ObjectKey{
 			Namespace: config.GetUserSystemNamespace(),
 			Name:      user.Name,
-		}, sa); err != nil && !apierrors.IsNotFound(err) {
-			return err
+		}, sa); err != nil {
+			if !apierrors.IsNotFound(err) {
+				return err
+			}
+		} else if !controlledByUser(sa, user) {
+			// The ServiceAccount already exists but is not controlled by this
+			// User, for example the controller's own user-controller-manager
+			// identity. Adopting it would leak its privileges into this User's
+			// kubeconfig, so refuse instead of updating it.
+			return fmt.Errorf(
+				"refusing to adopt existing service account %s/%s for User %s: it is not controlled by this User",
+				sa.Namespace,
+				sa.Name,
+				user.Name,
+			)
 		}
 
 		if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, sa, func() error {
@@ -1608,8 +1629,25 @@ func (r *UserReconciler) deleteBoundTokenSecret(ctx context.Context, user *userv
 	}
 
 	secret := &v1.Secret{}
-	secret.Name = secretName
-	secret.Namespace = config.GetUserSystemNamespace()
+	if err := r.Get(ctx, client.ObjectKey{
+		Name: secretName, Namespace: config.GetUserSystemNamespace(),
+	}, secret); err != nil {
+		if !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to get bound token secret: %w", err)
+		}
+		return nil
+	}
+	// Legacy bound token secrets follow the sealos-token-<User.Name> scheme, so
+	// a derived name can collide with another identity's secret. Never delete
+	// a secret that is explicitly annotated for a different service account.
+	if owner, ok := secret.Annotations[v1.ServiceAccountNameKey]; ok && owner != user.Name {
+		r.Logger.V(1).Info(
+			"skip deleting bound token secret owned by another service account",
+			"secret", client.ObjectKeyFromObject(secret),
+			"owner", owner,
+		)
+		return nil
+	}
 	if err := r.Delete(ctx, secret); err != nil && !apierrors.IsNotFound(err) {
 		return fmt.Errorf("failed to delete bound token secret: %w", err)
 	}
@@ -1726,6 +1764,38 @@ func (r *UserReconciler) updateStatus(
 	original := user.DeepCopy()
 	original.Status = *originalStatus.DeepCopy()
 	return r.Client.Status().Patch(ctx, user, client.MergeFrom(original))
+}
+
+func (r *UserReconciler) rejectReservedName(
+	ctx context.Context,
+	user *userv1.User,
+	originalStatus *userv1.UserStatus,
+) (ctrl.Result, error) {
+	condition := &userv1.Condition{
+		Type:               reservedNameCondition,
+		Status:             v1.ConditionFalse,
+		LastTransitionTime: metav1.Now(),
+		LastHeartbeatTime:  metav1.Now(),
+		Reason:             "NameReserved",
+		Message: fmt.Sprintf(
+			"user name %q is reserved for internal identities and must not own the ServiceAccount user-system/%s",
+			user.Name,
+			user.Name,
+		),
+	}
+	user.Status.Phase = userv1.UserPending
+	user.Status.Conditions = helper.UpdateCondition(user.Status.Conditions, *condition)
+	if err := r.updateStatus(ctx, user, originalStatus); err != nil {
+		return ctrl.Result{}, err
+	}
+	r.Recorder.Eventf(
+		user,
+		v1.EventTypeWarning,
+		"ReservedUserName",
+		"User name %s is reserved; delete this User and recreate it with another name",
+		user.Name,
+	)
+	return ctrl.Result{RequeueAfter: r.minRequeueDuration}, nil
 }
 
 func (r *UserReconciler) handleLicenseLimit(
