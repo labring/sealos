@@ -15,131 +15,124 @@
 package applydrivers
 
 import (
-	"context"
-	"errors"
-	"net"
-	"os"
-	"path/filepath"
+	"strings"
 	"testing"
 
-	"github.com/labring/sealos/pkg/clusterfile"
-	"github.com/labring/sealos/pkg/constants"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
-	"github.com/labring/sealos/pkg/unshare"
-	"github.com/labring/sealos/pkg/utils/yaml"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestStandaloneCommitPreservesLocalRecoveryUntilCompletion(t *testing.T) {
-	t.Setenv(unshare.DisableAutoRootless, "true")
-	previousRoot := constants.DefaultRuntimeRootDir
-	constants.DefaultRuntimeRootDir = t.TempDir()
-	t.Cleanup(func() {
-		constants.DefaultRuntimeRootDir = previousRoot
-	})
-	for _, action := range []string{"add", "delete"} {
-		t.Run(action, func(t *testing.T) {
-			name := "commit-" + action
-			path := constants.Clusterfile(name)
-			if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
-				t.Fatal(err)
-			}
-			current := &v2.Cluster{
-				TypeMeta:   metav1.TypeMeta{APIVersion: "sealos.io/v1beta1", Kind: "Cluster"},
-				ObjectMeta: metav1.ObjectMeta{Name: name},
-				Spec: v2.ClusterSpec{
-					ControlPlaneMode: v2.ControlPlaneModeStandalone,
-					Hosts: []v2.Host{
-						{IPS: []string{"127.0.0.1:22"}, Roles: []string{v2.MASTER}},
-					},
-				},
-			}
-			worker := v2.Host{IPS: []string{"192.0.2.2:22"}, Roles: []string{v2.NODE}}
-			if action == "delete" {
-				current.Spec.Hosts = append(current.Spec.Hosts, worker)
-			}
-			original, err := yaml.MarshalConfigs(current)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if err := os.WriteFile(path, original, 0o600); err != nil {
-				t.Fatal(err)
-			}
-			cf := clusterfile.NewClusterFile(path)
-			if err := cf.Process(); err != nil {
-				t.Fatal(err)
-			}
-			desired := current.DeepCopy()
-			if action == "add" {
-				desired.Spec.Hosts = append(desired.Spec.Hosts, worker)
-			} else {
-				desired.Spec.Hosts = desired.Spec.Hosts[:1]
-			}
-			applier := &Applier{
-				Context:        context.Background(),
-				ClusterFile:    cf,
-				ClusterCurrent: current,
-				ClusterDesired: desired,
-			}
-			operation := clusterfile.LifecycleOperation{Action: "apply", Request: action}
-			failure := errors.New("commit interrupted after inventory synchronization")
-			err = clusterfile.WithLifecycle(
-				context.Background(), name, operation, false,
-				func(context.Context) error {
-					if err := applier.commitStandaloneInventory(); err != nil {
-						return err
-					}
-					return failure
-				},
-			)
-			if !errors.Is(err, failure) {
-				t.Fatal(err)
-			}
-			assertWorkers := func(want int) {
-				t.Helper()
-				loaded := clusterfile.NewClusterFile(path)
-				if err := loaded.Process(); err != nil {
-					t.Fatal(err)
-				}
-				if got := len(loaded.GetCluster().GetNodeIPList()); got != want {
-					t.Fatalf("loaded %d workers, want %d", got, want)
-				}
-			}
-			assertWorkers(len(current.GetNodeIPList()))
-			if err := clusterfile.WithLifecycle(
-				context.Background(), name, operation, false,
-				func(context.Context) error {
-					return applier.commitStandaloneInventory()
-				},
-			); err != nil {
-				t.Fatal(err)
-			}
-			assertWorkers(len(desired.GetNodeIPList()))
-			marker := filepath.Join(filepath.Dir(path), clusterfile.LifecycleFilename)
-			if _, err := os.Stat(marker); !os.IsNotExist(err) {
-				t.Fatalf("completed lifecycle retained its local marker: %v", err)
+func standaloneTestCluster(hosts ...string) *v2.Cluster {
+	cluster := &v2.Cluster{
+		TypeMeta:   metav1.TypeMeta{APIVersion: "sealos.io/v1beta1", Kind: "Cluster"},
+		ObjectMeta: metav1.ObjectMeta{Name: "standalone-test"},
+		Spec:       v2.ClusterSpec{ControlPlaneMode: v2.ControlPlaneModeStandalone},
+	}
+	for index, host := range hosts {
+		role := v2.NODE
+		if index == 0 {
+			role = v2.MASTER
+		}
+		cluster.Spec.Hosts = append(
+			cluster.Spec.Hosts,
+			v2.Host{IPS: []string{host}, Roles: []string{role}},
+		)
+	}
+	return cluster
+}
+
+func TestValidateImageReferences(t *testing.T) {
+	if err := validateImageReferences(nil); err != nil {
+		t.Fatalf("empty request rejected: %v", err)
+	}
+	valid := []string{
+		"docker.io/labring/kubernetes:v1.33.6",
+		"ghcr.io/zijiren233/gvisor:release-20261026.0-amd64",
+		"busybox:1",
+	}
+	if err := validateImageReferences(valid); err != nil {
+		t.Fatalf("valid references rejected: %v", err)
+	}
+	// sealos run -f /path/to/Clusterfile turns the path into an image name.
+	invalid := []string{"/root/.sealos/default/Clusterfile"}
+	err := validateImageReferences(invalid)
+	if err == nil || !strings.Contains(err.Error(), "invalid image reference") {
+		t.Fatalf("file path accepted as image reference: %v", err)
+	}
+}
+
+func TestStandaloneMembershipDecision(t *testing.T) {
+	master, worker := "192.0.2.1:22", "192.0.2.2:22"
+	created := standaloneTestCluster(master, worker)
+	created.CreationTimestamp = metav1.Now()
+
+	same := standaloneTestCluster(master, worker)
+	same.CreationTimestamp = metav1.Now()
+	addedWorker := standaloneTestCluster(master, worker, "192.0.2.3:22")
+	addedWorker.CreationTimestamp = metav1.Now()
+	addedMaster := standaloneTestCluster(master, "192.0.2.9:22", worker)
+	addedMaster.CreationTimestamp = metav1.Now()
+	removedWorker := standaloneTestCluster(master)
+	removedWorker.CreationTimestamp = metav1.Now()
+
+	cases := []struct {
+		name    string
+		current *v2.Cluster
+		desired *v2.Cluster
+		want    bool
+	}{
+		{"unchanged inventory", created, same, false},
+		{"added worker", created, addedWorker, true},
+		{"added master", created, addedMaster, true},
+		{"removed worker", created, removedWorker, true},
+		{"day-zero", nil, same, false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			applier := &Applier{ClusterCurrent: tc.current, ClusterDesired: tc.desired}
+			if got := applier.standaloneMembership(); got != tc.want {
+				t.Fatalf("membership = %v, want %v", got, tc.want)
 			}
 		})
 	}
 }
 
-func TestLocalLifecycleHostAddresses(t *testing.T) {
-	addresses := []net.Addr{
-		&net.IPNet{IP: net.ParseIP("192.0.2.1"), Mask: net.CIDRMask(24, 32)},
-		&net.IPNet{IP: net.ParseIP("2001:db8::1"), Mask: net.CIDRMask(64, 128)},
+func TestValidateStandaloneRequestGuards(t *testing.T) {
+	master, worker := "192.0.2.1:22", "192.0.2.2:22"
+	current := standaloneTestCluster(master, worker)
+	current.CreationTimestamp = metav1.Now()
+
+	appOnly := standaloneTestCluster(master, worker)
+	appOnly.CreationTimestamp = metav1.Now()
+	applier := &Applier{ClusterCurrent: current, ClusterDesired: appOnly}
+	if err := applier.validateStandaloneRequest(); err != nil {
+		t.Fatalf("app-only request rejected: %v", err)
 	}
-	for _, host := range []string{
-		"192.0.2.1:22",
-		"[2001:db8::1]:22",
-		"localhost:22",
-		"127.0.0.2:22",
-		"[::1]:22",
-	} {
-		if !isLocalLifecycleHost(host, addresses) {
-			t.Fatalf("did not preserve local marker on %s", host)
-		}
+
+	// Mixing addition and removal must stay a hard error.
+	mixed := standaloneTestCluster(master, "192.0.2.9:22")
+	mixed.CreationTimestamp = metav1.Now()
+	applier = &Applier{ClusterCurrent: current, ClusterDesired: mixed}
+	if err := applier.validateStandaloneRequest(); err == nil {
+		t.Fatal("mixed addition and removal accepted")
 	}
-	if isLocalLifecycleHost("192.0.2.2:22", addresses) {
-		t.Fatal("classified a remote master as local")
+
+	// A registered cluster must not be operated through the standalone path.
+	registered := standaloneTestCluster(master, worker)
+	registered.Spec.ControlPlaneMode = v2.ControlPlaneModeRegistered
+	registered.CreationTimestamp = metav1.Now()
+	applier = &Applier{ClusterCurrent: registered, ClusterDesired: appOnly}
+	if err := applier.validateStandaloneRequest(); err == nil {
+		t.Fatal("registered cluster accepted as standalone")
+	}
+
+	// Necessarily failing image references are rejected up front.
+	applier = &Applier{
+		ClusterCurrent: current,
+		ClusterDesired: appOnly,
+		RunNewImages:   []string{"/root/.sealos/default/Clusterfile"},
+	}
+	if err := applier.validateStandaloneRequest(); err == nil {
+		t.Fatal("invalid image reference accepted")
 	}
 }

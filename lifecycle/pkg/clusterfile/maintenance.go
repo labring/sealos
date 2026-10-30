@@ -35,14 +35,14 @@ const ModeTransitionFilename = "control-plane-transition.json"
 // LockMaintenance serializes lifecycle operations using the same cluster
 // inventory. A durable transition marker blocks unrelated mutations on retry.
 func LockMaintenance(name string, conversion bool) (func(), error) {
-	return lockMaintenance(name, conversion, false)
+	return lockMaintenance(name, conversion)
 }
 
 func LockLifecycleMaintenance(name string) (func(), error) {
-	return lockMaintenance(name, false, true)
+	return lockMaintenance(name, false)
 }
 
-func lockMaintenance(name string, conversion, lifecycle bool) (func(), error) {
+func lockMaintenance(name string, conversion bool) (func(), error) {
 	dir := constants.ClusterDir(name)
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return nil, err
@@ -64,14 +64,6 @@ func lockMaintenance(name string, conversion, lifecycle bool) (func(), error) {
 			release()
 			return nil, errors.New(
 				"control-plane mode conversion is incomplete; resume with sealos switch control-plane",
-			)
-		}
-	}
-	if !lifecycle {
-		if _, err := os.Stat(filepath.Join(dir, LifecycleFilename)); !os.IsNotExist(err) {
-			release()
-			return nil, errors.New(
-				"standalone lifecycle is incomplete; resume the original command",
 			)
 		}
 	}
