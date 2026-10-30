@@ -10,15 +10,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       req
     });
 
-    const { body } = await k8sCustomObjects.getNamespacedCustomObject(
-      AccountMeta.group,
-      AccountMeta.version,
-      AccountMeta.namespace,
-      AccountMeta.plural,
-      kube_user.name
-    );
+    const account = await k8sCustomObjects.getNamespacedCustomObject({
+      group: AccountMeta.group,
+      version: AccountMeta.version,
+      namespace: AccountMeta.namespace,
+      plural: AccountMeta.plural,
+      name: kube_user.name
+    });
 
-    jsonRes(res, { data: body });
+    jsonRes(res, { data: account });
   } catch (error) {
     console.log(error);
     jsonRes(res, { code: 500, data: error });

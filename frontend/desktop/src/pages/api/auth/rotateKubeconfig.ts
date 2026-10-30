@@ -33,8 +33,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // if rotation completes before our first poll, we still detect the change.
     let previousKubeconfig: string | undefined;
     try {
-      const pre = await client.getClusterCustomObjectStatus(group, version, plural, k8s_username);
-      const preBody = pre.body as any;
+      const pre = await client.getClusterCustomObjectStatus({
+        group,
+        version,
+        plural,
+        name: k8s_username
+      });
+      const preBody = pre as any;
       if (preBody?.status?.kubeConfig) {
         previousKubeconfig = preBody.status.kubeConfig as string;
       }
@@ -51,18 +56,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     ];
 
     await client.patchClusterCustomObject(
-      group,
-      version,
-      plural,
-      k8s_username,
-      patches,
-      undefined,
-      undefined,
-      undefined,
+      { group, version, plural, name: k8s_username, body: patches },
       {
-        headers: {
-          'Content-Type': 'application/json-patch+json'
-        }
+        // the object-args API sends patches as application/json; JSON patches
+        // need the json-patch content type for the apiserver to accept them
+        middleware: [
+          {
+            pre: (context) =>
+              new k8s.Observable(
+                Promise.resolve(context).then((ctx) => {
+                  ctx.setHeaderParam('Content-Type', k8s.PatchStrategy.JsonPatch);
+                  return ctx;
+                })
+              ),
+            post: (context) => new k8s.Observable(Promise.resolve(context))
+          }
+        ]
       }
     );
 
@@ -116,8 +125,8 @@ async function watchKubeconfigUpdate(
     await new Promise((resolve) => setTimeout(resolve, interval));
 
     try {
-      const data = await client.getClusterCustomObjectStatus(group, version, plural, name);
-      const body = data.body as any;
+      const data = await client.getClusterCustomObjectStatus({ group, version, plural, name });
+      const body = data as any;
 
       const phase = body?.status?.phase as string | undefined;
       const conds = body?.status?.conditions as any[] | undefined;

@@ -18,7 +18,7 @@
     "@chakra-ui/system": "^2.6.1",
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
-    "@kubernetes/client-node": "^0.18.1",
+    "@kubernetes/client-node": "^1.4.0",
     "@next/font": "13.1.6",
     "@sealos/ui": "workspace:^",
     "@tanstack/react-query": "^4.35.3",
