@@ -82,15 +82,22 @@ rules:
       - get
       - list
       - watch
+  # clusterrolebindings: the controller reads them via its informer and, when
+  # adminClusterAdmin is disabled (default), only ever deletes the legacy
+  # sealos-cloudadmin binding. create/update and the cluster-admin bind grant
+  # are rendered exclusively for the opt-in legacy path so the default grant
+  # cannot mint new ClusterRoleBindings.
   - apiGroups:
       - rbac.authorization.k8s.io
     resources:
       - clusterrolebindings
     verbs:
-      - create
       - get
       - list
       - watch
+{{- if .Values.adminClusterAdmin.enabled }}
+      - create
+{{- end }}
   - apiGroups:
       - rbac.authorization.k8s.io
     resources:
@@ -98,8 +105,20 @@ rules:
     resourceNames:
       - sealos-cloudadmin
     verbs:
-      - update
       - delete
+{{- if .Values.adminClusterAdmin.enabled }}
+      - update
+{{- end }}
+{{- if .Values.adminClusterAdmin.enabled }}
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - clusterroles
+    resourceNames:
+      - cluster-admin
+    verbs:
+      - bind
+{{- end }}
   - apiGroups:
       - rbac.authorization.k8s.io
     resources:
@@ -135,14 +154,6 @@ rules:
       - Owner
       - Manager
       - Developer
-    verbs:
-      - bind
-  - apiGroups:
-      - rbac.authorization.k8s.io
-    resources:
-      - clusterroles
-    resourceNames:
-      - cluster-admin
     verbs:
       - bind
   - apiGroups:

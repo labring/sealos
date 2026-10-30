@@ -86,12 +86,14 @@ rules:
   - get
   - list
   - watch
+# clusterrolebindings 最小默认(adminClusterAdmin 关闭时 controller 只读并删除
+# legacy sealos-cloudadmin)。启用 --enable-admin-cluster-admin 需补:
+#   clusterrolebindings +create;sealos-cloudadmin +update;clusterroles bind cluster-admin
 - apiGroups:
   - rbac.authorization.k8s.io
   resources:
   - clusterrolebindings
   verbs:
-  - create
   - get
   - list
   - watch
@@ -102,7 +104,6 @@ rules:
   resourceNames:
   - sealos-cloudadmin
   verbs:
-  - update
   - delete
 - apiGroups:
   - rbac.authorization.k8s.io
@@ -139,14 +140,6 @@ rules:
   - Owner
   - Manager
   - Developer
-  verbs:
-  - bind
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - clusterroles
-  resourceNames:
-  - cluster-admin
   verbs:
   - bind
 - apiGroups:
