@@ -57,17 +57,19 @@ func TestValidateCreateRejectsReservedUserNames(t *testing.T) {
 	}
 }
 
-func TestValidateReservedUserNameMessageIncludesIdentity(t *testing.T) {
+func TestValidateReservedUserNameMessageIsTerse(t *testing.T) {
 	err := validateReservedUserName(reserved.ControllerServiceAccount)
 	if err == nil {
 		t.Fatal("controller service account name was not reserved")
 	}
-	for _, fragment := range []string{
-		reserved.ControllerServiceAccount,
-		"user-system/" + reserved.ControllerServiceAccount,
-	} {
-		if !strings.Contains(err.Error(), fragment) {
-			t.Fatalf("reserved name error missing %q: %v", fragment, err)
+	if !strings.Contains(err.Error(), "is reserved") {
+		t.Fatalf("reserved name error missing reason: %v", err)
+	}
+	// The message is API-consumer facing and must not disclose the collision
+	// target, the escalation impact, or the controller's configuration flags.
+	for _, leaked := range []string{"user-system", "ServiceAccount", "privilege", "blocked-user-names"} {
+		if strings.Contains(err.Error(), leaked) {
+			t.Fatalf("reserved name error leaked %q: %v", leaked, err)
 		}
 	}
 	if validateReservedUserName("alice") != nil {

@@ -20,7 +20,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/labring/sealos/controllers/user/pkg/licensegate"
 	"github.com/labring/sealos/controllers/user/pkg/reserved"
@@ -46,16 +45,12 @@ const (
 // validateReservedUserName rejects User names that collide with identities
 // already deployed in the user-system namespace. Every User mints tokens for
 // the ServiceAccount user-system/<User.Name>, so such a collision would leak
-// that identity's privileges to the User holder.
+// that identity's privileges to the User holder. The error message is
+// deliberately terse: details about the collision and the configurable
+// blocklist belong to operator docs, not to API consumers.
 func validateReservedUserName(name string) error {
 	if reserved.IsReserved(name) {
-		return fmt.Errorf(
-			"user name %q is reserved: it collides with the ServiceAccount user-system/%s and is denied to prevent privilege escalation "+
-				"(reserved by default: %s; extra names can be configured via the controller's --blocked-user-names flag)",
-			name,
-			name,
-			strings.Join(reserved.DefaultNames(), ", "),
-		)
+		return fmt.Errorf("user name %q is reserved", name)
 	}
 	return nil
 }

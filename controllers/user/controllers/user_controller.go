@@ -1792,11 +1792,7 @@ func (r *UserReconciler) rejectReservedName(
 		LastTransitionTime: metav1.Now(),
 		LastHeartbeatTime:  metav1.Now(),
 		Reason:             "NameReserved",
-		Message: fmt.Sprintf(
-			"user name %q is reserved for internal identities and must not own the ServiceAccount user-system/%s",
-			user.Name,
-			user.Name,
-		),
+		Message:            fmt.Sprintf("user name %q is reserved", user.Name),
 	}
 	user.Status.Phase = userv1.UserPending
 	user.Status.Conditions = helper.UpdateCondition(user.Status.Conditions, *condition)
