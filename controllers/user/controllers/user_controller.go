@@ -116,24 +116,30 @@ func (s *userReconcileState) recordSyncError(err error) {
 	s.syncError = errors.Join(s.syncError, err)
 }
 
-// User workspaces and the shared user-system namespace.
+// User workspaces and the shared user-system namespace. ServiceAccounts,
+// their tokens and bound-token Secrets are only ever touched in user-system,
+// so they are granted through a namespaced Role.
 // +kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch;create;update;delete
-// +kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=get;list;watch;create;update
-// +kubebuilder:rbac:groups="",resources=serviceaccounts/token,verbs=create
-// +kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;delete
+// +kubebuilder:rbac:groups="",namespace=user-system,resources=serviceaccounts,verbs=get;list;watch;create;update
+// +kubebuilder:rbac:groups="",namespace=user-system,resources=serviceaccounts/token,verbs=create
+// +kubebuilder:rbac:groups="",namespace=user-system,resources=secrets,verbs=get;list;watch;create;update;delete
 // +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
-// +kubebuilder:rbac:groups=events.k8s.io,resources=events,verbs=create;patch
 // Workspace RBAC: Roles/RoleBindings in ns-* namespaces and the legacy admin
-// sealos-cloudadmin ClusterRoleBinding.
+// sealos-cloudadmin ClusterRoleBinding. list/watch and create cannot be
+// constrained by resourceNames; writes to the admin binding are.
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles,verbs=get;list;watch;create;update
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;list;watch;create;update;delete
-// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterrolebindings,verbs=get;list;watch;create;update;delete
-// User resources, including Users deleted through DeleteRequests.
+// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterrolebindings,verbs=get;list;watch;create
+// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterrolebindings,resourceNames=sealos-cloudadmin,verbs=update;delete
+// User resources, including Users deleted through DeleteRequests. Finalizers
+// are updated through the main resource, so no finalizers subresource rule.
 // +kubebuilder:rbac:groups=user.sealos.io,resources=users,verbs=get;list;watch;update;patch;delete
-// +kubebuilder:rbac:groups=user.sealos.io,resources=users/status,verbs=get;patch;update
-// +kubebuilder:rbac:groups=user.sealos.io,resources=users/finalizers,verbs=update
+// +kubebuilder:rbac:groups=user.sealos.io,resources=users/status,verbs=patch
 // Licensing.
 // +kubebuilder:rbac:groups=license.sealos.io,resources=licenses,verbs=get;list;watch
+// Authenticated metrics endpoint (controller-runtime metrics filter).
+// +kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenreviews,verbs=create
+// +kubebuilder:rbac:groups=authorization.k8s.io,resources=subjectaccessreviews,verbs=create
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.

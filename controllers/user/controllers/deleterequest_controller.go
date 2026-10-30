@@ -47,9 +47,8 @@ type DeleteRequestReconciler struct {
 
 const DeleteRequestRequeueDuration time.Duration = 30 * time.Second
 
-//+kubebuilder:rbac:groups=user.sealos.io,resources=deleterequests,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=user.sealos.io,resources=deleterequests/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=user.sealos.io,resources=deleterequests/finalizers,verbs=update
+//+kubebuilder:rbac:groups=user.sealos.io,resources=deleterequests,verbs=get;list;watch;delete
+//+kubebuilder:rbac:groups=user.sealos.io,resources=deleterequests/status,verbs=update
 
 func (r *DeleteRequestReconciler) Reconcile(
 	ctx context.Context,
