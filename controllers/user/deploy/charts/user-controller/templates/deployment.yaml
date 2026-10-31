@@ -43,6 +43,9 @@ spec:
             - --kube-api-burst={{ .Values.kubeAPI.burst }}
             - --enable-admin-cluster-admin={{ .Values.adminClusterAdmin.enabled }}
             - --enable-strict-namespace-pod-security={{ .Values.strictNamespacePodSecurity.enabled }}
+            {{- with .Values.blockedUserNames }}
+            - --blocked-user-names={{ join "," . }}
+            {{- end }}
             {{- if .Values.metrics.enabled }}
             - --metrics-secure=true
             - --metrics-bind-address=:8443

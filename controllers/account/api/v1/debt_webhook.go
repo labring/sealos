@@ -45,6 +45,13 @@ const (
 	mastersGroup               = "system:masters"
 	kubeSystemNamespace        = "kube-system"
 	defaultUserSystemNamespace = "user-system"
+	// userControllerServiceAccount is the ServiceAccount of the user
+	// controller deployment, which writes User CRs on behalf of tenants and
+	// must not be blocked by the balance gate. It is exempted by exact
+	// identity only: a tenant User whose name merely contains the controller
+	// name (user-controller-manager2) mints a different ServiceAccount that
+	// must pass through the debt checks.
+	userControllerServiceAccount = "user-controller-manager"
 )
 
 const (
@@ -64,10 +71,17 @@ type DebtValidate struct {
 	TTLUserMap *maps.TTLMap[*pkgtype.UsableBalanceWithCredits]
 }
 
-var kubeSystemGroup string
+var (
+	kubeSystemGroup string
+	// userControllerSAUsername is the exact username of the user controller
+	// ServiceAccount in the user-system namespace.
+	userControllerSAUsername string
+)
 
 func init() {
 	kubeSystemGroup = fmt.Sprintf("%s:%s", saPrefix, kubeSystemNamespace)
+	userControllerSAUsername = fmt.Sprintf(
+		"system:serviceaccount:%s:%s", defaultUserSystemNamespace, userControllerServiceAccount)
 }
 
 func (d *DebtValidate) Handle(ctx context.Context, req admission.Request) admission.Response {
@@ -92,7 +106,10 @@ func (d *DebtValidate) Handle(ctx context.Context, req admission.Request) admiss
 		if !strings.HasPrefix(g, saPrefix+":user-system") {
 			continue
 		}
-		if strings.Contains(req.UserInfo.Username, "user-controller-manager") {
+		// exempt the user controller itself by exact identity; a username
+		// that merely contains the controller name is a tenant User and
+		// must run the debt checks below.
+		if req.UserInfo.Username == userControllerSAUsername {
 			break
 		}
 		if strings.HasSuffix(req.UserInfo.Username, "user-system:admin") {

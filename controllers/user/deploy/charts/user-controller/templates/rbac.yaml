@@ -45,11 +45,219 @@ metadata:
   name: {{ include "user.fullname" . }}-manager-role
 rules:
   - apiGroups:
-      - "*"
+      - ""
     resources:
-      - "*"
+      - events
     verbs:
-      - "*"
+      - create
+      - patch
+  - apiGroups:
+      - ""
+    resources:
+      - namespaces
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - update
+      - watch
+  - apiGroups:
+      - authentication.k8s.io
+    resources:
+      - tokenreviews
+    verbs:
+      - create
+  - apiGroups:
+      - authorization.k8s.io
+    resources:
+      - subjectaccessreviews
+    verbs:
+      - create
+  - apiGroups:
+      - license.sealos.io
+    resources:
+      - licenses
+    verbs:
+      - get
+      - list
+      - watch
+  # clusterrolebindings: the controller reads them via its informer and, when
+  # adminClusterAdmin is disabled (default), only ever deletes the legacy
+  # sealos-cloudadmin binding. create/update and the cluster-admin bind grant
+  # are rendered exclusively for the opt-in legacy path so the default grant
+  # cannot mint new ClusterRoleBindings.
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - clusterrolebindings
+    verbs:
+      - get
+      - list
+      - watch
+{{- if .Values.adminClusterAdmin.enabled }}
+      - create
+{{- end }}
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - clusterrolebindings
+    resourceNames:
+      - sealos-cloudadmin
+    verbs:
+      - delete
+{{- if .Values.adminClusterAdmin.enabled }}
+      - update
+{{- end }}
+{{- if .Values.adminClusterAdmin.enabled }}
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - clusterroles
+    resourceNames:
+      - cluster-admin
+    verbs:
+      - bind
+{{- end }}
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - rolebindings
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - update
+      - watch
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - roles
+    verbs:
+      - create
+      - get
+      - list
+      - update
+      - watch
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - roles
+    verbs:
+      - escalate
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - roles
+    resourceNames:
+      - Owner
+      - Manager
+      - Developer
+    verbs:
+      - bind
+  - apiGroups:
+      - user.sealos.io
+    resources:
+      - users
+    verbs:
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - user.sealos.io
+    resources:
+      - users/status
+    verbs:
+      - patch
+  - apiGroups:
+      - user.sealos.io
+    resources:
+      - operationrequests
+    verbs:
+      - delete
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - user.sealos.io
+    resources:
+      - operationrequests/status
+    verbs:
+      - update
+  - apiGroups:
+      - user.sealos.io
+    resources:
+      - deleterequests
+    verbs:
+      - delete
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - user.sealos.io
+    resources:
+      - deleterequests/status
+    verbs:
+      - update
+---
+# ServiceAccounts, their tokens and bound-token Secrets are only touched in
+# user-system, which is also the namespace the controller reconciles against
+# regardless of the release namespace.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "user.fullname" . }}-manager-role
+  namespace: user-system
+  labels:
+    {{- include "user.labels" . | nindent 4 }}
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - update
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - serviceaccounts
+    verbs:
+      - create
+      - get
+      - list
+      - update
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - serviceaccounts/token
+    verbs:
+      - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "user.fullname" . }}-manager-rolebinding
+  namespace: user-system
+  labels:
+    {{- include "user.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "user.fullname" . }}-manager-role
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "user.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding

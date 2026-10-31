@@ -22,6 +22,7 @@ import (
 	"fmt"
 
 	"github.com/labring/sealos/controllers/user/pkg/licensegate"
+	"github.com/labring/sealos/controllers/user/pkg/reserved"
 	"github.com/labring/sealos/controllers/user/pkg/usercount"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -40,6 +41,19 @@ const (
 	licenseLimitErrorCode   = 40301
 	userCountLimitErrorCode = 40302
 )
+
+// validateReservedUserName rejects User names that collide with identities
+// already deployed in the user-system namespace. Every User mints tokens for
+// the ServiceAccount user-system/<User.Name>, so such a collision would leak
+// that identity's privileges to the User holder. The error message is
+// deliberately terse: details about the collision and the configurable
+// blocklist belong to operator docs, not to API consumers.
+func validateReservedUserName(name string) error {
+	if reserved.IsReserved(name) {
+		return fmt.Errorf("user name %q is reserved", name)
+	}
+	return nil
+}
 
 func buildLicenseLimitErrorMessage() string {
 	return fmt.Sprintf(
@@ -109,6 +123,9 @@ func (r *User) ValidateCreate(ctx context.Context, obj runtime.Object) (admissio
 	}
 	userlog.Info("validate create", "name", user.Name)
 	if err := user.validateCSRExpirationSeconds(); err != nil {
+		return admission.Warnings{}, err
+	}
+	if err := validateReservedUserName(user.Name); err != nil {
 		return admission.Warnings{}, err
 	}
 	if userWebhookCount == nil || !userWebhookCount.Initialized() {
