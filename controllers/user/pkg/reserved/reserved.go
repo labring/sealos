@@ -22,6 +22,14 @@
 // leaking the identity's privileges to the User holder and exposing it to
 // garbage collection when the User is deleted. The User webhook rejects
 // reserved names on create, and the reconciler refuses to process them.
+//
+// The controller ServiceAccount is matched by containment: a tenant User
+// named user-controller-manager2 mints a ServiceAccount whose username is a
+// superstring of the controller's, and downstream platform controls (for
+// example the account debt webhook) have historically matched that identity
+// by substring. Every superstring of the controller name is therefore
+// reserved, not only the exact name. The built-in default ServiceAccount and
+// operator-provided names stay exact-match.
 package reserved
 
 import (
@@ -77,9 +85,10 @@ func ExtraNames() []string {
 }
 
 // IsReserved reports whether name is reserved, either by default or through
-// the operator-provided list.
+// the operator-provided list. Any name containing the controller
+// ServiceAccount name is reserved; every other name matches exactly.
 func IsReserved(name string) bool {
-	if name == ControllerServiceAccount || name == DefaultServiceAccount {
+	if strings.Contains(name, ControllerServiceAccount) || name == DefaultServiceAccount {
 		return true
 	}
 	mu.RLock()

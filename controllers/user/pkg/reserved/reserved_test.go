@@ -34,6 +34,34 @@ func TestIsReservedCoversDefaultNames(t *testing.T) {
 	}
 }
 
+func TestIsReservedContainsControllerServiceAccount(t *testing.T) {
+	t.Parallel()
+	// A tenant User whose name merely embeds the controller ServiceAccount
+	// name mints a superstring identity that substring-matching platform
+	// controls would confuse with the controller; the whole class is
+	// reserved.
+	for _, name := range []string{
+		ControllerServiceAccount,
+		"user-controller-manager2",
+		"xuser-controller-manager",
+		"user-controller-manager-x",
+	} {
+		if !IsReserved(name) {
+			t.Fatalf("name containing the controller SA %q was not reserved", name)
+		}
+	}
+	// The built-in default ServiceAccount stays exact-match so ordinary
+	// names containing "default" remain creatable.
+	for _, name := range []string{"default2", "xdefault", "user"} {
+		if IsReserved(name) {
+			t.Fatalf("name %q should only be reserved on exact match", name)
+		}
+	}
+	if !IsReserved(DefaultServiceAccount) {
+		t.Fatal("exact default ServiceAccount name was not reserved")
+	}
+}
+
 func TestSetExtraNamesNormalizesEntries(t *testing.T) {
 	t.Parallel()
 	SetExtraNames([]string{" front-desktop ", "", "account", "account"})
