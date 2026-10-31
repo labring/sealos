@@ -167,24 +167,6 @@ func (c *ScaleProcessor) JoinCheck(cluster *v2.Cluster) error {
 	ips = append(ips, cluster.GetMaster0IPAndPort())
 	scales = append(c.MastersToJoin, c.NodesToJoin...)
 	ips = append(ips, scales...)
-	if cluster.IsStandaloneControlPlane() {
-		if err := checker.RunCheckList(
-			[]checker.Interface{checker.NewIPsHostChecker(ips)},
-			cluster,
-			checker.PhasePre,
-		); err != nil {
-			return NewCheckError(err)
-		}
-		return NewCheckError(
-			clusterfile.WithJoinPreflight(cluster.Name, scales, func(pending []string) error {
-				return checker.RunCheckList(
-					[]checker.Interface{checker.NewContainerdChecker(pending)},
-					cluster,
-					checker.PhasePre,
-				)
-			}),
-		)
-	}
 	return NewCheckError(
 		checker.RunCheckList(
 			[]checker.Interface{

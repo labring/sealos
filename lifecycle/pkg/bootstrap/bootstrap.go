@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/labring/sealos/pkg/clusterfile"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"golang.org/x/sync/errgroup"
@@ -79,12 +78,9 @@ func (bs *realBootstrap) Apply(hosts ...string) error {
 		}
 		if _, rootfsCheck := applier.(*defaultChecker); rootfsCheck &&
 			bs.ctx.GetCluster().IsStandaloneControlPlane() {
-			// Keep journal writes outside the parallel host loop.
-			if err := clusterfile.WithRootfsPreflight(
-				bs.ctx.GetCluster().Name,
-				hosts,
-				applyHosts,
-			); err != nil {
+			// Host checks are re-run on every retry; they are idempotent and
+			// the inventory itself records the desired state.
+			if err := applyHosts(hosts); err != nil {
 				return err
 			}
 			continue
