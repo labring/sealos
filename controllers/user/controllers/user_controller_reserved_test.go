@@ -32,7 +32,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-func reservedTestReconciler(t *testing.T, objects ...client.Object) (*UserReconciler, client.Client) {
+func reservedTestReconciler(
+	t *testing.T,
+	objects ...client.Object,
+) (*UserReconciler, client.Client) {
 	t.Helper()
 	scheme := reconcileTestScheme(t)
 	cli := fake.NewClientBuilder().
