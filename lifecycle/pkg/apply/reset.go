@@ -17,8 +17,6 @@ package apply
 import (
 	"errors"
 	"fmt"
-	"os"
-	"path/filepath"
 
 	"github.com/labring/sealos/pkg/apply/applydrivers"
 	"github.com/labring/sealos/pkg/clusterfile"
@@ -30,7 +28,7 @@ import (
 
 func NewApplierFromResetArgs(cmd *cobra.Command, args *ResetArgs) (applydrivers.Interface, error) {
 	clusterPath := constants.Clusterfile(args.ClusterName.ClusterName)
-	cf := clusterfile.NewClusterFile(clusterPath, clusterfile.WithLifecycleReset())
+	cf := clusterfile.NewClusterFile(clusterPath)
 	err := cf.Process()
 	// incase we want to reset force
 	if err != nil && err != clusterfile.ErrClusterFileNotExists {
@@ -59,13 +57,12 @@ func (r *ClusterArgs) resetArgs(cmd *cobra.Command, args *ResetArgs) error {
 		ssh.OverSSHConfig(&r.cluster.Spec.SSH, override)
 	}
 
-	if r.cluster.ObjectMeta.CreationTimestamp.IsZero() {
-		_, pending := os.Stat(
-			filepath.Join(constants.ClusterDir(r.cluster.Name), clusterfile.LifecycleFilename),
-		)
-		if !r.cluster.IsStandaloneControlPlane() || pending != nil {
-			return errors.New("creation time must be specified in clusterfile")
-		}
+	if r.cluster.CreationTimestamp.IsZero() &&
+		!r.cluster.IsStandaloneControlPlane() {
+		// A standalone inventory records its desired hosts even when the
+		// installation never completed, so a failed day-zero cluster can be
+		// reset without a creation timestamp.
+		return errors.New("creation time must be specified in clusterfile")
 	}
 	if len(r.cluster.Spec.Hosts) == 0 {
 		return errors.New("host must not be empty in clusterfile")

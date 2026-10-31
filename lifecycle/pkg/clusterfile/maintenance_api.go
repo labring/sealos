@@ -143,7 +143,7 @@ func leaseActive(lease *coordinationv1.Lease) bool {
 }
 
 func CheckRemoteModeTransition(ctx context.Context, name string, required bool) error {
-	for _, filename := range []string{ModeTransitionFilename, LifecycleFilename} {
+	for _, filename := range []string{ModeTransitionFilename} {
 		if _, err := os.Stat(filepath.Join(constants.ClusterDir(name), filename)); err == nil {
 			return fmt.Errorf(
 				"%w; resume the pending lifecycle operation",
@@ -201,9 +201,6 @@ func checkOptionalModeTransition(
 }
 
 func CheckModeTransition(ctx context.Context, client clientset.Interface) error {
-	if err := CheckLifecycle(ctx, client); err != nil {
-		return err
-	}
 	_, err := client.CoreV1().
 		ConfigMaps("kube-system").
 		Get(ctx, ModeTransitionResource, metav1.GetOptions{})
@@ -223,6 +220,25 @@ func CheckModeTransition(ctx context.Context, client clientset.Interface) error 
 		return ErrModeTransitionPending
 	}
 	if err != nil && !apierrors.IsNotFound(err) {
+		return err
+	}
+	return nil
+}
+
+// CheckPendingModeTransition reports whether an interrupted conversion is
+// recorded on the API. Callers that already hold the mode lease must use this
+// instead of CheckModeTransition, which also rejects the caller's own lease.
+func CheckPendingModeTransition(ctx context.Context, client clientset.Interface) error {
+	_, err := client.CoreV1().
+		ConfigMaps("kube-system").
+		Get(ctx, ModeTransitionResource, metav1.GetOptions{})
+	if err == nil {
+		return fmt.Errorf(
+			"%w; resume sealos switch control-plane before running other lifecycle commands",
+			ErrModeTransitionPending,
+		)
+	}
+	if !apierrors.IsNotFound(err) {
 		return err
 	}
 	return nil

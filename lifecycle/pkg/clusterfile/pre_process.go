@@ -38,7 +38,7 @@ type PreProcessor interface {
 }
 
 func (c *ClusterFile) Process() (err error) {
-	if !fileutil.IsExist(c.path) && !c.resetRecovery {
+	if !fileutil.IsExist(c.path) {
 		return ErrClusterFileNotExists
 	}
 	c.once.Do(func() {
@@ -58,7 +58,7 @@ func (c *ClusterFile) Process() (err error) {
 }
 
 func (c *ClusterFile) loadClusterFile() ([]byte, error) {
-	body, err := readLifecycleInventory(c.path, c.resetRecovery)
+	body, err := os.ReadFile(c.path)
 	if err != nil {
 		return nil, err
 	}
