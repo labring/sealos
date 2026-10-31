@@ -71,6 +71,7 @@ add_chart_component vlogs-service service/vlogs/deploy entrypoint.sh
 add_chart_component admission-webhook webhooks/admission/deploy entrypoint.sh
 
 copy_file "${ROOT_DIR}/controllers/app/deploy/manifests/deploy.yaml" "${STAGING_DIR}/manifests/app-controller/deploy.yaml"
+copy_file "${ROOT_DIR}/controllers/app/deploy/manifests/rbac.yaml" "${STAGING_DIR}/manifests/app-controller/rbac.yaml"
 copy_asset_dir "${ROOT_DIR}/controllers/node/deploy/drop" node-controller/drop
 copy_asset_dir "${ROOT_DIR}/controllers/user/deploy/drop" user-controller/drop
 copy_asset_dir "${ROOT_DIR}/service/vlogs/deploy/remove" vlogs-service/remove

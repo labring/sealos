@@ -157,6 +157,7 @@ run_component desktop-frontend
 wait_deployment sealos sealos-desktop
 run_component user-controller DROP_DIR="${ROOT_DIR}/assets/user-controller/drop"
 kubectl apply -f "${ROOT_DIR}/manifests/app-controller/deploy.yaml"
+kubectl apply -f "${ROOT_DIR}/manifests/app-controller/rbac.yaml"
 run_component account-controller
 run_component account-service
 run_component job-init
