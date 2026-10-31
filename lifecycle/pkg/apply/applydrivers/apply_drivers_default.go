@@ -85,20 +85,32 @@ type Applier struct {
 }
 
 func (c *Applier) Apply() error {
-	lock := clusterfile.LockMaintenance
 	if c.ClusterDesired.IsStandaloneControlPlane() {
-		lock = func(name string, _ bool) (func(), error) {
-			return clusterfile.LockLifecycleMaintenance(name)
+		release, err := clusterfile.LockLifecycleMaintenance(c.ClusterDesired.Name)
+		if err != nil {
+			return err
 		}
+		defer release()
+		if err := c.validateStandaloneRequest(); err != nil {
+			return err
+		}
+		run := c.applyDesired
+		if c.standaloneMembership() {
+			// Membership changes are the only operations coordinated
+			// cluster-wide: the lease is taken before anything is published so
+			// a command from another inventory cannot overwrite the record of
+			// the active one, and the desired inventory is replicated to the
+			// control-plane hosts while the local Clusterfile keeps the
+			// previous state until the reconcile has finished.
+			run = c.withStandaloneLease(c.runStandaloneMembership)
+		}
+		return run()
 	}
-	release, err := lock(c.ClusterDesired.Name, false)
+	release, err := clusterfile.LockMaintenance(c.ClusterDesired.Name, false)
 	if err != nil {
 		return err
 	}
 	defer release()
-	if c.ClusterDesired.IsStandaloneControlPlane() {
-		return c.withStandaloneOperation("apply", c.applyDesired)
-	}
 	return c.applyDesired()
 }
 
@@ -127,21 +139,15 @@ func (c *Applier) applyDesired() (result error) {
 	// clusterErr and appErr should not appear in the same time
 	var clusterErr, appErr error
 	defer func() {
-		if c.ClusterDesired.IsStandaloneControlPlane() {
-			if result == nil {
-				result = c.commitStandaloneInventory()
-			}
-			return
+		// Standalone and plain modes share the write-back rules: pre-check
+		// and pre-process failures record nothing, every other outcome
+		// writes the Clusterfile so re-runs and --force overrides converge.
+		c.mainlineWriteBack(clusterErr)
+		if c.ClusterDesired.IsStandaloneControlPlane() && result == nil {
+			// Membership recovery reads the inventory from any control-plane
+			// host, so the committed state is replicated after success.
+			result = c.syncStandaloneInventory(true)
 		}
-		var checkError *processor.CheckError
-		var preProcessError *processor.PreProcessError
-		switch {
-		case errors.As(clusterErr, &checkError):
-			return
-		case errors.As(clusterErr, &preProcessError):
-			return
-		}
-		c.applyAfter()
 	}()
 	c.initStatus()
 	if c.ClusterCurrent == nil || c.ClusterCurrent.CreationTimestamp.IsZero() {
@@ -200,6 +206,21 @@ func (c *Applier) initStatus() {
 
 // todo: atomic updating status after each installation for better reconcile?
 // todo: set up signal handler
+// mainlineWriteBack keeps plain-mode behavior: pre-check and pre-process
+// failures leave no recorded state, while every other outcome persists the
+// Clusterfile so retries and --force overrides operate on the same inventory.
+func (c *Applier) mainlineWriteBack(clusterErr error) {
+	var checkError *processor.CheckError
+	var preProcessError *processor.PreProcessError
+	switch {
+	case errors.As(clusterErr, &checkError):
+		return
+	case errors.As(clusterErr, &preProcessError):
+		return
+	}
+	c.applyAfter()
+}
+
 func (c *Applier) updateStatus(clusterErr, appErr error) {
 	switch clusterErr.(type) {
 	case *processor.CheckError, *processor.PreProcessError:
@@ -344,7 +365,10 @@ func (c *Applier) Delete() error {
 			return err
 		}
 		defer release()
-		return c.withStandaloneOperation("reset", c.deleteWithArchive)
+		// Destruction removes the coordination API itself: replicate the
+		// inventory first so any surviving host can resume the reset.
+		_ = c.syncStandaloneInventory(false)
+		return c.deleteWithArchive()
 	}
 	release, err := clusterfile.LockMaintenance(c.ClusterDesired.Name, false)
 	if err != nil {
