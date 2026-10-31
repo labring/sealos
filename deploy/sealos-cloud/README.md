@@ -26,8 +26,9 @@ the controller, frontend, service, and webhook workflows finish.
 
 The entrypoint waits for the desktop frontend to become ready before continuing,
 then deploys components in dependency order and waits for required workloads.
-The admission webhook uses its Helm chart. `drop/` and `remove/` files remain isolated under
-`assets/<component>/` and are passed to their owning component scripts.
+The admission webhook uses its Helm chart. `drop/` and `remove/` files remain
+isolated under `assets/<component>/` and are passed to their owning component
+scripts.
 
 The installer runs this component image. Database service and launchpad service
 deployments are intentionally excluded.
@@ -38,7 +39,7 @@ The entrypoint uses these runtime environment variables when waiting for
 component workloads:
 
 ```sh
-SEALOS_CLOUD_DEPLOY_TIMEOUT=10m
+SEALOS_CLOUD_DEPLOY_TIMEOUT=30m
 SEALOS_CLOUD_JOB_TIMEOUT=15m
 ```
 
@@ -52,4 +53,16 @@ sealos run \
 ```
 
 `SEALOS_CLOUD_DEPLOY_TIMEOUT` controls Deployment rollout checks. The job
-timeout applies to the initialization Job in `account-system`.
+timeout applies to the initialization Job in `account-system`. Deployment
+timeout accepts seconds or Kubernetes-style `s`, `m`, or `h` values.
+`DEPLOY_TIMEOUT` is also accepted as an alias.
+
+After `license-controller` is deployed, the entrypoint waits for the
+`ns-admin` namespace before installing `license-frontend`. It checks every 30
+seconds and fails with a diagnostic message if the namespace does not appear
+within the Deployment timeout.
+
+The heartbeat component uses `helm upgrade --install` for both first install and
+upgrade. The entrypoint therefore waits for the `heartbeat-cronjob` object to
+exist instead of waiting for a CronJob condition; it retries for up to 10
+minutes and logs progress every 30 seconds.
