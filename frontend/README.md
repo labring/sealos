@@ -3,6 +3,7 @@
 ## Development setup
 
 - It's recommended using this directory (`/frontend`) as root for your workspace.
+- Use Node.js 26.13.0 LTS for development and builds (`nvm install && nvm use`).
 - We use `pnpm` for package management, you should have it installed before getting started. ([Tutorial](https://pnpm.io/installation))
 - Desktop app is under `desktop/` directory, sub apps are under `providers/<package>/`.
 
@@ -15,6 +16,12 @@ App Launchpad, Database (formerly DBProvider), and the Template app store are ma
 Build and install these apps using their respective repositories. This repository's frontend builds and `scripts/cloud/install-v2.sh` no longer include them. Desktop retains their service URLs and integrations. The legacy Database and Launchpad monitoring services have been removed from this repository and its cloud installer; `service/vlogs` continues to provide logs for the extracted apps.
 
 ### Install dependencies
+
+Install the workspace's pinned package manager. Node.js 26 does not bundle Corepack:
+
+```sh
+npm install --global pnpm@8.9.0
+```
 
 The post install script will run automatically, and local packages should be built.
 
@@ -131,11 +138,11 @@ Kubernetes, billing APIs or other external services. They are not business-healt
 All three charts expose `startupProbe`, `readinessProbe`, `livenessProbe` and
 `tests.path` in both `values.yaml` and the installation `*-values.yaml`. Defaults:
 
-| App | Startup (period / timeout / failures) | Readiness | Liveness |
-| --- | --- | --- | --- |
-| Desktop | 2s / 3s / 60 | delay 5s, period 3s, timeout 2s, successes 3, failures 3 | delay 15s, period 20s, timeout 1s, failures 3 |
-| Costcenter | 2s / 3s / 30 | period 10s, timeout 3s, failures 6 | period 20s, timeout 3s, failures 3 |
-| License | 5s / 5s / 30 | period 5s, timeout 5s, failures 3 | period 20s, timeout 5s, failures 3 |
+| App        | Startup (period / timeout / failures) | Readiness                                                | Liveness                                      |
+| ---------- | ------------------------------------- | -------------------------------------------------------- | --------------------------------------------- |
+| Desktop    | 2s / 3s / 60                          | delay 5s, period 3s, timeout 2s, successes 3, failures 3 | delay 15s, period 20s, timeout 1s, failures 3 |
+| Costcenter | 2s / 3s / 30                          | period 10s, timeout 3s, failures 6                       | period 20s, timeout 3s, failures 3            |
+| License    | 5s / 5s / 30                          | period 5s, timeout 5s, failures 3                        | period 20s, timeout 5s, failures 3            |
 
 Startup success enables readiness/liveness checks. Readiness gates Service traffic;
 liveness failure restarts the container. Override the objects in the installation
