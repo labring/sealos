@@ -19,12 +19,9 @@ const nextConfig = {
       return [];
     }
   },
-  swcMinify: isProduction,
   output: 'standalone',
   transpilePackages: ['@sealos/ui', 'sealos-desktop-sdk', '@sealos/driver'],
-  experimental: {
-    outputFileTracingRoot: path.join(__dirname, '../')
-  }
+  outputFileTracingRoot: path.join(__dirname, '../')
 };
 
 module.exports = nextConfig;

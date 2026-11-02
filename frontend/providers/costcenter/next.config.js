@@ -14,11 +14,8 @@ const nextConfig = {
   reactStrictMode: false,
   output: 'standalone',
   transpilePackages: ['echarts', 'sealos@ui', '@sealos/shadcn-ui'],
-  experimental: {
-    // this includes files from the monorepo base two directories up
-    outputFileTracingRoot: path.join(__dirname, '../../'),
-    instrumentationHook: true
-  },
+  // Include files from the monorepo base two directories up.
+  outputFileTracingRoot: path.join(__dirname, '../../'),
   async headers() {
     return [
       {
