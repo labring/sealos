@@ -1030,6 +1030,7 @@ func (r *NamespaceReconciler) suspendOrphanPod(ctx context.Context, namespace st
 		}
 		clone := pod.DeepCopy()
 		clone.ResourceVersion = ""
+		clone.Finalizers = nil
 		clone.Spec.NodeName = ""
 		clone.Status = corev1.PodStatus{}
 		clone.Spec.SchedulerName = v1.DebtSchedulerName
@@ -1037,7 +1038,12 @@ func (r *NamespaceReconciler) suspendOrphanPod(ctx context.Context, namespace st
 			clone.Annotations = make(map[string]string)
 		}
 		clone.Annotations[v1.PreviousSchedulerName] = pod.Spec.SchedulerName
-		err := r.recreatePod(ctx, pod, clone)
+		// Tenant-registered finalizers or a dropped watch stream must not
+		// hold this worker open: bound the recreate wait exactly like the
+		// resume path does.
+		podCtx, cancel := context.WithTimeout(ctx, recreatePodTimeout)
+		err := r.recreatePod(podCtx, pod, clone)
+		cancel()
 		if err != nil {
 			return fmt.Errorf("recreate unowned pod `%s` failed: %w", pod.Name, err)
 		}
@@ -1069,7 +1075,7 @@ func (r *NamespaceReconciler) resumeOrphanPod(ctx context.Context, namespace str
 	if err := r.Client.List(ctx, &list, client.InNamespace(namespace)); err != nil {
 		return err
 	}
-	deleteCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	deleteCtx, cancel := context.WithTimeout(ctx, recreatePodTimeout)
 	defer cancel()
 	for _, pod := range list.Items {
 		if pod.Status.Phase != v1.PodPhaseSuspended ||
@@ -1085,6 +1091,7 @@ func (r *NamespaceReconciler) resumeOrphanPod(ctx context.Context, namespace str
 		// Only resume orphan pods
 		clone := pod.DeepCopy()
 		clone.ResourceVersion = ""
+		clone.Finalizers = nil
 		clone.Spec.NodeName = ""
 		clone.Status = corev1.PodStatus{}
 		if scheduler, ok := clone.Annotations[v1.PreviousSchedulerName]; ok {
@@ -1101,6 +1108,11 @@ func (r *NamespaceReconciler) resumeOrphanPod(ctx context.Context, namespace str
 	return nil
 }
 
+// recreatePodTimeout bounds each delete-and-recreate wait so a
+// tenant-registered finalizer or a dropped watch stream can hold a
+// suspension worker for at most this long per pod.
+const recreatePodTimeout = 10 * time.Second
+
 func (r *NamespaceReconciler) recreatePod(
 	ctx context.Context,
 	oldPod corev1.Pod,
@@ -1111,11 +1123,20 @@ func (r *NamespaceReconciler) recreatePod(
 	if err != nil {
 		return fmt.Errorf("failed to start watch stream for pod %s: %w", oldPod.Name, err)
 	}
+	defer watcher.Stop()
 	ch := watcher.ResultChan()
 	err = r.Client.Delete(ctx, &oldPod)
 	if err != nil {
 		return fmt.Errorf("failed to delete pod %s: %w", oldPod.Name, err)
 	}
+	// A tenant-registered finalizer would keep the pod Terminating and the
+	// Deleted event would never arrive. The platform is deleting this pod as
+	// part of debt enforcement and recreating a neutralized clone, so strip
+	// finalizers immediately instead of waiting out the tenant.
+	if err := r.removePodFinalizers(ctx, oldPod); err != nil {
+		return err
+	}
+	recreated := false
 	for event := range ch {
 		if event.Type == watch.Deleted {
 			if val, ok := event.Object.(*corev1.Pod); ok && val.Name == oldPod.Name {
@@ -1123,11 +1144,51 @@ func (r *NamespaceReconciler) recreatePod(
 				if err != nil {
 					return fmt.Errorf("failed to recreate pod %s: %w", newPod.Name, err)
 				}
-				watcher.Stop()
+				recreated = true
 				break
 			}
 		}
 	}
+	if !recreated {
+		// The watch stream ended (context deadline, server-side watch
+		// timeout or connection drop) without the pod being deleted:
+		// report the failure so the reconcile requeues instead of
+		// reporting the suspension as complete.
+		return fmt.Errorf(
+			"watch for deletion of pod %s ended before the pod was deleted",
+			oldPod.Name,
+		)
+	}
+	return nil
+}
+
+// removePodFinalizers clears finalizers on a pod the platform just deleted
+// during debt suspension or resume. Pods handled by recreatePod are replaced
+// by platform-controlled clones, so tenant-registered finalizers must not
+// hold the deletion open. It is a no-op when the pod has no finalizers or is
+// already gone.
+func (r *NamespaceReconciler) removePodFinalizers(ctx context.Context, pod corev1.Pod) error {
+	current := &corev1.Pod{}
+	err := r.Client.Get(ctx, client.ObjectKeyFromObject(&pod), current)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			// The pod is already gone; nothing holds the deletion open.
+			return nil
+		}
+		return fmt.Errorf("failed to get pod %s for finalizer removal: %w", pod.Name, err)
+	}
+	if len(current.Finalizers) == 0 {
+		return nil
+	}
+	original := current.DeepCopy()
+	current.Finalizers = nil
+	if err := r.Client.Patch(ctx, current, client.MergeFrom(original)); err != nil {
+		return fmt.Errorf("failed to remove finalizers from pod %s: %w", pod.Name, err)
+	}
+	r.Log.Info(
+		"stripped finalizers from debt-managed pod",
+		"pod", pod.Name, "namespace", pod.Namespace,
+	)
 	return nil
 }
 
