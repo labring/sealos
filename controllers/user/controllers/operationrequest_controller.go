@@ -120,9 +120,8 @@ func namespaceOnlyPredicate(namespace string) predicate.Predicate {
 	}
 }
 
-// +kubebuilder:rbac:groups=user.sealos.io,resources=operationrequests,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=user.sealos.io,resources=operationrequests/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=user.sealos.io,resources=operationrequests/finalizers,verbs=update
+// +kubebuilder:rbac:groups=user.sealos.io,resources=operationrequests,verbs=get;list;watch;delete
+// +kubebuilder:rbac:groups=user.sealos.io,resources=operationrequests/status,verbs=update
 
 func (r *OperationReqReconciler) Reconcile(
 	ctx context.Context,
