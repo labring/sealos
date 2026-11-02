@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { jsonRes } from '@/services/backend/response';
 import { verifyAccessToken } from '@/services/backend/auth';
-import { isAdminKubeconfigUser, K8sApiDefault } from '@/services/backend/kubernetes/admin';
+import { isKubeconfigAccessDenied, K8sApiDefault } from '@/services/backend/kubernetes/admin';
 import * as k8s from '@kubernetes/client-node';
 import { k8sRFC3339Time } from '@/utils/format';
 import { switchKubeconfigNamespace } from '@/utils/switchKubeconfigNamespace';
@@ -16,7 +16,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    if (isAdminKubeconfigUser(regionUser.userCrName)) {
+    if (isKubeconfigAccessDenied(regionUser.userCrName)) {
       return jsonRes(res, {
         code: 403,
         message: 'Kubeconfig rotation is forbidden for admin users'
