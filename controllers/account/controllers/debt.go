@@ -73,6 +73,7 @@ type DebtReconciler struct {
 	client.Client
 	*AccountReconciler
 	AccountV2           database.AccountV2
+	DBClient            database.Account
 	InitUserAccountFunc func(user *types.UserQueryOpts) (*types.Account, error)
 	Scheme              *runtime.Scheme
 	DebtDetectionCycle  time.Duration
@@ -107,27 +108,44 @@ var DebtConfig = v1.DefaultDebtConfig
 
 func (r *DebtReconciler) DetermineCurrentStatus(
 	oweamount int64,
-	_ uuid.UUID,
+	userUID uuid.UUID,
 	updateIntervalSeconds int64,
 	lastStatus v1.DebtStatusType,
 ) (v1.DebtStatusType, error) {
-	return determineCurrentStatus(oweamount, updateIntervalSeconds, lastStatus), nil
+	recentConsumption, err := r.getRecentConsumption(userUID, time.Now().UTC())
+	if err != nil {
+		return v1.NormalPeriod, err
+	}
+	return determineCurrentStatusWithConsumption(
+		oweamount, recentConsumption, updateIntervalSeconds, lastStatus,
+	), nil
 }
 
 func determineCurrentStatus(
 	oweamount, updateIntervalSeconds int64,
 	lastStatus v1.DebtStatusType,
 ) v1.DebtStatusType {
+	return determineCurrentStatusWithConsumption(
+		oweamount, 0, updateIntervalSeconds, lastStatus,
+	)
+}
+
+func determineCurrentStatusWithConsumption(
+	oweamount, recentConsumption, updateIntervalSeconds int64,
+	lastStatus v1.DebtStatusType,
+) v1.DebtStatusType {
 	if oweamount > 0 {
-		if oweamount > 10*BaseUnit {
+		if recentConsumption <= 0 || oweamount/recentConsumption > 7 {
 			return v1.NormalPeriod
-		} else if oweamount > 5*BaseUnit {
+		} else if oweamount/recentConsumption > 3 {
 			return v1.LowBalancePeriod
+		} else if oweamount/recentConsumption > 1 {
+			return v1.CriticalBalancePeriod
 		}
-		return v1.CriticalBalancePeriod
+		return v1.OneDayBalancePeriod
 	}
 	if lastStatus == v1.NormalPeriod || lastStatus == v1.LowBalancePeriod ||
-		lastStatus == v1.CriticalBalancePeriod {
+		lastStatus == v1.CriticalBalancePeriod || lastStatus == v1.OneDayBalancePeriod {
 		return v1.DebtPeriod
 	}
 	if lastStatus == v1.DebtPeriod && updateIntervalSeconds >= DebtConfig[v1.DebtDeletionPeriod] {
@@ -155,6 +173,7 @@ var (
 	TitleTemplateZHMap = map[v1.DebtStatusType]string{
 		v1.LowBalancePeriod:      "余额不足",
 		v1.CriticalBalancePeriod: "余额即将耗尽",
+		v1.OneDayBalancePeriod:   "余额将在一天内耗尽",
 		v1.DebtPeriod:            "余额耗尽",
 		v1.DebtDeletionPeriod:    "即将资源释放",
 		v1.FinalDeletionPeriod:   "彻底资源释放",
@@ -162,6 +181,7 @@ var (
 	TitleTemplateENMap = map[v1.DebtStatusType]string{
 		v1.LowBalancePeriod:      "Low Balance",
 		v1.CriticalBalancePeriod: "Critical Balance",
+		v1.OneDayBalancePeriod:   "Balance Exhaustion Imminent",
 		v1.DebtPeriod:            "Debt",
 		v1.DebtDeletionPeriod:    "Imminent Resource Release",
 		v1.FinalDeletionPeriod:   "Radical resource release",
@@ -364,7 +384,7 @@ func (r *DebtReconciler) Init() {
 	}
 	setDefaultDebtPeriodWaitSecond()
 	r.SendDebtStatusEmailBody = make(map[v1.DebtStatusType]string)
-	for _, status := range []v1.DebtStatusType{v1.LowBalancePeriod, v1.CriticalBalancePeriod, v1.DebtPeriod, v1.DebtDeletionPeriod, v1.FinalDeletionPeriod} {
+	for _, status := range []v1.DebtStatusType{v1.LowBalancePeriod, v1.CriticalBalancePeriod, v1.OneDayBalancePeriod, v1.DebtPeriod, v1.DebtDeletionPeriod, v1.FinalDeletionPeriod} {
 		email := os.Getenv(string(status) + "EmailBody")
 		if email == "" {
 			email = EmailTemplateZHMap[status] + "\n" + EmailTemplateENMap[status]
@@ -397,6 +417,7 @@ func setDefaultDebtPeriodWaitSecond() {
 	NoticeTemplateZHMap = map[v1.DebtStatusType]string{
 		v1.LowBalancePeriod:      "当前工作空间所属账户余额过低，请及时充值，以免影响您的正常使用。",
 		v1.CriticalBalancePeriod: "当前工作空间所属账户余额即将耗尽，请及时充值，以免影响您的正常使用。",
+		v1.OneDayBalancePeriod:   "当前工作空间所属账户余额预计将在一天内耗尽，请及时充值。",
 		v1.DebtPeriod:            "当前工作空间所属账户余额已耗尽，系统将为您暂停服务，请及时充值，以免影响您的正常使用。",
 		v1.DebtDeletionPeriod:    "系统即将释放当前空间的资源，请及时充值，以免影响您的正常使用。",
 		v1.FinalDeletionPeriod:   "系统将随时彻底释放当前工作空间所属账户下的所有资源，请及时充值，以免影响您的正常使用。",
@@ -404,6 +425,7 @@ func setDefaultDebtPeriodWaitSecond() {
 	NoticeTemplateENMap = map[v1.DebtStatusType]string{
 		v1.LowBalancePeriod:      "Your account balance is too low, please recharge in time to avoid affecting your normal use.",
 		v1.CriticalBalancePeriod: "Your account balance is about to run out, please recharge in time to avoid affecting your normal use.",
+		v1.OneDayBalancePeriod:   "Your account balance is expected to run out within one day, please recharge promptly.",
 		v1.DebtPeriod:            "Your account balance has been exhausted, and services will be suspended for you. Please recharge in time to avoid affecting your normal use.",
 		v1.DebtDeletionPeriod:    "The system will release the resources of the current space soon. Please recharge in time to avoid affecting your normal use.",
 		v1.FinalDeletionPeriod:   "The system will completely release all resources under the current account at any time. Please recharge in time to avoid affecting your normal use.",
@@ -413,7 +435,7 @@ func setDefaultDebtPeriodWaitSecond() {
 	), make(
 		map[v1.DebtStatusType]string,
 	)
-	for _, i := range []v1.DebtStatusType{v1.LowBalancePeriod, v1.CriticalBalancePeriod, v1.DebtPeriod, v1.DebtDeletionPeriod, v1.FinalDeletionPeriod} {
+	for _, i := range []v1.DebtStatusType{v1.LowBalancePeriod, v1.CriticalBalancePeriod, v1.OneDayBalancePeriod, v1.DebtPeriod, v1.DebtDeletionPeriod, v1.FinalDeletionPeriod} {
 		EmailTemplateENMap[i] = TitleTemplateENMap[i] + "：" + NoticeTemplateENMap[i] + "(" + domain + ")"
 		EmailTemplateZHMap[i] = TitleTemplateZHMap[i] + "：" + NoticeTemplateZHMap[i] + "(" + domain + ")"
 	}
@@ -779,6 +801,51 @@ func (r *DebtReconciler) RefreshDebtStatus(userUID uuid.UUID) error {
 	return r.refreshDebtStatus(userUID, false)
 }
 
+type recentConsumptionReader interface {
+	GetOwnerConsumptionAmount(owner string, startTime, endTime time.Time) (int64, error)
+}
+
+func (r *DebtReconciler) getRecentConsumption(userUID uuid.UUID, now time.Time) (int64, error) {
+	if r.DBClient == nil {
+		return 0, nil
+	}
+	reader, ok := r.DBClient.(recentConsumptionReader)
+	if !ok {
+		return 0, errors.New("billing database does not support recent consumption queries")
+	}
+	user, err := r.AccountV2.GetUser(&types.UserQueryOpts{UID: userUID})
+	if err != nil {
+		return 0, fmt.Errorf("failed to get user for consumption query: %w", err)
+	}
+	if user == nil || user.ID == "" {
+		return 0, fmt.Errorf("user %s has no billing owner", userUID)
+	}
+	return reader.GetOwnerConsumptionAmount(user.ID, now.Add(-24*time.Hour), now)
+}
+
+func (r *DebtReconciler) hasOneDayBalanceReminder(userUID uuid.UUID) (bool, error) {
+	var record types.DebtStatusRecord
+	err := r.AccountV2.GetGlobalDB().
+		Where("user_uid = ?", userUID).
+		Order("create_at DESC").
+		First(&record).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return false, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("failed to get latest debt status record: %w", err)
+	}
+	return record.LastStatus == types.CriticalBalancePeriod &&
+		record.CurrentStatus == types.CriticalBalancePeriod, nil
+}
+
+func persistedDebtStatus(status types.DebtStatusType) types.DebtStatusType {
+	if status == types.OneDayBalancePeriod {
+		return types.CriticalBalancePeriod
+	}
+	return status
+}
+
 func (r *DebtReconciler) refreshDebtStatus(userUID uuid.UUID, skipSendMsg bool) error {
 	account, err := r.AccountV2.GetAccountWithCredits(userUID)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -805,32 +872,53 @@ func (r *DebtReconciler) refreshDebtStatus(userUID uuid.UUID, skipSendMsg bool) 
 		lastStatus = types.NormalPeriod
 		update = true
 	}
+	if lastStatus == types.OneDayBalancePeriod {
+		lastStatus = types.CriticalBalancePeriod
+		update = true
+	}
 	// A user can still need debt recovery after ResumeBalance has normalized deduction_balance.
 	if account.DeductionBalance == 0 && !types.ContainDebtStatus(types.DebtStates, lastStatus) {
 		return nil
 	}
 	isBasicUser := account.Balance <= 10*BaseUnit
 	oweamount := account.Balance - account.DeductionBalance + account.UsableCredits
+	recentConsumption, err := r.getRecentConsumption(userUID, time.Now().UTC())
+	if err != nil {
+		return fmt.Errorf("failed to get recent consumption for user %s: %w", userUID, err)
+	}
 	// update interval seconds
 	updateIntervalSeconds := time.Now().UTC().Unix() - debt.UpdatedAt.UTC().Unix()
-	currentStatusRaw, err := r.DetermineCurrentStatus(
+	currentStatusRaw := determineCurrentStatusWithConsumption(
 		oweamount,
-		account.UserUID,
+		recentConsumption,
 		updateIntervalSeconds,
 		v1.DebtStatusType(lastStatus),
 	)
-	if err != nil {
-		return fmt.Errorf("failed to determine current status for user %s: %w", userUID, err)
+	calculatedStatus := types.DebtStatusType(currentStatusRaw)
+	// Keep the persisted state compatible with older controller versions. The
+	// one-day state is runtime-only and is marked by a Critical -> Critical
+	// status record after its notification is sent.
+	persistedStatus := persistedDebtStatus(calculatedStatus)
+	oneDayReminderSent := false
+	if calculatedStatus == types.OneDayBalancePeriod {
+		oneDayReminderSent, err = r.hasOneDayBalanceReminder(userUID)
+		if err != nil {
+			return err
+		}
 	}
-	currentStatus := types.DebtStatusType(currentStatusRaw)
-	if lastStatus == currentStatus && !update {
+	statusChanged := lastStatus != persistedStatus
+	oneDayNotificationSent := false
+	if !statusChanged && !update && (calculatedStatus != types.OneDayBalancePeriod || oneDayReminderSent) {
 		return nil
 	}
-	if lastStatus != currentStatus {
+	if skipSendMsg && calculatedStatus == types.OneDayBalancePeriod && !oneDayReminderSent && !statusChanged {
+		return nil
+	}
+	if statusChanged {
 		if err := r.sendFlushDebtResourceStatusRequest(AdminFlushResourceStatusReq{
 			UserUID:           userUID,
 			LastDebtStatus:    lastStatus,
-			CurrentDebtStatus: currentStatus,
+			CurrentDebtStatus: persistedStatus,
 			IsBasicUser:       isBasicUser,
 		}); err != nil {
 			return fmt.Errorf("failed to send flush resource status request: %w", err)
@@ -838,8 +926,8 @@ func (r *DebtReconciler) refreshDebtStatus(userUID uuid.UUID, skipSendMsg bool) 
 	}
 
 	switch lastStatus {
-	case types.NormalPeriod, types.LowBalancePeriod, types.CriticalBalancePeriod:
-		if types.ContainDebtStatus(types.DebtStates, currentStatus) {
+	case types.NormalPeriod, types.LowBalancePeriod, types.CriticalBalancePeriod, types.OneDayBalancePeriod:
+		if types.ContainDebtStatus(types.DebtStates, persistedStatus) {
 			// resume user account
 			if err = r.ResumeBalance(userUID); err != nil {
 				return fmt.Errorf("failed to resume balance: %w", err)
@@ -848,7 +936,7 @@ func (r *DebtReconciler) refreshDebtStatus(userUID uuid.UUID, skipSendMsg bool) 
 				if err := r.SendUserDebtMsg(
 					userUID,
 					oweamount,
-					currentStatus,
+					calculatedStatus,
 					isBasicUser,
 				); err != nil {
 					return NewErrSendMsg(err, userUID)
@@ -856,33 +944,32 @@ func (r *DebtReconciler) refreshDebtStatus(userUID uuid.UUID, skipSendMsg bool) 
 			}
 			break
 		}
-		if types.StatusMap[currentStatus] > types.StatusMap[lastStatus] {
-			// TODO send sms
-			if !skipSendMsg && account.Balance > 0 {
-				if err := r.SendUserDebtMsg(
-					userUID,
-					oweamount,
-					currentStatus,
-					isBasicUser,
-				); err != nil {
-					return NewErrSendMsg(err, userUID)
-				}
+		if (statusChanged || (calculatedStatus == types.OneDayBalancePeriod && !oneDayReminderSent)) &&
+			!skipSendMsg && account.Balance > 0 {
+			if err := r.SendUserDebtMsg(
+				userUID,
+				oweamount,
+				calculatedStatus,
+				isBasicUser,
+			); err != nil {
+				return NewErrSendMsg(err, userUID)
 			}
+			oneDayNotificationSent = calculatedStatus == types.OneDayBalancePeriod
 		}
 	case types.DebtPeriod,
 		types.DebtDeletionPeriod,
-		types.FinalDeletionPeriod: // The current status may be: (Normal, LowBalance, CriticalBalance) Period [Service needs to be restored], DebtDeletionPeriod [Service suspended]
-		if types.ContainDebtStatus(types.DebtStates, currentStatus) {
+		types.FinalDeletionPeriod: // The current status may be a warning period [service needs to be restored] or a deletion period [service suspended].
+		if types.ContainDebtStatus(types.DebtStates, persistedStatus) {
 			if err = r.ResumeBalance(userUID); err != nil {
 				return fmt.Errorf("failed to resume balance: %w", err)
 			}
 		}
-		if currentStatus != types.FinalDeletionPeriod {
-			if !skipSendMsg && types.StatusMap[currentStatus] > types.StatusMap[lastStatus] {
+		if persistedStatus != types.FinalDeletionPeriod {
+			if !skipSendMsg && statusChanged {
 				if err := r.SendUserDebtMsg(
 					userUID,
 					oweamount,
-					currentStatus,
+					calculatedStatus,
 					isBasicUser,
 				); err != nil {
 					return NewErrSendMsg(err, userUID)
@@ -893,16 +980,21 @@ func (r *DebtReconciler) refreshDebtStatus(userUID uuid.UUID, skipSendMsg bool) 
 
 	r.Logger.V(1).Info("update debt status", "account", debt.UserUID,
 		"last status", lastStatus, "last update time", debt.UpdatedAt.Format(time.RFC3339),
-		"current status", debt.AccountDebtStatus, "time", time.Now().UTC().Format(time.RFC3339))
+		"current status", persistedStatus, "time", time.Now().UTC().Format(time.RFC3339))
 
-	debt.AccountDebtStatus = currentStatus
+	debt.AccountDebtStatus = persistedStatus
 	debt.UpdatedAt = time.Now()
 
+	recordLastStatus, recordCurrentStatus := lastStatus, persistedStatus
+	if calculatedStatus == types.OneDayBalancePeriod && (oneDayReminderSent || oneDayNotificationSent) {
+		recordLastStatus = types.CriticalBalancePeriod
+		recordCurrentStatus = types.CriticalBalancePeriod
+	}
 	debtRecord := types.DebtStatusRecord{
 		ID:            uuid.New(),
 		UserUID:       userUID,
-		LastStatus:    lastStatus,
-		CurrentStatus: currentStatus,
+		LastStatus:    recordLastStatus,
+		CurrentStatus: recordCurrentStatus,
 		CreateAt:      time.Now().UTC(),
 	}
 	err = r.AccountV2.GlobalTransactionHandler(func(tx *gorm.DB) error {
@@ -981,9 +1073,6 @@ func (r *DebtReconciler) SendUserDebtMsg(
 	if r.SmsConfig == nil && r.VmsConfig == nil && r.smtpConfig == nil {
 		return nil
 	}
-	if isBasicUser && currentStatus == types.LowBalancePeriod {
-		return nil
-	}
 	_user, err := r.AccountV2.GetUser(&types.UserQueryOpts{UID: userUID})
 	if err != nil {
 		return fmt.Errorf("failed to get user: %w", err)
@@ -1010,10 +1099,28 @@ func (r *DebtReconciler) SendUserDebtMsg(
 			emails = append(emails, outh[i].ProviderID)
 		}
 	}
-	fmt.Printf("user: %s, phones: %v, emails: %v\n", userUID, phones, emails)
+	sendPhone := currentStatus == types.CriticalBalancePeriod ||
+		currentStatus == types.OneDayBalancePeriod ||
+		types.ContainDebtStatus(types.DebtStates, currentStatus)
+	sendEmail := currentStatus == types.LowBalancePeriod ||
+		types.ContainDebtStatus(types.DebtStates, currentStatus)
 
-	if len(phones) > 0 {
-		if r.SmsConfig != nil && r.SmsConfig.SmsCode[string(currentStatus)] != "" {
+	if sendPhone && len(phones) > 0 {
+		smsCode := ""
+		vmsCode := ""
+		if r.SmsConfig != nil {
+			smsCode = r.SmsConfig.SmsCode[string(currentStatus)]
+			if smsCode == "" && currentStatus == types.OneDayBalancePeriod {
+				smsCode = r.SmsConfig.SmsCode[string(types.CriticalBalancePeriod)]
+			}
+		}
+		if r.VmsConfig != nil {
+			vmsCode = r.VmsConfig.TemplateCode[string(currentStatus)]
+			if vmsCode == "" && currentStatus == types.OneDayBalancePeriod {
+				vmsCode = r.VmsConfig.TemplateCode[string(types.CriticalBalancePeriod)]
+			}
+		}
+		if r.SmsConfig != nil && smsCode != "" {
 			oweamount := strconv.FormatInt(
 				int64(math.Abs(math.Ceil(float64(oweamount)/1_000_000))),
 				10,
@@ -1023,19 +1130,18 @@ func (r *DebtReconciler) SendUserDebtMsg(
 				r.SmsConfig.Client,
 				phones,
 				r.SmsConfig.SmsSignName,
-				r.SmsConfig.SmsCode[string(currentStatus)],
+				smsCode,
 				"{\"user_id\":\""+userUID.String()+"\",\"oweamount\":\""+oweamount+"\"}",
 			)
 			if err != nil {
 				return fmt.Errorf("failed to send sms notice: %w", err)
 			}
 		}
-		if r.VmsConfig != nil && types.ContainDebtStatus(types.DebtStates, currentStatus) &&
-			r.VmsConfig.TemplateCode[string(currentStatus)] != "" {
+		if r.VmsConfig != nil && vmsCode != "" {
 			// Use SendVmsMultiple to send to all phone numbers
 			err = utils2.SendVmsMultiple(
 				phones,
-				r.VmsConfig.TemplateCode[string(currentStatus)],
+				vmsCode,
 				r.VmsConfig.NumberPoll,
 				GetSendVmsTimeInUTCPlus8(time.Now()),
 				forbidTimes,
@@ -1045,7 +1151,7 @@ func (r *DebtReconciler) SendUserDebtMsg(
 			}
 		}
 	}
-	if r.smtpConfig != nil && len(emails) > 0 {
+	if sendEmail && r.smtpConfig != nil && len(emails) > 0 {
 		var emailBody string
 		var emailSubject string
 		var emailTmpl string

@@ -364,6 +364,7 @@ func main() {
 		Client:                      mgr.GetClient(),
 		Scheme:                      mgr.GetScheme(),
 		AccountV2:                   v2Account,
+		DBClient:                    dbClient,
 		DebtUserMap:                 debtUserMap,
 		InitUserAccountFunc:         accountReconciler.InitUserAccountFunc,
 		SkipExpiredUserTimeDuration: skipExpiredUserTimeDuration,

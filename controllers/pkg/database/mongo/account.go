@@ -1109,6 +1109,49 @@ func (m *mongoDB) GetBillingCount(
 	return result.Count, result.Amount, nil
 }
 
+// GetOwnerConsumptionAmount returns the positive consumption amount for one
+// owner in the requested time window.
+func (m *mongoDB) GetOwnerConsumptionAmount(
+	owner string,
+	startTime, endTime time.Time,
+) (int64, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	var result struct {
+		Amount int64 `bson:"amount"`
+	}
+	pipeline := mongo.Pipeline{
+		{{Key: "$match", Value: bson.M{
+			"owner": owner,
+			"type":  common.Consumption,
+			"time": bson.M{
+				"$gte": startTime,
+				"$lt":  endTime,
+			},
+			"amount": bson.M{"$gt": 0},
+		}}},
+		{{Key: "$group", Value: bson.M{
+			"_id":    nil,
+			"amount": bson.M{"$sum": "$amount"},
+		}}},
+	}
+	cursor, err := m.getBillingCollection().Aggregate(ctx, pipeline)
+	if err != nil {
+		return 0, fmt.Errorf("aggregate owner consumption: %w", err)
+	}
+	defer cursor.Close(ctx)
+	if cursor.Next(ctx) {
+		if err := cursor.Decode(&result); err != nil {
+			return 0, fmt.Errorf("decode owner consumption: %w", err)
+		}
+	}
+	if err := cursor.Err(); err != nil {
+		return 0, fmt.Errorf("read owner consumption: %w", err)
+	}
+	return result.Amount, nil
+}
+
 func (m *mongoDB) getMeteringCollection() *mongo.Collection {
 	return m.Client.Database(m.AccountDB).Collection(m.MeteringConn)
 }
