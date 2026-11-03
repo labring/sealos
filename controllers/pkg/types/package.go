@@ -12,10 +12,12 @@ type WorkspaceAIQuotaPackage struct {
 	Workspace    string    `gorm:"type:varchar(50);not null;index:idx_workspace;column:workspace"                     json:"workspace"                 bson:"workspace"`
 	RegionDomain string    `gorm:"type:varchar(50);not null;index:idx_region_domain;column:region_domain"             json:"region_domain"             bson:"region_domain"`
 	// PackageType   string           `gorm:"type:varchar(50);not null;check:package_type IN ('FREE','SUBSCRIPTION','PAY_AS_YOU_GO')" json:"package_type" bson:"package_type"`
-	Total  int64       `gorm:"type:bigint;not null;default:0"                                                     json:"total_quota"               bson:"total_quota"`
-	Usage  int64       `gorm:"type:bigint;not null;default:0"                                                     json:"usage"                     bson:"usage"`
-	From   PackageFrom `gorm:"type:varchar(50)"                                                                   json:"from"                      bson:"from"`
-	FromID string      `gorm:"type:varchar(50)"                                                                   json:"from_id"                   bson:"from_id"`
+	Total int64       `gorm:"type:bigint;not null;default:0"                                                     json:"total_quota"               bson:"total_quota"`
+	Usage int64       `gorm:"type:bigint;not null;default:0"                                                     json:"usage"                     bson:"usage"`
+	From  PackageFrom `gorm:"type:varchar(50)"                                                                   json:"from"                      bson:"from"`
+	// FromID is the granting transaction's ID and the grant's idempotency key.
+	// See ensureFromIDIndex for how the index reaches pre-existing tables.
+	FromID string `gorm:"type:varchar(50);uniqueIndex:uniq_workspace_ai_quota_package_from_id"              json:"from_id"                   bson:"from_id"`
 	// RemainingQuota float64         `gorm:"type:decimal(15,2);generated:total_quota - usage" json:"remaining_quota" bson:"remaining_quota"`
 	Status                  PackageStatus `gorm:"type:varchar(20);not null;default:'active'"                                         json:"status"                    bson:"status"`
 	WorkspaceSubscriptionID uuid.UUID     `gorm:"type:uuid"                                                                          json:"workspace_subscription_id" bson:"workspace_subscription_id"`

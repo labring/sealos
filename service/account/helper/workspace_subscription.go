@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	"github.com/google/uuid"
 	"github.com/labring/sealos/controllers/pkg/database/cockroach"
 	"github.com/labring/sealos/controllers/pkg/types"
 	"github.com/sirupsen/logrus"
@@ -37,11 +36,13 @@ func AddTrafficPackage(
 		from,
 		fromID,
 		false,
-		0,
 	)
 }
 
-// AddTrafficPackageWithUpgrade adds traffic package with upgrade support
+// AddTrafficPackageWithUpgrade grants the plan's traffic and, when the grant
+// hands the workspace usable traffic, resumes its network. See
+// cockroach.AddWorkspaceSubscriptionTrafficPackageWithUpgrade for the upgrade
+// semantics.
 func AddTrafficPackageWithUpgrade(
 	globalDB *gorm.DB,
 	client client.Client,
@@ -51,33 +52,35 @@ func AddTrafficPackageWithUpgrade(
 	from types.WorkspaceTrafficFrom,
 	fromID string,
 	isUpgrade bool,
-	oldPlanTraffic int64,
 ) error {
 	logrus.Infof(
-		"start to add traffic package: subID=%s, plan=%s, isUpgrade=%v, oldPlanTraffic=%d",
+		"start to add traffic package: subID=%s, plan=%s, isUpgrade=%v",
 		sub.ID,
 		plan.Name,
 		isUpgrade,
-		oldPlanTraffic,
 	)
-	// For upgrade scenarios, expire existing traffic packages from the old plan
-	if isUpgrade && oldPlanTraffic > 0 {
-		err := expireOldTrafficPackages(globalDB, sub.ID, fromID)
-		if err != nil {
-			return fmt.Errorf("failed to expire old traffic packages: %w", err)
-		}
-	}
-
-	err := cockroach.AddWorkspaceSubscriptionTrafficPackage(
+	// The grant function owns the whole rule, including whether a zero-traffic
+	// plan writes anything: dedup and expiry run there under the subscription
+	// row lock, so a replay of an older transaction cannot expire a later grant.
+	granted, shouldSuspend, err := cockroach.AddWorkspaceSubscriptionTrafficPackageWithUpgrade(
 		globalDB,
 		sub.ID,
 		plan.Traffic,
 		expireAt,
 		from,
 		fromID,
+		isUpgrade,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create traffic package: %w", err)
+	}
+	if shouldSuspend {
+		return suspendWorkspaceTrafficAfterZeroAllowance(client, sub)
+	}
+	// A replay or a zero-traffic upgrade with surviving traffic grants no new
+	// allowance here. Neither may reopen the network as if a new grant arrived.
+	if !granted {
+		return nil
 	}
 	// Check if workspace was previously exhausted and needs to be resumed
 	if sub.TrafficStatus == types.WorkspaceTrafficStatusUsedUp ||
@@ -89,6 +92,7 @@ func AddTrafficPackageWithUpgrade(
 		if err != nil {
 			return fmt.Errorf("failed to update workspace traffic status: %w", err)
 		}
+		sub.TrafficStatus = types.WorkspaceTrafficStatusActive
 		// Send resume request (outside transaction)
 	}
 	err = resumeWorkspaceTraffic(client, sub.Workspace)
@@ -99,25 +103,14 @@ func AddTrafficPackageWithUpgrade(
 	return nil
 }
 
-// expireOldTrafficPackages expires existing traffic packages from old subscription plan
-func expireOldTrafficPackages(globalDB *gorm.DB, subscriptionID uuid.UUID, _ string) error {
-	now := time.Now()
-
-	// Update all existing active traffic packages to expired status
-	// We don't need to exclude newFromID because the new package hasn't been created yet
-	// The newFromID parameter is kept for API consistency but not used in the query
-	err := globalDB.Debug().Model(&types.WorkspaceTraffic{}).
-		Where("workspace_subscription_id = ? AND status = ?",
-			subscriptionID, types.WorkspaceTrafficStatusActive).
-		Updates(map[string]any{
-			"status":     types.WorkspaceTrafficStatusExpired,
-			"expired_at": now,
-			"updated_at": now,
-		}).Error
-	if err != nil {
-		return fmt.Errorf("failed to expire old traffic packages: %w", err)
+func suspendWorkspaceTrafficAfterZeroAllowance(
+	client client.Client,
+	sub *types.WorkspaceSubscription,
+) error {
+	sub.TrafficStatus = types.WorkspaceTrafficStatusUsedUp
+	if err := suspendWorkspaceTraffic(client, sub.Workspace); err != nil {
+		return fmt.Errorf("failed to suspend workspace traffic: %w", err)
 	}
-
 	return nil
 }
 
@@ -126,6 +119,15 @@ func resumeWorkspaceTraffic(client client.Client, workspace string) error {
 		client,
 		context.Background(),
 		types.NetworkResume,
+		[]string{workspace},
+	)
+}
+
+func suspendWorkspaceTraffic(client client.Client, workspace string) error {
+	return updateNamespaceStatus(
+		client,
+		context.Background(),
+		types.NetworkSuspend,
 		[]string{workspace},
 	)
 }
