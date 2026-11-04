@@ -5,6 +5,7 @@ import { AccessTokenPayload } from '@/types/token';
 import useSessionStore from '@/stores/session';
 import { SemData } from '@/types/sem';
 import { AdClickData } from '@/types/adClick';
+import { establishWebSession } from '@/services/web-session';
 
 export const sessionConfig = async ({
   token,
@@ -16,6 +17,8 @@ export const sessionConfig = async ({
   appToken: string;
 }): Promise<ProductUserTraits> => {
   const store = useSessionStore.getState();
+  // 登录证明尚有效时建立独立 Web 会话，访问 JWT 到期后才有可信的续期依据。
+  await establishWebSession(store.globalToken);
   store.setToken(token); // Sets region token for API requests
   const payload = jwtDecode<AccessTokenPayload>(token);
   const [infoData, planInfo] = await Promise.all([UserInfo(), getPlanInfo(payload.workspaceId)]);
