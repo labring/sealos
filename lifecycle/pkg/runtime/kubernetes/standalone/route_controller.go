@@ -1,0 +1,321 @@
+// Copyright © 2026 sealos.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package standalone
+
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"net/netip"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
+	"sigs.k8s.io/yaml"
+)
+
+func SavedRouteControllerOptions() (RouteControllerOptions, error) {
+	data, err := os.ReadFile(filepath.Join(modeRoot, "state.json"))
+	if err != nil {
+		return RouteControllerOptions{}, err
+	}
+	var state modeState
+	if err := json.Unmarshal(data, &state); err != nil {
+		return RouteControllerOptions{}, err
+	}
+	if state.Mode != ModeStandalone || state.Target != "" {
+		return RouteControllerOptions{}, errors.New(
+			"controller baseline is not a completed standalone deployment",
+		)
+	}
+	return routeOptionsFromState(&state)
+}
+
+func routeOptionsFromState(state *modeState) (RouteControllerOptions, error) {
+	options := RouteControllerOptions{
+		Enabled:  !state.ControllerDisabled,
+		Table:    state.RouteTable,
+		Protocol: state.RouteProtocol,
+	}
+	if state.ControllerDisabled {
+		if options.Table == 0 {
+			options.Table = DefaultRouteControllerOptions().Table
+		}
+		if options.Protocol == 0 {
+			options.Protocol = DefaultRouteControllerOptions().Protocol
+		}
+		return options, nil
+	}
+	var pod v1.Pod
+	if err := yaml.Unmarshal(state.RouteManifest, &pod); err != nil {
+		return RouteControllerOptions{}, err
+	}
+	if len(pod.Spec.Containers) != 1 {
+		return RouteControllerOptions{}, errors.New("invalid controller baseline")
+	}
+	options.Image = pod.Spec.Containers[0].Image
+	options.PodCIDR = flagValue(pod.Spec.Containers[0].Args, "pod-cidr")
+	options.ServiceCIDR = flagValue(pod.Spec.Containers[0].Args, "service-cidr")
+	options.RouterCIDR = flagValue(pod.Spec.Containers[0].Args, "router-cidr")
+	for _, volume := range pod.Spec.Volumes {
+		if volume.HostPath == nil {
+			continue
+		}
+		switch volume.Name {
+		case "kubeconfig":
+			options.Kubeconfig = volume.HostPath.Path
+		case "config":
+			options.Config = volume.HostPath.Path
+		}
+	}
+	if pod.Annotations[controllerCredentialsAnnotation] == "managed" {
+		options.Kubeconfig = ""
+	}
+	return options, options.Validate()
+}
+
+const (
+	DefaultRouteControllerImage      = "ghcr.io/labring-sigs/route-controller:0.1.0"
+	DefaultRouteControllerKubeconfig = "/etc/kubernetes/route-controller/sealos.kubeconfig"
+	controllerCredentialsAnnotation  = "sealos.io/route-controller-credentials"
+	controllerKubeconfigMount        = "/etc/route-controller/kubeconfig"
+	controllerConfigMount            = "/etc/route-controller/config.yaml"
+)
+
+type RouteControllerOptions struct {
+	Enabled     bool   `json:"Enabled"`
+	Image       string `json:"Image"`
+	Kubeconfig  string `json:"Kubeconfig"`
+	Config      string `json:"Config"`
+	PodCIDR     string `json:"PodCIDR"`
+	ServiceCIDR string `json:"ServiceCIDR"`
+	RouterCIDR  string `json:"RouterCIDR"`
+	Table       int    `json:"Table"`
+	Protocol    int    `json:"Protocol"`
+}
+
+func DefaultRouteControllerOptions() RouteControllerOptions {
+	return RouteControllerOptions{
+		Enabled:  true,
+		Image:    DefaultRouteControllerImage,
+		Table:    254,
+		Protocol: 99,
+	}
+}
+
+func (o RouteControllerOptions) Validate() error {
+	if !o.Enabled {
+		return nil
+	}
+	if o.Image == "" || (o.Kubeconfig != "" && !filepath.IsAbs(o.Kubeconfig)) {
+		return errors.New(
+			"route-controller requires an image and an absolute custom kubeconfig path",
+		)
+	}
+	if o.Config != "" && !filepath.IsAbs(o.Config) {
+		return errors.New("route-controller config path must be absolute")
+	}
+	if o.Table <= 0 || o.Table > 2147483647 || o.Protocol < 1 || o.Protocol > 255 {
+		return errors.New("route-controller requires route table 1..2147483647 and protocol 1..255")
+	}
+	// Empty values keep the controller's automatic CIDR discovery.
+	for name, value := range map[string]string{
+		"pod-cidr":     o.PodCIDR,
+		"service-cidr": o.ServiceCIDR,
+		"router-cidr":  o.RouterCIDR,
+	} {
+		for _, entry := range strings.Fields(strings.ReplaceAll(value, ",", " ")) {
+			if _, err := netip.ParsePrefix(entry); err != nil {
+				return fmt.Errorf("invalid %s entry %q: %w", name, entry, err)
+			}
+		}
+	}
+	return nil
+}
+
+func routeControllerPod(options RouteControllerOptions) (*v1.Pod, error) {
+	if err := options.Validate(); err != nil {
+		return nil, err
+	}
+	root := int64(0)
+	disabled := false
+	enabled := true
+	grace := int64(15)
+	fileType := v1.HostPathFile
+	kubeconfig := options.Kubeconfig
+	if kubeconfig == "" {
+		kubeconfig = DefaultRouteControllerKubeconfig
+	}
+	args := []string{
+		"run",
+		"--kubeconfig=" + controllerKubeconfigMount,
+		"--route-table=" + strconv.Itoa(options.Table),
+		"--route-protocol=" + strconv.Itoa(options.Protocol),
+		"--health-probe-bind-address=127.0.0.1:9919",
+	}
+	if options.Config != "" {
+		args = append(args, "--config="+controllerConfigMount)
+	}
+	if options.PodCIDR != "" {
+		args = append(args, "--pod-cidr="+options.PodCIDR)
+	}
+	if options.ServiceCIDR != "" {
+		args = append(args, "--service-cidr="+options.ServiceCIDR)
+	}
+	if options.RouterCIDR != "" {
+		args = append(args, "--router-cidr="+options.RouterCIDR)
+	}
+	pod := &v1.Pod{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Pod",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "route-controller",
+			Namespace: "kube-system",
+		},
+		Spec: v1.PodSpec{
+			HostNetwork:                   true,
+			PriorityClassName:             "system-node-critical",
+			RestartPolicy:                 v1.RestartPolicyAlways,
+			TerminationGracePeriodSeconds: &grace,
+			Containers: []v1.Container{
+				{
+					Name:            "controller",
+					Image:           options.Image,
+					ImagePullPolicy: v1.PullIfNotPresent,
+					Args:            args,
+					SecurityContext: &v1.SecurityContext{
+						RunAsUser:                &root,
+						RunAsGroup:               &root,
+						RunAsNonRoot:             &disabled,
+						AllowPrivilegeEscalation: &disabled,
+						ReadOnlyRootFilesystem:   &enabled,
+						SeccompProfile: &v1.SeccompProfile{
+							Type: v1.SeccompProfileTypeRuntimeDefault,
+						},
+						Capabilities: &v1.Capabilities{
+							Drop: []v1.Capability{"ALL"},
+							Add:  []v1.Capability{"NET_ADMIN"},
+						},
+					},
+					StartupProbe:   controllerProbe("/healthz", 2, 30),
+					LivenessProbe:  controllerProbe("/healthz", 10, 3),
+					ReadinessProbe: controllerProbe("/readyz", 5, 3),
+					Resources: v1.ResourceRequirements{
+						Requests: v1.ResourceList{
+							v1.ResourceCPU:    resource.MustParse("20m"),
+							v1.ResourceMemory: resource.MustParse("32Mi"),
+						},
+						Limits: v1.ResourceList{
+							v1.ResourceCPU:    resource.MustParse("200m"),
+							v1.ResourceMemory: resource.MustParse("128Mi"),
+						},
+					},
+					VolumeMounts: []v1.VolumeMount{
+						{
+							Name:      "kubeconfig",
+							MountPath: controllerKubeconfigMount,
+							ReadOnly:  true,
+						},
+					},
+				},
+			},
+			Volumes: []v1.Volume{
+				{
+					Name: "kubeconfig",
+					VolumeSource: v1.VolumeSource{
+						HostPath: &v1.HostPathVolumeSource{
+							Path: kubeconfig,
+							Type: &fileType,
+						},
+					},
+				},
+			},
+		},
+	}
+	if options.Kubeconfig == "" {
+		pod.Annotations = map[string]string{controllerCredentialsAnnotation: "managed"}
+	}
+	if options.Config != "" {
+		pod.Spec.Containers[0].VolumeMounts = append(
+			pod.Spec.Containers[0].VolumeMounts,
+			v1.VolumeMount{
+				Name:      "config",
+				MountPath: controllerConfigMount,
+				ReadOnly:  true,
+			},
+		)
+		pod.Spec.Volumes = append(pod.Spec.Volumes, v1.Volume{
+			Name: "config",
+			VolumeSource: v1.VolumeSource{
+				HostPath: &v1.HostPathVolumeSource{
+					Path: options.Config,
+					Type: &fileType,
+				},
+			},
+		})
+	}
+	return pod, nil
+}
+
+// Custom host files must exist; managed credentials are admission-checked with
+// a server-side dry-run during preflight and created after it. A disabled
+// controller renders no manifest and owns no host files.
+func prepareRouteController(options RouteControllerOptions) ([]byte, error) {
+	if !options.Enabled {
+		return nil, nil
+	}
+	pod, err := routeControllerPod(options)
+	if err != nil {
+		return nil, err
+	}
+	for _, volume := range pod.Spec.Volumes {
+		if volume.Name == "kubeconfig" && options.Kubeconfig == "" {
+			continue
+		}
+		info, err := os.Stat(volume.HostPath.Path)
+		if err != nil {
+			return nil, fmt.Errorf("route-controller hostPath: %w", err)
+		}
+		if !info.Mode().IsRegular() {
+			return nil, fmt.Errorf(
+				"route-controller hostPath must be a regular file: %s",
+				volume.HostPath.Path,
+			)
+		}
+	}
+	return yaml.Marshal(pod)
+}
+
+func controllerProbe(path string, period, failures int32) *v1.Probe {
+	return &v1.Probe{
+		ProbeHandler: v1.ProbeHandler{
+			HTTPGet: &v1.HTTPGetAction{
+				Host: "127.0.0.1",
+				Path: path,
+				Port: intstr.FromInt32(9919),
+			},
+		},
+		PeriodSeconds:    period,
+		FailureThreshold: failures,
+		TimeoutSeconds:   2,
+	}
+}

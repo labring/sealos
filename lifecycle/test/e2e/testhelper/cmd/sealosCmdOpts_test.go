@@ -19,7 +19,6 @@ import (
 	"testing"
 
 	"github.com/labring/sealos/pkg/types/v1beta1"
-	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 func TestAddOptions_Args(t *testing.T) {
@@ -341,6 +340,19 @@ func TestRunOptions_Args(t *testing.T) {
 				},
 				Transport: "test-transport",
 			},
+			want: []string{
+				"--cluster", "test-cluster",
+				"--masters", "ip1,ip2",
+				"--nodes", "ip3,ip4",
+				"testimage1", "testimage2", "testimage3",
+				"--cmd", "echo", "--cmd", "hello",
+				"--env", "test",
+				"--config-file", "test",
+				"--user", "user",
+				"--pk", "test-pk",
+				"--port", "22",
+				"--transport", "test-transport",
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -357,10 +369,37 @@ func TestRunOptions_Args(t *testing.T) {
 				SSH:        tt.fields.SSH,
 				Transport:  tt.fields.Transport,
 			}
-			logger.Info(ro.Args())
 			if got := ro.Args(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Args() = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestRunOptions_WithSSH(t *testing.T) {
+	opts := &RunOptions{
+		Cluster: "default",
+		Masters: []string{"192.0.2.1"},
+		Images:  []string{"nginx:latest"},
+		SSH: &v1beta1.SSH{
+			User:     "root",
+			Passwd:   "password",
+			Pk:       "/path/to/key",
+			PkPasswd: "keypass",
+			Port:     2222,
+		},
+	}
+	want := []string{
+		"--cluster", "default",
+		"--masters", "192.0.2.1",
+		"nginx:latest",
+		"--user", "root",
+		"--passwd", "password",
+		"--pk", "/path/to/key",
+		"--pk-passwd", "keypass",
+		"--port", "2222",
+	}
+	if got := opts.Args(); !reflect.DeepEqual(got, want) {
+		t.Errorf("Args() = %v, want %v", got, want)
 	}
 }

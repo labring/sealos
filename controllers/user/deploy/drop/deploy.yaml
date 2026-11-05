@@ -49,17 +49,104 @@ metadata:
   name: user-manager-role
 rules:
 - apiGroups:
-  - '*'
+  - ''
   resources:
-  - '*'
+  - events
   verbs:
-  - '*'
+  - create
+  - patch
+- apiGroups:
+  - ''
+  resources:
+  - namespaces
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+- apiGroups:
+  - license.sealos.io
+  resources:
+  - licenses
+  verbs:
+  - get
+  - list
+  - watch
+# clusterrolebindings 最小默认(adminClusterAdmin 关闭时 controller 只读并删除
+# legacy sealos-cloudadmin)。启用 --enable-admin-cluster-admin 需补:
+#   clusterrolebindings +create;sealos-cloudadmin +update;clusterroles bind cluster-admin
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterrolebindings
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterrolebindings
+  resourceNames:
+  - sealos-cloudadmin
+  verbs:
+  - delete
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - rolebindings
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - roles
+  verbs:
+  - create
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - roles
+  verbs:
+  - escalate
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - roles
+  resourceNames:
+  - Owner
+  - Manager
+  - Developer
+  verbs:
+  - bind
 - apiGroups:
   - user.sealos.io
   resources:
-  - deleterequests
+  - users
   verbs:
-  - create
   - delete
   - get
   - list
@@ -69,43 +156,87 @@ rules:
 - apiGroups:
   - user.sealos.io
   resources:
-  - deleterequests/finalizers
+  - users/status
   verbs:
-  - update
-- apiGroups:
-  - user.sealos.io
-  resources:
-  - deleterequests/status
-  verbs:
-  - get
   - patch
-  - update
 - apiGroups:
   - user.sealos.io
   resources:
   - operationrequests
   verbs:
-  - create
   - delete
   - get
   - list
-  - patch
-  - update
   - watch
-- apiGroups:
-  - user.sealos.io
-  resources:
-  - operationrequests/finalizers
-  verbs:
-  - update
 - apiGroups:
   - user.sealos.io
   resources:
   - operationrequests/status
   verbs:
-  - get
-  - patch
   - update
+- apiGroups:
+  - user.sealos.io
+  resources:
+  - deleterequests
+  verbs:
+  - delete
+  - get
+  - list
+  - watch
+- apiGroups:
+  - user.sealos.io
+  resources:
+  - deleterequests/status
+  verbs:
+  - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: user-manager-role
+  namespace: user-system
+rules:
+- apiGroups:
+  - ''
+  resources:
+  - secrets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - ''
+  resources:
+  - serviceaccounts
+  verbs:
+  - create
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - ''
+  resources:
+  - serviceaccounts/token
+  verbs:
+  - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: user-manager-rolebinding
+  namespace: user-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: user-manager-role
+subjects:
+- kind: ServiceAccount
+  name: user-controller-manager
+  namespace: user-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole

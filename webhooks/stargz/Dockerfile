@@ -1,5 +1,5 @@
 # Build the webhook binary
-FROM golang:1.24 AS builder
+FROM golang:1.26.10 AS builder
 ARG TARGETOS
 ARG TARGETARCH
 

@@ -350,7 +350,7 @@ func (k *KubeadmRuntime) UpdateCertSANs(certSans []string) error {
 		k.saveNewKubeadmConfig,
 		k.uploadConfigFromKubeadm,
 		k.syncCert,
-		k.deleteAPIServer,
+		k.restartAPIServer,
 		k.showKubeadmCert,
 	}
 	for i, f := range pipeline {
@@ -451,7 +451,7 @@ func (k *KubeadmRuntime) showKubeadmCert() error {
 	return k.sshCmdAsync(k.getMaster0IPAndPort(), fmt.Sprintf("%s%s", certCheck, vlogToStr(k.klogLevel)))
 }
 
-func (k *KubeadmRuntime) deleteAPIServer() error {
-	logger.Info("delete pod apiserver from crictl")
-	return k.deleteStaticPod(kubernetes.KubeAPIServer)
+func (k *KubeadmRuntime) restartAPIServer() error {
+	logger.Info("restart apiserver containers to load updated certificates")
+	return k.restartStaticPod(kubernetes.KubeAPIServer)
 }

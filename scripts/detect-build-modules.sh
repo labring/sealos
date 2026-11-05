@@ -29,9 +29,7 @@ declare -A CONTROLLER_MODULES=(
 )
 
 declare -A SERVICE_MODULES=(
-    ["database"]="database"
     ["account"]="account"
-    ["launchpad"]="launchpad"
     ["vlogs"]="vlogs"
 )
 
@@ -347,7 +345,7 @@ check_cross_project_dependencies() {
         for dep in "${dep_array[@]}"; do
             dep=$(echo "$dep" | xargs)
 
-            # Parse dependency: "controllers/account" or "service/database"
+            # Parse dependency: "controllers/account" or "service/account"
             if [[ "$dep" =~ ^(controllers|service)/(.+)$ ]]; then
                 local dep_type="${BASH_REMATCH[1]}"
                 local dep_module="${BASH_REMATCH[2]}"

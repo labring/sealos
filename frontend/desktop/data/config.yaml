@@ -32,6 +32,8 @@ database:
   regionalCockroachdbURI: "thisisregionalcockroachdburi"
 desktop:
   layout:
+    # Show Kubeconfig download, copy and refresh actions; visible by default.
+    kubeconfigEnabled: true
     version: "en"
     title: "Sealos Cloud"
     logo: "/logo.svg"

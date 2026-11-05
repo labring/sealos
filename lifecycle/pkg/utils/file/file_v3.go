@@ -15,6 +15,7 @@
 package file
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -169,6 +170,17 @@ func GetFileListBySuffix(dirPath, suffix string) ([]string, error) {
 //
 // It returns error when error occurs in underlying functions.
 func CopyDirV3(srcPath, destPath string, filters ...func(filePath string) bool) error {
+	return copyDirWithContext(context.Background(), srcPath, destPath, filters...)
+}
+
+func copyDirWithContext(
+	ctx context.Context,
+	srcPath, destPath string,
+	filters ...func(string) bool,
+) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	// Check if target directory exists.
 	//if IsExist(destPath) {
 	//	return errors.New("file or directory alreay exists: " + destPath)
@@ -191,6 +203,9 @@ func CopyDirV3(srcPath, destPath string, filters ...func(filePath string) bool) 
 	}
 
 	for _, info := range infos {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 		if filter != nil && filter(info) {
 			continue
 		}
@@ -199,7 +214,7 @@ func CopyDirV3(srcPath, destPath string, filters ...func(filePath string) bool) 
 		if strings.HasSuffix(info, "/") {
 			err = os.MkdirAll(curPath, os.ModePerm)
 		} else {
-			err = Copy(path.Join(srcPath, info), curPath)
+			err = copyWithContext(ctx, path.Join(srcPath, info), curPath)
 		}
 		if err != nil {
 			return err
@@ -210,6 +225,13 @@ func CopyDirV3(srcPath, destPath string, filters ...func(filePath string) bool) 
 
 // Copy copies file from source to target path.
 func Copy(src, dest string) error {
+	return copyWithContext(context.Background(), src, dest)
+}
+
+func copyWithContext(ctx context.Context, src, dest string) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	_ = os.Remove(dest)
 	// Gather file information to set back later.
 	si, err := os.Lstat(src)
@@ -240,7 +262,14 @@ func Copy(src, dest string) error {
 	}
 	defer dw.Close()
 
-	if _, err = io.Copy(dw, sr); err != nil {
+	var reader io.Reader = sr
+	if ctx.Done() != nil {
+		reader = &contextReader{ctx: ctx, reader: sr}
+	}
+	if _, err = io.Copy(dw, reader); err != nil {
+		return err
+	}
+	if err := ctx.Err(); err != nil {
 		return err
 	}
 
@@ -249,4 +278,16 @@ func Copy(src, dest string) error {
 		return err
 	}
 	return os.Chmod(dest, si.Mode())
+}
+
+type contextReader struct {
+	ctx    context.Context
+	reader io.Reader
+}
+
+func (r *contextReader) Read(buffer []byte) (int, error) {
+	if err := r.ctx.Err(); err != nil {
+		return 0, err
+	}
+	return r.reader.Read(buffer)
 }

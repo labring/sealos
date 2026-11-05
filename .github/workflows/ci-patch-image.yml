@@ -2,7 +2,7 @@ name: CI Patch Images Package
 
 env:
   # Common versions
-  GO_VERSION: "1.25"
+  GO_VERSION: "1.26.10"
   DEFAULT_OWNER: "labring"
   PROJECT_PATH: "./lifecycle"
 

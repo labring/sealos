@@ -20,6 +20,7 @@ import (
 	"crypto/tls"
 	"flag"
 	"os"
+	"strings"
 	"time"
 
 	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
@@ -27,6 +28,7 @@ import (
 	"github.com/labring/sealos/controllers/user/controllers"
 	usercache "github.com/labring/sealos/controllers/user/controllers/cache"
 	ratelimiter "github.com/labring/sealos/controllers/user/controllers/helper/ratelimiter"
+	"github.com/labring/sealos/controllers/user/pkg/reserved"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -78,6 +80,7 @@ func main() {
 		enableHTTP2                bool
 		enableAdminClusterAdmin    bool
 		enableStrictNamespacePSA   bool
+		blockedUserNames           string
 		tlsOpts                    []func(*tls.Config)
 	)
 	flag.StringVar(
@@ -175,6 +178,15 @@ func main() {
 		true,
 		"Apply Pod Security labels to all ns-* namespaces, including namespaces without a Sealos User.",
 	)
+	flag.StringVar(
+		&blockedUserNames,
+		"blocked-user-names",
+		"",
+		"Comma-separated extra User names to reject in addition to the built-in reserved names "+
+			"("+strings.Join(reserved.DefaultNames(), ", ")+"). Every User owns the ServiceAccount "+
+			"user-system/<User.Name>, so names matching ServiceAccounts deployed in user-system "+
+			"must be blocked to prevent privilege escalation.",
+	)
 	rateLimiterOptions.BindFlags(flag.CommandLine)
 	opts := zap.Options{
 		Development: true,
@@ -183,6 +195,11 @@ func main() {
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+
+	reserved.SetExtraNames(strings.Split(blockedUserNames, ","))
+	if extras := reserved.ExtraNames(); len(extras) > 0 {
+		setupLog.Info("configured extra blocked user names", "names", extras)
+	}
 
 	// if the enable-http2 flag is false (the default), http/2 should be disabled
 	// due to its vulnerabilities. More specifically, disabling http/2 will

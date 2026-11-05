@@ -18,13 +18,12 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/spf13/cobra"
-
 	"github.com/labring/sealos/pkg/apply/applydrivers"
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/spf13/cobra"
 )
 
 func NewApplierFromResetArgs(cmd *cobra.Command, args *ResetArgs) (applydrivers.Interface, error) {
@@ -58,7 +57,11 @@ func (r *ClusterArgs) resetArgs(cmd *cobra.Command, args *ResetArgs) error {
 		ssh.OverSSHConfig(&r.cluster.Spec.SSH, override)
 	}
 
-	if r.cluster.ObjectMeta.CreationTimestamp.IsZero() {
+	if r.cluster.CreationTimestamp.IsZero() &&
+		!r.cluster.IsStandaloneControlPlane() {
+		// A standalone inventory records its desired hosts even when the
+		// installation never completed, so a failed day-zero cluster can be
+		// reset without a creation timestamp.
 		return errors.New("creation time must be specified in clusterfile")
 	}
 	if len(r.cluster.Spec.Hosts) == 0 {

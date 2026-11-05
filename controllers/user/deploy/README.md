@@ -32,3 +32,19 @@ These are Kubernetes probe settings; no application environment variable is used
 Readiness also requires the webhook server to have started when webhooks are
 enabled, in addition to the existing user-count cache check. With the existing
 `DISABLE_WEBHOOKS=true` setting, the webhook readiness check is not registered.
+
+### Reserved user names
+
+每个 User 都会拥有并为其签发 token 的 ServiceAccount `user-system/<User.Name>`。
+为避免与 user-system 中已部署的身份（例如 `user-controller-manager`）发生同名收养导致越权，
+以下名称默认被拒绝创建：
+
+- `user-controller-manager`
+- `default`
+
+如部署在 user-system 中额外创建了其他 ServiceAccount，通过
+`blockedUserNames` 追加需要拒绝的名称：
+
+```shell
+export HELM_OPTS="--set blockedUserNames={front-desktop,account-controller}"
+```

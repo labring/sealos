@@ -16,6 +16,7 @@ package types
 
 import (
 	"fmt"
+	"slices"
 
 	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta4"
 
@@ -88,7 +89,25 @@ func (k *KubeadmConfig) mutuallyExclusiveMerge(kubeadmConfig *KubeadmConfig) err
 	} {
 		fn(kubeadmConfig)
 	}
-	return mergo.Merge(k, kubeadmConfig, defaultMergeOpts...)
+	if err := mergo.Merge(k, kubeadmConfig, defaultMergeOpts...); err != nil {
+		return err
+	}
+	k.dedupeEnforceNodeAllocatable()
+	return nil
+}
+
+// dedupeEnforceNodeAllocatable drops entries appended twice by slice merging
+// when a Clusterfile restates default values. Kubelet rejects duplicated
+// enforcements with "invalid configuration" and refuses to start.
+func (k *KubeadmConfig) dedupeEnforceNodeAllocatable() {
+	values := k.EnforceNodeAllocatable
+	deduped := make([]string, 0, len(values))
+	for _, value := range values {
+		if !slices.Contains(deduped, value) {
+			deduped = append(deduped, value)
+		}
+	}
+	k.EnforceNodeAllocatable = deduped
 }
 
 func (k *KubeadmConfig) etcdLocalOrExternal(kubeadmConfig *KubeadmConfig) {
@@ -112,7 +131,11 @@ func (k *KubeadmConfig) Merge(kubeadmYamlPath string) error {
 		if err != nil {
 			return err
 		}
-		return mergo.Merge(k, defaultKubeadmConfig, defaultMergeOpts...)
+		if err := mergo.Merge(k, defaultKubeadmConfig, defaultMergeOpts...); err != nil {
+			return err
+		}
+		k.dedupeEnforceNodeAllocatable()
+		return nil
 	} else if !file.IsExist(kubeadmYamlPath) {
 		logger.Debug("skip merging kubeadm configs from cause file %s not exists", kubeadmYamlPath)
 		return nil
@@ -126,6 +149,7 @@ func (k *KubeadmConfig) Merge(kubeadmYamlPath string) error {
 	if err != nil {
 		return fmt.Errorf("failed to merge kubeadm config from %s: %v", kubeadmYamlPath, err)
 	}
+	k.dedupeEnforceNodeAllocatable()
 	return nil
 }
 

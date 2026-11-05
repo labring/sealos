@@ -21,9 +21,6 @@ import (
 	"sync"
 
 	"github.com/Masterminds/semver/v3"
-	coreV1 "k8s.io/api/core/v1"
-	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/exec"
@@ -31,11 +28,14 @@ import (
 	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/logger"
+	coreV1 "k8s.io/api/core/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type KubeadmRuntime struct {
-	config  *types.Config // from argument
-	cluster *v2.Cluster
+	maintenanceContext context.Context
+	config             *types.Config // from argument
+	cluster            *v2.Cluster
 
 	token         *types.Token
 	kubeadmConfig *types.KubeadmConfig // a deep copy from config.KubeadmConfig or a new one
@@ -49,6 +49,9 @@ type KubeadmRuntime struct {
 }
 
 func (k *KubeadmRuntime) Init() error {
+	if k.cluster.IsStandaloneControlPlane() {
+		return k.initStandaloneMaster()
+	}
 	return k.runPipelines("init masters",
 		k.InitKubeadmConfigToMaster0,
 		k.InitCertsAndKubeConfigs,
@@ -74,14 +77,18 @@ func (k *KubeadmRuntime) GetRawConfig() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	objects := []interface{}{cluster,
+	objects := []any{
+		cluster,
 		conversion.InitConfiguration,
 		conversion.ClusterConfiguration,
 		conversion.JoinConfiguration,
 		conversion.KubeProxyConfiguration,
 		conversion.KubeletConfiguration,
 	}
-	data, err := marshalConfigsForVersion(k.kubeadmConfig.ClusterConfiguration.KubernetesVersion, objects...)
+	data, err := marshalConfigsForVersion(
+		k.kubeadmConfig.KubernetesVersion,
+		objects...,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -89,14 +96,36 @@ func (k *KubeadmRuntime) GetRawConfig() ([]byte, error) {
 }
 
 func (k *KubeadmRuntime) Reset() error {
-	logger.Info("start to delete Cluster: master %s, node %s", k.getMasterIPList(), k.getNodeIPList())
+	if k.cluster.IsStandaloneControlPlane() {
+		k.resetNodes(k.getNodeIPAndPortList())
+		for _, master := range k.getMasterIPAndPortList() {
+			if err := k.removeStandaloneMasters([]string{master}, true); err != nil {
+				logger.Error("delete master %s failed %v", master, err)
+			} else if err := k.sshCmdAsync(master, fmt.Sprintf(cleanKubernetesFiles, k.getEtcdDataDir())); err != nil {
+				logger.Error("failed to clean master files on %s: %v", master, err)
+			}
+			if err := k.sshCmdAsync(master, removeKubeConfig); err != nil {
+				logger.Error("failed to clean kubeconfig on %s: %v", master, err)
+			}
+		}
+		return nil
+	}
+	logger.Info(
+		"start to delete Cluster: master %s, node %s",
+		k.getMasterIPList(),
+		k.getNodeIPList(),
+	)
 	return k.reset()
 }
 
-func (k *KubeadmRuntime) ScaleUp(newMasterIPList []string, newNodeIPList []string) error {
+func (k *KubeadmRuntime) ScaleUp(newMasterIPList, newNodeIPList []string) error {
 	if len(newMasterIPList) != 0 {
 		logger.Info("%s will be added as master", newMasterIPList)
-		if err := k.joinMasters(newMasterIPList); err != nil {
+		join := k.joinMasters
+		if k.cluster.IsStandaloneControlPlane() {
+			join = k.joinStandaloneMasters
+		}
+		if err := join(newMasterIPList); err != nil {
 			return err
 		}
 	}
@@ -109,7 +138,19 @@ func (k *KubeadmRuntime) ScaleUp(newMasterIPList []string, newNodeIPList []strin
 	return nil
 }
 
-func (k *KubeadmRuntime) ScaleDown(deleteMastersIPList []string, deleteNodesIPList []string) error {
+func (k *KubeadmRuntime) ScaleDown(deleteMastersIPList, deleteNodesIPList []string) error {
+	if k.cluster.IsStandaloneControlPlane() {
+		if len(deleteMastersIPList) != 0 &&
+			len(deleteMastersIPList) >= len(k.getMasterIPAndPortList()) {
+			return errors.New(
+				"cannot remove every control plane; use sealos reset to destroy the cluster",
+			)
+		}
+		if err := k.deleteNodes(deleteNodesIPList); err != nil {
+			return err
+		}
+		return k.removeStandaloneMasters(deleteMastersIPList, false, deleteNodesIPList...)
+	}
 	if len(deleteMastersIPList) != 0 {
 		logger.Info("master %s will be deleted", deleteMastersIPList)
 		if err := k.deleteMasters(deleteMastersIPList); err != nil {
@@ -158,6 +199,11 @@ func New(cluster *v2.Cluster, config any) (*KubeadmRuntime, error) {
 }
 
 func (k *KubeadmRuntime) Validate() error {
+	switch k.cluster.Spec.ControlPlaneMode {
+	case "", v2.ControlPlaneModeRegistered, v2.ControlPlaneModeStandalone:
+	default:
+		return fmt.Errorf("unknown control-plane mode %q", k.cluster.Spec.ControlPlaneMode)
+	}
 	if len(k.cluster.Spec.Hosts) == 0 {
 		return fmt.Errorf("master hosts cannot be empty")
 	}
@@ -171,6 +217,9 @@ func (k *KubeadmRuntime) Validate() error {
 }
 
 func (k *KubeadmRuntime) Upgrade(version string) error {
+	if k.cluster.IsStandaloneControlPlane() {
+		return k.upgradeStandaloneCluster(version)
+	}
 	currVersion := k.getKubeVersionFromImage()
 
 	v0, err := semver.NewVersion(currVersion)
@@ -192,13 +241,20 @@ func (k *KubeadmRuntime) Upgrade(version string) error {
 			logger.Info("skip upgrade because of same version")
 			return nil
 		}
-		logger.Info("continue upgrade because some node kubelet versions or readiness states are not aligned with %s", version)
+		logger.Info(
+			"continue upgrade because some node kubelet versions or readiness states are not aligned with %s",
+			version,
+		)
 	} else {
 		if v0.GreaterThan(v1) {
 			return fmt.Errorf("cannot apply an older version %s than %s", version, currVersion)
 		}
 		if v0.Minor()+1 < v1.Minor() {
-			return fmt.Errorf("cannot be upgraded across more than one major releases, %s -> %s", currVersion, version)
+			return fmt.Errorf(
+				"cannot be upgraded across more than one major releases, %s -> %s",
+				currVersion,
+				version,
+			)
 		}
 	}
 
@@ -218,16 +274,29 @@ func (k *KubeadmRuntime) nodeVersionsNeedUpgrade(targetVersion *semver.Version) 
 		kubeletVersion := node.Status.NodeInfo.KubeletVersion
 		nodeVersion, err := semver.NewVersion(kubeletVersion)
 		if err != nil {
-			logger.Warn("failed to parse kubelet version %q of node %s: %s", kubeletVersion, node.Name, err.Error())
+			logger.Warn(
+				"failed to parse kubelet version %q of node %s: %s",
+				kubeletVersion,
+				node.Name,
+				err.Error(),
+			)
 			return true, nil
 		}
 		if !nodeVersion.Equal(targetVersion) {
-			logger.Info("node %s kubelet version %s does not match target %s", node.Name, kubeletVersion, targetVersion.Original())
+			logger.Info(
+				"node %s kubelet version %s does not match target %s",
+				node.Name,
+				kubeletVersion,
+				targetVersion.Original(),
+			)
 			return true, nil
 		}
 		for _, condition := range node.Status.Conditions {
 			if condition.Type == coreV1.NodeReady && condition.Status == coreV1.ConditionUnknown {
-				logger.Info("node %s ready condition is unknown, continue upgrade recovery", node.Name)
+				logger.Info(
+					"node %s ready condition is unknown, continue upgrade recovery",
+					node.Name,
+				)
 				return true, nil
 			}
 		}
