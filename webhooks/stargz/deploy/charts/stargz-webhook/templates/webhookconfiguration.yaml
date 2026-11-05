@@ -12,6 +12,8 @@ webhooks:
     sideEffects: None
     failurePolicy: {{ .Values.webhook.failurePolicy }}
     timeoutSeconds: {{ .Values.webhook.timeoutSeconds }}
+    namespaceSelector:
+      {{- toYaml .Values.webhook.namespaceSelector | nindent 6 }}
     reinvocationPolicy: Never
     clientConfig:
       service:

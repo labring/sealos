@@ -40,6 +40,15 @@ resources:
     cpu: 50m
     memory: 25Mi
 
+# Allow up to five minutes for initialization before liveness checks begin.
+startupProbe:
+  httpGet:
+    path: /health
+    port: 2333
+  periodSeconds: 5
+  timeoutSeconds: 2
+  failureThreshold: 60
+
 livenessProbe:
   httpGet:
     path: /health

@@ -28,3 +28,5 @@ runtimeClass:
 
 metrics:
   enabled: false
+
+# Set webhook.namespaceSelector.matchLabels to scope injection to prepared namespaces.

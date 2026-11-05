@@ -55,6 +55,8 @@ spec:
             optional: true
         ports:
         - containerPort: {{ .Values.service.port }}
+        startupProbe:
+          {{- toYaml .Values.startupProbe | nindent 10 }}
         livenessProbe:
           {{- toYaml .Values.livenessProbe | nindent 10 }}
         readinessProbe:

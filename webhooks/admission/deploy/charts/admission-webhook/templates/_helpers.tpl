@@ -9,6 +9,10 @@ sealos.io/component: admission-webhook
 {{- end }}
 
 {{- define "admission-webhook.selectorLabels" -}}
+{{- if .Values.selectorLabels }}
+{{- toYaml .Values.selectorLabels }}
+{{- else }}
 app.kubernetes.io/name: admission-webhook
 sealos.io/component: admission-webhook
+{{- end }}
 {{- end }}

@@ -78,3 +78,34 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
+
+### Startup health checks
+
+The manager has an HTTP `/healthz` startup probe with a 5-second period,
+2-second timeout, and failure threshold of 60 (approximately five minutes).
+Liveness and readiness checks begin after startup succeeds. These defaults are
+kept in the deployment template and the corresponding static/Kustomize manifests;
+to change the window, patch `startupProbe.failureThreshold` in that deployment
+(or use a Helm post-renderer for the chart). No environment variable is used.
+
+When metrics are enabled, `kube-rbac-proxy` also has TCP startup, liveness and
+readiness probes on its existing metrics listener. Startup allows 60 failures
+at 5-second intervals; liveness allows 3 failures at 20-second intervals;
+readiness allows 3 failures at 5-second intervals. Each timeout is 2 seconds.
+The probes check listener availability without requiring metrics authentication;
+they do not validate RBAC or the upstream metrics response. They are omitted
+with the proxy when `metrics.enabled=false`. Patch the proxy container probes
+(or use a Helm post-renderer) to override these defaults.
+
+For in-place Helm adoption, set `deploymentName` (default `admission-webhook`) and
+`containerName` (default `webhook`, typically `manager` in legacy manifests), plus
+`selectorLabels` (empty by default, effectively `app.kubernetes.io/name=admission-webhook`,
+`sealos.io/component=admission-webhook`) to the existing Deployment identity.
+Pass these in the user values file (`deploy/env.template`). Preserve Service and
+certificate settings, validate resource ownership, then annotate existing resources
+for the release before installing directly with Helm. The legacy cleanup entrypoint
+is not used for this non-destructive adoption path.
+
+Explicit `selectorLabels` replaces the standard selector instead of merging its keys.
+Preserve the original container name during first adoption: otherwise Kubernetes
+strategic merge can retain both containers and cause port conflicts.

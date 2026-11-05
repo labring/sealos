@@ -23,3 +23,12 @@ adminClusterAdmin:
 
 strictNamespacePodSecurity:
   enabled: true
+
+# Allow up to five minutes for initialization before liveness checks begin.
+startupProbe:
+  httpGet:
+    path: /healthz
+    port: 8081
+  periodSeconds: 5
+  timeoutSeconds: 2
+  failureThreshold: 60

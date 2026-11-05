@@ -1,3 +1,9 @@
+# Keep these names/selectors equal to the existing workload when adopting it.
+deploymentName: admission-webhook
+containerName: webhook
+# Empty uses the standard chart selector; explicit maps replace it during adoption.
+selectorLabels: {}
+
 image: ghcr.io/labring/sealos/admission-webhook:latest
 imagePullPolicy: IfNotPresent
 imagePullSecrets: []

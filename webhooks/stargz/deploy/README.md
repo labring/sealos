@@ -274,3 +274,19 @@ kubectl -n sealos-system logs deploy/pod-stargz-runtime-injector-controller-mana
 The webhook matches by registry host only. For example,
 `hub.staging-usw-1.sealos.io/ns/image:tag` matches
 `hub.staging-usw-1.sealos.io`; `docker.io/library/busybox:1.36` does not.
+
+### Startup health checks
+
+The manager has an HTTP `/healthz` startup probe with a 5-second period,
+2-second timeout, and failure threshold of 60 (approximately five minutes).
+Liveness and readiness checks begin after startup succeeds. These defaults are
+kept in the deployment template and the corresponding static/Kustomize manifests;
+to change the window, patch `startupProbe.failureThreshold` in that deployment
+(or use a Helm post-renderer for the chart). No environment variable is used.
+
+`webhook.namespaceSelector` defaults to `{}` (all namespaces). Override it in
+`stargz-webhook-values.yaml`, for example `matchLabels: {stargz.sealos.io/enabled: "true"}`,
+to opt in only prepared namespaces. Before adding that label, configure the node
+runtime and `stargz.sealos.io/runtime=true` node label described above. Installing
+the Helm chart alone does not configure containerd or make lazy pulling available.
+See `env.template` for the user-values path override.

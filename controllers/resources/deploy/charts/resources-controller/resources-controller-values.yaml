@@ -18,3 +18,12 @@ configmap:
   concurrentLimit: "1000"
   ephemeralStorageChargeThreshold: "10Gi"
   limitQuotaExpansionCycle: "24h"
+
+# Allow up to five minutes for initialization before liveness checks begin.
+startupProbe:
+  httpGet:
+    path: /healthz
+    port: 8081
+  periodSeconds: 5
+  timeoutSeconds: 2
+  failureThreshold: 60

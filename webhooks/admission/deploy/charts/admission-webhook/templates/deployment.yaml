@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: admission-webhook
+  name: {{ .Values.deploymentName }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "admission-webhook.labels" . | nindent 4 }}
@@ -42,7 +42,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       containers:
-        - name: webhook
+        - name: {{ .Values.containerName }}
           image: {{ .Values.image | quote }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           command: [/manager]
@@ -75,6 +75,13 @@ spec:
             - name: health
               containerPort: {{ .Values.health.port }}
               protocol: TCP
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: health
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 60
           livenessProbe:
             httpGet:
               path: /healthz
@@ -110,6 +117,24 @@ spec:
             allowPrivilegeEscalation: false
             capabilities:
               drop: [ALL]
+          startupProbe:
+            tcpSocket:
+              port: metrics
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 60
+          livenessProbe:
+            tcpSocket:
+              port: metrics
+            periodSeconds: 20
+            timeoutSeconds: 2
+            failureThreshold: 3
+          readinessProbe:
+            tcpSocket:
+              port: metrics
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 3
           resources:
             requests:
               cpu: 5m
