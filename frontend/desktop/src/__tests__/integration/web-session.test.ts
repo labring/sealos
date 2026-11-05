@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { sign } from 'jsonwebtoken';
+import type { NextApiRequest } from 'next';
 import { chromium, type Browser, type BrowserContext, type Page } from '@playwright/test';
 import { PrismaClient as GlobalClient } from '../../../prisma/providers/postgresql/global/generated/client';
 import { PrismaClient as RegionClient } from '../../../prisma/providers/postgresql/region/generated/client';
@@ -122,7 +123,10 @@ describe.skipIf(!globalUrl || !regionUrl)(
             },
             json: (value: unknown) => res.end(JSON.stringify(value))
           };
-          await handler(Object.assign(req, { body, cookies }) as any, response);
+          const apiRequest = req as NextApiRequest;
+          apiRequest.body = body;
+          apiRequest.cookies = cookies;
+          await handler(apiRequest, response);
         } catch {
           res.statusCode = 500;
           res.end(JSON.stringify({ code: 500 }));
