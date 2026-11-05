@@ -103,7 +103,7 @@ Sealos 维护了一个[公开的发展路线图](https://github.com/orgs/labring
 
 📖 [查看贡献指南 →](./CONTRIBUTING.md)
 
-🔧 [查看开发指南 →](./DEVELOPGUIDE.md)
+🔧 [查看开发指南 →](./lifecycle/DEVELOPGUIDE.md)
 
 ## 🔗 链接
 
