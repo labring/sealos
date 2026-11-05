@@ -20,7 +20,6 @@ import (
 	"context"
 	"errors"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -33,8 +32,7 @@ var operationrequestlog = logf.Log.WithName("operationrequest-resource")
 func (r *Operationrequest) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	m := &ReqMutator{Client: mgr.GetClient()}
 	v := &ReqValidator{Client: mgr.GetClient()}
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
+	return ctrl.NewWebhookManagedBy(mgr, r).
 		WithDefaulter(m).
 		WithValidator(v).
 		Complete()
@@ -47,11 +45,7 @@ type ReqMutator struct {
 	client.Client
 }
 
-func (r ReqMutator) Default(_ context.Context, obj runtime.Object) error {
-	req, ok := obj.(*Operationrequest)
-	if !ok {
-		return errors.New("obj convert Operationrequest is error")
-	}
+func (r ReqMutator) Default(_ context.Context, req *Operationrequest) error {
 	// mutate the request with an owner label
 	operationrequestlog.Info("mutate", "name", req.Name)
 	req.ObjectMeta = initAnnotationAndLabels(req.ObjectMeta)
@@ -68,14 +62,8 @@ type ReqValidator struct {
 
 func (r ReqValidator) ValidateCreate(
 	ctx context.Context,
-	obj runtime.Object,
+	req *Operationrequest,
 ) (admission.Warnings, error) {
-	req, ok := obj.(*Operationrequest)
-	if !ok {
-		message := "obj convert Operationrequest is error"
-		return admission.Warnings{message}, errors.New(message)
-	}
-
 	// todo check request, _ := admission.RequestFromContext(ctx), request.UserInfo.Username if legal
 
 	// list all requests in the same namespace with a same owner
@@ -109,19 +97,9 @@ func (r ReqValidator) ValidateCreate(
 
 func (r ReqValidator) ValidateUpdate(
 	_ context.Context,
-	oldObj, newObj runtime.Object,
+	oldReq, newReq *Operationrequest,
 ) (admission.Warnings, error) {
 	// todo check request, _ := admission.RequestFromContext(ctx), request.UserInfo.Username if legal
-	oldReq, ok := oldObj.(*Operationrequest)
-	if !ok {
-		message := "obj convert Operationrequest error"
-		return admission.Warnings{message}, errors.New(message)
-	}
-	newReq, ok := newObj.(*Operationrequest)
-	if !ok {
-		message := "obj convert Operationrequest error"
-		return admission.Warnings{message}, errors.New(message)
-	}
 	if oldReq.Spec != newReq.Spec {
 		message := "operation request spec do not support update"
 		return admission.Warnings{message}, errors.New(message)
@@ -131,7 +109,7 @@ func (r ReqValidator) ValidateUpdate(
 
 func (r ReqValidator) ValidateDelete(
 	_ context.Context,
-	_ runtime.Object,
+	_ *Operationrequest,
 ) (admission.Warnings, error) {
 	return admission.Warnings{}, nil
 }
