@@ -43,7 +43,8 @@ Sealos['siːləs] is an AI-native Cloud Operating System built on Kubernetes tha
   <a href="https://sealos.io/docs">Docs</a> •
   <a href="https://discord.gg/wdUn538zVP">Discord</a> •
   <a href="https://twitter.com/Sealos_io">Twitter</a> •
-  <a href="./README_zh.md">简体中文</a>
+  <a href="./README_zh.md">简体中文</a> •
+  <a href="./README_ja.md">日本語</a>
 </div>
 
 <br />
