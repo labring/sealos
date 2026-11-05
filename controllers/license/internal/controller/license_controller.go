@@ -70,6 +70,7 @@ const (
 // +kubebuilder:rbac:groups=license.sealos.io,resources=licenses/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=license.sealos.io,resources=licenses/finalizers,verbs=update
 // +kubebuilder:rbac:groups="",resources=nodes,verbs=get;list;watch
+// +kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch
 
 func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.Logger.V(1).Info("start reconcile for license")

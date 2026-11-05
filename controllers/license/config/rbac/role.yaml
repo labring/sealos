@@ -4,6 +4,9 @@ kind: ClusterRole
 metadata:
   name: manager-role
 rules:
+- apiGroups: [""]
+  resources: ["namespaces"]
+  verbs: ["get", "list", "watch"]
 - apiGroups:
   - ""
   resources:
