@@ -171,8 +171,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = builder.WebhookManagedBy(mgr).
-		For(&corev1.Namespace{}).
+	err = builder.WebhookManagedBy(mgr, &corev1.Namespace{}).
 		WithValidator(&v1.NamespaceValidator{Client: mgr.GetClient()}).
 		WithDefaulter(&v1.NamespaceMutator{Client: mgr.GetClient()}).
 		Complete()

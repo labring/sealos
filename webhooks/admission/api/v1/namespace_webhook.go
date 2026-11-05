@@ -21,7 +21,6 @@ import (
 	"errors"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -39,11 +38,7 @@ type NamespaceMutator struct {
 	client.Client
 }
 
-func (m *NamespaceMutator) Default(_ context.Context, obj runtime.Object) error {
-	i, ok := obj.(*corev1.Namespace)
-	if !ok {
-		return errors.New("obj convert to Namespace error")
-	}
+func (m *NamespaceMutator) Default(_ context.Context, i *corev1.Namespace) error {
 	nlog.Info("mutating create/update", "name", i.Name)
 	initAnnotationAndLabels(&i.ObjectMeta)
 
@@ -62,12 +57,8 @@ type NamespaceValidator struct {
 
 func (v *NamespaceValidator) ValidateCreate(
 	ctx context.Context,
-	obj runtime.Object,
+	i *corev1.Namespace,
 ) (admission.Warnings, error) {
-	i, ok := obj.(*corev1.Namespace)
-	if !ok {
-		return nil, errors.New("obj convert to Namespace error")
-	}
 	nlog.Info("validating create", "name", i.Name)
 	err := v.validate(ctx, i)
 	return nil, err
@@ -75,16 +66,8 @@ func (v *NamespaceValidator) ValidateCreate(
 
 func (v *NamespaceValidator) ValidateUpdate(
 	ctx context.Context,
-	oldObj, newObj runtime.Object,
+	oi, ni *corev1.Namespace,
 ) (admission.Warnings, error) {
-	ni, ok := newObj.(*corev1.Namespace)
-	if !ok {
-		return nil, errors.New("obj convert to Namespace error")
-	}
-	oi, ok := oldObj.(*corev1.Namespace)
-	if !ok {
-		return nil, errors.New("obj convert to Namespace error")
-	}
 	nlog.Info("validating update", "name", oi.Name)
 	err := v.validate(ctx, ni)
 	return nil, err
@@ -92,12 +75,8 @@ func (v *NamespaceValidator) ValidateUpdate(
 
 func (v *NamespaceValidator) ValidateDelete(
 	ctx context.Context,
-	obj runtime.Object,
+	i *corev1.Namespace,
 ) (admission.Warnings, error) {
-	i, ok := obj.(*corev1.Namespace)
-	if !ok {
-		return nil, errors.New("obj convert to Namespace error")
-	}
 	nlog.Info("validating delete", "name", i.Name)
 	err := v.validate(ctx, i)
 	return nil, err
