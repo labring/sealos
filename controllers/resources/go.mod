@@ -130,3 +130,5 @@ replace (
 replace k8s.io/component-base => k8s.io/component-base v0.36.6
 
 replace github.com/labring/sealos/controllers/app => ../app
+
+replace github.com/labring/sealos/controllers/license => ../license

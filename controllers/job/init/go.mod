@@ -95,3 +95,5 @@ replace (
 	k8s.io/component-base => k8s.io/component-base v0.36.6
 	sigs.k8s.io/controller-runtime => sigs.k8s.io/controller-runtime v0.24.1
 )
+
+replace github.com/labring/sealos/controllers/license => ../../license
