@@ -21,7 +21,7 @@ import {
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { regionList as getRegionList, initRegionToken } from '@/api/auth';
-import { sessionConfig } from '@/utils/sessionConfig';
+import { loginSessionConfig } from '@/utils/sessionConfig';
 import { useRouter } from 'next/router';
 import { useCustomToast } from '@/hooks/useCustomToast';
 import { useConfigStore } from '@/stores/config';
@@ -101,7 +101,7 @@ export default function Workspace() {
         throw new Error('No result data');
       }
       // globalToken is already set in session store, no need to pass it
-      await sessionConfig(initRegionTokenResult.data);
+      await loginSessionConfig(initRegionTokenResult.data);
       await router.replace(appendMarketingQuery('/', marketingQuery));
     } catch (error) {
       console.error(error);

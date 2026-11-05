@@ -12,7 +12,7 @@ import { createTemplateInstance } from '@/api/platform';
 import { getRegionToken, initRegionToken } from '@/api/auth';
 import { nsListRequest, switchRequest } from '@/api/namespace';
 import { SwitchRegionType } from '@/constants/account';
-import { sessionConfig } from '@/utils/sessionConfig';
+import { loginSessionConfig, sessionConfig } from '@/utils/sessionConfig';
 import { switchKubeconfigNamespace } from '@/utils/switchKubeconfigNamespace';
 import { AccessTokenPayload } from '@/types/token';
 import { ProductUserTraits } from '@/types/analytics';
@@ -162,7 +162,7 @@ export default function OAuth() {
             throw new Error('No result data');
           }
 
-          productUserTraits = await sessionConfig(initRegionTokenResult.data);
+          productUserTraits = await loginSessionConfig(initRegionTokenResult.data);
         } else {
           // Normal mode: get region token
           const regionTokenRes = await getRegionToken();
@@ -171,7 +171,7 @@ export default function OAuth() {
             throw new Error('Failed to get region token');
           }
 
-          productUserTraits = await sessionConfig(regionTokenRes.data);
+          productUserTraits = await loginSessionConfig(regionTokenRes.data);
 
           // Switch workspace if needed
           const currentSession = useSessionStore.getState().session;

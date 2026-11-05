@@ -93,7 +93,8 @@ async function recoverRequest(config: SessionRequest): Promise<any> {
   if (
     !current ||
     current.userUid !== config.webContext.userUid ||
-    current.workspaceUid !== config.webContext.workspaceUid
+    current.workspaceUid !== config.webContext.workspaceUid ||
+    current.generation !== config.webContext.generation
   )
     throw { code: 409, message: 'Session context changed' };
   if (config.webRetried) {

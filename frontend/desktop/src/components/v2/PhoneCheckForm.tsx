@@ -4,7 +4,7 @@ import useSessionStore from '@/stores/session';
 import { useSigninFormStore } from '@/stores/signinForm';
 import { ApiResp } from '@/types';
 import { gtmLoginSuccess } from '@/utils/gtm';
-import { getAdClickData, getUserSemData, sessionConfig } from '@/utils/sessionConfig';
+import { getAdClickData, getUserSemData, loginSessionConfig } from '@/utils/sessionConfig';
 import { consumePendingOauth2RedirectPath } from '@/utils/oauth2';
 import { useGuideModalStore } from '@/stores/guideModal';
 import {
@@ -119,7 +119,7 @@ export function PhoneCheckForm({ isModal = false, onBack }: PhoneCheckFormProps)
 
           if (initResult?.data) {
             const productUserTraits = {
-              ...(await sessionConfig(initResult.data)),
+              ...(await loginSessionConfig(initResult.data)),
               user_email: ''
             };
             gtmLoginSuccess({
@@ -143,7 +143,7 @@ export function PhoneCheckForm({ isModal = false, onBack }: PhoneCheckFormProps)
         const regionTokenRes = await getRegionToken();
         if (regionTokenRes?.data) {
           const productUserTraits = {
-            ...(await sessionConfig(regionTokenRes.data)),
+            ...(await loginSessionConfig(regionTokenRes.data)),
             user_email: ''
           };
           gtmLoginSuccess({

@@ -18,6 +18,7 @@ type SessionState = {
   firstUse: Date | null;
   hasEverLoggedIn: boolean;
   setSession: (ss: Session) => void;
+  setConfiguredSession: (token: string, session: Session) => void;
   setSessionProp: <T extends keyof Session>(key: T, value: Session[T]) => void;
   delSession: () => void;
   setFirstUse: (d: Date | null) => void;
@@ -72,6 +73,10 @@ const useSessionStore = create<SessionState>()(
       setSession: (ss: Session) => {
         if (get().session?.user?.userUid !== ss.user?.userUid) clearWebAnalyticsIdentity();
         set({ session: ss });
+      },
+      setConfiguredSession: (token, session) => {
+        if (get().session?.user?.userUid !== session.user?.userUid) clearWebAnalyticsIdentity();
+        set({ token, session, hasEverLoggedIn: true });
       },
       setSessionProp: <T extends keyof Session>(key: T, value: Session[T]) => {
         if (key === 'user' && get().session?.user?.userUid !== (value as Session['user'])?.userUid)

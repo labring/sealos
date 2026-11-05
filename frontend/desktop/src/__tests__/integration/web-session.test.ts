@@ -33,6 +33,7 @@ describe.skipIf(!globalUrl || !regionUrl)(
     let server: Server, browser: Browser, context: BrowserContext, page: Page;
     let origin: string;
     let refreshCalls = 0;
+    let bootstrapCalls = 0;
     let bundle: string;
 
     beforeAll(async () => {
@@ -78,6 +79,18 @@ describe.skipIf(!globalUrl || !regionUrl)(
           for await (const chunk of req) chunks.push(String(chunk));
           const body = chunks.length ? JSON.parse(chunks.join('')) : {};
           res.setHeader('Content-Type', 'application/json');
+          if (req.url === '/api/auth/info' || req.url === '/api/plan/info') {
+            const user = await verifyAccessToken(req.headers);
+            return res.end(
+              JSON.stringify(
+                !user
+                  ? { code: 401 }
+                  : req.url === '/api/auth/info'
+                  ? { code: 200, data: { info: { nickname: 'Test User', oauthProvider: [] } } }
+                  : { code: 200, data: { subscription: null } }
+              )
+            );
+          }
           if (req.url === '/api/auth/checkStatus') {
             const user = await verifyAccessToken(req.headers);
             return res.end(
@@ -90,6 +103,7 @@ describe.skipIf(!globalUrl || !regionUrl)(
             return res.end('{}');
           }
           if (req.url?.endsWith('/refresh')) refreshCalls++;
+          if (req.url === '/api/auth/session') bootstrapCalls++;
           const cookies = Object.fromEntries(
             (req.headers.cookie || '')
               .split(';')
@@ -129,7 +143,7 @@ describe.skipIf(!globalUrl || !regionUrl)(
       const esbuild = createRequire(require.resolve('vite/package.json'))('esbuild');
       const built = await esbuild.build({
         stdin: {
-          contents: `import request from './services/request'; import store from './stores/session'; import { establishWebSession } from './services/web-session'; window.testSession = { request, store, establishWebSession };`,
+          contents: `import request from './services/request'; import store from './stores/session'; import { loginSessionConfig, sessionConfig } from './utils/sessionConfig'; window.testSession = { request, store, loginSessionConfig, sessionConfig };`,
           resolveDir: fileURLToPath(new URL('../../', import.meta.url)),
           loader: 'ts'
         },
@@ -175,15 +189,27 @@ describe.skipIf(!globalUrl || !regionUrl)(
         'test-regional',
         { expiresIn: '-1s' }
       );
+      const regional = sign(
+        {
+          userUid: uid,
+          userId: uid,
+          userCrUid: crid,
+          userCrName: `user-${uid}`,
+          regionUid: 'test-region',
+          workspaceUid: wid,
+          workspaceId: namespace
+        },
+        'test-regional',
+        { expiresIn: '7d' }
+      );
       const result = await page.evaluate(
-        async ({ uid, wid, namespace, globalToken, expired }) => {
+        async ({ globalToken, expired, regional }) => {
           const api = (window as any).testSession;
-          await api.establishWebSession(globalToken);
-          api.store.getState().setSession({
-            user: { userUid: uid, ns_uid: wid, nsid: namespace },
-            token: 'old-app',
-            kubeconfig: 'old-kc',
-            subscription: null
+          api.store.getState().setGlobalToken(globalToken);
+          await api.loginSessionConfig({
+            token: regional,
+            appToken: 'old-app',
+            kubeconfig: 'old-kc'
           });
           api.store.getState().setToken(expired);
           const results = await Promise.all([
@@ -197,7 +223,7 @@ describe.skipIf(!globalUrl || !regionUrl)(
             path: location.pathname
           };
         },
-        { uid, wid, namespace, globalToken, expired }
+        { globalToken, expired, regional }
       );
       expect(result).toEqual({
         codes: [200, 200],
@@ -206,9 +232,28 @@ describe.skipIf(!globalUrl || !regionUrl)(
         path: '/'
       });
       expect(refreshCalls).toBe(1);
+      expect(bootstrapCalls).toBe(1);
       expect((await context.cookies()).find((c) => c.name === 'sealos_web_session')?.httpOnly).toBe(
         true
       );
+    });
+
+    it('applies workspace credentials with an expired global proof and a valid persistent cookie', async () => {
+      const { generateGlobalAccessToken } = await import('@/services/backend/auth');
+      const expiredProof = generateGlobalAccessToken({ sub: uid, user_id: uid }, '-1s');
+      const result = await page.evaluate(async (expiredProof) => {
+        const api = (window as any).testSession;
+        api.store.setState({ globalToken: expiredProof });
+        const state = api.store.getState();
+        await api.sessionConfig({
+          token: state.token,
+          appToken: state.session.token,
+          kubeconfig: state.session.kubeconfig
+        });
+        return api.store.getState().session.user.ns_uid;
+      }, expiredProof);
+      expect(result).toBe(wid);
+      expect(bootstrapCalls).toBe(1);
     });
 
     it('revokes the persistent session and rejects further refresh requests', async () => {
