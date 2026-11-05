@@ -31,7 +31,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 	"k8s.io/client-go/discovery"
-	"k8s.io/client-go/discovery/cached/memory"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
@@ -204,7 +203,12 @@ func GetGVRdyClientAndClientSet(gvk *schema.GroupVersionKind, configpath string,
 		log.Printf("failed create discovery client: %v", err)
 		return nil, nil, err
 	}
-	mapperGVRGVK := restmapper.NewDeferredDiscoveryRESTMapper(memory.NewMemCacheClient(discoveryClient))
+	apiGroupResources, err := restmapper.GetAPIGroupResources(discoveryClient)
+	if err != nil {
+		log.Printf("failed to get api group resources: %v", err)
+		return nil, nil, err
+	}
+	mapperGVRGVK := restmapper.NewDiscoveryRESTMapper(apiGroupResources)
 	resourceMapper, err := mapperGVRGVK.RESTMapping(gvk.GroupKind(), gvk.Version)
 	if err != nil {
 		log.Printf("failed to get resourceMapper: %v", err)

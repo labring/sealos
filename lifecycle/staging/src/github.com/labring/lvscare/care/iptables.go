@@ -25,7 +25,6 @@ import (
 	proxyipvs "k8s.io/kubernetes/pkg/proxy/ipvs"
 	utilipset "k8s.io/kubernetes/pkg/proxy/ipvs/ipset"
 	utiliptables "k8s.io/kubernetes/pkg/util/iptables"
-	"k8s.io/utils/exec"
 )
 
 type iptablesImpl struct {
@@ -122,10 +121,9 @@ func newIptablesImpl(iface string, masqueradeBit int, virtualIPs ...string) (Rul
 
 	masqueradeValue := uint32(1) << uint(masqueradeBit)
 
-	execer := exec.New()
 	return &iptablesImpl{
-		ipset:          utilipset.New(execer),
-		iptables:       utiliptables.New(execer, utiliptables.ProtocolIPv4),
+		ipset:          utilipset.New(),
+		iptables:       utiliptables.New(utiliptables.ProtocolIPv4),
 		nl:             proxyipvs.NewNetLinkHandle(false),
 		sysctl:         utilsysctl.New(),
 		bindAddresses:  bindAddresses,

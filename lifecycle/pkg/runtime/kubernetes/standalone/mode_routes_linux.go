@@ -23,7 +23,7 @@ import (
 func reservedRoutes(table, protocol int) ([]netlink.Route, error) {
 	return netlink.RouteListFiltered(netlink.FAMILY_ALL, &netlink.Route{
 		Table:    table,
-		Protocol: protocol,
+		Protocol: netlink.RouteProtocol(protocol),
 	}, netlink.RT_FILTER_TABLE|netlink.RT_FILTER_PROTOCOL)
 }
 

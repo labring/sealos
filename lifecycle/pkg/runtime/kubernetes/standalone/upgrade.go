@@ -698,7 +698,7 @@ func (u *upgrade) apply(ctx context.Context) (err error) {
 	}
 	if u.localEtcd {
 		snapCtx, cancel := context.WithTimeout(ctx, u.Timeout)
-		err := snapshot.Save(snapCtx, zap.NewNop(), u.etcdCfg, filepath.Join(u.dir, "etcd.db"))
+		_, err := snapshot.SaveWithVersion(snapCtx, zap.NewNop(), u.etcdCfg, filepath.Join(u.dir, "etcd.db"))
 		cancel()
 		if err != nil {
 			return err
