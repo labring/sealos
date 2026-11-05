@@ -1,0 +1,6 @@
+apiVersion: v2
+name: app-controller
+description: Sealos App Controller
+type: application
+version: 0.1.0
+appVersion: "v5.1"

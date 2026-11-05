@@ -31,7 +31,7 @@ wait_deployment sealos sealos-desktop
 run_component user-controller DROP_DIR="${ROOT_DIR}/assets/user-controller/drop"
 wait_deployment user-system user-controller-manager
 
-kubectl apply -f "${ROOT_DIR}/manifests/app-controller/deploy.yaml"
+run_component app-controller "CHART_PATH=${ROOT_DIR}/charts/app-controller"
 wait_deployment app-system app-controller-manager
 run_component account-controller
 wait_deployment account-system account-controller-manager

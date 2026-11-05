@@ -1,0 +1,14 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: app-default-user
+  namespace: {{ .Release.Namespace }}
+rules:
+- apiGroups:
+  - app.sealos.io
+  resources:
+  - apps
+  verbs:
+  - get
+  - watch
+  - list
