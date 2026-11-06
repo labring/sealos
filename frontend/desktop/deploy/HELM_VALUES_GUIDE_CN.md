@@ -106,6 +106,7 @@ desktopConfig:
 ```yaml
 desktopConfig:
   guideEnabled: false # 启用用户引导
+  accountMergeEnabled: false # 展示绑定弹窗中的账号合并操作，默认关闭；不限制后端合并接口
   apiEnabled: false # 启用 API 访问
   rechargeEnabled: false # 启用充值功能
   enterpriseRealNameAuthEnabled: false # 启用企业实名认证
@@ -114,6 +115,8 @@ desktopConfig:
   licenseCheckEnabled: false # 启用 License 检查
   activityEnabled: true # 桌面拉新奖励（邀请好友/首次登录礼）开关；仅 version "cn" 生效，false 关闭活动
 ```
+
+`accountMergeEnabled` 对应运行时配置 `common.accountMergeEnabled`，仅布尔值 `true` 开启。开启后，绑定可合并账号时显示确认操作；关闭或未配置时只提示账号已被绑定。适用于中英文版本。通过 Helm 更新配置会触发 Pod 滚动更新，用户刷新页面后生效；直接修改 ConfigMap 则需重启 Desktop。关闭开关不会撤销已完成的合并，也不会立即更新已打开的页面。
 
 ### 9. Common URLs 配置
 

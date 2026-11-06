@@ -18,15 +18,18 @@ import {
   HStack,
   ModalCloseButton
 } from '@chakra-ui/react';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'next-i18next';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { getSmsBindCodeRequest, verifySmsBindRequest } from '@/api/auth';
+import { getSmsBindCodeRequest, mergeUserRequest, verifySmsBindRequest } from '@/api/auth';
 import { ApiResp } from '@/types';
+import type { I18nErrorKey } from '@/types/i18next';
+import { useConfigStore } from '@/stores/config';
 import { MERGE_USER_READY } from '@/types/response/utils';
 import { WarnTriangeIcon } from '@sealos/ui';
+import { ProviderType } from 'prisma/global/generated/client';
 
-type ModalStep = 'BINDING' | 'MERGE_CONFLICT';
+type ModalStep = 'BINDING' | 'MERGE_CONFLICT' | 'MERGE_CONFIRM';
 
 interface PhoneBindingModalProps {
   isOpen: boolean;
@@ -37,13 +40,57 @@ export function PhoneBindingModal({ isOpen, onClose }: PhoneBindingModalProps) {
   const { t } = useTranslation();
   const toast = useToast();
   const queryClient = useQueryClient();
+  const accountMergeEnabled = useConfigStore((s) => s.commonConfig?.accountMergeEnabled === true);
+  const cancelRef = useRef<HTMLButtonElement>(null);
+  const submittingRef = useRef(false);
 
   const [currentStep, setCurrentStep] = useState<ModalStep>('BINDING');
+  const [mergeData, setMergeData] = useState<Parameters<typeof mergeUserRequest>[0] | null>(null);
+  const [mergeError, setMergeError] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [verifyCode, setVerifyCode] = useState('');
   const [challengeId, setChallengeId] = useState('');
   const [countdown, setCountdown] = useState(0);
   const [isSending, setIsSending] = useState(false);
+  const canMerge = accountMergeEnabled && currentStep === 'MERGE_CONFIRM' && !!mergeData?.code;
+
+  useEffect(() => {
+    if (!isOpen) {
+      setCurrentStep('BINDING');
+      setMergeData(null);
+      setMergeError('');
+    }
+  }, [isOpen]);
+
+  const mergeMutation = useMutation({
+    mutationFn: mergeUserRequest,
+    onSuccess() {
+      queryClient.invalidateQueries();
+      setCurrentStep('BINDING');
+      setMergeData(null);
+      setMergeError('');
+      onClose();
+    },
+    onError(error: ApiResp) {
+      if (error.message === 'invalid code') {
+        setMergeData(null);
+        setCurrentStep('BINDING');
+        setVerifyCode('');
+        setChallengeId('');
+        setMergeError(t('common:verification_code_expired'));
+      } else {
+        setMergeError(
+          t((error.message || 'INTERNAL_SERVER_ERROR') as I18nErrorKey, {
+            ns: 'error',
+            defaultValue: error.message || t('error:INTERNAL_SERVER_ERROR')
+          })
+        );
+      }
+    },
+    onSettled() {
+      submittingRef.current = false;
+    }
+  });
 
   // Phone number validation
   const isPhoneValid = useCallback((phone: string) => {
@@ -113,7 +160,15 @@ export function PhoneBindingModal({ isOpen, onClose }: PhoneBindingModalProps) {
         // Close modal
         onClose();
       } else if (Object.values(MERGE_USER_READY).includes(status as MERGE_USER_READY)) {
-        setCurrentStep('MERGE_CONFLICT');
+        setMergeError('');
+        const code = data.data?.code;
+        if (accountMergeEnabled && status === MERGE_USER_READY.MERGE_USER_CONTINUE && code) {
+          setMergeData({ code, providerType: ProviderType.PHONE });
+          setCurrentStep('MERGE_CONFIRM');
+        } else {
+          setMergeData(null);
+          setCurrentStep('MERGE_CONFLICT');
+        }
       } else {
         toast({
           position: 'top',
@@ -183,6 +238,14 @@ export function PhoneBindingModal({ isOpen, onClose }: PhoneBindingModalProps) {
 
   const handleBackToBinding = () => {
     setCurrentStep('BINDING');
+    setMergeData(null);
+    setMergeError('');
+  };
+
+  const handleClose = () => {
+    if (submittingRef.current || verifyMutation.isLoading) return;
+    handleBackToBinding();
+    onClose();
   };
 
   // Get modal title based on current step
@@ -191,6 +254,7 @@ export function PhoneBindingModal({ isOpen, onClose }: PhoneBindingModalProps) {
       case 'BINDING':
         return t('common:phone_binding_required');
       case 'MERGE_CONFLICT':
+      case 'MERGE_CONFIRM':
         return (
           <Flex alignItems="center" gap="10px">
             <WarnTriangeIcon boxSize="24px" fill="yellow.500" />
@@ -203,15 +267,25 @@ export function PhoneBindingModal({ isOpen, onClose }: PhoneBindingModalProps) {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} closeOnOverlayClick={false}>
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      closeOnOverlayClick={false}
+      initialFocusRef={canMerge ? cancelRef : undefined}
+    >
       <ModalOverlay />
       <ModalContent
+        role={canMerge ? 'alertdialog' : 'dialog'}
         maxW="450px"
         borderRadius={currentStep === 'BINDING' ? undefined : '10px'}
         bgColor={currentStep === 'BINDING' ? undefined : '#FFF'}
         backdropFilter={currentStep === 'BINDING' ? undefined : 'blur(150px)'}
       >
-        <ModalCloseButton top={'8px'} right={'20px'} />
+        <ModalCloseButton
+          top={'8px'}
+          right={'20px'}
+          isDisabled={mergeMutation.isLoading || verifyMutation.isLoading}
+        />
         <ModalHeader
           fontSize={currentStep === 'BINDING' ? '20px' : '16px'}
           fontWeight={currentStep === 'BINDING' ? 600 : 500}
@@ -231,6 +305,7 @@ export function PhoneBindingModal({ isOpen, onClose }: PhoneBindingModalProps) {
           px={currentStep === 'BINDING' ? '24px' : '36px'}
           fontSize={currentStep === 'BINDING' ? undefined : '14px'}
         >
+          {mergeError && <Text role="alert">{mergeError}</Text>}
           {/* BINDING Step */}
           {currentStep === 'BINDING' && (
             <Box>
@@ -308,12 +383,22 @@ export function PhoneBindingModal({ isOpen, onClose }: PhoneBindingModalProps) {
           )}
 
           {/* MERGE_CONFLICT Step */}
-          {currentStep === 'MERGE_CONFLICT' && (
+          {currentStep !== 'BINDING' && (
             <VStack alignItems={'stretch'} gap={'0'}>
-              <Text mb={'12px'}>{t('common:account_already_bound')}</Text>
+              <Text mb={'12px'}>
+                {t(
+                  canMerge
+                    ? 'common:merge_account_tips2'
+                    : accountMergeEnabled && currentStep === 'MERGE_CONFLICT'
+                    ? 'common:merge_account_tips1'
+                    : 'common:account_already_bound'
+                )}
+              </Text>
               <HStack gap={'12px'} justifyContent={'flex-end'} mt={'24px'}>
                 <Button
+                  ref={cancelRef}
                   onClick={handleBackToBinding}
+                  isDisabled={mergeMutation.isLoading}
                   variant={'unstyled'}
                   border={'1px'}
                   borderColor={'grayModern.250'}
@@ -322,8 +407,26 @@ export function PhoneBindingModal({ isOpen, onClose }: PhoneBindingModalProps) {
                   fontWeight={'500'}
                   color={'grayModern.600'}
                 >
-                  {t('common:confirm')}
+                  {t(canMerge ? 'common:cancel' : 'common:confirm')}
                 </Button>
+                {canMerge && (
+                  <Button
+                    onClick={() => {
+                      if (!canMerge || !mergeData || submittingRef.current) return;
+                      submittingRef.current = true;
+                      setMergeError('');
+                      mergeMutation.mutate(mergeData);
+                    }}
+                    isLoading={mergeMutation.isLoading}
+                    bgColor={'grayModern.900'}
+                    color={'white'}
+                    fontSize={'12px'}
+                    fontWeight={'500'}
+                    p={'8px 19px'}
+                  >
+                    {t('common:merge')}
+                  </Button>
+                )}
               </HStack>
             </VStack>
           )}
