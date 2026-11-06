@@ -71,6 +71,8 @@ export default function SecondaryLinks() {
 
   const user = session?.user;
   const workspaceResourceHeaderEnabled = layoutConfig?.workspaceResourceHeaderEnabled === true;
+  const balanceLabel =
+    layoutConfig?.balanceLabel === 'credits' ? 'common:credits' : 'common:balance';
   const currencySymbol = layoutConfig?.currencySymbol || 'shellCoin';
 
   const isCollapsed = useBreakpointValue({
@@ -137,8 +139,8 @@ export default function SecondaryLinks() {
   const resourceSummary = primaryQuota
     ? formatQuotaWithUnit(primaryQuota, getAvailableValue(primaryQuota))
     : isResourceLoading
-      ? t('common:loading')
-      : '--';
+    ? t('common:loading')
+    : '--';
   const balanceSummary = formatMoney(balance).toFixed(2);
 
   const renderHeaderMetric = (label: string, value: string) => (
@@ -156,7 +158,7 @@ export default function SecondaryLinks() {
     <Flex alignItems="center" gap="8px" minW={0} flexWrap={allowWrap ? 'wrap' : 'nowrap'}>
       {renderHeaderMetric(t('common:resources'), resourceSummary)}
       <Divider orientation="vertical" h="16px" borderColor="rgba(37, 99, 235, 0.14)" />
-      {renderHeaderMetric(t('common:balance'), balanceSummary)}
+      {renderHeaderMetric(t(balanceLabel), balanceSummary)}
     </Flex>
   );
 
@@ -463,7 +465,7 @@ export default function SecondaryLinks() {
           cursor={'pointer'}
           onClick={handleHeaderClick}
         >
-          <Text>{t('common:balance')}</Text>
+          <Text>{t(balanceLabel)}</Text>
           <Divider orientation="vertical" mx={'12px'} />
           <CurrencySymbol type={currencySymbol} />
           <Text ml={'4px'}>{balanceSummary}</Text>
@@ -519,7 +521,7 @@ export default function SecondaryLinks() {
                 lineHeight="20px"
                 color="rgba(45, 65, 91, 0.68)"
               >
-                {t('common:balance')}
+                {t(balanceLabel)}
               </Text>
               <Text
                 fontSize="14px"

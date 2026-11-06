@@ -71,6 +71,7 @@ export type LayoutConfigType = {
   logo: string;
   backgroundImage: string;
   workspaceResourceHeaderEnabled?: boolean;
+  balanceLabel?: 'balance' | 'credits';
   kubeconfigEnabled?: boolean;
   authTitle?: {
     zh: string;
@@ -314,6 +315,7 @@ export const DefaultLayoutConfig: LayoutConfigType = {
   logo: '/logo.svg',
   backgroundImage: '/images/bg-light.svg',
   workspaceResourceHeaderEnabled: false,
+  balanceLabel: 'balance',
   kubeconfigEnabled: true,
   protocol: {
     enabled: true,

@@ -77,6 +77,8 @@ desktopConfig:
   layoutLogo: "/logo.svg"
   layoutBackgroundImage: "/images/bg-light.svg"
   workspaceResourceHeaderEnabled: true
+  # Header label: balance (default) or credits; does not change the amount.
+  balanceLabel: balance
   # Show Kubeconfig download, copy and refresh actions in the account menu.
   kubeconfigEnabled: true
   customerServiceURL: ""
