@@ -105,6 +105,7 @@ desktopConfig:
   trackingEnabled: false # 启用追踪/统计
   realNameAuthEnabled: false # 启用实名认证
   workspaceResourceHeaderEnabled: false # 默认显示余额；设为 true 时使用资源头部
+  balanceLabel: balance # 右上角名称：balance（默认，余额）或 credits（积分）；不改变金额
   licenseCheckEnabled: false # 启用 License 检查
   passwordEnabled: true # 启用密码登录
 ```

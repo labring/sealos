@@ -66,11 +66,12 @@ const mockedUseBreakpointValue = useBreakpointValue as jest.MockedFunction<
 const mockedGetResource = getResource as jest.MockedFunction<typeof getResource>;
 const mockedGetAmount = getAmount as jest.MockedFunction<typeof getAmount>;
 
-function renderSecondaryLinks(workspaceResourceHeaderEnabled?: boolean) {
+function renderSecondaryLinks(workspaceResourceHeaderEnabled?: boolean, balanceLabel?: string) {
   mockedUseConfigStore.mockReturnValue({
     layoutConfig: {
       common: {},
       currencySymbol: 'shellCoin',
+      balanceLabel,
       ...(workspaceResourceHeaderEnabled === undefined ? {} : { workspaceResourceHeaderEnabled })
     },
     commonConfig: {
@@ -100,6 +101,7 @@ function renderSecondaryLinks(workspaceResourceHeaderEnabled?: boolean) {
 describe('workspace resource header flag', () => {
   it('defaults to the balance header', () => {
     expect(DefaultLayoutConfig.workspaceResourceHeaderEnabled).toBe(false);
+    expect(DefaultLayoutConfig.balanceLabel).toBe('balance');
   });
 
   beforeEach(() => {
@@ -141,5 +143,24 @@ describe('workspace resource header flag', () => {
     expect(await screen.findByText('common:balance')).not.toBeNull();
     expect(screen.queryByText('common:credits')).toBeNull();
     await waitFor(() => expect(mockedGetResource).toHaveBeenCalledTimes(1));
+  });
+
+  describe.each([true, false])('header balance label (resource mode: %s)', (resourceMode) => {
+    it.each([true, false])('shows credits at collapsed=%s', async (collapsed) => {
+      mockedUseBreakpointValue.mockReturnValue(collapsed);
+      renderSecondaryLinks(resourceMode, 'credits');
+
+      expect(await screen.findByText('common:credits')).not.toBeNull();
+      expect(screen.queryByText('common:balance')).toBeNull();
+      expect(await screen.findByText('1.50')).not.toBeNull();
+    });
+
+    it.each(['balance', 'invalid'])('uses balance for %s', async (label) => {
+      mockedUseBreakpointValue.mockReturnValue(false);
+      renderSecondaryLinks(resourceMode, label);
+
+      expect(await screen.findByText('common:balance')).not.toBeNull();
+      expect(screen.queryByText('common:credits')).toBeNull();
+    });
   });
 });

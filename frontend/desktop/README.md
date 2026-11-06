@@ -292,3 +292,9 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
     TEAM_LIMIT="50"
     TEAM_INVITE_LIMIT="50"
   ```
+
+### 右上角余额名称
+
+`desktopConfig.balanceLabel` 支持 `balance`（默认，中文“余额”/英文“Balance”）和 `credits`（中文“积分”/英文“Credits”）。对资源模式、普通模式及窄屏头部均生效，仅改变名称，不改变余额计算或计费。缺省或无效值回退为“余额”。
+
+部署时通过 Helm `--set desktopConfig.balanceLabel=credits`，或安装脚本的 `HELM_OPTIONS="--set desktopConfig.balanceLabel=credits"` 覆盖；运行时注入到 `desktop.layout.balanceLabel`。本地开发修改 `data/config.yaml` 中该字段，重启 Desktop 后生效。

@@ -102,6 +102,8 @@ desktopConfig:
       zh: https://sealos.io/zh-Hans/docs/msa/privacy-policy
       en: https://sealos.io/docs/msa/privacy-policy
   workspaceResourceHeaderEnabled: false
+  # Header label: balance (default) or credits; does not change the amount.
+  balanceLabel: balance
 
 # End of auto-configured values
 # ============================================================================

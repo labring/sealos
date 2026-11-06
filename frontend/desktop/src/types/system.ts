@@ -71,6 +71,7 @@ export type LayoutConfigType = {
   logo: string;
   backgroundImage: string;
   workspaceResourceHeaderEnabled?: boolean;
+  balanceLabel?: 'balance' | 'credits';
   authTitle?: {
     zh: string;
     en: string;
@@ -313,6 +314,7 @@ export const DefaultLayoutConfig: LayoutConfigType = {
   logo: '/logo.svg',
   backgroundImage: '/images/bg-light.svg',
   workspaceResourceHeaderEnabled: false,
+  balanceLabel: 'balance',
   protocol: {
     enabled: true,
     serviceProtocol: {
