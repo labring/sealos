@@ -15,7 +15,6 @@
 package v1beta1
 
 import (
-	"maps"
 	"path"
 
 	"github.com/labring/sealos/pkg/version"
@@ -119,7 +118,9 @@ func (m *MountImage) IsPatch() bool {
 
 func MergeEnvWithBuiltinKeys(src map[string]string, m MountImage) map[string]string {
 	out := make(map[string]string, len(src))
-	maps.Copy(out, src)
+	for k, v := range src {
+		out[k] = v
+	}
 	if m.IsRootFs() {
 		out[ImageKubeVersionEnvSysKey] = m.Labels[ImageKubeVersionKey]
 		out[ImageSealosVersionEnvSysKey] = version.Get().GitVersion
@@ -254,21 +255,17 @@ type ClusterSpec struct {
 	SSH   SSH       `json:"ssh"`
 	Hosts []Host    `json:"hosts,omitempty"`
 	// Why env not using map[string]string
-	// Because some argument is list, like: CertSANS=127.0.0.1 CertSANS=localhost, if ENV is map,
-	// will merge those two values but user want to InfraMetadata a list, using array we can convert
-	// it to {CertSANS:[127.0.0.1, localhost]}
+	// Because some argument is list, like: CertSANS=127.0.0.1 CertSANS=localhost, if ENV is map, will merge those two values
+	// but user want to InfraMetadata a list, using array we can convert it to {CertSANS:[127.0.0.1, localhost]}
 	Env []string `json:"env,omitempty"`
 	// Entrypoint array. Not executed within a shell.
 	// The docker image's ENTRYPOINT is used if this is not provided.
 	// Variable references $(VAR_NAME) are expanded using the container's environment. If a variable
-	// cannot be resolved, the reference in the input string will be unchanged. Double $$ are
-	// reduced
+	// cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced
 	// to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. "$$(VAR_NAME)" will
-	// produce the string literal "$(VAR_NAME)". Escaped references will never be expanded,
-	// regardless
+	// produce the string literal "$(VAR_NAME)". Escaped references will never be expanded, regardless
 	// of whether the variable exists or not. Cannot be updated.
-	// More info:
-	// https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell
+	// More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell
 	// +optional
 	Command []string `json:"command,omitempty"`
 }

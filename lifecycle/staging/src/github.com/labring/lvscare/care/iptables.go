@@ -25,6 +25,7 @@ import (
 	proxyipvs "k8s.io/kubernetes/pkg/proxy/ipvs"
 	utilipset "k8s.io/kubernetes/pkg/proxy/ipvs/ipset"
 	utiliptables "k8s.io/kubernetes/pkg/util/iptables"
+	"k8s.io/utils/exec"
 )
 
 type iptablesImpl struct {
@@ -121,9 +122,10 @@ func newIptablesImpl(iface string, masqueradeBit int, virtualIPs ...string) (Rul
 
 	masqueradeValue := uint32(1) << uint(masqueradeBit)
 
+	execer := exec.New()
 	return &iptablesImpl{
-		ipset:          utilipset.New(),
-		iptables:       utiliptables.New(utiliptables.ProtocolIPv4),
+		ipset:          utilipset.New(execer),
+		iptables:       utiliptables.New(execer, utiliptables.ProtocolIPv4),
 		nl:             proxyipvs.NewNetLinkHandle(false),
 		sysctl:         utilsysctl.New(),
 		bindAddresses:  bindAddresses,
@@ -391,8 +393,7 @@ func (impl *iptablesImpl) cleanupIptablesLeftovers() (encounteredError bool) {
 		}
 	}
 
-	// Flush and remove all of our chains. Flushing all chains before removing them also removes all
-	// links between chains first.
+	// Flush and remove all of our chains. Flushing all chains before removing them also removes all links between chains first.
 	for _, ch := range iptablesChains {
 		if err := impl.iptables.FlushChain(ch.table, ch.chain); err != nil {
 			if !utiliptables.IsNotFoundError(err) {

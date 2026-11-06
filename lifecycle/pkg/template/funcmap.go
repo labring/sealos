@@ -24,7 +24,6 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
-	"maps"
 	"net"
 	"strings"
 	"text/template"
@@ -53,7 +52,9 @@ func funcMap() template.FuncMap {
 		"ipAt":          ipAt,
 	}
 
-	maps.Copy(f, extra)
+	for k, v := range extra {
+		f[k] = v
+	}
 
 	return f
 }
@@ -62,7 +63,7 @@ func funcMap() template.FuncMap {
 // always return a string, even on marshal error (empty string).
 //
 // This is designed to be called from a template.
-func toYAML(v any) string {
+func toYAML(v interface{}) string {
 	data, err := yaml.Marshal(v)
 	if err != nil {
 		// Swallow errors inside of a template.
@@ -77,8 +78,8 @@ func toYAML(v any) string {
 // YAML documents. Additionally, because its intended use is within templates
 // it tolerates errors. It will insert the returned error message string into
 // m["Error"] in the returned map.
-func fromYAML(str string) map[string]any {
-	m := map[string]any{}
+func fromYAML(str string) map[string]interface{} {
+	m := map[string]interface{}{}
 
 	if err := yaml.Unmarshal([]byte(str), &m); err != nil {
 		m["Error"] = err.Error()
@@ -92,11 +93,11 @@ func fromYAML(str string) map[string]any {
 // YAML documents. Additionally, because its intended use is within templates
 // it tolerates errors. It will insert the returned error message string as
 // the first and only item in the returned array.
-func fromYAMLArray(str string) []any {
-	a := []any{}
+func fromYAMLArray(str string) []interface{} {
+	a := []interface{}{}
 
 	if err := yaml.Unmarshal([]byte(str), &a); err != nil {
-		a = []any{err.Error()}
+		a = []interface{}{err.Error()}
 	}
 	return a
 }
@@ -105,7 +106,7 @@ func fromYAMLArray(str string) []any {
 // always return a string, even on marshal error (empty string).
 //
 // This is designed to be called from a template.
-func toTOML(v any) string {
+func toTOML(v interface{}) string {
 	b := bytes.NewBuffer(nil)
 	e := toml.NewEncoder(b)
 	if err := e.Encode(v); err != nil {
@@ -118,7 +119,7 @@ func toTOML(v any) string {
 // always return a string, even on marshal error (empty string).
 //
 // This is designed to be called from a template.
-func toJSON(v any) string {
+func toJSON(v interface{}) string {
 	data, err := json.Marshal(v)
 	if err != nil {
 		// Swallow errors inside of a template.
@@ -133,8 +134,8 @@ func toJSON(v any) string {
 // JSON documents. Additionally, because its intended use is within templates
 // it tolerates errors. It will insert the returned error message string into
 // m["Error"] in the returned map.
-func fromJSON(str string) map[string]any {
-	m := make(map[string]any)
+func fromJSON(str string) map[string]interface{} {
+	m := make(map[string]interface{})
 
 	if err := json.Unmarshal([]byte(str), &m); err != nil {
 		m["Error"] = err.Error()
@@ -148,11 +149,11 @@ func fromJSON(str string) map[string]any {
 // JSON documents. Additionally, because its intended use is within templates
 // it tolerates errors. It will insert the returned error message string as
 // the first and only item in the returned array.
-func fromJSONArray(str string) []any {
-	a := []any{}
+func fromJSONArray(str string) []interface{} {
+	a := []interface{}{}
 
 	if err := json.Unmarshal([]byte(str), &a); err != nil {
-		a = []any{err.Error()}
+		a = []interface{}{err.Error()}
 	}
 	return a
 }

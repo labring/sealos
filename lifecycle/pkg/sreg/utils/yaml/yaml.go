@@ -23,7 +23,7 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-func UnmarshalYamlFromFile(file string, obj any) error {
+func UnmarshalYamlFromFile(file string, obj interface{}) error {
 	metadata, err := fileutil.ReadAll(file)
 	if err != nil {
 		return err

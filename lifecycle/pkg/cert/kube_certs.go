@@ -133,10 +133,7 @@ func List(CertPath, CertEtcdPath string, identity localIdentityModel) []Config {
 			Organization: nil,
 			Year:         100,
 			AltNames:     AltNames{}, // need set altNames
-			Usages: []x509.ExtKeyUsage{
-				x509.ExtKeyUsageServerAuth,
-				x509.ExtKeyUsageClientAuth,
-			},
+			Usages:       []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth},
 		},
 		{
 			Path:         CertEtcdPath,
@@ -147,10 +144,7 @@ func List(CertPath, CertEtcdPath string, identity localIdentityModel) []Config {
 			Organization: nil,
 			Year:         100,
 			AltNames:     AltNames{}, // change this in filter
-			Usages: []x509.ExtKeyUsage{
-				x509.ExtKeyUsageServerAuth,
-				x509.ExtKeyUsageClientAuth,
-			},
+			Usages:       []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth},
 		},
 		{
 			Path:         CertEtcdPath,
@@ -188,30 +182,12 @@ const (
 	EtcdHealthcheckClientCert
 )
 
-// apiServerIPAndDomains = MasterIP + VIP + CertSANS 暂时只有apiserver,
-// 记得把cluster.local后缀加到apiServerIPAndDOmas里先
-func NewSealosCertMetaData(
-	certPATH, certEtcdPATH string,
-	apiServerIPAndDomains []string,
-	SvcCIDR, nodeName, nodeIP, DNSDomain string,
-) (*SealosCertMetaData, error) {
-	return NewSealosCertMetaDataForKubeVersion(
-		certPATH,
-		certEtcdPATH,
-		apiServerIPAndDomains,
-		SvcCIDR,
-		nodeName,
-		nodeIP,
-		DNSDomain,
-		"",
-	)
+// apiServerIPAndDomains = MasterIP + VIP + CertSANS 暂时只有apiserver, 记得把cluster.local后缀加到apiServerIPAndDOmas里先
+func NewSealosCertMetaData(certPATH, certEtcdPATH string, apiServerIPAndDomains []string, SvcCIDR, nodeName, nodeIP, DNSDomain string) (*SealosCertMetaData, error) {
+	return NewSealosCertMetaDataForKubeVersion(certPATH, certEtcdPATH, apiServerIPAndDomains, SvcCIDR, nodeName, nodeIP, DNSDomain, "")
 }
 
-func NewSealosCertMetaDataForKubeVersion(
-	certPATH, certEtcdPATH string,
-	apiServerIPAndDomains []string,
-	SvcCIDR, nodeName, nodeIP, DNSDomain, kubeVersion string,
-) (*SealosCertMetaData, error) {
+func NewSealosCertMetaDataForKubeVersion(certPATH, certEtcdPATH string, apiServerIPAndDomains []string, SvcCIDR, nodeName, nodeIP, DNSDomain, kubeVersion string) (*SealosCertMetaData, error) {
 	data := &SealosCertMetaData{}
 	data.CertPath = certPATH
 	data.CertEtcdPath = certEtcdPATH
@@ -220,7 +196,7 @@ func NewSealosCertMetaDataForKubeVersion(
 	data.APIServer.IPs = make(map[string]net.IP)
 	data.APIServer.DNSNames = make(map[string]string)
 
-	for svcCidr := range strings.SplitSeq(SvcCIDR, ",") {
+	for _, svcCidr := range strings.Split(SvcCIDR, ",") {
 		_, svcNet, err := net.ParseCIDR(svcCidr)
 		if err != nil {
 			return nil, err
@@ -281,11 +257,7 @@ func (meta *SealosCertMetaData) etcdAltAndCommonName(certList *[]Config) {
 	(*certList)[EtcdPeerCert].CommonName = meta.NodeName
 	(*certList)[EtcdPeerCert].AltNames = altname
 
-	logger.Info(
-		"Etcd altnames : %v, commonName : %s",
-		(*certList)[EtcdPeerCert].AltNames,
-		(*certList)[EtcdPeerCert].CommonName,
-	)
+	logger.Info("Etcd altnames : %v, commonName : %s", (*certList)[EtcdPeerCert].AltNames, (*certList)[EtcdPeerCert].CommonName)
 }
 
 // create sa.key sa.pub for service Account

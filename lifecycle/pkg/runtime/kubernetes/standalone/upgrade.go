@@ -698,12 +698,7 @@ func (u *upgrade) apply(ctx context.Context) (err error) {
 	}
 	if u.localEtcd {
 		snapCtx, cancel := context.WithTimeout(ctx, u.Timeout)
-		_, err := snapshot.SaveWithVersion(
-			snapCtx,
-			zap.NewNop(),
-			u.etcdCfg,
-			filepath.Join(u.dir, "etcd.db"),
-		)
+		err := snapshot.Save(snapCtx, zap.NewNop(), u.etcdCfg, filepath.Join(u.dir, "etcd.db"))
 		cancel()
 		if err != nil {
 			return err
@@ -858,7 +853,7 @@ func (u *upgrade) prepareV2StoreCheck(ctx context.Context, current *semver.Versi
 			err,
 		)
 	}
-	for line := range strings.SplitSeq(string(out), "\n") {
+	for _, line := range strings.Split(string(out), "\n") {
 		if !strings.HasPrefix(line, "etcdutl version:") {
 			continue
 		}

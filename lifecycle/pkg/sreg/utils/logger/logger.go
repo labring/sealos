@@ -110,36 +110,36 @@ func IsDebugMode() bool {
 }
 
 // Fatal logs a message at emergency level and exit.
-func Fatal(f any, v ...any) {
+func Fatal(f interface{}, v ...interface{}) {
 	defaultLogger.Sugar().Fatalf(formatLog(zapcore.FatalLevel, f, v...))
 }
 
 // Panic logs a message at emergency level and exit.
-func Panic(f any, v ...any) {
+func Panic(f interface{}, v ...interface{}) {
 	defaultLogger.Sugar().Panicf(formatLog(zapcore.PanicLevel, f, v...))
 }
 
 // Error logs a message at error level.
-func Error(f any, v ...any) {
+func Error(f interface{}, v ...interface{}) {
 	defaultLogger.Sugar().Errorf(formatLog(zapcore.ErrorLevel, f, v...))
 }
 
 // Warn logs a message at warning level.
-func Warn(f any, v ...any) {
+func Warn(f interface{}, v ...interface{}) {
 	defaultLogger.Sugar().Warnf(formatLog(zapcore.WarnLevel, f, v...))
 }
 
 // Info logs a message at info level.
-func Info(f any, v ...any) {
+func Info(f interface{}, v ...interface{}) {
 	defaultLogger.Sugar().Infof(formatLog(zapcore.InfoLevel, f, v...))
 }
 
 // Debug logs a message at debug level.
-func Debug(f any, v ...any) {
+func Debug(f interface{}, v ...interface{}) {
 	defaultLogger.Sugar().Debugf(formatLog(zapcore.DebugLevel, f, v...))
 }
 
-func formatLog(l zapcore.Level, f any, v ...any) string {
+func formatLog(l zapcore.Level, f interface{}, v ...interface{}) string {
 	var msg string
 	switch f := f.(type) {
 	case string:

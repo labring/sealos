@@ -97,7 +97,7 @@ func IsFileExist(filename string) bool {
 	return !os.IsNotExist(err)
 }
 
-func UnmarshalYamlFile(file string, obj any) error {
+func UnmarshalYamlFile(file string, obj interface{}) error {
 	data, err := os.ReadFile(filepath.Clean(file))
 	if err != nil {
 		return err
@@ -106,8 +106,8 @@ func UnmarshalYamlFile(file string, obj any) error {
 	return err
 }
 
-func UnmarshalData(metadata []byte) (map[string]any, error) {
-	var data map[string]any
+func UnmarshalData(metadata []byte) (map[string]interface{}, error) {
+	var data map[string]interface{}
 	err := yaml.Unmarshal(metadata, &data)
 	if err != nil {
 		return nil, err
@@ -115,7 +115,7 @@ func UnmarshalData(metadata []byte) (map[string]any, error) {
 	return data, nil
 }
 
-func MarshalYamlToFile(file string, obj any) error {
+func MarshalYamlToFile(file string, obj interface{}) error {
 	data, err := yaml.Marshal(obj)
 	if err != nil {
 		return err
@@ -161,7 +161,7 @@ func Log(msg string) {
 	Logf(msg)
 }
 
-func Logf(format string, args ...any) {
+func Logf(format string, args ...interface{}) {
 	fmt.Fprintf(ginkgo.GinkgoWriter, "INFO: "+format, args...)
 }
 
@@ -169,15 +169,15 @@ func Failf(msg string) {
 	ginkgo.Fail(fmt.Sprintf("FAIL: %s", msg), 1)
 }
 
-func CheckNotNil(obj any) {
+func CheckNotNil(obj interface{}) {
 	gomega.Expect(obj).NotTo(gomega.BeNil())
 }
 
-func CheckEqual(obj1 any, obj2 any) {
+func CheckEqual(obj1 interface{}, obj2 interface{}) {
 	gomega.Expect(obj1).To(gomega.Equal(obj2))
 }
 
-func CheckNotEqual(obj1 any, obj2 any) {
+func CheckNotEqual(obj1 interface{}, obj2 interface{}) {
 	gomega.Expect(obj1).NotTo(gomega.Equal(obj2))
 }
 
@@ -240,7 +240,7 @@ func ListLocalHostAddrs() (*[]net.Addr, error) {
 		return nil, err
 	}
 	var allAddrs []net.Addr
-	for i := range netInterfaces {
+	for i := 0; i < len(netInterfaces); i++ {
 		if (netInterfaces[i].Flags & net.FlagUp) == 0 {
 			continue
 		}
@@ -248,7 +248,7 @@ func ListLocalHostAddrs() (*[]net.Addr, error) {
 		if err != nil {
 			logger.Warn("failed to get Addrs, %s", err.Error())
 		}
-		for j := range addrs {
+		for j := 0; j < len(addrs); j++ {
 			allAddrs = append(allAddrs, addrs[j])
 		}
 	}
@@ -257,8 +257,7 @@ func ListLocalHostAddrs() (*[]net.Addr, error) {
 
 func LocalIP(addrs *[]net.Addr) string {
 	for _, address := range *addrs {
-		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() &&
-			ipnet.IP.To4() != nil {
+		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() && ipnet.IP.To4() != nil {
 			return ipnet.IP.String()
 		}
 	}

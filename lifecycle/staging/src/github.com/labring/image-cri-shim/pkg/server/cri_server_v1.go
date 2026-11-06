@@ -18,8 +18,6 @@ package server
 
 import (
 	"context"
-	"errors"
-	"io"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -32,7 +30,6 @@ import (
 )
 
 type v1ImageService struct {
-	api.UnimplementedImageServiceServer
 	imageClient  api.ImageServiceClient
 	authStore    *AuthStore
 	cacheMutex   sync.RWMutex
@@ -503,28 +500,6 @@ func (s *v1ImageService) ListImages(ctx context.Context,
 	}
 
 	return rsp, err
-}
-
-func (s *v1ImageService) StreamImages(req *api.StreamImagesRequest,
-	srv api.ImageService_StreamImagesServer,
-) error {
-	logger.Debug("StreamImages: %+v", req)
-	stream, err := s.imageClient.StreamImages(srv.Context(), req)
-	if err != nil {
-		return err
-	}
-	for {
-		rsp, err := stream.Recv()
-		if err != nil {
-			if errors.Is(err, io.EOF) {
-				return nil
-			}
-			return err
-		}
-		if err := srv.Send(rsp); err != nil {
-			return err
-		}
-	}
 }
 
 func (s *v1ImageService) ImageStatus(ctx context.Context,

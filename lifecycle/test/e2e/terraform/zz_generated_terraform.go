@@ -68,7 +68,7 @@ func (fi bindataFileInfo) IsDir() bool {
 }
 
 // Sys return file is sys mode
-func (fi bindataFileInfo) Sys() any {
+func (fi bindataFileInfo) Sys() interface{} {
 	return nil
 }
 
@@ -250,8 +250,8 @@ func AssetDir(name string) ([]string, error) {
 	node := _bintree
 	if len(name) != 0 {
 		cannonicalName := strings.Replace(name, "\\", "/", -1)
-		pathList := strings.SplitSeq(cannonicalName, "/")
-		for p := range pathList {
+		pathList := strings.Split(cannonicalName, "/")
+		for _, p := range pathList {
 			node = node.Children[p]
 			if node == nil {
 				return nil, fmt.Errorf("Asset %s not found", name)

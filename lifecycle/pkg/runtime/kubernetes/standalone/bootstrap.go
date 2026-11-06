@@ -480,7 +480,7 @@ func bootstrapNode(registration map[string]any, args []string) (*v1.Node, error)
 		)
 	}
 	if labels := flagValue(args, "node-labels"); labels != "" {
-		for item := range strings.SplitSeq(labels, ",") {
+		for _, item := range strings.Split(labels, ",") {
 			parts := strings.SplitN(item, "=", 2)
 			if len(parts) != 2 || parts[0] == "" {
 				return nil, fmt.Errorf("invalid bootstrap node label %q", item)

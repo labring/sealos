@@ -16,7 +16,6 @@ package env
 
 // nosemgrep: go.lang.security.audit.xss.import-text-template.import-text-template
 import (
-	maps0 "maps"
 	"strings"
 	"sync"
 
@@ -54,7 +53,9 @@ func NewEnvProcessor(cluster *v1beta1.Cluster) Interface {
 func (p *processor) Getenv(host string) map[string]string {
 	env := make(map[string]string)
 	envs := p.getHostEnvInCache(host)
-	maps0.Copy(env, envs)
+	for k, v := range envs {
+		env[k] = v
+	}
 	return env
 }
 
@@ -108,10 +109,7 @@ func (p *processor) getHostEnv(hostIP string) map[string]string {
 	excludeSysEnv := func(m map[string]string) map[string]string {
 		m, exclude := ExcludeKeysWithPrefix(m, "SEALOS_SYS")
 		if len(exclude) > 0 {
-			logger.Warn(
-				"skip %s cause envs with prefix SEALOS_SYS are sealos system only",
-				strings.Join(exclude, ", "),
-			)
+			logger.Warn("skip %s cause envs with prefix SEALOS_SYS are sealos system only", strings.Join(exclude, ", "))
 		}
 		return m
 	}

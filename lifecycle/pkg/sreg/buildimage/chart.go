@@ -21,9 +21,9 @@ import (
 	"strings"
 
 	"github.com/labring/sealos/pkg/sreg/buildimage/manifests"
+	"github.com/labring/sealos/pkg/sreg/utils/yaml"
 	"github.com/labring/sealos/pkg/sreg/utils/file"
 	"github.com/labring/sealos/pkg/sreg/utils/logger"
-	"github.com/labring/sealos/pkg/sreg/utils/yaml"
 
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chart/loader"
@@ -84,7 +84,7 @@ func (c Chart) getRenderContent() (map[string]string, error) {
 
 	// todo: remove hardcode
 	valuesFile := path.Join(path.Dir(c.Path), fmt.Sprintf("%s.values.yaml", ccc.Metadata.Name))
-	values := make(map[string]any)
+	values := make(map[string]interface{})
 	if file.IsExist(valuesFile) {
 		logger.Debug("found named customize values file %s", valuesFile)
 		if err = yaml.UnmarshalYamlFromFile(valuesFile, &values); err != nil {

@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"math/big"
 	"net"
-	"slices"
 	"sort"
 	"strings"
 
@@ -111,7 +110,7 @@ func ListLocalHostAddrs() (*[]net.Addr, error) {
 		return netInterfaces[i].Index < netInterfaces[j].Index
 	})
 	var allAddrs []net.Addr
-	for i := range netInterfaces {
+	for i := 0; i < len(netInterfaces); i++ {
 		if (netInterfaces[i].Flags & net.FlagUp) == 0 {
 			continue
 		}
@@ -119,7 +118,7 @@ func ListLocalHostAddrs() (*[]net.Addr, error) {
 		if err != nil {
 			logger.Warn("failed to get Addrs, %s", err.Error())
 		}
-		for j := range addrs {
+		for j := 0; j < len(addrs); j++ {
 			allAddrs = append(allAddrs, addrs[j])
 		}
 	}
@@ -131,9 +130,7 @@ func IsLocalIP(ip string, addrs *[]net.Addr) bool {
 		ip = defaultIP
 	}
 	for _, address := range *addrs {
-		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() &&
-			ipnet.IP.To4() != nil &&
-			ipnet.IP.String() == ip {
+		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() && ipnet.IP.To4() != nil && ipnet.IP.String() == ip {
 			return true
 		}
 	}
@@ -142,8 +139,7 @@ func IsLocalIP(ip string, addrs *[]net.Addr) bool {
 
 func LocalIP(addrs *[]net.Addr) string {
 	for _, address := range *addrs {
-		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() &&
-			ipnet.IP.To4() != nil {
+		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() && ipnet.IP.To4() != nil {
 			return ipnet.IP.String()
 		}
 	}
@@ -157,9 +153,9 @@ func GetLocalIpv4() string {
 }
 
 func inc(ip net.IP) {
-	for _, v := range slices.Backward(ip) {
-		v++
-		if v > 0 {
+	for j := len(ip) - 1; j >= 0; j-- {
+		ip[j]++
+		if ip[j] > 0 {
 			break
 		}
 	}

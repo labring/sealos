@@ -18,7 +18,6 @@ package maps
 
 import (
 	"fmt"
-	"maps"
 	"strings"
 
 	"sigs.k8s.io/kustomize/kyaml/yaml"
@@ -53,24 +52,26 @@ func FromSlice(data []string) map[string]string {
 func Merge(ms ...map[string]string) map[string]string {
 	res := map[string]string{}
 	for _, m := range ms {
-		maps.Copy(res, m)
+		for k, v := range m {
+			res[k] = v
+		}
 	}
 	return res
 }
 
-func DeepMerge(dst, src *map[string]any) {
+func DeepMerge(dst, src *map[string]interface{}) {
 	for srcK, srcV := range *src {
 		dstV, ok := (*dst)[srcK]
 		if !ok {
 			continue
 		}
-		dV, ok := dstV.(map[string]any)
+		dV, ok := dstV.(map[string]interface{})
 		// dstV is string type
 		if !ok {
 			(*dst)[srcK] = srcV
 			continue
 		}
-		sV, ok := srcV.(map[string]any)
+		sV, ok := srcV.(map[string]interface{})
 		if !ok {
 			continue
 		}

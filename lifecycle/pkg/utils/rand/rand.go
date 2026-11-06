@@ -21,20 +21,19 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"math/big"
-	"strings"
 )
 
 func Generator(len int) string {
-	var container strings.Builder
+	var container string
 	var str = "abcdefghijklmnopqrstuvwxyz1234567890"
 	b := bytes.NewBufferString(str)
 	length := b.Len()
 	bigInt := big.NewInt(int64(length))
-	for range len {
+	for i := 0; i < len; i++ {
 		randomInt, _ := rand.Int(rand.Reader, bigInt)
-		container.WriteString(string(str[randomInt.Int64()]))
+		container += string(str[randomInt.Int64()])
 	}
-	return container.String()
+	return container
 }
 
 // CreateRandBytes returns a cryptographically secure slice of random bytes with a given size
