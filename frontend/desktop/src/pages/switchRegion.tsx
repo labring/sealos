@@ -7,7 +7,7 @@ import { useInitWorkspaceStore } from '@/stores/initWorkspace';
 import useSessionStore from '@/stores/session';
 import { AccessTokenPayload } from '@/types/token';
 import { parseOpenappQuery } from '@/utils/format';
-import { sessionConfig } from '@/utils/sessionConfig';
+import { loginSessionConfig, sessionConfig } from '@/utils/sessionConfig';
 import { switchKubeconfigNamespace } from '@/utils/switchKubeconfigNamespace';
 import { Flex, Spinner } from '@chakra-ui/react';
 import { useMutation } from '@tanstack/react-query';
@@ -127,7 +127,7 @@ const Callback: NextPage = () => {
           if (!initRegionTokenResult.data) {
             throw new Error('No result data');
           }
-          await sessionConfig(initRegionTokenResult.data);
+          await loginSessionConfig(initRegionTokenResult.data);
           await router.replace(appendMarketingQuery('/', marketingQuery));
           return;
         } catch (error) {
@@ -158,7 +158,7 @@ const Callback: NextPage = () => {
           setGlobalToken(globalToken); // Sets global token and cookie
           const regionTokenRes = await getRegionToken();
           if (regionTokenRes?.data) {
-            await sessionConfig(regionTokenRes.data);
+            await loginSessionConfig(regionTokenRes.data);
             const session = useSessionStore.getState().session;
             if (session?.token && session?.user?.ns_uid) {
               const nsList = await nsListRequest();
