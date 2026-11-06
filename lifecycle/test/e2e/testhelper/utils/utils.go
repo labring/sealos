@@ -257,7 +257,8 @@ func ListLocalHostAddrs() (*[]net.Addr, error) {
 
 func LocalIP(addrs *[]net.Addr) string {
 	for _, address := range *addrs {
-		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() && ipnet.IP.To4() != nil {
+		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() &&
+			ipnet.IP.To4() != nil {
 			return ipnet.IP.String()
 		}
 	}

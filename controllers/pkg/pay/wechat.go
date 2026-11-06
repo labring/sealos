@@ -89,7 +89,8 @@ func (w WechatPayment) RefundPayment(option RefundOption) (string, string, error
 		refundNo = option.RefundID
 	}
 
-	// Amount Unit Conversion: option. Amount is the "cent", which is the same as CreatePayment (amount/10000)
+	// Amount Unit Conversion: option. Amount is the "cent", which is the same as CreatePayment
+	// (amount/10000)
 	refundAmt := option.Amount / 10000
 
 	ctx := context.Background()

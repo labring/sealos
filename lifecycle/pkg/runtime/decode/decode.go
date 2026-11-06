@@ -63,9 +63,30 @@ func init() {
 }
 
 func overrideKubeletDefaults(obj any) {
+	dropRemovedKubeletFeatureGates(obj.(*kubelet.KubeletConfiguration))
 	kubeletconfig.SetObjectDefaults_KubeletConfiguration(obj.(*kubelet.KubeletConfiguration))
 	logger.Debug("override defaults of kubelet configuration")
 	obj.(*kubelet.KubeletConfiguration).ResolverConfig = nil
+}
+
+// removedKubeletFeatureGates lists GA feature gates that the vendored kubelet
+// registry no longer knows about; keeping them in a KubeletConfiguration makes
+// SetObjectDefaults_KubeletConfiguration panic. Every release that still
+// recognizes a gate in this list defaults it to enabled, so dropping it here
+// does not change cluster behavior.
+var removedKubeletFeatureGates = []string{
+	"CSIStorageCapacity",
+	"TTLAfterFinished",
+	"EphemeralContainers",
+}
+
+func dropRemovedKubeletFeatureGates(config *kubelet.KubeletConfiguration) {
+	for _, gate := range removedKubeletFeatureGates {
+		if _, ok := config.FeatureGates[gate]; ok {
+			logger.Debug("dropping removed kubelet feature gate %s", gate)
+			delete(config.FeatureGates, gate)
+		}
+	}
 }
 
 func CRDFromFile(filePath string, kind string) (any, error) {
@@ -124,7 +145,10 @@ func typeConversion(raw []byte, metaType *metav1.TypeMeta) (any, error) {
 			}
 			// Convert to v1beta4
 			if err := kubeadmv1beta3.Convert_v1beta3_InitConfiguration_To_kubeadm_InitConfiguration(newObj, obj.(*kubeadm.InitConfiguration), nil); err != nil {
-				return nil, fmt.Errorf("convert kubeadmv1beta3 InitConfiguration to v1beta4 failed %v", err)
+				return nil, fmt.Errorf(
+					"convert kubeadmv1beta3 InitConfiguration to v1beta4 failed %v",
+					err,
+				)
 			}
 			obj.(*kubeadm.InitConfiguration).APIVersion = kubeadmv1beta3.SchemeGroupVersion.String()
 			obj.(*kubeadm.InitConfiguration).Kind = metaType.Kind
@@ -139,7 +163,10 @@ func typeConversion(raw []byte, metaType *metav1.TypeMeta) (any, error) {
 			}
 			// Convert to v1beta4
 			if err := kubeadmv1beta3.Convert_v1beta3_JoinConfiguration_To_kubeadm_JoinConfiguration(newObj, obj.(*kubeadm.JoinConfiguration), nil); err != nil {
-				return nil, fmt.Errorf("convert kubeadmv1beta3 JoinConfiguration to v1beta4 failed %v", err)
+				return nil, fmt.Errorf(
+					"convert kubeadmv1beta3 JoinConfiguration to v1beta4 failed %v",
+					err,
+				)
 			}
 			obj.(*kubeadm.JoinConfiguration).APIVersion = kubeadmv1beta3.SchemeGroupVersion.String()
 			obj.(*kubeadm.JoinConfiguration).Kind = metaType.Kind
@@ -154,7 +181,10 @@ func typeConversion(raw []byte, metaType *metav1.TypeMeta) (any, error) {
 			}
 			// Convert to v1beta4
 			if err := kubeadmv1beta3.Convert_v1beta3_ClusterConfiguration_To_kubeadm_ClusterConfiguration(newObj, obj.(*kubeadm.ClusterConfiguration), nil); err != nil {
-				return nil, fmt.Errorf("convert kubeadmv1beta3 ClusterConfiguration to v1beta4 failed %v", err)
+				return nil, fmt.Errorf(
+					"convert kubeadmv1beta3 ClusterConfiguration to v1beta4 failed %v",
+					err,
+				)
 			}
 			obj.(*kubeadm.ClusterConfiguration).APIVersion = kubeadmv1beta3.SchemeGroupVersion.String()
 			obj.(*kubeadm.ClusterConfiguration).Kind = metaType.Kind

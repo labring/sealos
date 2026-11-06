@@ -365,7 +365,7 @@ func TestKubeadmRuntime_setFeatureGatesConfiguration(t *testing.T) {
 	}
 }
 func TestKubeadmRuntime_setFeatureGatesConfiguration4Controller(t *testing.T) {
-	testyaml := `apiVersion: kubeadm.k8s.io/v1beta2
+	testyaml := `apiVersion: kubeadm.k8s.io/v1beta3
 kind: ClusterConfiguration
 kubernetesVersion: v1.19.8
 #controlPlaneEndpoint: "apiserver.cluster.local:6443"

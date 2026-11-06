@@ -169,7 +169,8 @@ func (sp *SubscriptionProcessor) shouldProcessTransaction(tx *types.Subscription
 }
 
 // If the account service network is too slow, can synchronize the database
-// func (sp *SubscriptionProcessor) flushOtherDomainQuota(_ context.Context, userUID uuid.UUID) error {
+// func (sp *SubscriptionProcessor) flushOtherDomainQuota(_ context.Context, userUID uuid.UUID)
+// error {
 //	var regionTaskList []*types.AccountRegionUserTask
 //	for _, domain := range sp.allRegionDomain {
 //		if domain == sp.localDomain {

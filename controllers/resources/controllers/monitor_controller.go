@@ -635,7 +635,8 @@ func (r *MonitorReconciler) monitorDatabaseBackupUsage(
 	for i := range backupList.Items {
 		backup := &backupList.Items[i]
 		backupRes := resources.NewResourceNamed(backup)
-		// fmt.Printf("backup name: %v, backup size: %v, backupRes: %s \n", backupList.Items[i].Name, backupList.Items[i].Status.TotalSize, backupRes.String())
+		// fmt.Printf("backup name: %v, backup size: %v, backupRes: %s \n",
+		// backupList.Items[i].Name, backupList.Items[i].Status.TotalSize, backupRes.String())
 		if resUsed[backupRes.String()] == nil {
 			resNamed[backupRes.String()] = backupRes
 			resUsed[backupRes.String()] = initResources()
@@ -833,7 +834,8 @@ func (r *MonitorReconciler) handlerObjectStorageTrafficUsed(
 	if err != nil {
 		return fmt.Errorf("failed to get object storage flow: %w", err)
 	}
-	// Because the obtained traffic includes traffic communicating with the controller, filter out traffic smaller than 1 MB
+	// Because the obtained traffic includes traffic communicating with the controller, filter out
+	// traffic smaller than 1 MB
 	if bytes < 1024*1024 {
 		return nil
 	}

@@ -94,7 +94,8 @@ func getCreditsInfo(userUID uuid.UUID) (any, error) {
 
 	// start := time.Now()
 	currentPlan, err := dao.DBClient.GetSubscriptionPlan(subscription.PlanName)
-	// logrus.Printf("[DB] GetSubscriptionPlan (%s) took %v", subscription.PlanName, time.Since(start))
+	// logrus.Printf("[DB] GetSubscriptionPlan (%s) took %v", subscription.PlanName,
+	// time.Since(start))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get subscription plan info: %w", err)
 	}

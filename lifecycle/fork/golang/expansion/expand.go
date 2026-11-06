@@ -114,7 +114,8 @@ func tryReadVariableName(input string) (string, bool, int) {
 		var variableName strings.Builder
 		var i int
 		for i = 0; i < len(input); i++ {
-			if !unicode.IsLetter(rune(input[i])) && !unicode.IsDigit(rune(input[i])) && input[i] != '_' {
+			if !unicode.IsLetter(rune(input[i])) && !unicode.IsDigit(rune(input[i])) &&
+				input[i] != '_' {
 				break
 			}
 			variableName.WriteString(string(input[i]))

@@ -46,7 +46,8 @@ type Cockroach struct {
 	tasks             map[uuid.UUID]types.Task
 	subscriptionPlans *sync.Map
 	workspaceSubPlans *sync.Map
-	// use sync.map : More suitable for writing once read multiple scenarios & Lock contention can be reduced when multiple processes operate on different keys
+	// use sync.map : More suitable for writing once read multiple scenarios & Lock contention can
+	// be reduced when multiple processes operate on different keys
 	ownerUsrUIDMap *sync.Map
 	ownerUsrIDMap  *sync.Map
 }
@@ -428,7 +429,8 @@ func (c *Cockroach) GetUserRechargeDiscount(
 //		return false, fmt.Errorf("failed to get user uid: %v", err)
 //	}
 //	var paymentCount int64
-//	if err := c.DB.Model(&types.Payment{}).Where(&types.Payment{PaymentRaw: types.PaymentRaw{UserUID: userUid}}).
+// 	if err := c.DB.Model(&types.Payment{}).Where(&types.Payment{PaymentRaw:
+// types.PaymentRaw{UserUID: userUid}}).
 //		Count(&paymentCount).Error; err != nil {
 //		return false, fmt.Errorf("failed to get payment count: %v", err)
 //	}
@@ -2292,20 +2294,26 @@ func ensureBillingQueryIndexes(db *gorm.DB) error {
 	}
 	for _, statement := range statements {
 		if err := db.Exec(statement.sql).Error; err != nil {
-			return fmt.Errorf("failed to create billing history index on %s: %w", statement.name, err)
+			return fmt.Errorf(
+				"failed to create billing history index on %s: %w",
+				statement.name,
+				err,
+			)
 		}
 	}
 	return nil
 }
 
 func (c *Cockroach) migratorPaymentRefundTable() error {
-	// If the id field does not exist or exists but is not the primary key and is not not null, skip the migration
+	// If the id field does not exist or exists but is not the primary key and is not not null, skip
+	// the migration
 	if !c.DB.Migrator().HasConstraint(&types.PaymentRefund{}, "PaymentRefund_pkey") {
 		fmt.Println("PaymentRefund.id is not primary key, skipping migration")
 		return nil
 	}
 
-	// Migrate the PaymentRefund table: Rename the id field to order_id and remove the unique constraint
+	// Migrate the PaymentRefund table: Rename the id field to order_id and remove the unique
+	// constraint
 	if c.DB.Migrator().HasColumn(&types.PaymentRefund{}, "id") {
 		fmt.Println("check PaymentRefund table for id -> order_id migration")
 
@@ -2337,11 +2345,13 @@ func (c *Cockroach) migratorPaymentRefundTable() error {
 			return fmt.Errorf("failed to add rowid column: %w", err)
 		}
 
-		// Remove the unique constraint of the id field (if it exists) and add rowid as an alternative constraint
+		// Remove the unique constraint of the id field (if it exists) and add rowid as an
+		// alternative constraint
 		// （https://go.crdb.dev/issue-v/48026/v23.1）
 		fmt.Println("migrate PaymentRefund primary key from id to rowid")
 		tranDB := c.DB.Begin()
-		// To modify the primary key within the same transaction: delete the old primary key and add a new one
+		// To modify the primary key within the same transaction: delete the old primary key and add
+		// a new one
 		fmt.Println("modify primary key from id to rowid")
 		err = tranDB.Exec(`
 			ALTER TABLE "PaymentRefund"
@@ -2425,7 +2435,8 @@ func (c *Cockroach) migrateColumns() error {
 		fmt.Println("PaymentRefund.trade_no column does not exist, skipping migration")
 	}
 
-	// Migrate the PaymentRefund table: Rename the id field to order_id and remove the unique constraint
+	// Migrate the PaymentRefund table: Rename the id field to order_id and remove the unique
+	// constraint
 	if needMigratorPaymentRefundID {
 		if err := c.migratorPaymentRefundTable(); err != nil {
 			return fmt.Errorf("failed to migrate PaymentRefund table: %w", err)
@@ -2495,7 +2506,10 @@ func (c *Cockroach) migrateColumns() error {
 			alterTableAddColumnSQL(tableName, `"pay_app" TEXT NOT NULL DEFAULT ''`),
 		).Error
 		if err != nil {
-			return fmt.Errorf("failed to add column pay_app to WorkspaceSubscriptionTransaction: %w", err)
+			return fmt.Errorf(
+				"failed to add column pay_app to WorkspaceSubscriptionTransaction: %w",
+				err,
+			)
 		}
 	}
 	if !c.Localdb.Migrator().HasColumn(&types.WorkspaceSubscriptionPlan{}, "ai_quota") {
@@ -2512,7 +2526,8 @@ func (c *Cockroach) migrateColumns() error {
 	if c.DB.Migrator().HasColumn(&types.Account{}, "encryptBalance") {
 		// 将现有 NULL 值更新为 ''
 		// fmt.Println("updating NULL values to '' for encryptBalance")
-		// err := c.Exec(`UPDATE "Account" SET "encryptBalance" = '' WHERE "encryptBalance" IS NULL`).Error
+		// err := c.Exec(`UPDATE "Account" SET "encryptBalance" = '' WHERE "encryptBalance" IS
+		// NULL`).Error
 		// if err != nil {
 		//	return fmt.Errorf("failed to update NULL values for encryptBalance: %v", err)
 		//}
@@ -2529,7 +2544,8 @@ func (c *Cockroach) migrateColumns() error {
 	if c.DB.Migrator().HasColumn(&types.Account{}, "encryptDeductionBalance") {
 		//// 将现有 NULL 值更新为 ''
 		// fmt.Println("updating NULL values to '' for encryptDeductionBalance")
-		// err := c.Exec(`UPDATE "Account" SET "encryptDeductionBalance" = '' WHERE "encryptDeductionBalance" IS NULL`).Error
+		// err := c.Exec(`UPDATE "Account" SET "encryptDeductionBalance" = '' WHERE
+		// "encryptDeductionBalance" IS NULL`).Error
 		// if err != nil {
 		//	return fmt.Errorf("failed to update NULL values for encryptDeductionBalance: %v", err)
 		//}
@@ -2722,7 +2738,8 @@ func (c *Cockroach) GetLocalDB() *gorm.DB {
 	return c.Localdb
 }
 
-// RetryableTransaction wraps a GORM transaction and retries on CockroachDB retryable errors (SQLSTATE 40001)
+// RetryableTransaction wraps a GORM transaction and retries on CockroachDB retryable errors
+// (SQLSTATE 40001)
 func RetryableTransaction(db *gorm.DB, maxRetries int, fn func(tx *gorm.DB) error) error {
 	var err error
 

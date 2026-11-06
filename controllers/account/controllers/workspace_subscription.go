@@ -188,7 +188,8 @@ func (r *AccountReconciler) updateWorkspaceQuotaLimit0(
 		//			if usedQuantity.Cmp(quantity) > 0 {
 		//				// TODO situations exceeding the quota need to be handled
 		//				// restart the space resource deploy sts
-		//				return fmt.Errorf("used resource %s exceeds the limit 0: used %s", usedRs, usedQuantity.String())
+		// 				return fmt.Errorf("used resource %s exceeds the limit 0: used %s", usedRs,
+		// usedQuantity.String())
 		//			}
 		//		}
 		//	}

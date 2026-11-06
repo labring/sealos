@@ -45,7 +45,9 @@ type Terraform struct {
 func (tf *Terraform) Apply(architecture string) error {
 	_, ok := executils.CheckCmdIsExist("terraform")
 	if !ok {
-		return fmt.Errorf("not install terraform, please install terraform. vist: https://developer.hashicorp.com/terraform/downloads ")
+		return fmt.Errorf(
+			"not install terraform, please install terraform. vist: https://developer.hashicorp.com/terraform/downloads ",
+		)
 	}
 	tf.setEnv()
 	defer func() {
@@ -76,11 +78,21 @@ func (tf *Terraform) Apply(architecture string) error {
 		}
 	}
 	_ = file.CleanFiles(path.Join(HomeDir, "vars.tf.amd64"), path.Join(HomeDir, "vars.tf.arm64"))
-	err := executils.CmdWithContext(context.Background(), "bash", "-c", fmt.Sprintf("cd %s && terraform init", HomeDir))
+	err := executils.CmdWithContext(
+		context.Background(),
+		"bash",
+		"-c",
+		fmt.Sprintf("cd %s && terraform init", HomeDir),
+	)
 	if err != nil {
 		return err
 	}
-	err = executils.CmdWithContext(context.Background(), "bash", "-c", fmt.Sprintf("cd %s && terraform apply -auto-approve", HomeDir))
+	err = executils.CmdWithContext(
+		context.Background(),
+		"bash",
+		"-c",
+		fmt.Sprintf("cd %s && terraform apply -auto-approve", HomeDir),
+	)
 	if err != nil {
 		return err
 	}
@@ -90,7 +102,9 @@ func (tf *Terraform) Apply(architecture string) error {
 func (tf *Terraform) Destroy() error {
 	_, ok := executils.CheckCmdIsExist("terraform")
 	if !ok {
-		return fmt.Errorf("not install terraform, please install terraform. vist: https://developer.hashicorp.com/terraform/downloads ")
+		return fmt.Errorf(
+			"not install terraform, please install terraform. vist: https://developer.hashicorp.com/terraform/downloads ",
+		)
 	}
 	var err error
 	tf.setEnv()
@@ -107,7 +121,12 @@ func (tf *Terraform) Destroy() error {
 			file.CleanDir(HomeDir)
 		}
 	}()
-	err = executils.CmdWithContext(context.Background(), "bash", "-c", fmt.Sprintf("cd %s && terraform destroy -auto-approve", HomeDir))
+	err = executils.CmdWithContext(
+		context.Background(),
+		"bash",
+		"-c",
+		fmt.Sprintf("cd %s && terraform destroy -auto-approve", HomeDir),
+	)
 	if err != nil {
 		return err
 	}
@@ -129,7 +148,9 @@ type InfraDetail struct {
 func (tf *Terraform) Detail() (*InfraDetail, error) {
 	_, ok := executils.CheckCmdIsExist("terraform")
 	if !ok {
-		return nil, fmt.Errorf("not install terraform, please install terraform. vist: https://developer.hashicorp.com/terraform/downloads ")
+		return nil, fmt.Errorf(
+			"not install terraform, please install terraform. vist: https://developer.hashicorp.com/terraform/downloads ",
+		)
 	}
 	var err error
 	tf.setEnv()
@@ -159,10 +180,26 @@ func (tf *Terraform) Detail() (*InfraDetail, error) {
 				for i, instance := range instances {
 					if instanceObj, ok := instance.(map[string]any); ok {
 						h := &Host{}
-						h.Name, _, _ = unstructured.NestedString(instanceObj, "attributes", "instance_name")
-						h.Password, _, _ = unstructured.NestedString(instanceObj, "attributes", "password")
-						h.PublicIP, _, _ = unstructured.NestedString(instanceObj, "attributes", "public_ip")
-						h.PrivateIP, _, _ = unstructured.NestedString(instanceObj, "attributes", "private_ip")
+						h.Name, _, _ = unstructured.NestedString(
+							instanceObj,
+							"attributes",
+							"instance_name",
+						)
+						h.Password, _, _ = unstructured.NestedString(
+							instanceObj,
+							"attributes",
+							"password",
+						)
+						h.PublicIP, _, _ = unstructured.NestedString(
+							instanceObj,
+							"attributes",
+							"public_ip",
+						)
+						h.PrivateIP, _, _ = unstructured.NestedString(
+							instanceObj,
+							"attributes",
+							"private_ip",
+						)
 						if resourceName == "sealos" {
 							d.Public = h
 							break

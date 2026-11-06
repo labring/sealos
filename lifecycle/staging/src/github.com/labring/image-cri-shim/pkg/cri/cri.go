@@ -71,7 +71,8 @@ func (runtime *CRIORuntime) CGroupDriver() (string, error) {
 		"crio-status -s %s  info | grep \"cgroup driver\" | awk '{print $3}'",
 		runtime.criSocket,
 	)
-	// nosemgrep: trailofbits.go.invalid-usage-of-modified-variable.invalid-usage-of-modified-variable
+	// nosemgrep:
+	// trailofbits.go.invalid-usage-of-modified-variable.invalid-usage-of-modified-variable
 	if outBytes, err = runtime.exec.Command("bash", "-c", driverCmd).CombinedOutput(); err != nil {
 		return DefaultCgroupDriver, fmt.Errorf(
 			"container cgroup driver: output: %s, error: %w",
@@ -127,7 +128,8 @@ func NewContainerRuntime(
 
 // IsRunning checks if runtime is running
 func (runtime *ContainerdRuntime) IsRunning() error {
-	// nosemgrep: trailofbits.go.invalid-usage-of-modified-variable.invalid-usage-of-modified-variable
+	// nosemgrep:
+	// trailofbits.go.invalid-usage-of-modified-variable.invalid-usage-of-modified-variable
 	cmd := runtime.exec.Command(
 		"crictl",
 		"-r",
@@ -146,7 +148,8 @@ func (runtime *ContainerdRuntime) IsRunning() error {
 
 // IsRunning checks if runtime is running
 func (runtime *DockerRuntime) IsRunning() error {
-	// nosemgrep: trailofbits.go.invalid-usage-of-modified-variable.invalid-usage-of-modified-variable
+	// nosemgrep:
+	// trailofbits.go.invalid-usage-of-modified-variable.invalid-usage-of-modified-variable
 	if out, err := runtime.exec.Command("docker", "info").CombinedOutput(); err != nil {
 		return fmt.Errorf(
 			"container runtime is not running: output: %s, error: %w",
@@ -163,7 +166,8 @@ func (runtime *DockerRuntime) CGroupDriver() (string, error) {
 	}
 	var err error
 	var out []byte
-	// nosemgrep: trailofbits.go.invalid-usage-of-modified-variable.invalid-usage-of-modified-variable
+	// nosemgrep:
+	// trailofbits.go.invalid-usage-of-modified-variable.invalid-usage-of-modified-variable
 	cmd := runtime.exec.Command(
 		"docker",
 		"info",
@@ -243,7 +247,8 @@ func (runtime *ContainerdRuntime) processConfigFile() (string, error) {
 	return DefaultCgroupDriver, nil
 }
 
-// detectCRISocketImpl is separated out only for test purposes, DON'T call it directly, use DetectCRISocket instead
+// detectCRISocketImpl is separated out only for test purposes, DON'T call it directly, use
+// DetectCRISocket instead
 func detectCRISocketImpl(isSocket func(string) bool, knownCRISockets []string) (string, error) {
 	foundCRISockets := []string{}
 
@@ -255,7 +260,8 @@ func detectCRISocketImpl(isSocket func(string) bool, knownCRISockets []string) (
 	logger.Debug("knownCRISockets: %+v,foundCRISockets: %+v", knownCRISockets, foundCRISockets)
 	switch len(foundCRISockets) {
 	case 0:
-		// Fall back to the default socket if no CRI is detected, we can error out later on if we need it
+		// Fall back to the default socket if no CRI is detected, we can error out later on if we
+		// need it
 		return DefaultCRISocket, nil
 	case 1:
 		// Precisely one CRI found, use that
@@ -269,7 +275,8 @@ func detectCRISocketImpl(isSocket func(string) bool, knownCRISockets []string) (
 	}
 }
 
-// DetectCRISocket uses a list of known CRI sockets to detect one. If more than one or none is discovered, an error is returned.
+// DetectCRISocket uses a list of known CRI sockets to detect one. If more than one or none is
+// discovered, an error is returned.
 func DetectCRISocket() (string, error) {
 	return detectCRISocketImpl(isExistingSocket, defaultKnownCRISockets)
 }

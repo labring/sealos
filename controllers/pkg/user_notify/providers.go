@@ -242,7 +242,8 @@ func (p *EmailProvider) Send(
 	var emailContent string
 	if message.TemplateID != "" {
 		// 使用HTML模板并替换变量
-		// emailContent = p.renderEmailTemplate(message.TemplateID, message.Content, message.EventData, message.Recipient)
+		// emailContent = p.renderEmailTemplate(message.TemplateID, message.Content,
+		// message.EventData, message.Recipient)
 		emailContent = message.TemplateID
 	} else {
 		// 退回到使用简单内容，包装为基本HTML
@@ -551,7 +552,9 @@ You have successfully subscribed to the %s plan for the %s space in the %s regio
 		Recommendation: "https://usw.sealos.io/?openapp=system-costcenter&region=%s&workspace=%s",
 		DatesFormat:    "Until %s",
 	},
-	// EventTypeWorkspaceSubscriptionRenewedBalanceFallback 订阅支付失败，自动使用余额支付，需要通知用户订阅支付失败，但使用cloud balance成功
+	// EventTypeWorkspaceSubscriptionRenewedBalanceFallback
+	// 订阅支付失败，自动使用余额支付，需要通知用户订阅支付失败，但使用cloud
+	// balance成功
 	EventTypeWorkspaceSubscriptionRenewedBalanceFallback: {
 		TitleTemplate:  "%s Region %s Workspace Subscription Renewed with Cloud Balance",
 		AlertTemplate:  `Your subscription to the %s plan for the %s workspace in the %s region was successfully renewed using your cloud balance.Dear User, Your subscription auto-renewal has failed. However, we have successfully deducted the payment from your account balance, and your subscription has been renewed. Please check your payment method to ensure smooth auto-renewals in the future. If you have any questions, please contact our customer support.`,
@@ -620,7 +623,9 @@ You have successfully subscribed to the %s plan for the %s space in the %s regio
 		AlertTemplate:     "Your %s Plan for the %s workspace in the %s region has expired. Your service will be suspended on your plan's expiration date.",
 		BorderColor:       "#ff0000",
 		WarnAlertTemplate: "To prevent service interruption and data loss, please update your payment information as soon as possible. Your resources will be permanently deleted 7 days after the expiration date.",
-		// Content:           `To prevent service interruption and data loss, please update your plan as soon as possible. Your resources will be permanently deleted 7 days after the expiration date.`,
+		// Content:           `To prevent service interruption and data loss, please update your
+		// plan as soon as possible. Your resources will be permanently deleted 7 days after the
+		// expiration date.`,
 		Content:        "Your subscription will delete in %d days. Please renew your subscription to continue enjoying our services.",
 		Recommendation: "https://usw.sealos.io/?openapp=system-costcenter&region=%s&workspace=%s",
 	},

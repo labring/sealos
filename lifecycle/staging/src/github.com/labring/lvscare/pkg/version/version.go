@@ -34,7 +34,8 @@ type Version struct {
 var (
 	// versionMatchRE splits a version string into numeric and "extra" parts
 	versionMatchRE = regexp.MustCompile(`^\s*v?([0-9]+(?:\.[0-9]+)*)(.*)*$`)
-	// extraMatchRE splits the "extra" part of versionMatchRE into semver pre-release and build metadata; it does not validate the "no leading zeroes" constraint for pre-release
+	// extraMatchRE splits the "extra" part of versionMatchRE into semver pre-release and build
+	// metadata; it does not validate the "no leading zeroes" constraint for pre-release
 	extraMatchRE = regexp.MustCompile(
 		`^(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?\s*$`,
 	)

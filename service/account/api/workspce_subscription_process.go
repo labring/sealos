@@ -51,7 +51,8 @@ func (wsp *WorkspaceSubscriptionProcessor) Start(ctx context.Context) {
 			case <-ticker.C:
 				count, err := wsp.processPendingTransactions(ctx)
 				if err != nil {
-					// log.Printf("Failed to process pending workspace subscription transactions: %v", err)
+					// log.Printf("Failed to process pending workspace subscription transactions:
+					// %v", err)
 					logrus.Infof("process pending transactions failed: %v", err)
 				}
 				if count == 0 {
@@ -148,7 +149,8 @@ func (wsp *WorkspaceSubscriptionProcessor) processTransaction(
 
 		// 检查是否仍需处理
 		if !wsp.shouldProcessTransaction(&latestTx) {
-			// wsp.Logger.Info("Workspace subscription transaction needn't processed", "id", latestTx.ID)
+			// wsp.Logger.Info("Workspace subscription transaction needn't processed", "id",
+			// latestTx.ID)
 			logrus.Infof(
 				"Skip processing transaction for workspace subscription transaction: %s",
 				latestTx.ID,
@@ -551,7 +553,8 @@ func (wsp *WorkspaceSubscriptionProcessor) handleDeletion(
 		if _, err := services.StripeServiceInstance.CancelSubscription(
 			sub.Stripe.SubscriptionID,
 		); err != nil {
-			// logrus.Errorf("Failed to cancel Stripe subscription %s: %v", sub.Stripe.SubscriptionID, err)
+			// logrus.Errorf("Failed to cancel Stripe subscription %s: %v",
+			// sub.Stripe.SubscriptionID, err)
 			dao.Logger.Errorf(
 				"Failed to cancel Stripe subscription %s: %v",
 				sub.Stripe.SubscriptionID,
@@ -560,7 +563,8 @@ func (wsp *WorkspaceSubscriptionProcessor) handleDeletion(
 			// 记录错误但不阻止删除过程
 			// TODO too long
 			// tx.StatusDesc = fmt.Sprintf("Stripe cancellation failed: %v", err)
-			// return fmt.Errorf("failed to cancel Stripe subscription %s: %w", sub.Stripe.SubscriptionID, err)
+			// return fmt.Errorf("failed to cancel Stripe subscription %s: %w",
+			// sub.Stripe.SubscriptionID, err)
 		}
 		sub.PayStatus = types.SubscriptionPayStatusCanceled
 	} else {
@@ -587,7 +591,8 @@ func (wsp *WorkspaceSubscriptionProcessor) handleDeletion(
 		FinalDeletionDebtNamespaceAnnoStatus,
 		[]string{sub.Workspace},
 	); err != nil {
-		// logrus.Errorf("Failed to set final deletion annotation for workspace %s: %v", sub.Workspace, err)
+		// logrus.Errorf("Failed to set final deletion annotation for workspace %s: %v",
+		// sub.Workspace, err)
 		dao.Logger.Errorf(
 			"Failed to set final deletion annotation for workspace %s: %v",
 			sub.Workspace,
@@ -668,7 +673,8 @@ func CheckQuota(ctx context.Context, workspace, planName string) (bool, error) {
 }
 
 // processExpiredBalanceSubscriptions 处理已到期的余额支付订阅
-// 1. The current cycle is about to end (within 20 minutes) and the expiration time is longer than the end time of the current cycle - renewal is required
+// 1. The current cycle is about to end (within 20 minutes) and the expiration time is longer than
+// the end time of the current cycle - renewal is required
 // 2. The situation where the current cycle has ended and needs to be renewed
 func (wsp *WorkspaceSubscriptionProcessor) processExpiredBalanceSubscriptions(
 	ctx context.Context,
@@ -739,7 +745,8 @@ func (wsp *WorkspaceSubscriptionProcessor) processPeriodRenewal(
 			return nil
 		}
 
-		// Check if the current cycle has not yet reached the renewal time (leave a 20-minute buffer)
+		// Check if the current cycle has not yet reached the renewal time (leave a 20-minute
+		// buffer)
 		if latestSub.CurrentPeriodEndAt.After(now.Add(20 * time.Minute)) {
 			logrus.Infof("Subscription %s current period not yet ending (ends at %s), skipping",
 				latestSub.ID, latestSub.CurrentPeriodEndAt.Format(time.RFC3339))
@@ -760,7 +767,8 @@ func (wsp *WorkspaceSubscriptionProcessor) processPeriodRenewal(
 		}
 
 		// Calculate the new cycle time
-		// For expired subscriptions, the new cycle begins now; For subscriptions that are about to expire, start from the end time of the current cycle
+		// For expired subscriptions, the new cycle begins now; For subscriptions that are about to
+		// expire, start from the end time of the current cycle
 		var newPeriodStart time.Time
 		if isExpired {
 			newPeriodStart = now
@@ -786,7 +794,8 @@ func (wsp *WorkspaceSubscriptionProcessor) processPeriodRenewal(
 		}
 
 		if needsPayment {
-			// Only subscriptions with balance payments are processed here. Other payment methods such as stripe are not handled
+			// Only subscriptions with balance payments are processed here. Other payment methods
+			// such as stripe are not handled
 			if latestSub.PayMethod != types.PaymentMethodBalance {
 				return nil
 			}
@@ -1016,7 +1025,8 @@ func (wsp *WorkspaceSubscriptionProcessor) handleInsufficientBalance(
 	//}
 	//
 	//// 更新工作空间状态
-	// if err := wdp.updateWorkspaceDebtStatus(ctx, types.SuspendDebtNamespaceAnnoStatus, namespaces); err != nil {
+	// if err := wdp.updateWorkspaceDebtStatus(ctx, types.SuspendDebtNamespaceAnnoStatus,
+	// namespaces); err != nil {
 	//	return fmt.Errorf("update workspace debt status error: %w", err)
 	//}
 	if err := updateDebtNamespaceStatus(
@@ -1043,7 +1053,8 @@ func (wsp *WorkspaceSubscriptionProcessor) handleInsufficientBalance(
 			sub.UserUID,
 			err,
 		)
-		// return fmt.Errorf("failed to send subscription success notification to user %s: %w", userUID, err)
+		// return fmt.Errorf("failed to send subscription success notification to user %s: %w",
+		// userUID, err)
 	}
 
 	logrus.Infof(

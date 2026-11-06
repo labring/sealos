@@ -249,14 +249,30 @@ func TestBillingQueriesUseIndexesWithMongoRuntime(t *testing.T) {
 		{Key: "owner", Value: bson.M{"$in": []string{"owner-target"}}},
 		{Key: "time", Value: end},
 		{Key: "type", Value: Consumption},
-		{Key: "app_type", Value: bson.M{"$nin": []int{int(resources.AppType[resources.CVM]), int(resources.AppType[resources.LLMToken])}}},
+		{
+			Key: "app_type",
+			Value: bson.M{
+				"$nin": []int{
+					int(resources.AppType[resources.CVM]),
+					int(resources.AppType[resources.LLMToken]),
+				},
+			},
+		},
 	}
 	unsettledFilter := bson.D{
 		{Key: "time", Value: end},
 		{Key: "status", Value: resources.Unsettled},
 		{Key: "type", Value: Consumption},
 		{Key: "order_id", Value: primitive.Regex{Pattern: "^bh_"}},
-		{Key: "app_type", Value: bson.M{"$nin": []int{int(resources.AppType[resources.CVM]), int(resources.AppType[resources.LLMToken])}}},
+		{
+			Key: "app_type",
+			Value: bson.M{
+				"$nin": []int{
+					int(resources.AppType[resources.CVM]),
+					int(resources.AppType[resources.LLMToken]),
+				},
+			},
+		},
 	}
 	for name, filter := range map[string]bson.D{
 		"owner billing lookup":      ownerFilter,

@@ -137,8 +137,9 @@ func waitForInvoiceMetadata(invoiceID string) (*stripe.Invoice, error) {
 		}
 
 		// Check if critical metadata fields are present
-		// For upgrade: metadata is on the invoice (subscription_operator, new_plan_name, payment_id)
-		// For downgrade: metadata is on the subscription (subscription_operator, new_plan_name, transaction_id)
+		// For upgrade: metadata is on the invoice (subscription_operator, new_plan_name,
+		// payment_id) For downgrade: metadata is on the subscription (subscription_operator,
+		// new_plan_name, transaction_id)
 		operator := inv.Metadata["subscription_operator"]
 		hasOperator := operator != ""
 		hasPlan := inv.Metadata["new_plan_name"] != ""
@@ -146,7 +147,8 @@ func waitForInvoiceMetadata(invoiceID string) (*stripe.Invoice, error) {
 
 		var hasMetadata bool
 
-		// Check if this might be a downgrade (invoice metadata is empty or missing subscription_operator)
+		// Check if this might be a downgrade (invoice metadata is empty or missing
+		// subscription_operator)
 		// For downgrade, DowngradePlan sets metadata on subscription, not invoice
 		mightBeDowngrade := !hasOperator ||
 			operator == string(types.SubscriptionTransactionTypeDowngraded)
@@ -398,7 +400,8 @@ func getNotificationRecipient(userUID uuid.UUID) (*types.NotificationRecipient, 
 	return nr, nil
 }
 
-// applyStripePaymentToWorkspaceSubscription Synchronize the Stripe field only in payment success events
+// applyStripePaymentToWorkspaceSubscription Synchronize the Stripe field only in payment success
+// events
 func applyStripePaymentToWorkspaceSubscription(
 	tx *gorm.DB,
 	workspaceSubscription *types.WorkspaceSubscription,
@@ -605,8 +608,9 @@ func handleSubscriptionCreateOrRenew(
 			return err
 		}
 
-		// Detect and record the old subscriptions that need to be closed (for the scenario of recreating subscriptions in debt status)
-		// In memory records, such as finalizeWorkspaceSubscriptionSuccess again after the completion of processing
+		// Detect and record the old subscriptions that need to be closed (for the scenario of
+		// recreating subscriptions in debt status) In memory records, such as
+		// finalizeWorkspaceSubscriptionSuccess again after the completion of processing
 		var oldSubscriptionID string
 		if ws != nil && isInitial && ws.Stripe != nil && ws.Stripe.SubscriptionID != "" &&
 			ws.Stripe.SubscriptionID != subscription.ID {
@@ -674,7 +678,8 @@ func handleSubscriptionCreateOrRenew(
 				err,
 			)
 		}
-		// After the transaction is successful, the old subscription is closed asynchronously (at this point, the database has been updated to the new subscription ID).
+		// After the transaction is successful, the old subscription is closed asynchronously (at
+		// this point, the database has been updated to the new subscription ID).
 		if oldSubscriptionID != "" {
 			go func(subID string) {
 				// 添加短暂延迟，确保数据库事务已完全提交

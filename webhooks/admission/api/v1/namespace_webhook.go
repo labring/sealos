@@ -30,7 +30,7 @@ import (
 var nlog = logf.Log.WithName("namespace-validating-webhook")
 
 //+kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:webhook:path=/mutate--v1-namespace,mutating=true,failurePolicy=ignore,sideEffects=None,groups=core,resources=namespaces,verbs=create;update,versions=v1,name=mnamespace.sealos.io,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=/mutate--v1-namespace,mutating=true,failurePolicy=ignore,sideEffects=None,groups=core,resources=namespaces,verbs=create;update,versions=v1,name=mnamespace.sealos.io,admissionReviewVersions=v1
 
 //+kubebuilder:object:generate=false
 
@@ -53,7 +53,7 @@ type NamespaceValidator struct {
 	client.Client
 }
 
-//+kubebuilder:webhook:path=/validate--v1-namespace,mutating=false,failurePolicy=ignore,sideEffects=None,groups=core,resources=namespaces,verbs=create;update;delete,versions=v1,name=vnamespace.sealos.io,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=/validate--v1-namespace,mutating=false,failurePolicy=ignore,sideEffects=None,groups=core,resources=namespaces,verbs=create;update;delete,versions=v1,name=vnamespace.sealos.io,admissionReviewVersions=v1
 
 func (v *NamespaceValidator) ValidateCreate(
 	ctx context.Context,

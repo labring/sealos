@@ -391,7 +391,8 @@ func (impl *iptablesImpl) cleanupIptablesLeftovers() (encounteredError bool) {
 		}
 	}
 
-	// Flush and remove all of our chains. Flushing all chains before removing them also removes all links between chains first.
+	// Flush and remove all of our chains. Flushing all chains before removing them also removes all
+	// links between chains first.
 	for _, ch := range iptablesChains {
 		if err := impl.iptables.FlushChain(ch.table, ch.chain); err != nil {
 			if !utiliptables.IsNotFoundError(err) {

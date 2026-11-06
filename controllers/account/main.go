@@ -514,7 +514,8 @@ func main() {
 		accountReconciler,
 		trafficDBClient,
 	)
-	// workspaceSubscriptionProcessor, err := controllers.NewWorkspaceSubscriptionProcessor(accountReconciler, workspaceTrafficProcessor)
+	// workspaceSubscriptionProcessor, err :=
+	// controllers.NewWorkspaceSubscriptionProcessor(accountReconciler, workspaceTrafficProcessor)
 	// if err != nil {
 	//	setupLog.Error(err, "unable to create workspace subscription processor")
 	//	os.Exit(1)

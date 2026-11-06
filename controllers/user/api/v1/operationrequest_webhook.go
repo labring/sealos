@@ -53,7 +53,7 @@ func (r ReqMutator) Default(_ context.Context, req *Operationrequest) error {
 	return nil
 }
 
-//+kubebuilder:webhook:path=/validate-user-sealos-io-v1-operationrequest,mutating=false,failurePolicy=fail,sideEffects=None,groups=user.sealos.io,resources=operationrequests,verbs=create;update,versions=v1,name=voperationrequest.kb.io,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=/validate-user-sealos-io-v1-operationrequest,mutating=false,failurePolicy=fail,sideEffects=None,groups=user.sealos.io,resources=operationrequests,verbs=create;update,versions=v1,name=voperationrequest.kb.io,admissionReviewVersions=v1
 //+kubebuilder:object:generate=false
 
 type ReqValidator struct {
@@ -64,7 +64,8 @@ func (r ReqValidator) ValidateCreate(
 	ctx context.Context,
 	req *Operationrequest,
 ) (admission.Warnings, error) {
-	// todo check request, _ := admission.RequestFromContext(ctx), request.UserInfo.Username if legal
+	// todo check request, _ := admission.RequestFromContext(ctx), request.UserInfo.Username if
+	// legal
 
 	// list all requests in the same namespace with a same owner
 	var reqList OperationrequestList
@@ -99,7 +100,8 @@ func (r ReqValidator) ValidateUpdate(
 	_ context.Context,
 	oldReq, newReq *Operationrequest,
 ) (admission.Warnings, error) {
-	// todo check request, _ := admission.RequestFromContext(ctx), request.UserInfo.Username if legal
+	// todo check request, _ := admission.RequestFromContext(ctx), request.UserInfo.Username if
+	// legal
 	if oldReq.Spec != newReq.Spec {
 		message := "operation request spec do not support update"
 		return admission.Warnings{message}, errors.New(message)

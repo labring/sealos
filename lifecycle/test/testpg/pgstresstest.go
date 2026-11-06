@@ -93,7 +93,8 @@ func RunPostgresTest(config, userNamespace string) error {
 		err error
 	)
 	obj := &unstructured.Unstructured{}
-	_, gvk, err = yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme).Decode([]byte(metaCRD), nil, obj)
+	_, gvk, err = yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme).
+		Decode([]byte(metaCRD), nil, obj)
 	if err != nil {
 		return err
 	}
@@ -123,7 +124,11 @@ func RunPostgresTest(config, userNamespace string) error {
 }
 
 // PostgresClusterRandomCreate Create random PostgresCluster.
-func PostgresClusterRandomCreate(ctx context.Context, dr dynamic.ResourceInterface, obj *unstructured.Unstructured) ([]*unstructured.Unstructured, error) {
+func PostgresClusterRandomCreate(
+	ctx context.Context,
+	dr dynamic.ResourceInterface,
+	obj *unstructured.Unstructured,
+) ([]*unstructured.Unstructured, error) {
 	var err error
 
 	var bigN *big.Int
@@ -148,7 +153,13 @@ func PostgresClusterRandomCreate(ctx context.Context, dr dynamic.ResourceInterfa
 }
 
 // PostgresGet Get PostgresCluster.
-func PostgresGet(ctx context.Context, dr dynamic.ResourceInterface, cs *kubernetes.Clientset, obj *unstructured.Unstructured, userNamespace string) error {
+func PostgresGet(
+	ctx context.Context,
+	dr dynamic.ResourceInterface,
+	cs *kubernetes.Clientset,
+	obj *unstructured.Unstructured,
+	userNamespace string,
+) error {
 	objGET, err := dr.Get(ctx, obj.GetName(), metav1.GetOptions{})
 	if err != nil {
 		log.Printf("select resource ERROR: %v\n", err)
@@ -158,7 +169,9 @@ func PostgresGet(ctx context.Context, dr dynamic.ResourceInterface, cs *kubernet
 	oobj, ismap := objGET.Object["status"].(map[string]any)
 	if ismap {
 		if oobj["state"] != "running" {
-			events, _ := cs.CoreV1().Events(userNamespace).List(context.TODO(), metav1.ListOptions{TypeMeta: metav1.TypeMeta{Kind: "Event"}})
+			events, _ := cs.CoreV1().
+				Events(userNamespace).
+				List(context.TODO(), metav1.ListOptions{TypeMeta: metav1.TypeMeta{Kind: "Event"}})
 			for _, event := range events.Items {
 				fmt.Println(event.Message)
 			}
@@ -169,7 +182,11 @@ func PostgresGet(ctx context.Context, dr dynamic.ResourceInterface, cs *kubernet
 }
 
 // PostgresDelete Delete PostgresCluster.
-func PostgresDelete(ctx context.Context, dr dynamic.ResourceInterface, obj *unstructured.Unstructured) {
+func PostgresDelete(
+	ctx context.Context,
+	dr dynamic.ResourceInterface,
+	obj *unstructured.Unstructured,
+) {
 	//Delete
 	err := dr.Delete(ctx, obj.GetName(), metav1.DeleteOptions{})
 	if err != nil {
@@ -191,7 +208,11 @@ func GetKubeconfig(configpath string) (*restclient.Config, error) {
 	return config, nil
 }
 
-func GetGVRdyClientAndClientSet(gvk *schema.GroupVersionKind, configpath string, namespace string) (dr dynamic.ResourceInterface, cs *kubernetes.Clientset, err error) {
+func GetGVRdyClientAndClientSet(
+	gvk *schema.GroupVersionKind,
+	configpath string,
+	namespace string,
+) (dr dynamic.ResourceInterface, cs *kubernetes.Clientset, err error) {
 	config, err := GetKubeconfig(configpath)
 	if err != nil {
 		log.Printf("failed to get kubeconfig: %v", err)

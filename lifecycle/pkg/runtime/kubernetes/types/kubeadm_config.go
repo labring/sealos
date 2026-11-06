@@ -17,10 +17,12 @@ package types
 import (
 	"fmt"
 	"slices"
+	"time"
 
 	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta4"
 
 	"github.com/imdario/mergo"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	versionutil "k8s.io/apimachinery/pkg/util/version"
 	kubeproxyconfigv1alpha1 "k8s.io/kube-proxy/config/v1alpha1"
@@ -123,11 +125,16 @@ func (k *KubeadmConfig) FetchDefaultKubeadmConfig() string {
 	return DefaultKubeadmInitConfiguration()
 }
 
-// Merge Using github.com/imdario/mergo to merge KubeadmConfig to the CloudImage default kubeadm Config, overwrite some field.
-// if defaultKubeadmConfig file not exist, use default raw kubeadm Config to merge k.KubeConfigSpec empty value
+// Merge Using github.com/imdario/mergo to merge KubeadmConfig to the CloudImage default kubeadm
+// Config, overwrite some field. if defaultKubeadmConfig file not exist, use default raw kubeadm
+// Config to merge k.KubeConfigSpec empty value
 func (k *KubeadmConfig) Merge(kubeadmYamlPath string) error {
 	if kubeadmYamlPath == "" {
-		defaultKubeadmConfig, err := LoadKubeadmConfigs(k.FetchDefaultKubeadmConfig(), false, decode.CRDFromString)
+		defaultKubeadmConfig, err := LoadKubeadmConfigs(
+			k.FetchDefaultKubeadmConfig(),
+			false,
+			decode.CRDFromString,
+		)
 		if err != nil {
 			return err
 		}
@@ -156,6 +163,12 @@ func (k *KubeadmConfig) Merge(kubeadmYamlPath string) error {
 func (k *KubeadmConfig) ToConvertedKubeadmConfig() (*ConvertedKubeadmConfig, error) {
 	conversion := &ConvertedKubeadmConfig{}
 	var err error
+
+	// The kubeadm v1beta3/v1beta4 conversion helpers dereference
+	// Timeouts.Discovery without a nil check.
+	if k.JoinConfiguration.Timeouts.Discovery == nil {
+		k.JoinConfiguration.Timeouts.Discovery = &metav1.Duration{Duration: 5 * time.Minute}
+	}
 
 	switch k.InitConfiguration.APIVersion {
 	case KubeadmV1beta3, "": // defaults to v1beta3
@@ -250,8 +263,13 @@ func (k *KubeadmConfig) FinalizeFeatureGatesConfiguration() {
 	if k.ClusterConfiguration.KubernetesVersion == "" {
 		panic("kubernetesVersion must not been null")
 	}
-	extraArgs := [][]kubeadm.Arg{k.ClusterConfiguration.ControllerManager.ExtraArgs, k.ClusterConfiguration.APIServer.ExtraArgs, k.ClusterConfiguration.Scheduler.ExtraArgs}
-	if versionutil.MustParseSemantic(k.ClusterConfiguration.KubernetesVersion).LessThan(versionutil.MustParseSemantic("1.19.0")) {
+	extraArgs := [][]kubeadm.Arg{
+		k.ClusterConfiguration.ControllerManager.ExtraArgs,
+		k.ClusterConfiguration.APIServer.ExtraArgs,
+		k.ClusterConfiguration.Scheduler.ExtraArgs,
+	}
+	if versionutil.MustParseSemantic(k.ClusterConfiguration.KubernetesVersion).
+		LessThan(versionutil.MustParseSemantic("1.19.0")) {
 		for i, args := range extraArgs {
 			for j, v := range args {
 				if v.Name == "cluster-signing-duration" {
@@ -289,10 +307,14 @@ var featureGatesUpdate = map[string][]string{
 	"EphemeralContainers": {"AtLeast", "v1.26.0"},
 }
 
-func deleteFeatureMap[T string | bool](currentFeature map[string]T, versionStr string) map[string]T {
+func deleteFeatureMap[T string | bool](
+	currentFeature map[string]T,
+	versionStr string,
+) map[string]T {
 	for k, v := range featureGatesUpdate {
 		if v[0] == "LessThan" &&
-			versionutil.MustParseSemantic(versionStr).LessThan(versionutil.MustParseSemantic(v[1])) {
+			versionutil.MustParseSemantic(versionStr).
+				LessThan(versionutil.MustParseSemantic(v[1])) {
 			delete(currentFeature, k)
 		}
 		if v[0] == "AtLeast" &&
@@ -317,7 +339,11 @@ func updateFeatureGatesConfiguration(featureGates any, version string) any {
 	return nil
 }
 
-func LoadKubeadmConfigs(arg string, setDefaults bool, decodeFunc func(arg string, kind string) (any, error)) (*KubeadmConfig, error) {
+func LoadKubeadmConfigs(
+	arg string,
+	setDefaults bool,
+	decodeFunc func(arg string, kind string) (any, error),
+) (*KubeadmConfig, error) {
 	if setDefaults {
 		decodeFunc = func(arg string, kind string) (any, error) {
 			ret, err := decodeFunc(arg, kind)

@@ -1257,7 +1257,8 @@ func (r *DebtReconciler) getUserMutex(userUID uuid.UUID) (*sync.Mutex, error) {
 	return mutex, nil
 }
 
-// Parallel processing of user debt status, the same user simultaneously through the lock to implement a debt refresh processing.
+// Parallel processing of user debt status, the same user simultaneously through the lock to
+// implement a debt refresh processing.
 func (r *DebtReconciler) processUsersInParallel(users []uuid.UUID) {
 	var (
 		wg        sync.WaitGroup

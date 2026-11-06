@@ -131,7 +131,9 @@ func IsLocalIP(ip string, addrs *[]net.Addr) bool {
 		ip = defaultIP
 	}
 	for _, address := range *addrs {
-		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() && ipnet.IP.To4() != nil && ipnet.IP.String() == ip {
+		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() &&
+			ipnet.IP.To4() != nil &&
+			ipnet.IP.String() == ip {
 			return true
 		}
 	}
@@ -140,7 +142,8 @@ func IsLocalIP(ip string, addrs *[]net.Addr) bool {
 
 func LocalIP(addrs *[]net.Addr) string {
 	for _, address := range *addrs {
-		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() && ipnet.IP.To4() != nil {
+		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() &&
+			ipnet.IP.To4() != nil {
 			return ipnet.IP.String()
 		}
 	}

@@ -81,13 +81,13 @@ var errFinalDeletionCancelled = errors2.New("final deletion cancelled by namespa
 //+kubebuilder:rbac:groups=batch,resources=cronjobs,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=apps.kubeblocks.io,resources=clusters,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=apps.kubeblocks.io,resources=clusters,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=apps.kubeblocks.io,resources=clusters/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=apps.kubeblocks.io,resources=opsrequests,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=apps.kubeblocks.io,resources=opsrequests,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=apps.kubeblocks.io,resources=opsrequests/status,verbs=get;update;watch
-//+kubebuilder:rbac:groups=app.sealos.io,resources=apps,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=app.sealos.io,resources=instances,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=app.sealos.io,resources=apps,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=app.sealos.io,resources=instances,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
 
 //nolint:gocyclo
 func (r *NamespaceReconciler) Reconcile(
@@ -295,7 +295,8 @@ func (r *NamespaceReconciler) Reconcile(
 				return "suspend/resume"
 			}(),
 		},
-		// Case 4: debt completion status handling network OR network completion status handling debt
+		// Case 4: debt completion status handling network OR network completion status handling
+		// debt
 		{
 			condition: func() bool {
 				// Subcase 4a: debt completed but network not completed
@@ -418,7 +419,8 @@ func (r *NamespaceReconciler) SuspendUserResource(ctx context.Context, namespace
 	// IMPORTANT: The order of operations matters!
 	// 1. suspendOrphanPod must run FIRST because it needs to recreate pods with the debt scheduler,
 	//    which requires pod creation permissions.
-	// 2. limitResourceQuotaCreate runs immediately after to quickly block all new resource creation,
+	// 2. limitResourceQuotaCreate runs immediately after to quickly block all new resource
+	// creation,
 	//    preventing any new workloads from being created during the suspension process.
 	pipelines := []func(context.Context, string) error{
 		r.suspendOrphanPod,          // Recreate orphan pods with debt scheduler (requires pod creation)
@@ -663,7 +665,8 @@ func (r *NamespaceReconciler) suspendKBCluster(ctx context.Context, namespace st
 			}
 		}
 
-		// Get current backup configuration (only once, used for both saving state and disabling backup)
+		// Get current backup configuration (only once, used for both saving state and disabling
+		// backup)
 		backupEnabled := false
 		backup, hasBackup, err := unstructured.NestedMap(cluster.Object, "spec", "backup")
 		if err != nil {
@@ -804,7 +807,8 @@ func (r *NamespaceReconciler) suspendKBCluster(ctx context.Context, namespace st
 //		return err
 //	}
 //	for _, kbCluster := range kbClusterList.Items {
-//		if kbCluster.Status.Phase == kbv1alpha1.StoppedClusterPhase || kbCluster.Status.Phase == kbv1alpha1.StoppingClusterPhase {
+// 		if kbCluster.Status.Phase == kbv1alpha1.StoppedClusterPhase || kbCluster.Status.Phase ==
+// kbv1alpha1.StoppingClusterPhase {
 //			continue
 //		}
 //		ops := kbv1alpha1.OpsRequest{}
@@ -819,7 +823,7 @@ func (r *NamespaceReconciler) suspendKBCluster(ctx context.Context, namespace st
 //			return nil
 //		})
 //		if err != nil {
-//			r.Log.Error(err, "create ops request failed", "ops", ops.Name, "namespace", ops.Namespace)
+// 			r.Log.Error(err, "create ops request failed", "ops", ops.Name, "namespace", ops.Namespace)
 //		}
 //	}
 //	return nil
@@ -847,7 +851,8 @@ func deployViaFrontend(annotations map[string]string) bool {
 	return hasMinReplicas || hasMaxReplicas || hasResize
 }
 
-// suspendHPA handles HPA suspension logic: reads HPA config, saves to pause annotation, and deletes HPA
+// suspendHPA handles HPA suspension logic: reads HPA config, saves to pause annotation, and deletes
+// HPA
 // Returns true if annotations were modified, false otherwise
 func (r *NamespaceReconciler) suspendHPA(
 	ctx context.Context,
@@ -1887,7 +1892,8 @@ func (r *NamespaceReconciler) resumeOrphanDeployments(ctx context.Context, names
 			needsUpdate = true
 		}
 
-		// Restore HPA only if original replicas was not 0 (meaning it was actually running before suspension)
+		// Restore HPA only if original replicas was not 0 (meaning it was actually running before
+		// suspension)
 		// Call resumeHPA before update to modify annotations in one go
 		if originalState.Replicas != 0 {
 			hpaModified, err := r.resumeHPA(
@@ -2117,7 +2123,8 @@ func (r *NamespaceReconciler) resumeOrphanStatefulSets(
 			needsUpdate = true
 		}
 
-		// Restore HPA only if original replicas was not 0 (meaning it was actually running before suspension)
+		// Restore HPA only if original replicas was not 0 (meaning it was actually running before
+		// suspension)
 		// Call resumeHPA before update to modify annotations in one go
 		if originalState.Replicas != 0 {
 			hpaModified, err := r.resumeHPA(
