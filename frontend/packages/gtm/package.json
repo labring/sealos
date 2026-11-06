@@ -50,6 +50,7 @@
     }
   },
   "devDependencies": {
+    "next": "15.5.28",
     "@types/react": "18.3.27",
     "@types/node": "18.15.11",
     "typescript": "^5.0.0"

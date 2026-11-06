@@ -61,14 +61,8 @@
     ".": [
       "./src/index.ts"
     ],
-    "./*": [
-      "./src/components/ui/*.ts",
-      "./src/components/ui/*.tsx",
-      "./src/components/*/index.ts",
-      "./src/components/*/index.tsx",
-      "./src/components/*.ts",
-      "./src/components/*.tsx"
-    ]
+    "./table-layout": "./src/components/table-layout/index.tsx",
+    "./*": "./src/components/ui/*.tsx"
   },
   "types": "./src/index.ts",
   "typesVersions": {
