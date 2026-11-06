@@ -2449,7 +2449,7 @@ func processNoPaymentOperationInTransaction(
 			if _, err := services.StripeServiceInstance.UpdateSubscription(
 				subscription.Stripe.SubscriptionID,
 				&stripe.SubscriptionParams{
-					CancelAtPeriodEnd: stripe.Bool(true),
+					CancelAtPeriodEnd: new(true),
 				},
 			); err != nil {
 				SetErrorResp(
@@ -2508,7 +2508,7 @@ func processNoPaymentOperationInTransaction(
 			if _, err := services.StripeServiceInstance.UpdateSubscription(
 				subscription.Stripe.SubscriptionID,
 				&stripe.SubscriptionParams{
-					CancelAtPeriodEnd: stripe.Bool(false),
+					CancelAtPeriodEnd: new(false),
 				},
 			); err != nil {
 				SetErrorResp(
@@ -2821,7 +2821,7 @@ func finalizeWorkspaceSubscriptionSuccess(
 			CurrentPeriodStartAt: time.Now().UTC(),
 			CurrentPeriodEndAt:   time.Now().UTC().AddDate(0, 1, 0), // Monthly
 			CreateAt:             time.Now().UTC(),
-			ExpireAt:             stripe.Time(time.Now().UTC().AddDate(0, 1, 0)),
+			ExpireAt:             new(time.Now().UTC().AddDate(0, 1, 0)),
 		}
 		if wsTransaction.Period != "" {
 			period, err := types.ParsePeriod(wsTransaction.Period)
@@ -2829,7 +2829,7 @@ func finalizeWorkspaceSubscriptionSuccess(
 				workspaceSubscription.CurrentPeriodEndAt = workspaceSubscription.CurrentPeriodStartAt.Add(
 					period,
 				)
-				workspaceSubscription.ExpireAt = stripe.Time(
+				workspaceSubscription.ExpireAt = new(
 					workspaceSubscription.CurrentPeriodEndAt,
 				)
 			}
@@ -2847,7 +2847,7 @@ func finalizeWorkspaceSubscriptionSuccess(
 			workspaceSubscription.CurrentPeriodEndAt = time.Now().UTC().Add(periodDuration)
 		}
 		if workspaceSubscription.ExpireAt.Before(workspaceSubscription.CurrentPeriodEndAt) {
-			workspaceSubscription.ExpireAt = stripe.Time(workspaceSubscription.CurrentPeriodEndAt)
+			workspaceSubscription.ExpireAt = new(workspaceSubscription.CurrentPeriodEndAt)
 		}
 	}
 
@@ -4568,7 +4568,7 @@ func createOrUpdateWorkspaceSubscription(
 			CurrentPeriodStartAt: now,
 			CurrentPeriodEndAt:   endTime,
 			CreateAt:             now,
-			ExpireAt:             stripe.Time(endTime),
+			ExpireAt:             new(endTime),
 		}
 	}
 

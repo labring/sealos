@@ -130,7 +130,7 @@ type AppCostDetail struct {
 type WorkspaceAppCostWithResources struct {
 	AppName         string          `json:"app_name,omitempty"          bson:"app_name,omitempty"  example:"app"`
 	AppType         int32           `json:"app_type,omitempty"          bson:"app_type,omitempty"  example:"8"`
-	Time            time.Time       `json:"time,omitempty"              bson:"time,omitempty"      example:"2021-01-01T00:00:00Z"`
+	Time            time.Time       `json:"time"              bson:"time,omitempty"      example:"2021-01-01T00:00:00Z"`
 	OrderID         string          `json:"order_id,omitempty"          bson:"order_id,omitempty"  example:"order_id"`
 	Namespace       string          `json:"namespace,omitempty"         bson:"namespace,omitempty" example:"ns-admin"`
 	Amount          int64           `json:"amount,omitempty"            bson:"amount,omitempty"    example:"100000000"`
@@ -339,7 +339,7 @@ type RechargeDiscountResp struct {
 }
 
 type NamespaceBillingHistoryResp struct {
-	Data    NamespaceBillingHistoryRespData `json:"data,omitempty"    bson:"data,omitempty"`
+	Data    NamespaceBillingHistoryRespData `json:"data"    bson:"data,omitempty"`
 	Message string                          `json:"message,omitempty" bson:"message"        example:"successfully retrieved namespace list"`
 }
 
@@ -348,7 +348,7 @@ type NamespaceBillingHistoryRespData struct {
 }
 
 type GetPropertiesResp struct {
-	Data    GetPropertiesRespData `json:"data,omitempty"    bson:"data,omitempty"`
+	Data    GetPropertiesRespData `json:"data"    bson:"data,omitempty"`
 	Message string                `json:"message,omitempty" bson:"message"        example:"successfully retrieved properties"`
 }
 
@@ -583,7 +583,7 @@ type UseGiftCodeRespData struct {
 }
 
 type UseGiftCodeResp struct {
-	Data    UseGiftCodeRespData `json:"data,omitempty"    bson:"data,omitempty"`
+	Data    UseGiftCodeRespData `json:"data"    bson:"data,omitempty"`
 	Message string              `json:"message,omitempty" bson:"message"        example:"Gift code successfully redeemed"`
 }
 
@@ -607,7 +607,7 @@ type GetRealNameInfoRespData struct {
 }
 
 type GetRealNameInfoResp struct {
-	Data    GetRealNameInfoRespData `json:"data,omitempty"    bson:"data,omitempty"`
+	Data    GetRealNameInfoRespData `json:"data"    bson:"data,omitempty"`
 	Message string                  `json:"message,omitempty" bson:"message"        example:"Successfully retrieved real name information"`
 }
 

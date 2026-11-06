@@ -38,7 +38,7 @@ func (info Info) String() string {
 }
 
 type Output struct {
-	SealosVersion     Info               `json:"SealosVersion,omitempty" yaml:"SealosVersion,omitempty"`
+	SealosVersion     Info               `json:"SealosVersion" yaml:"SealosVersion,omitempty"`
 	CriRuntimeVersion *CriRuntimeVersion `json:"CriVersionInfo,omitempty" yaml:"CriVersionInfo,omitempty"`
 	KubernetesVersion *KubernetesVersion `json:"KubernetesVersionInfo,omitempty" yaml:"KubernetesVersionInfo,omitempty"`
 }

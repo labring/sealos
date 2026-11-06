@@ -83,7 +83,7 @@ func parse(str string, semver bool) (*Version, error) {
 		}
 		v.preRelease, v.buildMetadata = extraParts[1], extraParts[2]
 
-		for _, comp := range strings.Split(v.preRelease, ".") {
+		for comp := range strings.SplitSeq(v.preRelease, ".") {
 			if _, err := strconv.ParseUint(comp, 10, 0); err == nil {
 				if strings.HasPrefix(comp, "0") && comp != "0" {
 					return nil, fmt.Errorf(

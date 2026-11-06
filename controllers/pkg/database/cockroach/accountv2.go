@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"maps"
 	"os"
 	"strconv"
 	"strings"
@@ -333,9 +334,7 @@ func (c *Cockroach) GetUser(ops *types.UserQueryOpts) (*types.User, error) {
 
 func cloneMap(m map[int64]int64) map[int64]int64 {
 	newMap := make(map[int64]int64, len(m))
-	for k, v := range m {
-		newMap[k] = v
-	}
+	maps.Copy(newMap, m)
 	return newMap
 }
 
@@ -2754,10 +2753,9 @@ func backoffDuration(retry int) time.Duration {
 	base := 50 * time.Millisecond
 	_max := 1 * time.Second
 
-	wait := base * time.Duration(1<<retry) // exponential backoff
-	if wait > _max {
-		wait = _max
-	}
+	wait := min(
+		// exponential backoff
+		base*time.Duration(1<<retry), _max)
 	return wait
 }
 

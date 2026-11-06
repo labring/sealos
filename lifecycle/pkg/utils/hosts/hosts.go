@@ -133,7 +133,7 @@ func (h *HostFile) writeToFile(hostnameMap *linkedhashmap.Map, path string) {
 	}
 	defer fp.Close()
 
-	hostnameMap.Each(func(key interface{}, value interface{}) {
+	hostnameMap.Each(func(key any, value any) {
 		if v, ok := value.(*hostname); ok {
 			_, writeErr := fp.WriteString(v.toString())
 			if writeErr != nil {
@@ -191,7 +191,7 @@ func (h *HostFile) ListCurrentHosts() {
 	if currHostsMap == nil {
 		return
 	}
-	currHostsMap.Each(func(key interface{}, value interface{}) {
+	currHostsMap.Each(func(key any, value any) {
 		if v, ok := value.(*hostname); ok {
 			fmt.Print(v.toString())
 		}

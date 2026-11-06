@@ -221,7 +221,7 @@ func TestBillingQueriesUseIndexesWithMongoRuntime(t *testing.T) {
 	}
 	end := time.Date(2026, time.July, 7, 10, 0, 0, 0, time.UTC)
 	documents := make([]any, 0, 50000)
-	for i := 0; i < 50000; i++ {
+	for i := range 50000 {
 		owner := "owner-other"
 		billingTime := end.Add(time.Duration(i%24) * time.Hour)
 		status := resources.Settled

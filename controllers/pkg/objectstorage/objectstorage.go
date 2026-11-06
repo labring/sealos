@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -407,12 +408,7 @@ func isUsageBytesTargetMetric(name string) bool {
 	targetMetrics := []string{
 		"minio_bucket_usage_total_bytes",
 	}
-	for _, target := range targetMetrics {
-		if name == target {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(targetMetrics, name)
 }
 
 func isUsageAndTrafficBytesTargetMetric(name string) bool {
@@ -421,12 +417,7 @@ func isUsageAndTrafficBytesTargetMetric(name string) bool {
 		"minio_bucket_traffic_sent_bytes",
 		"minio_bucket_traffic_received_bytes",
 	}
-	for _, target := range targetMetrics {
-		if name == target {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(targetMetrics, name)
 }
 
 func getUserWithBucket(bucket string) string {

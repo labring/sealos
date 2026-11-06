@@ -62,13 +62,13 @@ func init() {
 	utilruntime.Must(proxyconfig.AddToScheme(scheme))
 }
 
-func overrideKubeletDefaults(obj interface{}) {
+func overrideKubeletDefaults(obj any) {
 	kubeletconfig.SetObjectDefaults_KubeletConfiguration(obj.(*kubelet.KubeletConfiguration))
 	logger.Debug("override defaults of kubelet configuration")
 	obj.(*kubelet.KubeletConfiguration).ResolverConfig = nil
 }
 
-func CRDFromFile(filePath string, kind string) (interface{}, error) {
+func CRDFromFile(filePath string, kind string) (any, error) {
 	file, err := os.Open(filepath.Clean(filePath))
 	if err != nil {
 		return nil, err
@@ -77,7 +77,7 @@ func CRDFromFile(filePath string, kind string) (interface{}, error) {
 	return CRDFromReader(file, kind)
 }
 
-func CRDFromReader(r io.Reader, kind string) (interface{}, error) {
+func CRDFromReader(r io.Reader, kind string) (any, error) {
 	d := yaml.NewYAMLOrJSONDecoder(r, 4096)
 
 	for {
@@ -106,11 +106,11 @@ func CRDFromReader(r io.Reader, kind string) (interface{}, error) {
 	return nil, nil
 }
 
-func CRDFromString(config string, kind string) (interface{}, error) {
+func CRDFromString(config string, kind string) (any, error) {
 	return CRDFromReader(strings.NewReader(config), kind)
 }
 
-func typeConversion(raw []byte, metaType *metav1.TypeMeta) (interface{}, error) {
+func typeConversion(raw []byte, metaType *metav1.TypeMeta) (any, error) {
 	var obj k8sruntime.Object
 	switch metaType.Kind {
 	case Cluster:

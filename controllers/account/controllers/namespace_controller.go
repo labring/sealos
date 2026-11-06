@@ -31,7 +31,6 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
-	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -1599,7 +1598,7 @@ func (r *NamespaceReconciler) suspendOrphanCronJob(ctx context.Context, namespac
 
 		// Set suspend to true if not already suspended
 		if !currentlySuspended {
-			cronJob.Spec.Suspend = ptr.To(true)
+			cronJob.Spec.Suspend = new(true)
 			needsUpdate = true
 		}
 
@@ -1677,7 +1676,7 @@ func (r *NamespaceReconciler) resumeOrphanCronJob(ctx context.Context, namespace
 
 		// Restore original suspend state
 		if !originalState.Suspend {
-			cronJob.Spec.Suspend = ptr.To(originalState.Suspend)
+			cronJob.Spec.Suspend = new(originalState.Suspend)
 			needsUpdate = true
 		}
 
@@ -1802,7 +1801,7 @@ func (r *NamespaceReconciler) suspendOrphanDeployments(
 
 		// Set replicas to 0 if not already 0
 		if replicas != 0 {
-			deploy.Spec.Replicas = ptr.To(int32(0))
+			deploy.Spec.Replicas = new(int32(0))
 			needsUpdate = true
 		}
 
@@ -1878,7 +1877,7 @@ func (r *NamespaceReconciler) resumeOrphanDeployments(ctx context.Context, names
 
 		// Restore original replicas only if not 0
 		if originalState.Replicas != 0 {
-			deploy.Spec.Replicas = ptr.To(originalState.Replicas)
+			deploy.Spec.Replicas = new(originalState.Replicas)
 			needsUpdate = true
 		}
 
@@ -2029,7 +2028,7 @@ func (r *NamespaceReconciler) suspendOrphanStatefulSets(
 
 		// Set replicas to 0 if not already 0
 		if replicas != 0 {
-			sts.Spec.Replicas = ptr.To(int32(0))
+			sts.Spec.Replicas = new(int32(0))
 			needsUpdate = true
 		}
 
@@ -2108,7 +2107,7 @@ func (r *NamespaceReconciler) resumeOrphanStatefulSets(
 
 		// Restore original replicas only if not 0
 		if originalState.Replicas != 0 {
-			sts.Spec.Replicas = ptr.To(originalState.Replicas)
+			sts.Spec.Replicas = new(originalState.Replicas)
 			needsUpdate = true
 		}
 
@@ -2235,7 +2234,7 @@ func (r *NamespaceReconciler) suspendOrphanReplicaSets(
 
 		// Set replicas to 0 if not already 0
 		if replicas != 0 {
-			rs.Spec.Replicas = ptr.To(int32(0))
+			rs.Spec.Replicas = new(int32(0))
 			needsUpdate = true
 		}
 
@@ -2308,7 +2307,7 @@ func (r *NamespaceReconciler) resumeOrphanReplicaSets(ctx context.Context, names
 
 		// Restore original replicas only if not 0
 		if originalState.Replicas != 0 {
-			rs.Spec.Replicas = ptr.To(originalState.Replicas)
+			rs.Spec.Replicas = new(originalState.Replicas)
 			needsUpdate = true
 		}
 
@@ -2844,7 +2843,7 @@ func (r *NamespaceReconciler) suspendOrphanJob(ctx context.Context, namespace st
 
 		// Set suspend to true if not already suspended
 		if !currentlySuspended {
-			job.Spec.Suspend = ptr.To(true)
+			job.Spec.Suspend = new(true)
 			needsUpdate = true
 		}
 
@@ -2919,7 +2918,7 @@ func (r *NamespaceReconciler) resumeOrphanJob(ctx context.Context, namespace str
 
 		// Restore original suspend state
 		if !originalState.Suspend {
-			job.Spec.Suspend = ptr.To(originalState.Suspend)
+			job.Spec.Suspend = new(originalState.Suspend)
 			needsUpdate = true
 		}
 

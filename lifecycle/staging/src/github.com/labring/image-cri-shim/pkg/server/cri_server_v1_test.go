@@ -184,9 +184,7 @@ func TestRewriteImageConcurrentAccess(t *testing.T) {
 		results := make(chan string, goroutines*iterations)
 		errCh := make(chan error, goroutines)
 		for range goroutines {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
+			wg.Go(func() {
 				for range iterations {
 					out, found, _ := service.rewriteImage(image, "pull")
 					if !found {
@@ -195,7 +193,7 @@ func TestRewriteImageConcurrentAccess(t *testing.T) {
 					}
 					results <- out
 				}
-			}()
+			})
 		}
 		wg.Wait()
 		close(results)
@@ -438,6 +436,14 @@ func (f *fakeImageClient) ListImages(
 	opts ...grpc.CallOption,
 ) (*api.ListImagesResponse, error) {
 	return &api.ListImagesResponse{}, nil
+}
+
+func (f *fakeImageClient) StreamImages(
+	ctx context.Context,
+	in *api.StreamImagesRequest,
+	opts ...grpc.CallOption,
+) (grpc.ServerStreamingClient[api.StreamImagesResponse], error) {
+	return nil, errors.New("stream images is not supported by the fake client")
 }
 
 func (f *fakeImageClient) ImageStatus(

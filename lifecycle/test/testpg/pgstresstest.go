@@ -133,7 +133,7 @@ func PostgresClusterRandomCreate(ctx context.Context, dr dynamic.ResourceInterfa
 	n := int(bigN.Int64())
 	var objSlice []*unstructured.Unstructured
 	//Create
-	for i := 0; i < n; i++ {
+	for i := range n {
 		objTmp := obj.DeepCopy()
 		objTmp.SetName(objTmp.GetName() + strconv.Itoa(i))
 		_, err = dr.Create(ctx, objTmp, metav1.CreateOptions{})
@@ -155,7 +155,7 @@ func PostgresGet(ctx context.Context, dr dynamic.ResourceInterface, cs *kubernet
 		return err
 	}
 	fmt.Println(objGET.Object["status"])
-	oobj, ismap := objGET.Object["status"].(map[string]interface{})
+	oobj, ismap := objGET.Object["status"].(map[string]any)
 	if ismap {
 		if oobj["state"] != "running" {
 			events, _ := cs.CoreV1().Events(userNamespace).List(context.TODO(), metav1.ListOptions{TypeMeta: metav1.TypeMeta{Kind: "Event"}})

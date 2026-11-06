@@ -1,6 +1,7 @@
 package types
 
 import (
+	"slices"
 	"time"
 
 	"github.com/google/uuid"
@@ -61,12 +62,7 @@ var (
 )
 
 func ContainDebtStatus(statuses []DebtStatusType, status DebtStatusType) bool {
-	for _, s := range statuses {
-		if s == status {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(statuses, status)
 }
 
 // Debt 表示 debts 表
@@ -84,7 +80,7 @@ type DebtStatusRecord struct {
 	UserUID       uuid.UUID      `gorm:"column:user_uid;type:uuid;not null"                                 json:"user_uid"` // 外键，关联 User.ID
 	LastStatus    DebtStatusType `gorm:"column:last_status"                                                 json:"last_status,omitempty"`
 	CurrentStatus DebtStatusType `gorm:"column:current_status"                                              json:"current_status,omitempty"`
-	CreateAt      time.Time      `gorm:"column:create_at;not null;autoCreateTime;default:current_timestamp" json:"create_at,omitempty"`
+	CreateAt      time.Time      `gorm:"column:create_at;not null;autoCreateTime;default:current_timestamp" json:"create_at"`
 }
 
 func (Debt) TableName() string {

@@ -27,7 +27,7 @@ import (
 )
 
 // WaitForServer waits for a gRPC server to start accepting connections on a socket.
-func WaitForServer(socket string, timeout time.Duration, opts ...interface{}) error {
+func WaitForServer(socket string, timeout time.Duration, opts ...any) error {
 	var errChecker []func(error) bool
 	var dialOpts []grpc.DialOption
 	var connp **grpc.ClientConn

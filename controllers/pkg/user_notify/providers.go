@@ -27,7 +27,6 @@ import (
 	openapi "github.com/alibabacloud-go/darabonba-openapi/v2/client"
 	dysmsapi20170525 "github.com/alibabacloud-go/dysmsapi-20170525/v3/client"
 	util "github.com/alibabacloud-go/tea-utils/v2/service"
-	"github.com/alibabacloud-go/tea/tea"
 	"github.com/go-gomail/gomail"
 	"github.com/sirupsen/logrus"
 	"github.com/volcengine/volc-sdk-golang/service/vms"
@@ -861,9 +860,9 @@ func (p *SMSProvider) Send(
 
 	// 创建阿里云SMS客户端
 	config := &openapi.Config{
-		AccessKeyId:     tea.String(p.Config.SMSAccessKeyID),
-		AccessKeySecret: tea.String(p.Config.SMSAccessKeySecret),
-		Endpoint:        tea.String(p.Config.SMSEndpoint),
+		AccessKeyId:     new(p.Config.SMSAccessKeyID),
+		AccessKeySecret: new(p.Config.SMSAccessKeySecret),
+		Endpoint:        new(p.Config.SMSEndpoint),
 	}
 
 	client, err := dysmsapi20170525.NewClient(config)
@@ -875,10 +874,10 @@ func (p *SMSProvider) Send(
 
 	// 构建发送短信请求
 	sendSmsRequest := &dysmsapi20170525.SendSmsRequest{
-		PhoneNumbers:  tea.String(message.Recipient.PhoneNumber),
-		SignName:      tea.String(p.Config.SMSSignName),
-		TemplateCode:  tea.String(message.TemplateID),
-		TemplateParam: tea.String(templateParam),
+		PhoneNumbers:  new(message.Recipient.PhoneNumber),
+		SignName:      new(p.Config.SMSSignName),
+		TemplateCode:  new(message.TemplateID),
+		TemplateParam: new(templateParam),
 	}
 
 	// 发送短信

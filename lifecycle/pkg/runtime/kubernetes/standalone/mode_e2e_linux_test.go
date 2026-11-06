@@ -55,7 +55,7 @@ func TestModeControllerFixture(t *testing.T) {
 		Dst:      destination,
 		Type:     unix.RTN_BLACKHOLE,
 		Table:    table,
-		Protocol: protocol,
+		Protocol: netlink.RouteProtocol(protocol),
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -171,9 +171,9 @@ func TestModeRoundTripE2E(t *testing.T) {
 		if err := reservedRoutesEmpty(controller.Table, controller.Protocol); err != nil {
 			t.Fatal(err)
 		}
-		if err := reservedRoutesEmpty(controller.Table, unrelated.Protocol); err == nil {
-			t.Fatal("reverse conversion removed an unrelated route")
-		}
+			if err := reservedRoutesEmpty(controller.Table, int(unrelated.Protocol)); err == nil {
+				t.Fatal("reverse conversion removed an unrelated route")
+			}
 		if _, err := os.Stat(routeManifestPath); !os.IsNotExist(err) {
 			t.Fatalf("controller manifest remains after reverse: %v", err)
 		}

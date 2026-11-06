@@ -456,9 +456,7 @@ func (r *DebtReconciler) start(ctx context.Context) {
 	var wg sync.WaitGroup
 
 	// 1.1 account update processing
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		r.processWithTimeRange(
 			&types.Account{},
 			"updated_at",
@@ -484,12 +482,10 @@ func (r *DebtReconciler) start(ctx context.Context) {
 				return nil
 			},
 		)
-	}()
+	})
 
 	// 1.2 the arrears are transferred to the clearing state
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		ticker := time.NewTicker(5 * time.Minute)
 		for range ticker.C {
 			var users []uuid.UUID
@@ -519,12 +515,10 @@ func (r *DebtReconciler) start(ctx context.Context) {
 				)
 			}
 		}
-	}()
+	})
 
 	// 1.3 clearing changes to delete state
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		ticker := time.NewTicker(5 * time.Minute)
 		for range ticker.C {
 			var users []uuid.UUID
@@ -554,14 +548,12 @@ func (r *DebtReconciler) start(ctx context.Context) {
 				)
 			}
 		}
-	}()
+	})
 
 	// 1.4 replay final deletion status for accounts that are already in the terminal debt state.
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		r.syncFinalDeletionDebtNamespacesLoop(ctx, db)
-	}()
+	})
 
 	// 2.1 recharge record processing
 	// wg.Add(1)
@@ -661,11 +653,9 @@ func (r *DebtReconciler) start(ctx context.Context) {
 	// }()
 
 	// 3 retry failed users
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		r.retryFailedUsers()
-	}()
+	})
 
 	wg.Wait()
 }

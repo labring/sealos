@@ -112,8 +112,8 @@ func main() {
 	setupLog.Info("ingress annotations:", "annotation", ingressAnnotationString)
 	ingressAnnotations := make(map[string]string)
 	if ingressAnnotationString != "" {
-		kvs := strings.Split(ingressAnnotationString, ",")
-		for _, kv := range kvs {
+		kvs := strings.SplitSeq(ingressAnnotationString, ",")
+		for kv := range kvs {
 			parts := strings.Split(kv, "=")
 			if len(parts) == 2 {
 				key := parts[0]

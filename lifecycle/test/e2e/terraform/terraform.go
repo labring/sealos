@@ -144,20 +144,20 @@ func (tf *Terraform) Detail() (*InfraDetail, error) {
 	if err != nil {
 		return nil, err
 	}
-	var stateMap map[string]interface{}
+	var stateMap map[string]any
 	if err = json.Unmarshal(data, &stateMap); err != nil {
 		return nil, err
 	}
 	d := &InfraDetail{}
 	resources, _, _ := unstructured.NestedSlice(stateMap, "resources")
 	for _, res := range resources {
-		if obj, ok := res.(map[string]interface{}); ok {
+		if obj, ok := res.(map[string]any); ok {
 			resourceType, _, _ := unstructured.NestedString(obj, "type")
 			resourceName, _, _ := unstructured.NestedString(obj, "name")
 			if resourceType == "alicloud_instance" {
 				instances, _, _ := unstructured.NestedSlice(obj, "instances")
 				for i, instance := range instances {
-					if instanceObj, ok := instance.(map[string]interface{}); ok {
+					if instanceObj, ok := instance.(map[string]any); ok {
 						h := &Host{}
 						h.Name, _, _ = unstructured.NestedString(instanceObj, "attributes", "instance_name")
 						h.Password, _, _ = unstructured.NestedString(instanceObj, "attributes", "password")

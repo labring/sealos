@@ -45,7 +45,7 @@ type KubeadmConfig struct {
 }
 
 type ConvertedKubeadmConfig struct {
-	InitConfiguration, ClusterConfiguration, JoinConfiguration, KubeProxyConfiguration, KubeletConfiguration interface{}
+	InitConfiguration, ClusterConfiguration, JoinConfiguration, KubeProxyConfiguration, KubeletConfiguration any
 }
 
 func NewKubeadmConfig() *KubeadmConfig {
@@ -317,9 +317,9 @@ func updateFeatureGatesConfiguration(featureGates any, version string) any {
 	return nil
 }
 
-func LoadKubeadmConfigs(arg string, setDefaults bool, decodeFunc func(arg string, kind string) (interface{}, error)) (*KubeadmConfig, error) {
+func LoadKubeadmConfigs(arg string, setDefaults bool, decodeFunc func(arg string, kind string) (any, error)) (*KubeadmConfig, error) {
 	if setDefaults {
-		decodeFunc = func(arg string, kind string) (interface{}, error) {
+		decodeFunc = func(arg string, kind string) (any, error) {
 			ret, err := decodeFunc(arg, kind)
 			if err != nil {
 				return nil, err

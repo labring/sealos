@@ -97,7 +97,7 @@ func IsFileExist(filename string) bool {
 	return !os.IsNotExist(err)
 }
 
-func UnmarshalYamlFile(file string, obj interface{}) error {
+func UnmarshalYamlFile(file string, obj any) error {
 	data, err := os.ReadFile(filepath.Clean(file))
 	if err != nil {
 		return err
@@ -106,8 +106,8 @@ func UnmarshalYamlFile(file string, obj interface{}) error {
 	return err
 }
 
-func UnmarshalData(metadata []byte) (map[string]interface{}, error) {
-	var data map[string]interface{}
+func UnmarshalData(metadata []byte) (map[string]any, error) {
+	var data map[string]any
 	err := yaml.Unmarshal(metadata, &data)
 	if err != nil {
 		return nil, err
@@ -115,7 +115,7 @@ func UnmarshalData(metadata []byte) (map[string]interface{}, error) {
 	return data, nil
 }
 
-func MarshalYamlToFile(file string, obj interface{}) error {
+func MarshalYamlToFile(file string, obj any) error {
 	data, err := yaml.Marshal(obj)
 	if err != nil {
 		return err
@@ -161,7 +161,7 @@ func Log(msg string) {
 	Logf(msg)
 }
 
-func Logf(format string, args ...interface{}) {
+func Logf(format string, args ...any) {
 	fmt.Fprintf(ginkgo.GinkgoWriter, "INFO: "+format, args...)
 }
 
@@ -169,15 +169,15 @@ func Failf(msg string) {
 	ginkgo.Fail(fmt.Sprintf("FAIL: %s", msg), 1)
 }
 
-func CheckNotNil(obj interface{}) {
+func CheckNotNil(obj any) {
 	gomega.Expect(obj).NotTo(gomega.BeNil())
 }
 
-func CheckEqual(obj1 interface{}, obj2 interface{}) {
+func CheckEqual(obj1 any, obj2 any) {
 	gomega.Expect(obj1).To(gomega.Equal(obj2))
 }
 
-func CheckNotEqual(obj1 interface{}, obj2 interface{}) {
+func CheckNotEqual(obj1 any, obj2 any) {
 	gomega.Expect(obj1).NotTo(gomega.Equal(obj2))
 }
 
@@ -240,7 +240,7 @@ func ListLocalHostAddrs() (*[]net.Addr, error) {
 		return nil, err
 	}
 	var allAddrs []net.Addr
-	for i := 0; i < len(netInterfaces); i++ {
+	for i := range netInterfaces {
 		if (netInterfaces[i].Flags & net.FlagUp) == 0 {
 			continue
 		}
@@ -248,7 +248,7 @@ func ListLocalHostAddrs() (*[]net.Addr, error) {
 		if err != nil {
 			logger.Warn("failed to get Addrs, %s", err.Error())
 		}
-		for j := 0; j < len(addrs); j++ {
+		for j := range addrs {
 			allAddrs = append(allAddrs, addrs[j])
 		}
 	}

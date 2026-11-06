@@ -21,7 +21,7 @@ import (
 
 func Retry(tryTimes int, trySleepTime time.Duration, action func() error) error {
 	var err error
-	for i := 0; i < tryTimes; i++ {
+	for i := range tryTimes {
 		err = action()
 		if err == nil {
 			return nil

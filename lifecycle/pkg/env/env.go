@@ -16,6 +16,7 @@ package env
 
 // nosemgrep: go.lang.security.audit.xss.import-text-template.import-text-template
 import (
+	maps0 "maps"
 	"strings"
 	"sync"
 
@@ -53,9 +54,7 @@ func NewEnvProcessor(cluster *v1beta1.Cluster) Interface {
 func (p *processor) Getenv(host string) map[string]string {
 	env := make(map[string]string)
 	envs := p.getHostEnvInCache(host)
-	for k, v := range envs {
-		env[k] = v
-	}
+	maps0.Copy(env, envs)
 	return env
 }
 

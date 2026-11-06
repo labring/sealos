@@ -23,6 +23,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"slices"
 	"time"
 
 	v1 "k8s.io/api/core/v1"
@@ -170,8 +171,8 @@ func printPod(pod *v1.Pod) string {
 	if !initializing {
 		restarts = 0
 		hasRunning := false
-		for i := len(pod.Status.ContainerStatuses) - 1; i >= 0; i-- {
-			container := pod.Status.ContainerStatuses[i]
+		for _, v := range slices.Backward(pod.Status.ContainerStatuses) {
+			container := v
 
 			restarts += int(container.RestartCount)
 			if container.LastTerminationState.Terminated != nil {

@@ -42,7 +42,6 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
-	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlconfig "sigs.k8s.io/controller-runtime/pkg/config"
@@ -212,7 +211,7 @@ func main() {
 			RenewDeadline:          &renewDeadline,
 			RetryPeriod:            &retryPeriod,
 			Controller: ctrlconfig.Controller{
-				UsePriorityQueue: ptr.To(true),
+				UsePriorityQueue: new(true),
 			},
 		})
 		return stageErr

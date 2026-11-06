@@ -52,7 +52,7 @@ func FileDigest(path string) string {
 }
 
 // ToString gen hash string base on actual values of the nested objects.
-func ToString(obj interface{}) string {
+func ToString(obj any) string {
 	hasher := sha256.New()
 	DeepHashObject(hasher, obj)
 	return hex.EncodeToString(hasher.Sum(nil)[0:])
@@ -61,7 +61,7 @@ func ToString(obj interface{}) string {
 // DeepHashObject writes specified object to hash using the spew library
 // which follows pointers and prints actual values of the nested objects
 // ensuring the hash does not change when a pointer changes.
-func DeepHashObject(hasher hash.Hash, objectToWrite interface{}) {
+func DeepHashObject(hasher hash.Hash, objectToWrite any) {
 	hasher.Reset()
 	printer := spew.ConfigState{
 		Indent:         " ",

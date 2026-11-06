@@ -21,7 +21,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/wechatpay-apiv3/wechatpay-go/core"
 	"github.com/wechatpay-apiv3/wechatpay-go/services/refunddomestic"
 )
 
@@ -100,13 +99,13 @@ func (w WechatPayment) RefundPayment(option RefundOption) (string, string, error
 	}
 
 	req := refunddomestic.CreateRequest{
-		OutTradeNo:  core.String(option.TradeNo),
-		OutRefundNo: core.String(refundNo),
-		Reason:      core.String("refund for order " + option.OrderID),
+		OutTradeNo:  new(option.TradeNo),
+		OutRefundNo: new(refundNo),
+		Reason:      new("refund for order " + option.OrderID),
 		Amount: &refunddomestic.AmountReq{
-			Total:    core.Int64(paidAmount / 10000),
-			Refund:   core.Int64(refundAmt),
-			Currency: core.String("CNY"),
+			Total:    new(paidAmount / 10000),
+			Refund:   new(refundAmt),
+			Currency: new("CNY"),
 		},
 	}
 

@@ -36,7 +36,6 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
-	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/config"
@@ -259,7 +258,7 @@ func main() {
 		LeaderElectionReleaseOnCancel: true,
 		GracefulShutdownTimeout:       &gracefulShutdownTimeout,
 		Controller: config.Controller{
-			UsePriorityQueue: ptr.To(true),
+			UsePriorityQueue: new(true),
 		},
 	})
 	if err != nil {

@@ -89,7 +89,7 @@ type Monitor struct {
 
 type ActiveBilling struct {
 	ID        primitive.ObjectID `json:"_id,omitempty"  bson:"_id,omitempty"`
-	Time      time.Time          `json:"time,omitempty" bson:"time"`
+	Time      time.Time          `json:"time" bson:"time"`
 	Namespace string             `json:"namespace"      bson:"namespace"`
 	AppType   string             `json:"app_type"       bson:"app_type"`
 	AppName   string             `json:"app_name"       bson:"app_name"`

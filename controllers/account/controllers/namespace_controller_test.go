@@ -19,7 +19,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/dynamic/fake"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	clientfake "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -268,7 +267,7 @@ func TestSuspendResumeOrphanDeployments(t *testing.T) {
 					Namespace: "test-ns",
 				},
 				Spec: appsv1.DeploymentSpec{
-					Replicas: ptr.To(tt.initialReplicas),
+					Replicas: new(tt.initialReplicas),
 				},
 			}
 
@@ -366,7 +365,7 @@ func TestSuspendResumeOrphanStatefulSets(t *testing.T) {
 			Namespace: "test-ns",
 		},
 		Spec: appsv1.StatefulSetSpec{
-			Replicas: ptr.To(int32(3)),
+			Replicas: new(int32(3)),
 		},
 	}
 
@@ -432,7 +431,7 @@ func TestSuspendResumeOrphanReplicaSets(t *testing.T) {
 			Namespace: "test-ns",
 		},
 		Spec: appsv1.ReplicaSetSpec{
-			Replicas: ptr.To(int32(2)),
+			Replicas: new(int32(2)),
 		},
 	}
 
@@ -514,7 +513,7 @@ func TestSuspendResumeOrphanCronJob(t *testing.T) {
 				},
 				Spec: batchv1.CronJobSpec{
 					Schedule: "*/5 * * * *",
-					Suspend:  ptr.To(tt.initiallySuspended),
+					Suspend:  new(tt.initiallySuspended),
 				},
 			}
 
@@ -894,7 +893,7 @@ func TestSuspendResumeRoundtrip(t *testing.T) {
 			Namespace: "test-ns",
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: ptr.To(int32(3)),
+			Replicas: new(int32(3)),
 		},
 	}
 
@@ -905,7 +904,7 @@ func TestSuspendResumeRoundtrip(t *testing.T) {
 		},
 		Spec: batchv1.CronJobSpec{
 			Schedule: "*/5 * * * *",
-			Suspend:  ptr.To(false),
+			Suspend:  new(false),
 		},
 	}
 
@@ -1033,7 +1032,7 @@ func TestSuspendResumeHPAWithFrontendDeployment(t *testing.T) {
 					},
 				},
 				Spec: appsv1.DeploymentSpec{
-					Replicas: ptr.To(tt.deploymentReplicas),
+					Replicas: new(tt.deploymentReplicas),
 				},
 			}
 
@@ -1052,7 +1051,7 @@ func TestSuspendResumeHPAWithFrontendDeployment(t *testing.T) {
 							Kind:       "Deployment",
 							Name:       "test-deploy",
 						},
-						MinReplicas: ptr.To(tt.hpaMinReplicas),
+						MinReplicas: new(tt.hpaMinReplicas),
 						MaxReplicas: tt.hpaMaxReplicas,
 						Metrics: []autoscalingv2.MetricSpec{
 							{
@@ -1061,7 +1060,7 @@ func TestSuspendResumeHPAWithFrontendDeployment(t *testing.T) {
 									Name: corev1.ResourceName(tt.hpaTarget),
 									Target: autoscalingv2.MetricTarget{
 										Type:               autoscalingv2.UtilizationMetricType,
-										AverageUtilization: ptr.To(tt.hpaValue),
+										AverageUtilization: new(tt.hpaValue),
 									},
 								},
 							},
@@ -1241,7 +1240,7 @@ func TestSuspendResumeHPAWithFrontendStatefulSet(t *testing.T) {
 			},
 		},
 		Spec: appsv1.StatefulSetSpec{
-			Replicas: ptr.To(int32(3)),
+			Replicas: new(int32(3)),
 		},
 	}
 
@@ -1257,7 +1256,7 @@ func TestSuspendResumeHPAWithFrontendStatefulSet(t *testing.T) {
 				Kind:       "StatefulSet",
 				Name:       "test-sts",
 			},
-			MinReplicas: ptr.To(int32(1)),
+			MinReplicas: new(int32(1)),
 			MaxReplicas: 5,
 			Metrics: []autoscalingv2.MetricSpec{
 				{
@@ -1266,7 +1265,7 @@ func TestSuspendResumeHPAWithFrontendStatefulSet(t *testing.T) {
 						Name: corev1.ResourceCPU,
 						Target: autoscalingv2.MetricTarget{
 							Type:               autoscalingv2.UtilizationMetricType,
-							AverageUtilization: ptr.To(int32(70)),
+							AverageUtilization: new(int32(70)),
 						},
 					},
 				},
@@ -1431,7 +1430,7 @@ func TestSuspendResumeNonFrontendDeployment(t *testing.T) {
 			// No frontend annotations
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: ptr.To(int32(3)),
+			Replicas: new(int32(3)),
 		},
 	}
 
@@ -1447,7 +1446,7 @@ func TestSuspendResumeNonFrontendDeployment(t *testing.T) {
 				Kind:       "Deployment",
 				Name:       "test-deploy",
 			},
-			MinReplicas: ptr.To(int32(2)),
+			MinReplicas: new(int32(2)),
 			MaxReplicas: 10,
 		},
 	}
@@ -1580,7 +1579,7 @@ func TestSuspendResumeNonFrontendStatefulSet(t *testing.T) {
 			// No frontend annotations
 		},
 		Spec: appsv1.StatefulSetSpec{
-			Replicas: ptr.To(int32(5)),
+			Replicas: new(int32(5)),
 		},
 	}
 
@@ -1596,7 +1595,7 @@ func TestSuspendResumeNonFrontendStatefulSet(t *testing.T) {
 				Kind:       "StatefulSet",
 				Name:       "test-sts",
 			},
-			MinReplicas: ptr.To(int32(3)),
+			MinReplicas: new(int32(3)),
 			MaxReplicas: 15,
 		},
 	}
@@ -1714,7 +1713,7 @@ func TestResumeAlreadyPausedDeploymentWithHPA(t *testing.T) {
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: ptr.To(int32(0)),
+			Replicas: new(int32(0)),
 		},
 	}
 
@@ -1806,7 +1805,7 @@ func TestResumeAlreadyPausedStatefulSetWithHPA(t *testing.T) {
 			},
 		},
 		Spec: appsv1.StatefulSetSpec{
-			Replicas: ptr.To(int32(0)),
+			Replicas: new(int32(0)),
 		},
 	}
 
@@ -1893,7 +1892,7 @@ func TestResumeDeploymentContinuesOnHPAError(t *testing.T) {
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: ptr.To(int32(0)),
+			Replicas: new(int32(0)),
 		},
 	}
 
@@ -1912,7 +1911,7 @@ func TestResumeDeploymentContinuesOnHPAError(t *testing.T) {
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: ptr.To(int32(0)),
+			Replicas: new(int32(0)),
 		},
 	}
 
@@ -2007,7 +2006,7 @@ func TestResumeStatefulSetContinuesOnHPAError(t *testing.T) {
 			},
 		},
 		Spec: appsv1.StatefulSetSpec{
-			Replicas: ptr.To(int32(0)),
+			Replicas: new(int32(0)),
 		},
 	}
 
@@ -2026,7 +2025,7 @@ func TestResumeStatefulSetContinuesOnHPAError(t *testing.T) {
 			},
 		},
 		Spec: appsv1.StatefulSetSpec{
-			Replicas: ptr.To(int32(0)),
+			Replicas: new(int32(0)),
 		},
 	}
 
@@ -2122,7 +2121,7 @@ func TestHPARestoredAfterDeploymentUpdate(t *testing.T) {
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: ptr.To(int32(0)),
+			Replicas: new(int32(0)),
 		},
 	}
 

@@ -22,7 +22,7 @@ import (
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 )
 
-func MarshalFile(file string, obj interface{}) error {
+func MarshalFile(file string, obj any) error {
 	data, err := toml.Marshal(obj)
 	if err != nil {
 		return err
@@ -30,7 +30,7 @@ func MarshalFile(file string, obj interface{}) error {
 	return fileutil.WriteFile(file, data)
 }
 
-func UnmarshalFile(file string, obj interface{}) error {
+func UnmarshalFile(file string, obj any) error {
 	metadata, err := fileutil.ReadAll(file)
 	if err != nil {
 		return err

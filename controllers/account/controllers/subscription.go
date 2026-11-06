@@ -40,9 +40,7 @@ func NewSubscriptionProcessor(reconciler *AccountReconciler) *SubscriptionProces
 
 // Start 开始监听和处理订阅事务
 func (sp *SubscriptionProcessor) Start(ctx context.Context) error {
-	sp.wg.Add(1)
-	go func() {
-		defer sp.wg.Done()
+	sp.wg.Go(func() {
 		ticker := time.NewTicker(sp.pollInterval)
 		defer ticker.Stop()
 
@@ -58,7 +56,7 @@ func (sp *SubscriptionProcessor) Start(ctx context.Context) error {
 				}
 			}
 		}
-	}()
+	})
 	return nil
 }
 

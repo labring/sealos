@@ -144,11 +144,11 @@ func (s *StripeService) CreateWorkspaceSubscriptionSessionWithPromotion(
 		CancelURL:  stripe.String(cancelURL),
 		// BillingAddressCollection: stripe.String("required"),
 		AutomaticTax: &stripe.CheckoutSessionAutomaticTaxParams{
-			Enabled: stripe.Bool(false),
+			Enabled: new(false),
 		},
-		ExpiresAt: stripe.Int64(time.Now().UTC().Add(31 * time.Minute).Unix()),
+		ExpiresAt: new(time.Now().UTC().Add(31 * time.Minute).Unix()),
 	}
-	checkoutParams.SubscriptionData.BillingCycleAnchor = stripe.Int64(
+	checkoutParams.SubscriptionData.BillingCycleAnchor = new(
 		time.Now().UTC().AddDate(0, 0, 30).Unix(),
 	)
 
@@ -166,7 +166,7 @@ func (s *StripeService) CreateWorkspaceSubscriptionSessionWithPromotion(
 			},
 		}
 	} else {
-		checkoutParams.AllowPromotionCodes = stripe.Bool(true)
+		checkoutParams.AllowPromotionCodes = new(true)
 	}
 
 	// Create session using official SDK
@@ -271,7 +271,7 @@ func (s *StripeService) UpdatePlan(
 			"subscription_operator": string(types.SubscriptionTransactionTypeUpgraded),
 			"last_payment_id":       payReqID,
 		},
-		BillingCycleAnchorNow: stripe.Bool(true),
+		BillingCycleAnchorNow: new(true),
 		ProrationBehavior: stripe.String(
 			stripe.SubscriptionSchedulePhaseProrationBehaviorAlwaysInvoice,
 		),
@@ -361,7 +361,7 @@ func (s *StripeService) UpdatePlanPricePreviewWithPromotion(
 			},
 			// ProrationDate:         stripe.Int64(time.Now().UTC().Unix()),
 			ProrationBehavior:     stripe.String("create_prorations"),
-			BillingCycleAnchorNow: stripe.Bool(true),
+			BillingCycleAnchorNow: new(true),
 			// Ensure billing cycle anchors to now for upgrade
 			// BillingCycleAnchor: stripe.Int64(time.Now().UTC().Unix()),
 		},
@@ -573,7 +573,7 @@ func (s *StripeService) CancelSubscription(subscriptionID string) (*stripe.Subsc
 	// 先查找是否存在
 
 	sub, err := subscription.Cancel(subscriptionID, &stripe.SubscriptionCancelParams{
-		InvoiceNow: stripe.Bool(true),
+		InvoiceNow: new(true),
 	})
 	if err != nil && !strings.Contains(err.Error(), "No such subscription") {
 		sub, _ = subscription.Get(subscriptionID, nil)
@@ -776,7 +776,7 @@ func (s *StripeService) GetCustomerInvoices(
 		Customer: stripe.String(customerID),
 	}
 	if limit > 0 {
-		params.Limit = stripe.Int64(limit)
+		params.Limit = new(limit)
 	}
 
 	invoiceCapacity := 10
@@ -1112,7 +1112,7 @@ func (s *StripeService) CreateUpgradeInvoice(
 				Price: stripe.String(newPriceID),
 			},
 		},
-		BillingCycleAnchorNow: stripe.Bool(true),
+		BillingCycleAnchorNow: new(true),
 		ProrationBehavior: stripe.String(
 			stripe.SubscriptionSchedulePhaseProrationBehaviorAlwaysInvoice,
 		),

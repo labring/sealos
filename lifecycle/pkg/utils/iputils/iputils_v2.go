@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"math/big"
 	"net"
+	"slices"
 	"sort"
 	"strings"
 
@@ -110,7 +111,7 @@ func ListLocalHostAddrs() (*[]net.Addr, error) {
 		return netInterfaces[i].Index < netInterfaces[j].Index
 	})
 	var allAddrs []net.Addr
-	for i := 0; i < len(netInterfaces); i++ {
+	for i := range netInterfaces {
 		if (netInterfaces[i].Flags & net.FlagUp) == 0 {
 			continue
 		}
@@ -118,7 +119,7 @@ func ListLocalHostAddrs() (*[]net.Addr, error) {
 		if err != nil {
 			logger.Warn("failed to get Addrs, %s", err.Error())
 		}
-		for j := 0; j < len(addrs); j++ {
+		for j := range addrs {
 			allAddrs = append(allAddrs, addrs[j])
 		}
 	}
@@ -153,9 +154,9 @@ func GetLocalIpv4() string {
 }
 
 func inc(ip net.IP) {
-	for j := len(ip) - 1; j >= 0; j-- {
-		ip[j]++
-		if ip[j] > 0 {
+	for _, v := range slices.Backward(ip) {
+		v++
+		if v > 0 {
 			break
 		}
 	}

@@ -22,8 +22,8 @@ import (
 	"github.com/containers/image/v5/docker/reference"
 	"k8s.io/apimachinery/pkg/util/sets"
 
-	strutil "github.com/labring/sealos/pkg/sreg/utils/strings"
 	"github.com/labring/sealos/pkg/sreg/utils/logger"
+	strutil "github.com/labring/sealos/pkg/sreg/utils/strings"
 )
 
 // ParseImages parse image from yaml content
@@ -54,11 +54,11 @@ func parseImageRefFromLine(s string) string {
 	if strings.HasPrefix(s, "#") {
 		return ""
 	}
-	idx := strings.Index(s, imageIdentity)
-	if idx < 0 {
+	_, after, ok := strings.Cut(s, imageIdentity)
+	if !ok {
 		return ""
 	}
-	imageStr := strutil.TrimQuotes(strings.TrimSpace(s[idx+len(imageIdentity):]))
+	imageStr := strutil.TrimQuotes(strings.TrimSpace(after))
 	if imageStr == "" {
 		return ""
 	}

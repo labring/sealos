@@ -34,7 +34,7 @@ import (
 
 const nonStructPointerErrorFmt = "must be a struct pointer, got %T"
 
-func unmarshalStrict(r io.Reader, obj interface{}) (err error) {
+func unmarshalStrict(r io.Reader, obj any) (err error) {
 	if obj != nil && reflect.ValueOf(obj).Kind() != reflect.Pointer {
 		return fmt.Errorf(nonStructPointerErrorFmt, obj)
 	}
@@ -66,8 +66,8 @@ func unmarshalStrict(r io.Reader, obj interface{}) (err error) {
 	return
 }
 
-func UnmarshalToMap(buf []byte) (map[string]interface{}, error) {
-	var data map[string]interface{}
+func UnmarshalToMap(buf []byte) (map[string]any, error) {
+	var data map[string]any
 	err := yaml.Unmarshal(buf, &data)
 	if err != nil {
 		return nil, err
@@ -91,11 +91,11 @@ func ToJSON(bs []byte) (jsons []string) {
 	return
 }
 
-func Marshal(obj interface{}) ([]byte, error) {
+func Marshal(obj any) ([]byte, error) {
 	return yaml.Marshal(obj)
 }
 
-func MarshalFile(file string, obj ...interface{}) error {
+func MarshalFile(file string, obj ...any) error {
 	data, err := MarshalConfigs(obj...)
 	if err != nil {
 		return err
@@ -103,7 +103,7 @@ func MarshalFile(file string, obj ...interface{}) error {
 	return fileutil.WriteFile(file, data)
 }
 
-func Unmarshal(r io.Reader, obj interface{}) error {
+func Unmarshal(r io.Reader, obj any) error {
 	return unmarshalStrict(r, obj)
 }
 
@@ -117,7 +117,7 @@ func IsNil(b []byte) (bool, error) {
 
 // UnmarshalFile if there is no content in the file or it contains only spaces,
 // result will be nil, then the given object is not initialized at this time.
-func UnmarshalFile(file string, obj interface{}) error {
+func UnmarshalFile(file string, obj any) error {
 	r, err := os.Open(file)
 	if err != nil {
 		return err
@@ -126,7 +126,7 @@ func UnmarshalFile(file string, obj interface{}) error {
 	return unmarshalStrict(r, obj)
 }
 
-func MarshalConfigs(configs ...interface{}) ([]byte, error) {
+func MarshalConfigs(configs ...any) ([]byte, error) {
 	var cfgs [][]byte
 	for _, cfg := range configs {
 		data, err := yaml.Marshal(cfg)
@@ -138,7 +138,7 @@ func MarshalConfigs(configs ...interface{}) ([]byte, error) {
 	return bytes.Join(cfgs, []byte("\n---\n")), nil
 }
 
-func ShowStructYaml(s interface{}) {
+func ShowStructYaml(s any) {
 	data, _ := yaml.Marshal(s)
 	fmt.Println(string(data))
 }

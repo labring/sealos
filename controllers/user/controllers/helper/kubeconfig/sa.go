@@ -33,7 +33,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd/api"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -202,7 +201,7 @@ func (sac *ServiceAccountConfig) requestToken(
 		ServiceAccounts(sac.namespace).
 		CreateToken(ctx, sac.user, &authenticationv1.TokenRequest{
 			Spec: authenticationv1.TokenRequestSpec{
-				ExpirationSeconds: ptr.To(int64(sac.tokenRequestExpirationSeconds())),
+				ExpirationSeconds: new(int64(sac.tokenRequestExpirationSeconds())),
 				BoundObjectRef: &authenticationv1.BoundObjectReference{
 					Kind:       "Secret",
 					APIVersion: "v1",

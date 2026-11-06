@@ -117,7 +117,7 @@ func NewContainerRuntime(
 		toolNames = "docker"
 		runtime = &DockerRuntime{execer}
 	}
-	for _, toolName := range strings.Split(toolNames, ",") {
+	for toolName := range strings.SplitSeq(toolNames, ",") {
 		if _, err := execer.LookPath(toolName); err != nil {
 			return nil, fmt.Errorf("%s is required for container runtime: %w", toolName, err)
 		}

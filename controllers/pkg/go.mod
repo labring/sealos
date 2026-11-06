@@ -19,7 +19,6 @@ replace (
 require (
 	github.com/alibabacloud-go/darabonba-openapi/v2 v2.1.13
 	github.com/alibabacloud-go/dysmsapi-20170525/v3 v3.0.6
-	github.com/alibabacloud-go/tea v1.3.14
 	github.com/alibabacloud-go/tea-utils/v2 v2.0.9
 	github.com/containers/storage v1.50.2
 	github.com/go-gomail/gomail v0.0.0-20160411212932-81ebce5c23df
@@ -65,6 +64,7 @@ require (
 	github.com/alibabacloud-go/debug v1.0.1 // indirect
 	github.com/alibabacloud-go/endpoint-util v1.1.0 // indirect
 	github.com/alibabacloud-go/openapi-util v0.1.0 // indirect
+	github.com/alibabacloud-go/tea v1.3.14 // indirect
 	github.com/alibabacloud-go/tea-utils v1.3.1 // indirect
 	github.com/aliyun/credentials-go v1.4.5 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
@@ -171,6 +171,7 @@ require (
 	golang.org/x/time v0.14.0 // indirect
 	google.golang.org/protobuf v1.36.12-0.20260120151049-f2248ac996af // indirect
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
+	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	k8s.io/client-go v12.0.0+incompatible // indirect

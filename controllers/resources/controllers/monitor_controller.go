@@ -205,9 +205,7 @@ func (r *MonitorReconciler) StartReconciler(ctx context.Context) error {
 }
 
 func (r *MonitorReconciler) startPeriodicReconcile(ctx context.Context) {
-	r.wg.Add(1)
-	go func() {
-		defer r.wg.Done()
+	r.wg.Go(func() {
 		if !waitForMonitorBoundary(ctx, time.Minute) {
 			return
 		}
@@ -227,7 +225,7 @@ func (r *MonitorReconciler) startPeriodicReconcile(ctx context.Context) {
 				return
 			}
 		}
-	}()
+	})
 }
 
 func (r *MonitorReconciler) getNamespaceList() (*corev1.NamespaceList, error) {
@@ -255,9 +253,7 @@ func waitForMonitorBoundary(ctx context.Context, interval time.Duration) bool {
 }
 
 func (r *MonitorReconciler) startMonitorTraffic(ctx context.Context) {
-	r.wg.Add(1)
-	go func() {
-		defer r.wg.Done()
+	r.wg.Go(func() {
 		startTime, endTime := time.Now().
 			UTC(),
 			time.Now().
@@ -287,7 +283,7 @@ func (r *MonitorReconciler) startMonitorTraffic(ctx context.Context) {
 				return
 			}
 		}
-	}()
+	})
 }
 
 func (r *MonitorReconciler) enqueueNamespacesForReconcile() {

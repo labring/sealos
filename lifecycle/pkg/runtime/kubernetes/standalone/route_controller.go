@@ -141,7 +141,7 @@ func (o RouteControllerOptions) Validate() error {
 		"service-cidr": o.ServiceCIDR,
 		"router-cidr":  o.RouterCIDR,
 	} {
-		for _, entry := range strings.Fields(strings.ReplaceAll(value, ",", " ")) {
+		for entry := range strings.FieldsSeq(strings.ReplaceAll(value, ",", " ")) {
 			if _, err := netip.ParsePrefix(entry); err != nil {
 				return fmt.Errorf("invalid %s entry %q: %w", name, entry, err)
 			}

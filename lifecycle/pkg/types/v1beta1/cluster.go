@@ -15,6 +15,7 @@
 package v1beta1
 
 import (
+	"maps"
 	"path"
 
 	"github.com/labring/sealos/pkg/version"
@@ -118,9 +119,7 @@ func (m *MountImage) IsPatch() bool {
 
 func MergeEnvWithBuiltinKeys(src map[string]string, m MountImage) map[string]string {
 	out := make(map[string]string, len(src))
-	for k, v := range src {
-		out[k] = v
-	}
+	maps.Copy(out, src)
 	if m.IsRootFs() {
 		out[ImageKubeVersionEnvSysKey] = m.Labels[ImageKubeVersionKey]
 		out[ImageSealosVersionEnvSysKey] = version.Get().GitVersion

@@ -268,9 +268,7 @@ func runMonitor(ctx context.Context, mgr ctrl.Manager) error {
 	}
 	maintenanceCtx, cancelMaintenance := context.WithCancel(ctx)
 	var maintenance sync.WaitGroup
-	maintenance.Add(1)
-	go func() {
-		defer maintenance.Done()
+	maintenance.Go(func() {
 		runMonitorMaintenance(maintenanceCtx, func() {
 			err := reconciler.DBClient.CreateMonitorTimeSeriesIfNotExist(
 				time.Now().UTC().Add(24 * time.Hour),
@@ -282,7 +280,7 @@ func runMonitor(ctx context.Context, mgr ctrl.Manager) error {
 				reconciler.Error(err, "failed to drop monitor collection")
 			}
 		})
-	}()
+	})
 	defer func() {
 		cancelMaintenance()
 		maintenance.Wait()

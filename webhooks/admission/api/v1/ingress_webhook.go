@@ -19,6 +19,7 @@ package v1
 import (
 	"context"
 	"fmt"
+	"maps"
 	"net"
 	"os"
 	"strings"
@@ -74,9 +75,7 @@ func (m *IngressMutator) Default(_ context.Context, i *netv1.Ingress) error {
 
 func (m *IngressMutator) mutateUserIngressAnnotations(i *netv1.Ingress) {
 	initAnnotationAndLabels(&i.ObjectMeta)
-	for k, v := range m.IngressAnnotations {
-		i.Annotations[k] = v
-	}
+	maps.Copy(i.Annotations, m.IngressAnnotations)
 }
 
 //+kubebuilder:object:generate=false

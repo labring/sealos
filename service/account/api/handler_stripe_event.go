@@ -446,7 +446,7 @@ func handleSubscriptionUpdate(
 	sub.CurrentPeriodEndAt = time.Unix(subscription.Items.Data[len(subscription.Items.Data)-1].CurrentPeriodEnd, 0).
 		UTC().
 		Add(1 * time.Hour)
-	sub.ExpireAt = stripe.Time(sub.CurrentPeriodEndAt)
+	sub.ExpireAt = new(sub.CurrentPeriodEndAt)
 
 	if err := dao.DBClient.GlobalTransactionHandler(func(tx *gorm.DB) error {
 		// Check if there's a PaymentOrder to convert
@@ -645,7 +645,7 @@ func handleSubscriptionCreateOrRenew(
 			ws.CurrentPeriodEndAt = time.Unix(subscription.Items.Data[len(subscription.Items.Data)-1].CurrentPeriodEnd, 0).
 				UTC().
 				Add(1 * time.Hour)
-			ws.ExpireAt = stripe.Time(ws.CurrentPeriodEndAt)
+			ws.ExpireAt = new(ws.CurrentPeriodEndAt)
 		}
 
 		if err := finalizeWorkspaceSubscriptionSuccess(

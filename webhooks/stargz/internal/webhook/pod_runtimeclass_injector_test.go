@@ -11,7 +11,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -62,7 +61,7 @@ func TestShouldNotInjectDevboxPod(t *testing.T) {
 		Kind:       "Devbox",
 		Name:       "my-devbox",
 		UID:        "abc-123",
-		Controller: ptr.To(true),
+		Controller: new(true),
 	}}
 
 	if inject, reason := injector.shouldInject(pod); inject {

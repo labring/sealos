@@ -3,6 +3,7 @@ package types
 import (
 	"encoding/json"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -83,12 +84,7 @@ func (p WorkspaceSubscriptionPlan) GetMaxResources() string {
 }
 
 func (p WorkspaceSubscriptionPlan) CanBeUpgraded(planName string) bool {
-	for _, plan := range p.UpgradePlanList {
-		if plan == planName {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(p.UpgradePlanList, planName)
 }
 
 func (WorkspaceSubscription) TableName() string {

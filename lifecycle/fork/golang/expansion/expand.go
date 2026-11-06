@@ -2,6 +2,7 @@ package expansion
 
 import (
 	"bytes"
+	"strings"
 	"unicode"
 )
 
@@ -110,16 +111,16 @@ func tryReadVariableName(input string) (string, bool, int) {
 		// Not the beginning of an expression, ie, an operator
 		// that doesn't begin an expression.  Return the operator
 		// and the first rune in the string.
-		var variableName string
+		var variableName strings.Builder
 		var i int
 		for i = 0; i < len(input); i++ {
 			if !unicode.IsLetter(rune(input[i])) && !unicode.IsDigit(rune(input[i])) && input[i] != '_' {
 				break
 			}
-			variableName += string(input[i])
+			variableName.WriteString(string(input[i]))
 		}
-		if len(variableName) > 0 {
-			return variableName, true, i
+		if len(variableName.String()) > 0 {
+			return variableName.String(), true, i
 		}
 		return string(operator) + string(input[0]), false, 1
 	}

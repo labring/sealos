@@ -196,7 +196,7 @@ func NewSealosCertMetaDataForKubeVersion(certPATH, certEtcdPATH string, apiServe
 	data.APIServer.IPs = make(map[string]net.IP)
 	data.APIServer.DNSNames = make(map[string]string)
 
-	for _, svcCidr := range strings.Split(SvcCIDR, ",") {
+	for svcCidr := range strings.SplitSeq(SvcCIDR, ",") {
 		_, svcNet, err := net.ParseCIDR(svcCidr)
 		if err != nil {
 			return nil, err
