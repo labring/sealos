@@ -103,7 +103,18 @@ func (m *mongoDB) getPodTrafficBytes(
 			},
 		)
 	} else {
-		pipeline = append(pipeline, bson.D{{Key: "$group", Value: bson.D{{Key: "_id", Value: nil}, {Key: "total", Value: bson.D{{Key: "$sum", Value: "$recv_bytes"}}}}}})
+		pipeline = append(
+			pipeline,
+			bson.D{
+				{
+					Key: "$group",
+					Value: bson.D{
+						{Key: "_id", Value: nil},
+						{Key: "total", Value: bson.D{{Key: "$sum", Value: "$recv_bytes"}}},
+					},
+				},
+			},
+		)
 	}
 	cur, err := m.getTrafficCollection().Aggregate(context.Background(), pipeline)
 	if err != nil {
@@ -156,7 +167,18 @@ func (m *mongoDB) getTrafficBytes(
 			},
 		)
 	} else {
-		pipeline = append(pipeline, bson.D{{Key: "$group", Value: bson.D{{Key: "_id", Value: nil}, {Key: "total", Value: bson.D{{Key: "$sum", Value: "$recv_bytes"}}}}}})
+		pipeline = append(
+			pipeline,
+			bson.D{
+				{
+					Key: "$group",
+					Value: bson.D{
+						{Key: "_id", Value: nil},
+						{Key: "total", Value: bson.D{{Key: "$sum", Value: "$recv_bytes"}}},
+					},
+				},
+			},
+		)
 	}
 	cur, err := m.getTrafficCollection().Aggregate(context.Background(), pipeline)
 	if err != nil {

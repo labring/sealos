@@ -114,11 +114,8 @@ func getACMEResolverName(obj client.Object) string {
 			continue
 		}
 		for _, arg := range container.Args {
-			if strings.HasPrefix(arg, acmesolverContainerArgsDomainPrefix) {
-				return acmesolver + "-" + strings.TrimPrefix(
-					arg,
-					acmesolverContainerArgsDomainPrefix,
-				)
+			if after, ok0 := strings.CutPrefix(arg, acmesolverContainerArgsDomainPrefix); ok0 {
+				return acmesolver + "-" + after
 			}
 		}
 	}

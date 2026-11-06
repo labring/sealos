@@ -24,10 +24,8 @@ import (
 	"github.com/labring/sealos/controllers/user/pkg/licensegate"
 	"github.com/labring/sealos/controllers/user/pkg/reserved"
 	"github.com/labring/sealos/controllers/user/pkg/usercount"
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -77,8 +75,7 @@ func (r *User) SetupWebhookWithManager(
 		return errors.New("user webhook count cache is not initialized")
 	}
 	userWebhookCount = userCounter
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
+	return ctrl.NewWebhookManagedBy(mgr, r).
 		WithDefaulter(r).
 		WithValidator(r).
 		Complete()
@@ -86,16 +83,12 @@ func (r *User) SetupWebhookWithManager(
 
 // TODO(user): EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
-//+kubebuilder:webhook:path=/mutate-user-sealos-io-v1-user,mutating=true,failurePolicy=fail,sideEffects=None,groups=user.sealos.io,resources=users,verbs=create;update,versions=v1,name=muser.kb.io,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=/mutate-user-sealos-io-v1-user,mutating=true,failurePolicy=fail,sideEffects=None,groups=user.sealos.io,resources=users,verbs=create;update,versions=v1,name=muser.kb.io,admissionReviewVersions=v1
 
-var _ webhook.CustomDefaulter = &User{}
+var _ admission.Defaulter[*User] = &User{}
 
-// Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *User) Default(ctx context.Context, obj runtime.Object) error {
-	user, ok := obj.(*User)
-	if !ok {
-		return errors.New("obj convert User is error")
-	}
+// Default implements admission.Defaulter so a webhook will be registered for the type
+func (r *User) Default(ctx context.Context, user *User) error {
 	userlog.Info("default", "name", user.Name)
 	user.ObjectMeta = initAnnotationAndLabels(user.ObjectMeta)
 	if user.Spec.CSRExpirationSeconds == 0 {
@@ -110,17 +103,14 @@ func (r *User) Default(ctx context.Context, obj runtime.Object) error {
 	return nil
 }
 
-// TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-//+kubebuilder:webhook:path=/validate-user-sealos-io-v1-user,mutating=false,failurePolicy=fail,sideEffects=None,groups=user.sealos.io,resources=users,verbs=create;update,versions=v1,name=vuser.kb.io,admissionReviewVersions=v1,timeoutSeconds=30
+// TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion
+// validation.
+// +kubebuilder:webhook:path=/validate-user-sealos-io-v1-user,mutating=false,failurePolicy=fail,sideEffects=None,groups=user.sealos.io,resources=users,verbs=create;update,versions=v1,name=vuser.kb.io,admissionReviewVersions=v1,timeoutSeconds=30
 
-var _ webhook.CustomValidator = &User{}
+var _ admission.Validator[*User] = &User{}
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *User) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	user, ok := obj.(*User)
-	if !ok {
-		return admission.Warnings{}, errors.New("obj convert User is error")
-	}
+// ValidateCreate implements admission.Validator so a webhook will be registered for the type
+func (r *User) ValidateCreate(ctx context.Context, user *User) (admission.Warnings, error) {
 	userlog.Info("validate create", "name", user.Name)
 	if err := user.validateCSRExpirationSeconds(); err != nil {
 		return admission.Warnings{}, err
@@ -146,15 +136,11 @@ func (r *User) ValidateCreate(ctx context.Context, obj runtime.Object) (admissio
 	)
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
+// ValidateUpdate implements admission.Validator so a webhook will be registered for the type
 func (r *User) ValidateUpdate(
 	ctx context.Context,
-	oldObj, newObj runtime.Object,
+	_, user *User,
 ) (admission.Warnings, error) {
-	user, ok := newObj.(*User)
-	if !ok {
-		return admission.Warnings{}, errors.New("obj convert User is error")
-	}
 	userlog.Info("validate update", "name", user.Name)
 	if err := user.validateCSRExpirationSeconds(); err != nil {
 		return admission.Warnings{}, err
@@ -165,12 +151,8 @@ func (r *User) ValidateUpdate(
 	)
 }
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *User) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	user, ok := obj.(*User)
-	if !ok {
-		return admission.Warnings{}, errors.New("obj convert User is error")
-	}
+// ValidateDelete implements admission.Validator so a webhook will be registered for the type
+func (r *User) ValidateDelete(ctx context.Context, user *User) (admission.Warnings, error) {
 	userlog.Info("validate delete", "name", user.Name)
 	return admission.Warnings{}, validateAnnotationKeyNotEmpty(
 		user.ObjectMeta,

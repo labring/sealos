@@ -3,6 +3,7 @@ package types
 import (
 	"encoding/json"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -21,7 +22,8 @@ type WorkspaceSubscription struct {
 	PayMethod     PaymentMethod          `gorm:"type:string;column:pay_method"`                                        // 支付方式
 	Stripe        *StripePay             `gorm:"column:stripe;type:json"`                                              // Stripe 相关信息
 	TrafficStatus WorkspaceTrafficStatus `gorm:"type:workspace_traffic_status;default:'active';column:traffic_status"` // 流量状态
-	// StartAt       time.Time              `gorm:"column:start_at;autoCreateTime"`                                       // 开始时间
+	// StartAt       time.Time              `gorm:"column:start_at;autoCreateTime"`
+	//                      // 开始时间
 	CurrentPeriodStartAt time.Time `gorm:"column:current_period_start_at"`            // 当前周期开始时间
 	CurrentPeriodEndAt   time.Time `gorm:"column:current_period_end_at"`              // 当前周期结束时间
 	CancelAtPeriodEnd    bool      `gorm:"column:cancel_at_period_end;default:false"` // 是否在当前周期结束时取消订阅
@@ -34,7 +36,8 @@ type WorkspaceSubscription struct {
 	AIQuota  []WorkspaceAIQuotaPackage `gorm:"foreignKey:WorkspaceSubscriptionID;references:ID"` // 关联的AI配额数据
 }
 
-// TODO CREATE INDEX IF NOT EXISTS idx_pending_transactions ON "WorkspaceSubscriptionTransaction" (pay_status, start_at, status, region_domain);
+// TODO CREATE INDEX IF NOT EXISTS idx_pending_transactions ON "WorkspaceSubscriptionTransaction"
+// (pay_status, start_at, status, region_domain);
 type WorkspaceSubscriptionTransaction struct {
 	ID            uuid.UUID                     `gorm:"type:uuid;default:gen_random_uuid();primaryKey;column:id"`                         // ID
 	From          TransactionFrom               `gorm:"type:varchar(50);column:from;type:text"`                                           // 变更来源, 例如: "user" / "admin" / "referral"
@@ -83,12 +86,7 @@ func (p WorkspaceSubscriptionPlan) GetMaxResources() string {
 }
 
 func (p WorkspaceSubscriptionPlan) CanBeUpgraded(planName string) bool {
-	for _, plan := range p.UpgradePlanList {
-		if plan == planName {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(p.UpgradePlanList, planName)
 }
 
 func (WorkspaceSubscription) TableName() string {

@@ -137,13 +137,13 @@ func (s StripePayment) RefundPayment(opt RefundOption) (string, string, error) {
 				"refund_id": refundNo,
 			},
 		},
-		PaymentIntent: stripe.String(session.PaymentIntent.ID),
+		PaymentIntent: new(session.PaymentIntent.ID),
 	}
 
 	// Handle partial vs full refund
 	if opt.Amount > 0 {
 		// Validate that the amount is reasonable (convert to cents for Stripe)
-		refundParams.Amount = stripe.Int64(opt.Amount / 10000) // Convert to cents
+		refundParams.Amount = new(opt.Amount / 10000) // Convert to cents
 	} else {
 		return "", "", errors.New("refund amount must be greater than zero")
 	}

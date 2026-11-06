@@ -31,7 +31,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"k8s.io/utils/keymutex"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -41,7 +41,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-// OperationReqRequeueDuration is the time interval to reconcile a OperationRequest if no error occurs
+// OperationReqRequeueDuration is the time interval to reconcile a OperationRequest if no error
+// occurs
 const OperationReqRequeueDuration time.Duration = 30 * time.Second
 
 // OperationReqReconciler reconciles a Operationrequest object
@@ -50,7 +51,7 @@ type OperationReqReconciler struct {
 
 	Logger   logr.Logger
 	Scheme   *runtime.Scheme
-	Recorder record.EventRecorder
+	Recorder events.EventRecorder
 	locks    keymutex.KeyMutex
 	lockOnce sync.Once
 
@@ -84,7 +85,7 @@ func (r *OperationReqReconciler) SetupWithManager(
 	}
 	r.Logger = ctrl.Log.WithName(controllerName)
 	if r.Recorder == nil {
-		r.Recorder = mgr.GetEventRecorderFor(controllerName)
+		r.Recorder = mgr.GetEventRecorder(controllerName)
 	}
 	r.Scheme = mgr.GetScheme()
 	r.expirationTime = expTime
@@ -196,9 +197,9 @@ func (r *OperationReqReconciler) reconcile(
 		user,
 	); err != nil {
 		r.Recorder.Eventf(
-			request,
+			request, nil,
 			v1.EventTypeWarning,
-			"Failed to get user",
+			"Failed to get user", "Failed to get user",
 			"Failed to get user %s",
 			request.Spec.User,
 		)
@@ -207,9 +208,9 @@ func (r *OperationReqReconciler) reconcile(
 	bindUser := &userv1.User{}
 	if err := r.Get(ctx, client.ObjectKey{Name: request.Spec.User}, bindUser); err != nil {
 		r.Recorder.Eventf(
-			request,
+			request, nil,
 			v1.EventTypeWarning,
-			"Failed to get bind user",
+			"Failed to get bind user", "Failed to get bind user",
 			"Failed to get bind user %s",
 			request.Spec.User,
 		)
@@ -227,9 +228,9 @@ func (r *OperationReqReconciler) reconcile(
 	switch request.Spec.Action {
 	case userv1.Grant:
 		r.Recorder.Eventf(
-			request,
+			request, nil,
 			v1.EventTypeNormal,
-			"Grant",
+			"Grant", "Grant",
 			"Grant role %s to user %s",
 			request.Spec.Role,
 			request.Spec.User,
@@ -241,9 +242,9 @@ func (r *OperationReqReconciler) reconcile(
 			configureRoleBinding,
 		); err != nil {
 			r.Recorder.Eventf(
-				request,
+				request, nil,
 				v1.EventTypeWarning,
-				"Failed to create/update rolebinding",
+				"Failed to create/update rolebinding", "Failed to create/update rolebinding",
 				"Failed to create rolebinding %s/%s",
 				rolebinding.Namespace,
 				rolebinding.Name,
@@ -254,9 +255,9 @@ func (r *OperationReqReconciler) reconcile(
 			// update user annotation
 			if err := r.patchUserOwner(ctx, user, request.Spec.User); err != nil {
 				r.Recorder.Eventf(
-					request,
+					request, nil,
 					v1.EventTypeWarning,
-					"Failed to update user",
+					"Failed to update user", "Failed to update user",
 					"Failed to update user %s",
 					request.Spec.User,
 				)
@@ -265,18 +266,18 @@ func (r *OperationReqReconciler) reconcile(
 		}
 	case userv1.Deprive:
 		r.Recorder.Eventf(
-			request,
+			request, nil,
 			v1.EventTypeNormal,
-			"Deprive",
+			"Deprive", "Deprive",
 			"Deprive role %s from user %s",
 			request.Spec.Role,
 			request.Spec.User,
 		)
 		if err := r.Delete(ctx, rolebinding); client.IgnoreNotFound(err) != nil {
 			r.Recorder.Eventf(
-				request,
+				request, nil,
 				v1.EventTypeWarning,
-				"Failed to delete rolebinding",
+				"Failed to delete rolebinding", "Failed to delete rolebinding",
 				"Failed to delete rolebinding %s/%s",
 				rolebinding.Namespace,
 				rolebinding.Name,
@@ -285,18 +286,18 @@ func (r *OperationReqReconciler) reconcile(
 		}
 	case userv1.Update:
 		r.Recorder.Eventf(
-			request,
+			request, nil,
 			v1.EventTypeNormal,
-			"Update",
+			"Update", "Update",
 			"Update role %s to user %s",
 			request.Spec.Role,
 			request.Spec.User,
 		)
 		if err := r.Delete(ctx, rolebinding); client.IgnoreNotFound(err) != nil {
 			r.Recorder.Eventf(
-				request,
+				request, nil,
 				v1.EventTypeWarning,
-				"Failed to delete rolebinding",
+				"Failed to delete rolebinding", "Failed to delete rolebinding",
 				"Failed to delete rolebinding %s/%s",
 				rolebinding.Namespace,
 				rolebinding.Name,
@@ -305,9 +306,9 @@ func (r *OperationReqReconciler) reconcile(
 		}
 		if err = configureRoleBinding(); err != nil {
 			r.Recorder.Eventf(
-				request,
+				request, nil,
 				v1.EventTypeWarning,
-				"Failed to set owner reference",
+				"Failed to set owner reference", "Failed to set owner reference",
 				"Failed to set owner reference for rolebinding %s/%s",
 				rolebinding.Namespace,
 				rolebinding.Name,
@@ -316,9 +317,9 @@ func (r *OperationReqReconciler) reconcile(
 		}
 		if err := r.Create(ctx, rolebinding); err != nil {
 			r.Recorder.Eventf(
-				request,
+				request, nil,
 				v1.EventTypeWarning,
-				"Failed to create rolebinding",
+				"Failed to create rolebinding", "Failed to create rolebinding",
 				"Failed to create rolebinding %s/%s",
 				rolebinding.Namespace,
 				rolebinding.Name,
@@ -329,9 +330,9 @@ func (r *OperationReqReconciler) reconcile(
 			// update user annotation
 			if err := r.patchUserOwner(ctx, user, request.Spec.User); err != nil {
 				r.Recorder.Eventf(
-					request,
+					request, nil,
 					v1.EventTypeWarning,
-					"Failed to update user",
+					"Failed to update user", "Failed to update user",
 					"Failed to update user %s",
 					request.Spec.User,
 				)
@@ -349,9 +350,9 @@ func (r *OperationReqReconciler) reconcile(
 	}
 
 	r.Recorder.Eventf(
-		request,
+		request, nil,
 		v1.EventTypeNormal,
-		"Completed",
+		"Completed", "Completed",
 		"Completed operation request %s/%s",
 		request.Spec.Namespace,
 		request.Name,
@@ -402,9 +403,9 @@ func (r *OperationReqReconciler) deleteRequest(
 	r.Logger.V(1).Info("deleting OperationRequest", "request", request)
 	if err := r.Delete(ctx, request); client.IgnoreNotFound(err) != nil {
 		r.Recorder.Eventf(
-			request,
+			request, nil,
 			v1.EventTypeWarning,
-			"Failed to delete OperationRequest",
+			"Failed to delete OperationRequest", "Failed to delete OperationRequest",
 			"Failed to delete OperationRequest %s/%s",
 			request.Spec.Namespace,
 			request.Name,
@@ -429,9 +430,9 @@ func (r *OperationReqReconciler) updateRequestStatus(
 	request.Status.Phase = phase
 	if err := r.Status().Update(ctx, request); err != nil {
 		r.Recorder.Eventf(
-			request,
+			request, nil,
 			v1.EventTypeWarning,
-			"Failed to update OperationRequest status",
+			"Failed to update OperationRequest status", "Failed to update OperationRequest status",
 			"Failed to update OperationRequest status %s/%s",
 			request.Spec.Namespace,
 			request.Name,

@@ -86,7 +86,3 @@ type LicenseList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []License `json:"items"`
 }
-
-func init() {
-	SchemeBuilder.Register(&License{}, &LicenseList{})
-}

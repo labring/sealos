@@ -22,7 +22,7 @@ import (
 
 // CVMBilling represents the billing information of a CloudVirtualMachine instance
 type CVMBilling struct {
-	ID           primitive.ObjectID `json:"_id"                bson:"_id"`
+	ID           primitive.ObjectID `json:"_id"          bson:"_id"`
 	InstanceName string             `json:"instanceName"`
 	// Namespace    string             `json:"namespace"`
 	// VirtualMachinePackageId string           `json:"virtualMachinePackageId"`

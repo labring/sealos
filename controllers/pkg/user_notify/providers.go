@@ -27,7 +27,6 @@ import (
 	openapi "github.com/alibabacloud-go/darabonba-openapi/v2/client"
 	dysmsapi20170525 "github.com/alibabacloud-go/dysmsapi-20170525/v3/client"
 	util "github.com/alibabacloud-go/tea-utils/v2/service"
-	"github.com/alibabacloud-go/tea/tea"
 	"github.com/go-gomail/gomail"
 	"github.com/sirupsen/logrus"
 	"github.com/volcengine/volc-sdk-golang/service/vms"
@@ -243,7 +242,8 @@ func (p *EmailProvider) Send(
 	var emailContent string
 	if message.TemplateID != "" {
 		// 使用HTML模板并替换变量
-		// emailContent = p.renderEmailTemplate(message.TemplateID, message.Content, message.EventData, message.Recipient)
+		// emailContent = p.renderEmailTemplate(message.TemplateID, message.Content,
+		// message.EventData, message.Recipient)
 		emailContent = message.TemplateID
 	} else {
 		// 退回到使用简单内容，包装为基本HTML
@@ -552,7 +552,9 @@ You have successfully subscribed to the %s plan for the %s space in the %s regio
 		Recommendation: "https://usw.sealos.io/?openapp=system-costcenter&region=%s&workspace=%s",
 		DatesFormat:    "Until %s",
 	},
-	// EventTypeWorkspaceSubscriptionRenewedBalanceFallback 订阅支付失败，自动使用余额支付，需要通知用户订阅支付失败，但使用cloud balance成功
+	// EventTypeWorkspaceSubscriptionRenewedBalanceFallback
+	// 订阅支付失败，自动使用余额支付，需要通知用户订阅支付失败，但使用cloud
+	// balance成功
 	EventTypeWorkspaceSubscriptionRenewedBalanceFallback: {
 		TitleTemplate:  "%s Region %s Workspace Subscription Renewed with Cloud Balance",
 		AlertTemplate:  `Your subscription to the %s plan for the %s workspace in the %s region was successfully renewed using your cloud balance.Dear User, Your subscription auto-renewal has failed. However, we have successfully deducted the payment from your account balance, and your subscription has been renewed. Please check your payment method to ensure smooth auto-renewals in the future. If you have any questions, please contact our customer support.`,
@@ -621,7 +623,9 @@ You have successfully subscribed to the %s plan for the %s space in the %s regio
 		AlertTemplate:     "Your %s Plan for the %s workspace in the %s region has expired. Your service will be suspended on your plan's expiration date.",
 		BorderColor:       "#ff0000",
 		WarnAlertTemplate: "To prevent service interruption and data loss, please update your payment information as soon as possible. Your resources will be permanently deleted 7 days after the expiration date.",
-		// Content:           `To prevent service interruption and data loss, please update your plan as soon as possible. Your resources will be permanently deleted 7 days after the expiration date.`,
+		// Content:           `To prevent service interruption and data loss, please update your
+		// plan as soon as possible. Your resources will be permanently deleted 7 days after the
+		// expiration date.`,
 		Content:        "Your subscription will delete in %d days. Please renew your subscription to continue enjoying our services.",
 		Recommendation: "https://usw.sealos.io/?openapp=system-costcenter&region=%s&workspace=%s",
 	},
@@ -861,9 +865,9 @@ func (p *SMSProvider) Send(
 
 	// 创建阿里云SMS客户端
 	config := &openapi.Config{
-		AccessKeyId:     tea.String(p.Config.SMSAccessKeyID),
-		AccessKeySecret: tea.String(p.Config.SMSAccessKeySecret),
-		Endpoint:        tea.String(p.Config.SMSEndpoint),
+		AccessKeyId:     new(p.Config.SMSAccessKeyID),
+		AccessKeySecret: new(p.Config.SMSAccessKeySecret),
+		Endpoint:        new(p.Config.SMSEndpoint),
 	}
 
 	client, err := dysmsapi20170525.NewClient(config)
@@ -875,10 +879,10 @@ func (p *SMSProvider) Send(
 
 	// 构建发送短信请求
 	sendSmsRequest := &dysmsapi20170525.SendSmsRequest{
-		PhoneNumbers:  tea.String(message.Recipient.PhoneNumber),
-		SignName:      tea.String(p.Config.SMSSignName),
-		TemplateCode:  tea.String(message.TemplateID),
-		TemplateParam: tea.String(templateParam),
+		PhoneNumbers:  new(message.Recipient.PhoneNumber),
+		SignName:      new(p.Config.SMSSignName),
+		TemplateCode:  new(message.TemplateID),
+		TemplateParam: new(templateParam),
 	}
 
 	// 发送短信

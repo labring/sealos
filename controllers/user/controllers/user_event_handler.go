@@ -99,7 +99,7 @@ func addUserRequest(
 		return
 	}
 
-	priorityQueue.AddWithOpts(priorityqueue.AddOpts{Priority: priority}, request)
+	priorityQueue.AddWithOpts(priorityqueue.AddOpts{Priority: &priority}, request)
 }
 
 func userPriority(obj client.Object) int {

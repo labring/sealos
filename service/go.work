@@ -1,4 +1,4 @@
-go 1.25.0
+go 1.26.0
 
 use (
 	.
@@ -7,14 +7,12 @@ use (
 )
 
 replace (
-	github.com/google/gnostic-models => github.com/google/gnostic-models v0.6.8
 	github.com/labring/sealos/controllers/account => ../controllers/account
 	github.com/labring/sealos/controllers/user => ../controllers/user
 
-	k8s.io/api => k8s.io/api v0.32.1
-	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.32.1
-	k8s.io/apimachinery => k8s.io/apimachinery v0.32.1
-	k8s.io/client-go => k8s.io/client-go v0.32.1
-	k8s.io/kube-openapi => k8s.io/kube-openapi v0.0.0-20241105132330-32ad38e42d3f
-	sigs.k8s.io/controller-runtime => sigs.k8s.io/controller-runtime v0.20.4
+	k8s.io/api => k8s.io/api v0.36.6
+	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.36.6
+	k8s.io/apimachinery => k8s.io/apimachinery v0.36.6
+	k8s.io/client-go => k8s.io/client-go v0.36.6
+	sigs.k8s.io/controller-runtime => sigs.k8s.io/controller-runtime v0.24.1
 )

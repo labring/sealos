@@ -26,7 +26,7 @@ import (
 	"github.com/labring/sealos/controllers/user/controllers/helper/config"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -37,7 +37,7 @@ type DeleteRequestReconciler struct {
 	client.Client
 	Scheme   *runtime.Scheme
 	Logger   logr.Logger
-	Recorder record.EventRecorder
+	Recorder events.EventRecorder
 
 	// expirationTime is the time duration of the request is expired
 	expirationTime time.Duration
@@ -102,9 +102,9 @@ func (r *DeleteRequestReconciler) reconcile(
 	if err := r.Get(ctx, client.ObjectKey{Name: request.Spec.User}, &user); err != nil {
 		r.Logger.Error(err, "get user error", "name", request.Spec.User)
 		r.Recorder.Eventf(
-			request,
+			request, nil,
 			corev1.EventTypeWarning,
-			"GetUserError",
+			"GetUserError", "GetUserError",
 			"get user %s error: %s",
 			request.Spec.User,
 			err.Error(),
@@ -116,9 +116,9 @@ func (r *DeleteRequestReconciler) reconcile(
 	if !isUserDeleted(user) && !isGroupUser(user) {
 		r.Logger.Info("user is not deleted or not a group user", "name", user.Name)
 		r.Recorder.Eventf(
-			request,
+			request, nil,
 			corev1.EventTypeWarning,
-			"UserNotDeleted",
+			"UserNotDeleted", "UserNotDeleted",
 			"user %s is not deleted or not a group user",
 			user.Name,
 		)
@@ -129,9 +129,9 @@ func (r *DeleteRequestReconciler) reconcile(
 	if err := r.Delete(ctx, &user); err != nil {
 		r.Logger.Error(err, "delete user error", "name", user.Name)
 		r.Recorder.Eventf(
-			request,
+			request, nil,
 			corev1.EventTypeWarning,
-			"DeleteUserError",
+			"DeleteUserError", "DeleteUserError",
 			"delete user %s error: %s",
 			user.Name,
 			err.Error(),
@@ -148,9 +148,9 @@ func (r *DeleteRequestReconciler) reconcile(
 	); err != nil {
 		r.Logger.Error(err, "get ns error", "name", ns.Name)
 		r.Recorder.Eventf(
-			request,
+			request, nil,
 			corev1.EventTypeWarning,
-			"GetNamespaceError",
+			"GetNamespaceError", "GetNamespaceError",
 			"get namespace %s error: %s",
 			ns.Name,
 			err.Error(),
@@ -162,9 +162,9 @@ func (r *DeleteRequestReconciler) reconcile(
 	if err := r.Delete(ctx, &ns); err != nil {
 		r.Logger.Error(err, "delete ns error", "name", ns.Name)
 		r.Recorder.Eventf(
-			request,
+			request, nil,
 			corev1.EventTypeWarning,
-			"DeleteNamespaceError",
+			"DeleteNamespaceError", "DeleteNamespaceError",
 			"delete namespace %s error: %s",
 			ns.Name,
 			err.Error(),
@@ -176,9 +176,9 @@ func (r *DeleteRequestReconciler) reconcile(
 	if err := r.updateRequestStatus(ctx, request, userv1.RequestCompleted); err != nil {
 		r.Logger.Error(err, "update request status error", "name", request.Name)
 		r.Recorder.Eventf(
-			request,
+			request, nil,
 			corev1.EventTypeWarning,
-			"UpdateRequestStatusError",
+			"UpdateRequestStatusError", "UpdateRequestStatusError",
 			"update request %s status error: %s",
 			request.Name,
 			err.Error(),
@@ -219,7 +219,7 @@ func (r *DeleteRequestReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 	r.Logger = ctrl.Log.WithName(controllerName)
 	if r.Recorder == nil {
-		r.Recorder = mgr.GetEventRecorderFor(controllerName)
+		r.Recorder = mgr.GetEventRecorder(controllerName)
 	}
 	r.Scheme = mgr.GetScheme()
 	r.Logger.V(1).Info("init reconcile deleterequest controller")
@@ -237,9 +237,9 @@ func (r *DeleteRequestReconciler) deleteRequest(
 	r.Logger.V(1).Info("deleting OperationRequest", "request", request)
 	if err := r.Delete(ctx, request); client.IgnoreNotFound(err) != nil {
 		r.Recorder.Eventf(
-			request,
+			request, nil,
 			corev1.EventTypeWarning,
-			"Failed to delete OperationRequest",
+			"Failed to delete OperationRequest", "Failed to delete OperationRequest",
 			"Failed to delete OperationRequest %s/%s",
 			request.Namespace,
 			request.Name,
@@ -259,9 +259,9 @@ func (r *DeleteRequestReconciler) updateRequestStatus(
 	request.Status.Phase = phase
 	if err := r.Status().Update(ctx, request); err != nil {
 		r.Recorder.Eventf(
-			request,
+			request, nil,
 			corev1.EventTypeWarning,
-			"Failed to update OperationRequest status",
+			"Failed to update OperationRequest status", "Failed to update OperationRequest status",
 			"Failed to update OperationRequest status %s/%s",
 			request.Namespace,
 			request.Name,

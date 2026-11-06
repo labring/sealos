@@ -40,6 +40,10 @@ func (r stubHandlerRegistration) HasSynced() bool {
 	return r.synced
 }
 
+func (r stubHandlerRegistration) HasSyncedChecker() toolscache.DoneChecker {
+	return nil
+}
+
 func TestUserCountCacheWaitForCacheSync(t *testing.T) {
 	tests := []struct {
 		name          string
