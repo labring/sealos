@@ -1,6 +1,16 @@
 import { clearWebAnalyticsIdentity, trackWebVisitorLink } from '@/utils/app-visitor-link';
 import useSessionStore from '@/stores/session';
 
+// Node 26 exposes localStorage as undefined without --localstorage-file.
+// Supply browser storage before the persisted store captures it during import.
+vi.hoisted(() => {
+  vi.stubGlobal('localStorage', {
+    getItem: () => null,
+    setItem: () => {},
+    removeItem: () => {}
+  });
+});
+
 const uid = 'b7fa951a-1683-4a43-82f0-a6e1089f96ea';
 const visitor = '41781e2d-cf00-4b7c-8712-25aa7e47f2bf';
 const context = {

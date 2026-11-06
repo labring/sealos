@@ -13,7 +13,7 @@ The candidate is **@labring/sealos-desktop-sdk@0.1.24**. It adds the shared
 AppSDK and MasterOptions use the same definition. Runtime protocol names and SDK
 request behavior are unchanged. Do not manually edit generated declarations.
 
-Build with the workspace's pnpm 8.9.0 and Node 20.20.2:
+Build with the workspace's pnpm 8.9.0 and Node 26.13.0:
 
 ```sh
 cd frontend
