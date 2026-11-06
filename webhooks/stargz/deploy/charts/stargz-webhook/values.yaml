@@ -20,6 +20,8 @@ runtimeClass:
     stargz.sealos.io/runtime: "true"
 
 webhook:
+  # Empty selects all namespaces; use matchLabels to opt in prepared namespaces.
+  namespaceSelector: {}
   name: pod-stargz-runtime-injector
   entryName: pod-stargz-runtime-injector.sealos-system.svc
   registries: sealos.hub:5000

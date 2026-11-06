@@ -39,6 +39,24 @@ spec:
         - containerPort: 8443
           protocol: TCP
           name: https
+        startupProbe:
+          tcpSocket:
+            port: https
+          periodSeconds: 5
+          timeoutSeconds: 2
+          failureThreshold: 60
+        livenessProbe:
+          tcpSocket:
+            port: https
+          periodSeconds: 20
+          timeoutSeconds: 2
+          failureThreshold: 3
+        readinessProbe:
+          tcpSocket:
+            port: https
+          periodSeconds: 5
+          timeoutSeconds: 2
+          failureThreshold: 3
         resources:
           limits:
             cpu: 500m

@@ -39,3 +39,8 @@ metrics:
 
 webhook:
   timeoutSeconds: 5
+
+# Preserve the existing identity when adopting a legacy deployment.
+deploymentName: admission-webhook
+containerName: webhook
+selectorLabels: {}

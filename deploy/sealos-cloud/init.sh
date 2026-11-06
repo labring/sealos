@@ -56,6 +56,7 @@ add_chart_component() {
 }
 
 # Charts share one root directory; duplicate chart names fail the assembly.
+add_chart_component app-controller controllers/app/deploy entrypoint.sh
 add_chart_component account-controller controllers/account/deploy account-controller-entrypoint.sh
 add_chart_component heartbeat controllers/job/heartbeat/deploy heartbeat-cronjob-entrypoint.sh
 add_chart_component job-init controllers/job/init/deploy job-init-entrypoint.sh

@@ -92,3 +92,26 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
+
+### Startup health checks
+
+The manager has an HTTP `/healthz` startup probe with a 5-second period,
+2-second timeout, and failure threshold of 60 (approximately five minutes).
+Liveness and readiness checks begin after startup succeeds. These defaults are
+kept in the deployment template and the corresponding static/Kustomize manifests;
+to change the window, patch `startupProbe.failureThreshold` in that deployment
+(or use a Helm post-renderer for the chart). No environment variable is used.
+
+### Helm deployment
+
+`deploy/entrypoint.sh` installs `app-controller` in `app-system`. It adopts existing
+resources in place after checking Helm ownership, retaining the Deployment name
+and selector. CRDs remain in the chart's `crds/` directory and are not deleted on
+uninstall. The standalone Kubefile and sealos-cloud bundle both use this entrypoint.
+
+Edit `/root/.sealos/cloud/values/core/app-controller-values.yaml` to override
+`replicaCount` (1), `resources`, or the three probes; their defaults are listed in
+the shipped values. `image` defaults to the package's App Controller image.
+For script path/namespace/timeout overrides see `deploy/env.template`. When manually
+adopting an existing installation, provide its current image and resources in the
+values file before running the entrypoint.

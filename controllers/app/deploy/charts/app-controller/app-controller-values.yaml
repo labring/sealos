@@ -1,0 +1,27 @@
+replicaCount: 1
+resources:
+  limits:
+    cpu: 500m
+    memory: 128Mi
+  requests:
+    cpu: 10m
+    memory: 64Mi
+startupProbe:
+  httpGet:
+    path: /healthz
+    port: 8081
+  periodSeconds: 5
+  timeoutSeconds: 2
+  failureThreshold: 60
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: 8081
+  initialDelaySeconds: 15
+  periodSeconds: 20
+readinessProbe:
+  httpGet:
+    path: /readyz
+    port: 8081
+  initialDelaySeconds: 5
+  periodSeconds: 10

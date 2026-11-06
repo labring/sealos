@@ -92,3 +92,17 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
+
+### Startup health checks
+
+The manager/service startup probe uses the same local HTTP endpoint as the
+liveness probe. It runs every 5 seconds, with a 2-second timeout and a failure
+threshold of 60 (approximately five minutes). Liveness and readiness probes
+begin only after startup succeeds. This protects slow initialization without
+checking external dependencies in liveness.
+
+Override `startupProbe` in the chart values file supplied with `helm upgrade -f`
+(or the persisted user values file used by the deployment entrypoint), for
+example `startupProbe.failureThreshold: 120` for approximately ten minutes.
+Defaults are included in the chart and its shipped user values where present.
+These are Kubernetes probe settings; no application environment variable is used.

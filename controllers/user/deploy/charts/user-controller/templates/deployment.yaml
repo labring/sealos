@@ -66,6 +66,8 @@ spec:
               protocol: TCP
           image: "{{ .Values.image }}"
           imagePullPolicy: IfNotPresent
+          startupProbe:
+            {{- toYaml .Values.startupProbe | nindent 12 }}
           livenessProbe:
             {{- toYaml .Values.livenessProbe | nindent 12 }}
           readinessProbe:

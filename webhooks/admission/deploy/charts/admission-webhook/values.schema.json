@@ -92,6 +92,20 @@
           "maximum": 30
         }
       }
+    },
+    "deploymentName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "containerName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "selectorLabels": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
     }
   }
 }
