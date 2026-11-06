@@ -75,7 +75,10 @@ func (w WechatPayment) RefundPayment(option RefundOption) (string, string, error
 			)
 		}
 	} else {
-		return "", "", fmt.Errorf("order %s has not been paid or the payment time is unknown and cannot be refunded", option.TradeNo)
+		return "", "", fmt.Errorf(
+			"order %s has not been paid or the payment time is unknown and cannot be refunded",
+			option.TradeNo,
+		)
 	}
 
 	_, paidAmount, err := w.GetPaymentDetails(option.TradeNo)

@@ -938,7 +938,12 @@ func (s *StripeService) CancelUnpaidUpgrade(subscriptionID, invoiceID, oldPriceI
 			return fmt.Errorf("failed to rollback subscription %s: %w", subscriptionID, err)
 		}
 	} else {
-		logrus.Infof("Successfully rolled back subscription %s to old price %s, plan %s", subscriptionID, oldPriceID, oldPlanName)
+		logrus.Infof(
+			"Successfully rolled back subscription %s to old price %s, plan %s",
+			subscriptionID,
+			oldPriceID,
+			oldPlanName,
+		)
 	}
 
 	// Step 6: Clear any pending payment intents related to this upgrade
@@ -1087,10 +1092,17 @@ func (s *StripeService) FinalizeUpgradeInvoice(invoiceID string) error {
 				err,
 			)
 		} else {
-			logrus.Infof("Successfully finalized upgrade invoice %s for subscription %s", invoiceID, subscriptionID)
+			logrus.Infof(
+				"Successfully finalized upgrade invoice %s for subscription %s",
+				invoiceID,
+				subscriptionID,
+			)
 		}
 	} else {
-		logrus.Infof("Successfully finalized upgrade invoice %s (could not determine subscription ID)", invoiceID)
+		logrus.Infof(
+			"Successfully finalized upgrade invoice %s (could not determine subscription ID)",
+			invoiceID,
+		)
 	}
 	return nil
 }
@@ -1268,7 +1280,10 @@ func (s *StripeService) ConfirmInvoice(invoiceID string) error {
 				return fmt.Errorf("failed to finalize invoice %s: %w", invoiceID, err)
 			}
 		} else {
-			logrus.Infof("Successfully finalized invoice %s, status changed from draft to open", invoiceID)
+			logrus.Infof(
+				"Successfully finalized invoice %s, status changed from draft to open",
+				invoiceID,
+			)
 			inv.Status = "open" // Update status for next step
 		}
 	}
