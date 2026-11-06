@@ -15,6 +15,8 @@
 package e2e
 
 import (
+	"os"
+	"strings"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -29,8 +31,19 @@ func TestSealosTest(t *testing.T) {
 }
 
 var _ = SynchronizedBeforeSuite(func() []byte {
-	//check sealos bin exist
-	//exec.CheckCmdIsExist()
+	// Cluster images expand the ephemeral port range to include service ports.
+	// Keep image pulls from claiming those ports before kubeadm starts listeners.
+	const reservedPortsPath = "/proc/sys/net/ipv4/ip_local_reserved_ports"
+	previous, err := os.ReadFile(reservedPortsPath)
+	Expect(err).NotTo(HaveOccurred())
+	ports := "2379-2381,5000,5050-5054,6443,10249-10259"
+	if existing := strings.TrimSpace(string(previous)); existing != "" {
+		ports = existing + "," + ports
+	}
+	Expect(os.WriteFile(reservedPortsPath, []byte(ports+"\n"), 0o600)).To(Succeed())
+	DeferCleanup(func() {
+		Expect(os.WriteFile(reservedPortsPath, previous, 0o600)).To(Succeed())
+	})
 	SetDefaultEventuallyTimeout(settings.E2EConfig.WaitTime)
 	return nil
 }, func(data []byte) {

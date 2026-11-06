@@ -106,6 +106,7 @@ desktopConfig:
   realNameAuthEnabled: false # 启用实名认证
   workspaceResourceHeaderEnabled: false # 默认显示余额；设为 true 时使用资源头部
   balanceLabel: balance # 右上角名称：balance（默认，余额）或 credits（积分）；不改变金额
+  kubeconfigEnabled: true # 默认显示 Kubeconfig 菜单；设为 false 隐藏下载、复制和刷新入口
   licenseCheckEnabled: false # 启用 License 检查
   passwordEnabled: true # 启用密码登录
 ```

@@ -37,6 +37,7 @@ import (
 	"github.com/labring/sealos/controllers/user/controllers/helper/kubeconfig"
 	"github.com/labring/sealos/controllers/user/controllers/helper/ratelimiter"
 	"github.com/labring/sealos/controllers/user/pkg/licensegate"
+	"github.com/labring/sealos/controllers/user/pkg/reserved"
 	"github.com/labring/sealos/controllers/user/pkg/usercount"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -65,6 +66,7 @@ const (
 	userAnnotationOwnerKey           = userv1.UserAnnotationOwnerKey
 	userLabelOwnerKey                = userv1.UserLabelOwnerKey
 	licenseLimitedCondition          = userv1.ConditionType("LicenseLimited")
+	reservedNameCondition            = userv1.ConditionType("ReservedName")
 	adminUserName                    = "admin"
 	adminClusterRoleBindingName      = config.AdminClusterRoleBindingName
 	userFinalizerName                = "sealos.io/user.finalizers"
@@ -114,8 +116,39 @@ func (s *userReconcileState) recordSyncError(err error) {
 	s.syncError = errors.Join(s.syncError, err)
 }
 
-// +kubebuilder:rbac:groups=*,resources=*,verbs=*
-// +kubebuilder:rbac:groups="",resources=serviceaccounts/token,verbs=create
+// User workspaces and the shared user-system namespace. ServiceAccounts,
+// their tokens and bound-token Secrets are only ever touched in user-system,
+// so they are granted through a namespaced Role.
+// +kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch;create;update;delete
+// +kubebuilder:rbac:groups="",namespace=user-system,resources=serviceaccounts,verbs=get;list;watch;create;update
+// +kubebuilder:rbac:groups="",namespace=user-system,resources=serviceaccounts/token,verbs=create
+// +kubebuilder:rbac:groups="",namespace=user-system,resources=secrets,verbs=get;list;watch;create;update;delete
+// +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
+// Workspace RBAC: Roles/RoleBindings in ns-* namespaces and the legacy admin
+// sealos-cloudadmin ClusterRoleBinding. list/watch and create cannot be
+// constrained by resourceNames; writes to the admin binding are.
+// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles,verbs=get;list;watch;create;update
+// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;list;watch;create;update;delete
+// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterrolebindings,verbs=get;list;watch;create
+// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterrolebindings,resourceNames=sealos-cloudadmin,verbs=update;delete
+// Workspace Roles carry wildcard rules the controller itself no longer holds,
+// so the API server requires an explicit escalate grant to create them. The
+// escalation check is issued without a resource name, so escalate cannot be
+// scoped by resourceNames. bind passes the referenced role name and is scoped
+// to the fixed workspace role names; cluster-admin bind backs the opt-in
+// legacy admin binding.
+// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles,verbs=escalate
+// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles,resourceNames=Owner;Manager;Developer,verbs=bind
+// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles,resourceNames=cluster-admin,verbs=bind
+// User resources, including Users deleted through DeleteRequests. Finalizers
+// are updated through the main resource, so no finalizers subresource rule.
+// +kubebuilder:rbac:groups=user.sealos.io,resources=users,verbs=get;list;watch;update;patch;delete
+// +kubebuilder:rbac:groups=user.sealos.io,resources=users/status,verbs=patch
+// Licensing.
+// +kubebuilder:rbac:groups=license.sealos.io,resources=licenses,verbs=get;list;watch
+// Authenticated metrics endpoint (controller-runtime metrics filter).
+// +kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenreviews,verbs=create
+// +kubebuilder:rbac:groups=authorization.k8s.io,resources=subjectaccessreviews,verbs=create
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -762,6 +795,12 @@ func (r *UserReconciler) reconcile(ctx context.Context, obj client.Object) (ctrl
 	}
 
 	originalStatus := user.Status.DeepCopy()
+	if reserved.IsReserved(user.Name) {
+		// Defense in depth: the webhook rejects reserved names on create, but
+		// the controller must also refuse Users that predate that check or were
+		// created with webhooks disabled.
+		return r.rejectReservedName(ctx, user, originalStatus)
+	}
 	blocked, err := r.handleLicenseLimit(ctx, user, originalStatus)
 	if err != nil {
 		return ctrl.Result{}, err
@@ -1393,8 +1432,21 @@ func (r *UserReconciler) syncServiceAccount(
 		if err = r.Get(ctx, client.ObjectKey{
 			Namespace: config.GetUserSystemNamespace(),
 			Name:      user.Name,
-		}, sa); err != nil && !apierrors.IsNotFound(err) {
-			return err
+		}, sa); err != nil {
+			if !apierrors.IsNotFound(err) {
+				return err
+			}
+		} else if !controlledByUser(sa, user) {
+			// The ServiceAccount already exists but is not controlled by this
+			// User, for example the controller's own user-controller-manager
+			// identity. Adopting it would leak its privileges into this User's
+			// kubeconfig, so refuse instead of updating it.
+			return fmt.Errorf(
+				"refusing to adopt existing service account %s/%s for User %s: it is not controlled by this User",
+				sa.Namespace,
+				sa.Name,
+				user.Name,
+			)
 		}
 
 		if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, sa, func() error {
@@ -1592,8 +1644,25 @@ func (r *UserReconciler) deleteBoundTokenSecret(ctx context.Context, user *userv
 	}
 
 	secret := &v1.Secret{}
-	secret.Name = secretName
-	secret.Namespace = config.GetUserSystemNamespace()
+	if err := r.Get(ctx, client.ObjectKey{
+		Name: secretName, Namespace: config.GetUserSystemNamespace(),
+	}, secret); err != nil {
+		if !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to get bound token secret: %w", err)
+		}
+		return nil
+	}
+	// Legacy bound token secrets follow the sealos-token-<User.Name> scheme, so
+	// a derived name can collide with another identity's secret. Never delete
+	// a secret that is explicitly annotated for a different service account.
+	if owner, ok := secret.Annotations[v1.ServiceAccountNameKey]; ok && owner != user.Name {
+		r.Logger.V(1).Info(
+			"skip deleting bound token secret owned by another service account",
+			"secret", client.ObjectKeyFromObject(secret),
+			"owner", owner,
+		)
+		return nil
+	}
 	if err := r.Delete(ctx, secret); err != nil && !apierrors.IsNotFound(err) {
 		return fmt.Errorf("failed to delete bound token secret: %w", err)
 	}
@@ -1710,6 +1779,34 @@ func (r *UserReconciler) updateStatus(
 	original := user.DeepCopy()
 	original.Status = *originalStatus.DeepCopy()
 	return r.Client.Status().Patch(ctx, user, client.MergeFrom(original))
+}
+
+func (r *UserReconciler) rejectReservedName(
+	ctx context.Context,
+	user *userv1.User,
+	originalStatus *userv1.UserStatus,
+) (ctrl.Result, error) {
+	condition := &userv1.Condition{
+		Type:               reservedNameCondition,
+		Status:             v1.ConditionFalse,
+		LastTransitionTime: metav1.Now(),
+		LastHeartbeatTime:  metav1.Now(),
+		Reason:             "NameReserved",
+		Message:            fmt.Sprintf("user name %q is reserved", user.Name),
+	}
+	user.Status.Phase = userv1.UserPending
+	user.Status.Conditions = helper.UpdateCondition(user.Status.Conditions, *condition)
+	if err := r.updateStatus(ctx, user, originalStatus); err != nil {
+		return ctrl.Result{}, err
+	}
+	r.Recorder.Eventf(
+		user,
+		v1.EventTypeWarning,
+		"ReservedUserName",
+		"User name %s is reserved; delete this User and recreate it with another name",
+		user.Name,
+	)
+	return ctrl.Result{RequeueAfter: r.minRequeueDuration}, nil
 }
 
 func (r *UserReconciler) handleLicenseLimit(

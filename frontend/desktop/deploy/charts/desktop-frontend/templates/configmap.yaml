@@ -50,6 +50,7 @@ data:
         logo: "{{ .Values.desktopConfig.layoutLogo }}"
         backgroundImage: "{{ .Values.desktopConfig.layoutBackgroundImage }}"
         balanceLabel: {{ .Values.desktopConfig.balanceLabel | default "balance" | quote }}
+        kubeconfigEnabled: {{ if hasKey .Values.desktopConfig "kubeconfigEnabled" }}{{ .Values.desktopConfig.kubeconfigEnabled }}{{ else }}true{{ end }}
         workspaceResourceHeaderEnabled: {{ .Values.desktopConfig.workspaceResourceHeaderEnabled }}
         customerServiceURL: "{{ .Values.desktopConfig.customerServiceURL }}"
         discordInviteLink: {{ if eq .Values.desktopConfig.version "en" }}"{{ .Values.desktopConfig.discordInviteLink }}"{{ else }}""{{ end }}

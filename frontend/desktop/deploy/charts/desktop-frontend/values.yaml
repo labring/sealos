@@ -104,6 +104,8 @@ desktopConfig:
   workspaceResourceHeaderEnabled: false
   # Header label: balance (default) or credits; does not change the amount.
   balanceLabel: balance
+  # Show Kubeconfig download, copy and refresh actions in the account menu.
+  kubeconfigEnabled: true
 
 # End of auto-configured values
 # ============================================================================

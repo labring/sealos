@@ -79,6 +79,8 @@ desktopConfig:
   workspaceResourceHeaderEnabled: true
   # Header label: balance (default) or credits; does not change the amount.
   balanceLabel: balance
+  # Show Kubeconfig download, copy and refresh actions in the account menu.
+  kubeconfigEnabled: true
   customerServiceURL: ""
   layoutDocsUseDocs: false
   layoutDocsUrl: "https://sealos.run/docs/Intro/"

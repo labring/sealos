@@ -34,12 +34,11 @@ func (k *KubeadmRuntime) copyMasterKubeConfig(host string) error {
 	return k.sshCmdAsync(host, copyKubeAdminConfigCommand)
 }
 
-func (k *KubeadmRuntime) deleteStaticPod(component string) error {
-	podIDSh := fmt.Sprintf("crictl ps -a --name %s -o json", component)
+func (k *KubeadmRuntime) restartStaticPod(component string) error {
+	containerQuery := fmt.Sprintf("crictl ps --state Running --name '^%s$' -o json", component)
 	type crictlPS struct {
 		Containers []struct {
-			ID           string `json:"id"`
-			PodSandboxID string `json:"podSandboxId"`
+			ID string `json:"id"`
 		} `json:"containers"`
 	}
 
@@ -47,23 +46,32 @@ func (k *KubeadmRuntime) deleteStaticPod(component string) error {
 	for _, master := range k.getMasterIPAndPortList() {
 		m := master
 		eg.Go(func() error {
-			podIDJSON, err := k.sshCmdToString(m, podIDSh)
+			containersJSON, err := k.sshCmdToString(m, containerQuery)
 			if err != nil {
 				return err
 			}
 			ps := &crictlPS{}
-			if err = json.Unmarshal([]byte(podIDJSON), ps); err != nil {
+			if err = json.Unmarshal([]byte(containersJSON), ps); err != nil {
 				return err
 			}
 			if len(ps.Containers) == 0 {
 				return errors.New("not found static pod running")
 			}
 
-			podID := ps.Containers[0].PodSandboxID[:13]
-			if err = k.sshCmdAsync(m, fmt.Sprintf("crictl --timeout=10s stopp %s", podID)); err != nil {
-				return err
+			// Kubelet restarts stopped containers and loads the updated certificates.
+			// Removing the sandbox races with containers that kubelet is starting.
+			for _, container := range ps.Containers {
+				if container.ID == "" {
+					return errors.New("static pod container has an empty ID")
+				}
+				if err = k.sshCmdAsync(
+					m,
+					"crictl --timeout=30s stop --timeout=10 "+shellArgument(container.ID),
+				); err != nil {
+					return err
+				}
 			}
-			return k.sshCmdAsync(m, fmt.Sprintf("crictl rmp %s", podID))
+			return nil
 		})
 	}
 	return eg.Wait()

@@ -37,11 +37,12 @@ import (
 )
 
 type CreateProcessor struct {
-	ClusterFile clusterfile.Interface
-	Buildah     buildah.Interface
-	Runtime     runtime.Interface
-	Guest       guest.Interface
-	ExtraEnvs   map[string]string // parsing from CLI arguments
+	maintenanceContext context.Context
+	ClusterFile        clusterfile.Interface
+	Buildah            buildah.Interface
+	Runtime            runtime.Interface
+	Guest              guest.Interface
+	ExtraEnvs          map[string]string // parsing from CLI arguments
 }
 
 func (c *CreateProcessor) Execute(cluster *v2.Cluster) error {
@@ -50,6 +51,9 @@ func (c *CreateProcessor) Execute(cluster *v2.Cluster) error {
 		return err
 	}
 	for _, f := range pipeLine {
+		if err := checkMaintenanceContext(c.maintenanceContext); err != nil {
+			return err
+		}
 		if err = f(cluster); err != nil {
 			return err
 		}
@@ -109,6 +113,7 @@ func (c *CreateProcessor) preProcess(cluster *v2.Cluster) error {
 		return fmt.Errorf("failed to init runtime, %v", err)
 	}
 	c.Runtime = rt
+	setMaintenanceContext(rt, c.maintenanceContext)
 	return nil
 }
 
@@ -143,7 +148,7 @@ func (c *CreateProcessor) MirrorRegistry(cluster *v2.Cluster) error {
 func (c *CreateProcessor) Bootstrap(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline Bootstrap in CreateProcessor")
 	hosts := append(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList()...)
-	bs := bootstrap.New(cluster)
+	bs := bootstrap.New(cluster, c.maintenanceContext)
 	return bs.Apply(hosts...)
 }
 
@@ -186,9 +191,10 @@ func NewCreateProcessor(ctx context.Context, name string, clusterFile clusterfil
 	}
 
 	return &CreateProcessor{
-		ClusterFile: clusterFile,
-		Buildah:     bder,
-		Guest:       gs,
-		ExtraEnvs:   GetEnvs(ctx),
+		maintenanceContext: ctx,
+		ClusterFile:        clusterFile,
+		Buildah:            bder,
+		Guest:              gs,
+		ExtraEnvs:          GetEnvs(ctx),
 	}, nil
 }

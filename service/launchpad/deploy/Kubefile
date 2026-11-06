@@ -1,7 +1,0 @@
-FROM scratch
-COPY charts charts
-COPY registry registry
-COPY remove remove
-COPY entrypoint.sh entrypoint.sh
-
-CMD ["bash entrypoint.sh"]

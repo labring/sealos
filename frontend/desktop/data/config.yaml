@@ -34,6 +34,8 @@ desktop:
   layout:
     # Header label: balance (default) or credits; only changes display text.
     balanceLabel: balance
+    # Show Kubeconfig download, copy and refresh actions; visible by default.
+    kubeconfigEnabled: true
     version: "en"
     title: "Sealos Cloud"
     logo: "/logo.svg"

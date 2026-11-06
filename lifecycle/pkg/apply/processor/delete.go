@@ -45,15 +45,20 @@ func (d DeleteProcessor) Execute(cluster *v2.Cluster) (err error) {
 	if err != nil {
 		return err
 	}
+	return runResetPipeline(cluster, pipLine)
+}
+
+func runResetPipeline(cluster *v2.Cluster, pipeline []func(*v2.Cluster) error) error {
 	// TODO if error is exec net process ???
-	for _, f := range pipLine {
-		if err = f(cluster); err != nil {
+	for _, f := range pipeline {
+		if err := f(cluster); err != nil {
 			logger.Warn("failed to exec delete process, %s", err.Error())
 		}
 	}
 
 	return nil
 }
+
 func (d DeleteProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error) {
 	var todoList []func(cluster *v2.Cluster) error
 	todoList = append(todoList,
@@ -80,7 +85,8 @@ func (d *DeleteProcessor) UndoBootstrap(cluster *v2.Cluster) error {
 	} else {
 		cls = cluster
 	}
-	bs := bootstrap.New(cls)
+	// Whole-cluster reset continues offline after its API lease disappears.
+	bs := bootstrap.New(cls, context.Background())
 	return bs.Delete(hosts...)
 }
 

@@ -16,8 +16,17 @@ limitations under the License.
 package registry
 
 import (
+	"context"
+	"errors"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"runtime"
+	"strconv"
 	"strings"
+	"syscall"
 	"testing"
+	"time"
 )
 
 type testPathResolver struct{}
@@ -55,7 +64,7 @@ func TestGetRegistryServeCommandIncludesSupportedFlags(t *testing.T) {
 		pidFile:        true,
 		disableLogging: true,
 	})
-	want := "/var/lib/sealos/data/default/rootfs/opt/sealctl registry serve filesystem --port 5050 --pid-file /var/lib/sealos/data/default/rootfs/registry.pid --disable-logging=true /var/lib/sealos/data/default/rootfs/registry >/dev/null 2>&1"
+	want := "exec /var/lib/sealos/data/default/rootfs/opt/sealctl registry serve filesystem --port 5050 --pid-file /var/lib/sealos/data/default/rootfs/registry.pid --disable-logging=true /var/lib/sealos/data/default/rootfs/registry >/dev/null 2>&1"
 	if got != want {
 		t.Fatalf("unexpected serve command:\nwant: %s\n got: %s", want, got)
 	}
@@ -63,10 +72,77 @@ func TestGetRegistryServeCommandIncludesSupportedFlags(t *testing.T) {
 
 func TestGetRegistryServeCommandOmitsUnsupportedOptionalFlags(t *testing.T) {
 	got := getRegistryServeCommand(testPathResolver{}, "5050", registryServeFlags{portFlag: "-p"})
-	want := "/var/lib/sealos/data/default/rootfs/opt/sealctl registry serve filesystem -p 5050 /var/lib/sealos/data/default/rootfs/registry >/dev/null 2>&1"
+	want := "exec /var/lib/sealos/data/default/rootfs/opt/sealctl registry serve filesystem -p 5050 /var/lib/sealos/data/default/rootfs/registry >/dev/null 2>&1"
 	if got != want {
 		t.Fatalf("unexpected serve command:\nwant: %s\n got: %s", want, got)
 	}
+}
+
+type delayedRegistryPaths struct {
+	testPathResolver
+	binary string
+}
+
+func (p delayedRegistryPaths) RootFSSealctlPath() string {
+	return p.binary + " -test.run=^TestDelayedRegistryProcess$ --"
+}
+
+func TestRegistryCancellationBeforePIDFile(t *testing.T) {
+	if runtime.GOOS != "linux" {
+		t.Skip("requires Linux process signaling")
+	}
+	binary, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	marker := filepath.Join(t.TempDir(), "started")
+	t.Setenv("SEALOS_TEST_REGISTRY_PROCESS", marker)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	command := getRegistryServeCommand(
+		delayedRegistryPaths{binary: binary},
+		"5050",
+		registryServeFlags{portFlag: "--port"},
+	)
+	process := exec.CommandContext(ctx, "/bin/bash", "-c", command)
+	if err := process.Start(); err != nil {
+		t.Fatal(err)
+	}
+	var data []byte
+	deadline := time.Now().Add(5 * time.Second)
+	for time.Now().Before(deadline) {
+		data, err = os.ReadFile(marker)
+		if err == nil && len(data) != 0 {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	cancel()
+	_ = process.Wait()
+	if err != nil {
+		t.Fatalf("registry helper did not start: %v", err)
+	}
+	pid, err := strconv.Atoi(string(data))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := syscall.Kill(pid, 0); !errors.Is(err, syscall.ESRCH) {
+		_ = syscall.Kill(pid, syscall.SIGKILL)
+		t.Fatalf("registry survived cancellation before publishing its PID file: %v", err)
+	}
+}
+
+func TestDelayedRegistryProcess(t *testing.T) {
+	marker := os.Getenv("SEALOS_TEST_REGISTRY_PROCESS")
+	if marker == "" {
+		return
+	}
+	//nolint:gosec // The parent test supplies a marker inside t.TempDir.
+	if err := os.WriteFile(marker, []byte(strconv.Itoa(os.Getpid())), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	// Simulate initialization before the registry writes the cleanup PID file.
+	time.Sleep(30 * time.Second)
 }
 
 func TestGetRegistryServeCleanupCommandIsScopedToTemporaryRegistry(t *testing.T) {

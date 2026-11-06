@@ -6,7 +6,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 RELEASE_NAMESPACE="${RELEASE_NAMESPACE:-sealos-system}"
 CHART_PATH="${CHART_PATH:-${SCRIPT_DIR}/charts/stargz-webhook}"
 USER_VALUES_FILE="${USER_VALUES_FILE:-/root/.sealos/cloud/values/core/stargz-webhook-values.yaml}"
-HELM_TIMEOUT="${HELM_TIMEOUT:-5m}"
 
 die() { echo "error: $*" >&2; exit 1; }
 ensure_values() {
@@ -61,11 +60,11 @@ RESOURCES
 apply() {
   ensure_values
   if ! release_exists; then delete_legacy_resources; fi
-  helm upgrade --install "$RELEASE_NAME" "$CHART_PATH" --namespace "$RELEASE_NAMESPACE" --create-namespace --reset-values --values "$USER_VALUES_FILE" --wait --timeout "$HELM_TIMEOUT"
+  helm upgrade --install "$RELEASE_NAME" "$CHART_PATH" --namespace "$RELEASE_NAMESPACE" --create-namespace --reset-values --values "$USER_VALUES_FILE"
 }
 delete_release() {
   if release_exists; then
-    helm uninstall "$RELEASE_NAME" -n "$RELEASE_NAMESPACE" --wait --timeout "$HELM_TIMEOUT"
+    helm uninstall "$RELEASE_NAME" -n "$RELEASE_NAMESPACE"
   fi
   echo "Removed Helm release $RELEASE_NAME; preserved $USER_VALUES_FILE and RuntimeClass/stargz"
 }
