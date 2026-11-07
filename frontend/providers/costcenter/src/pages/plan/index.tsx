@@ -21,7 +21,7 @@ import { CardInfoSection } from '@/components/plan/CardInfoSection';
 import { InvoicePaymentBanner } from '@/components/plan/InvoicePaymentBanner';
 import { BeingCancelledBanner } from '@/components/plan/BeingCancelledBanner';
 import { FreePlanExpiryBanner } from '@/components/plan/FreePlanExpiryBanner';
-import { getAccountBalance } from '@/api/account';
+import { getAccountBalance, getAccountSummary } from '@/api/account';
 import request from '@/service/request';
 import RechargeModal from '@/components/RechargeModal';
 import TransferModal from '@/components/TransferModal';
@@ -254,7 +254,7 @@ export default function Plan() {
   const transferRef = useRef<any>();
 
   // Get balance data
-  const { data: balance_raw } = useQuery({
+  const accountQuery = useQuery({
     queryKey: ['getAccount'],
     queryFn: getAccountBalance,
     staleTime: 0
@@ -392,9 +392,8 @@ export default function Plan() {
   });
 
   // Calculate balance
-  let rechargAmount = balance_raw?.data?.balance || 0;
-  let expenditureAmount = balance_raw?.data?.deductionBalance || 0;
-  let balance = rechargAmount - expenditureAmount;
+  const { balance } = getAccountSummary(accountQuery.data?.data);
+  const accountUnavailable = accountQuery.isError || (!accountQuery.isLoading && balance === null);
 
   // Get k8s_username for transfer functionality
   const getSession = useSessionStore((state) => state.getSession);
@@ -739,9 +738,12 @@ export default function Plan() {
           <div className="flex-1/3">
             <BalanceSection
               balance={balance}
+              isError={accountUnavailable}
+              isLoading={accountQuery.isLoading}
               rechargeEnabled={config.recharge.enabled}
               subscriptionEnabled={config.features.subscriptionEnabled}
               onTopUpClick={() => rechargeRef?.current?.onOpen()}
+              onRetry={() => void accountQuery.refetch()}
             />
           </div>
         </div>
@@ -809,9 +811,12 @@ export default function Plan() {
 
           <BalanceSection
             balance={balance}
+            isError={accountUnavailable}
+            isLoading={accountQuery.isLoading}
             rechargeEnabled={config.recharge.enabled}
             subscriptionEnabled={config.features.subscriptionEnabled}
             onTopUpClick={() => rechargeRef?.current!.onOpen()}
+            onRetry={() => void accountQuery.refetch()}
           />
         </>
       )}
@@ -829,7 +834,7 @@ export default function Plan() {
       {config.recharge.enabled && (
         <RechargeModal
           ref={rechargeRef}
-          balance={balance}
+          balance={balance ?? 0}
           stripePromise={stripePromise}
           request={request}
           onPaySuccess={async () => {
@@ -843,7 +848,7 @@ export default function Plan() {
       {config.features.transferEnabled && (
         <TransferModal
           ref={transferRef}
-          balance={balance}
+          balance={balance ?? 0}
           onTransferSuccess={async () => {
             // Note: invalidate will be handled when modal closes
             // Wait a bit for transfer to be processed
