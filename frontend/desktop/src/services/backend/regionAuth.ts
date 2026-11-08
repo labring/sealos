@@ -76,110 +76,121 @@ export async function getRegionToken({
     if (!userResult) {
       return null;
     }
-    let workspaceUid: string | undefined;
-    let curRegionWorkspaceUsage = userResult.WorkspaceUsage.filter(
-      (u) => u.regionUid == region.uid
-    );
-    const needFlush = !userResult.userInfo;
-    if (needFlush) {
-      // flush user workspace
-      const result = await prisma.userCr.findUnique({
-        where: {
-          userUid: userUid
-        },
-        select: {
-          uid: true,
-          userWorkspace: {
-            select: {
-              workspace: {
-                select: {
-                  uid: true,
-                  userWorkspace: true
-                }
-              },
-              role: true,
-              status: true,
-              isPrivate: true
-            }
-          }
-        }
-      });
-      const ownerWorkspace =
-        result?.userWorkspace.filter(
-          ({ status, role }) => status === 'IN_WORKSPACE' && role === 'OWNER'
-        ) || [];
-      ownerWorkspace.sort((a, b) => {
-        if (a.isPrivate && !b.isPrivate) {
-          return -1;
-        } else if (!a.isPrivate && b.isPrivate) {
-          return 1;
-        }
-        return 0;
-      });
-
-      if (curRegionWorkspaceUsage.length === 0 && ownerWorkspace.length > 0)
-        await globalPrisma.$transaction(async (tx) => {
-          for await (const r of ownerWorkspace) {
-            await tx.workspaceUsage.create({
-              data: {
-                userUid: userUid,
-                workspaceUid: r.workspace.uid,
-                seat: r.workspace.userWorkspace.filter(
-                  (predicate) => predicate.status === 'IN_WORKSPACE'
-                ).length,
-                regionUid: region.uid
-              }
-            });
-          }
-        });
-    } else if (userResult.userInfo && !userResult.userInfo.isInited) {
+    if (userResult.userInfo && !userResult.userInfo.isInited) {
       return null;
     }
-    if (needFlush) {
-      const afterFlushResult = await globalPrisma.workspaceUsage.findMany({
-        where: {
-          userUid: userUid
-        },
-        orderBy: {
-          createdAt: 'asc'
-        }
-      });
-      curRegionWorkspaceUsage = afterFlushResult.filter((u) => u.regionUid == region.uid);
-    }
-    let needCreating = curRegionWorkspaceUsage.length === 0;
-    // 先处理全局状态
-    if (!needCreating) {
-      // find out private workspace
-      const result = await prisma.userCr.findUnique({
-        where: {
-          userUid: userUid
-        },
-        select: {
-          userWorkspace: {
-            select: {
-              role: true,
-              status: true,
-              isPrivate: true,
-              workspaceUid: true
+
+    const curRegionWorkspaceUsage = userResult.WorkspaceUsage.filter(
+      (u) => u.regionUid === region.uid
+    );
+    const regionalUser = await prisma.userCr.findUnique({
+      where: { userUid },
+      select: {
+        userWorkspace: {
+          select: {
+            workspaceUid: true,
+            role: true,
+            status: true,
+            isPrivate: true,
+            workspace: {
+              select: {
+                uid: true,
+                userWorkspace: { select: { status: true } }
+              }
             }
           }
         }
-      });
-      const privateWorkspace = (result?.userWorkspace || []).find(
-        ({ isPrivate, role, workspaceUid, status }) =>
-          isPrivate && role === 'OWNER' && status === 'IN_WORKSPACE'
+      }
+    });
+    let needCreating = false;
+    let workspaceUid: string;
+
+    if (regionalUser) {
+      const ownerWorkspaces = regionalUser.userWorkspace.filter(
+        ({ role, status }) => role === Role.OWNER && status === JoinStatus.IN_WORKSPACE
       );
-      workspaceUid = privateWorkspace?.workspaceUid;
+      const privateWorkspaces = ownerWorkspaces.filter(({ isPrivate }) => isPrivate);
+      if (privateWorkspaces.length !== 1) {
+        throw new Error('Expected exactly one active private workspace owner relation');
+      }
+      workspaceUid = privateWorkspaces[0].workspaceUid;
+
+      // Global initialization does not guarantee that every region is registered.
+      // Recover from regional ownership, including partially missing registrations.
+      const registeredWorkspaceUids = new Set(curRegionWorkspaceUsage.map((u) => u.workspaceUid));
+      const missingWorkspaces = ownerWorkspaces.filter(
+        (w) => !registeredWorkspaceUids.has(w.workspaceUid)
+      );
+      if (missingWorkspaces.length > 0) {
+        await globalPrisma.$transaction(
+          async (tx) => {
+            // Transfers update global ownership before regional roles. Do not restore
+            // the old owner's usage while that regional update is still in flight.
+            const registered = await tx.workspaceUsage.findMany({
+              where: {
+                regionUid: region.uid,
+                workspaceUid: { in: missingWorkspaces.map((w) => w.workspaceUid) }
+              },
+              select: { workspaceUid: true, userUid: true }
+            });
+            const previousPrivateOwners = registered.filter(
+              (u) => u.workspaceUid === workspaceUid && u.userUid !== userUid
+            );
+            let recoverMergedPrivate = false;
+            if (previousPrivateOwners.length > 0) {
+              // Existing merges may move the regional user before moving global usage.
+              const mergeInfo = await tx.mergeUserTransactionInfo.findFirst({
+                where: {
+                  userUid,
+                  mergeUserUid: { in: previousPrivateOwners.map((u) => u.userUid) }
+                }
+              });
+              if (!mergeInfo) {
+                throw new Error('Private workspace is registered to another user');
+              }
+              recoverMergedPrivate = true;
+            }
+            const occupiedWorkspaceUids = new Set(registered.map((u) => u.workspaceUid));
+            const unregistered = missingWorkspaces.filter(
+              (w) =>
+                !occupiedWorkspaceUids.has(w.workspaceUid) ||
+                (w.workspaceUid === workspaceUid && recoverMergedPrivate)
+            );
+            if (unregistered.length > 0) {
+              await tx.workspaceUsage.createMany({
+                data: unregistered.map(({ workspace }) => ({
+                  userUid,
+                  regionUid: region.uid,
+                  workspaceUid: workspace.uid,
+                  seat: workspace.userWorkspace.filter((u) => u.status === JoinStatus.IN_WORKSPACE)
+                    .length
+                })),
+                skipDuplicates: true
+              });
+            }
+          },
+          { isolationLevel: 'Serializable' }
+        );
+      }
     } else {
-      workspaceUid = v4();
-      await globalPrisma.workspaceUsage.create({
-        data: {
-          workspaceUid,
-          userUid,
-          regionUid: region.uid,
-          seat: 1
-        }
-      });
+      if (curRegionWorkspaceUsage.length > 1) {
+        throw new Error('Ambiguous workspace registrations without a regional user');
+      }
+      if (curRegionWorkspaceUsage.length === 1) {
+        // Resume a prior attempt that registered globally before regional creation failed.
+        workspaceUid = curRegionWorkspaceUsage[0].workspaceUid;
+      } else {
+        workspaceUid = v4();
+        await globalPrisma.workspaceUsage.create({
+          data: {
+            workspaceUid,
+            userUid,
+            regionUid: region.uid,
+            seat: 1
+          }
+        });
+        needCreating = true;
+      }
     }
 
     const payload = await prisma.$transaction(async (tx): Promise<AccessTokenPayload | null> => {
@@ -198,9 +209,13 @@ export async function getRegionToken({
       if (userCrResult) {
         // get a exist user
         const relations = userCrResult.userWorkspace!;
-        const privateRelation = relations.find(
-          (r) => r.isPrivate && r.role === 'OWNER' && r.status === 'IN_WORKSPACE'
+        const privateRelations = relations.filter(
+          (r) => r.isPrivate && r.role === Role.OWNER && r.status === JoinStatus.IN_WORKSPACE
         );
+        if (privateRelations.length !== 1) {
+          throw new Error('Expected exactly one active private workspace owner relation');
+        }
+        const privateRelation = privateRelations[0];
         if (privateRelation?.workspaceUid !== workspaceUid) {
           // 不匹配的未知错误
           console.error(
