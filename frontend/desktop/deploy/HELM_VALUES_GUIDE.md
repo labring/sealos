@@ -106,6 +106,7 @@ desktopConfig:
 ```yaml
 desktopConfig:
   guideEnabled: false # 启用用户引导
+  adminKubeconfigEnabled: false # Allow admin User CR kubeconfig access, initialization and rotation; server only
   apiEnabled: false # 启用 API 访问
   rechargeEnabled: false # 启用充值功能
   enterpriseRealNameAuthEnabled: false # 启用企业实名认证
@@ -115,6 +116,10 @@ desktopConfig:
   passwordEnabled: true # 启用密码登录
   activityEnabled: true # 桌面拉新奖励（邀请好友/首次登录礼）开关；仅 version "cn" 生效，false 关闭活动
 ```
+
+`adminKubeconfigEnabled` maps to runtime config `desktop.auth.adminKubeconfigEnabled`. It defaults to `false` and only the boolean `true` enables access. Disabled, missing, or invalid values keep kubeconfig access, initialization, and rotation blocked for `userCrName = admin`; ordinary users and `ns-admin` are unaffected. The flag is server-only, is omitted from client configuration, and cannot be overridden by request parameters. The existing `kcRotationEnabled` flag still controls only the frontend rotation button.
+
+This flag only removes the Desktop restriction; requests still follow the existing access, initialization, and rotation flows. Changing the config itself does not create the admin User CR or grant cluster permissions; existing credentials and RBAC determine the actual privileges. Helm config updates roll the Desktop Pods; direct ConfigMap edits require a Desktop restart. Disabling the flag blocks subsequent requests but does not revoke kubeconfigs already issued.
 
 ### 9. Common URLs 配置
 

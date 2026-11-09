@@ -22,8 +22,12 @@ export class KubeconfigAccessDeniedError extends Error {
 
 export const isAdminKubeconfigUser = (userCrName: string) => userCrName === ADMIN_USER_CR_NAME;
 
+export const isKubeconfigAccessDenied = (userCrName: string) =>
+  isAdminKubeconfigUser(userCrName) &&
+  global.AppConfig?.desktop?.auth?.adminKubeconfigEnabled !== true;
+
 const assertKubeconfigAccess = (userCrName: string) => {
-  if (isAdminKubeconfigUser(userCrName)) {
+  if (isKubeconfigAccessDenied(userCrName)) {
     throw new KubeconfigAccessDeniedError(userCrName);
   }
 };

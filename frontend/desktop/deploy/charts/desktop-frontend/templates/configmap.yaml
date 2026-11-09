@@ -99,6 +99,7 @@ data:
       auth:
         callbackURL: "https://{{ .Values.desktopConfig.cloudDomain }}{{ if .Values.desktopConfig.cloudPort }}:{{ .Values.desktopConfig.cloudPort }}{{ end }}/callback"
         signUpEnabled: {{ .Values.desktopConfig.signUpEnabled }}
+        adminKubeconfigEnabled: {{ and (kindIs "bool" .Values.desktopConfig.adminKubeconfigEnabled) .Values.desktopConfig.adminKubeconfigEnabled }}
         baiduToken: "{{ .Values.desktopConfig.baiduToken }}"
         bingAd:
           tenant: "{{ .Values.desktopConfig.bingAdTenant }}"

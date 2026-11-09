@@ -81,6 +81,7 @@ desktop:
     billingToken: ""
     callbackURL: "https://127.0.0.1.nip.io/callback"
     signUpEnabled: true
+    adminKubeconfigEnabled: false
     baiduToken: ""
     bingAd:
       tenant: ""
