@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   globalPrisma: {
     region: { findUnique: vi.fn() },
     user: { findUnique: vi.fn() },
+    userInfo: { updateMany: vi.fn() },
     workspaceUsage: {
       findMany: vi.fn(),
       create: vi.fn(),
@@ -11,7 +12,7 @@ const mocks = vi.hoisted(() => ({
       delete: vi.fn(),
       updateMany: vi.fn()
     },
-    mergeUserTransactionInfo: { findFirst: vi.fn() },
+    mergeUserTransactionInfo: { findFirst: vi.fn(), findUnique: vi.fn() },
     $transaction: vi.fn()
   },
   prisma: {
@@ -38,9 +39,16 @@ vi.mock('@/services/backend/auth', () => ({
 vi.mock('uuid', () => ({ v4: mocks.uuid }));
 vi.mock('nanoid', () => ({ customAlphabet: () => () => 'new-user' }));
 
-import { getRegionToken } from '@/services/backend/regionAuth';
+import { getRegionToken, initRegionToken } from '@/services/backend/regionAuth';
 
-type Usage = { userUid: string; regionUid: string; workspaceUid: string; seat: number };
+type Usage = {
+  userUid: string;
+  regionUid: string;
+  workspaceUid: string;
+  seat: number;
+  id?: string;
+  createdAt?: Date;
+};
 const login = { userUid: 'existing-user', userId: 'sealos-user' };
 const usage = (workspaceUid: string, seat = 1, regionUid = 'current-region'): Usage => ({
   userUid: login.userUid,
@@ -87,6 +95,7 @@ describe('getRegionToken workspace registration recovery', () => {
     mocks.globalPrisma.workspaceUsage.findMany.mockImplementation(async ({ where }) =>
       usages.filter(
         (u) =>
+          (!where.userUid || u.userUid === where.userUid) &&
           (!where.regionUid || u.regionUid === where.regionUid) &&
           (!where.workspaceUid || where.workspaceUid.in.includes(u.workspaceUid))
       )
@@ -116,6 +125,10 @@ describe('getRegionToken workspace registration recovery', () => {
       }
     );
     mocks.globalPrisma.workspaceUsage.delete.mockImplementation(async ({ where }) => {
+      if (where.id) {
+        usages = usages.filter((u) => u.id !== where.id);
+        return;
+      }
       const key = where.regionUid_userUid_workspaceUid;
       usages = usages.filter(
         (u) =>
@@ -125,6 +138,11 @@ describe('getRegionToken workspace registration recovery', () => {
       );
     });
     mocks.globalPrisma.mergeUserTransactionInfo.findFirst.mockResolvedValue(null);
+    mocks.globalPrisma.mergeUserTransactionInfo.findUnique.mockResolvedValue(null);
+    mocks.globalPrisma.userInfo.updateMany.mockImplementation(async () => {
+      if (userInfo) userInfo.isInited = true;
+      return { count: 1 };
+    });
     mocks.globalPrisma.$transaction.mockImplementation(async (fn) => fn(mocks.globalPrisma));
     mocks.prisma.$transaction.mockImplementation(async (fn) => fn(mocks.prisma));
     mocks.prisma.userWorkspace.create.mockImplementation(async ({ data }) => {
@@ -139,7 +157,7 @@ describe('getRegionToken workspace registration recovery', () => {
     mocks.uuid.mockReturnValue('new-workspace');
   });
 
-  it('recovers missing private and team registrations for an initialized user', async () => {
+  it('recovers only the private registration without touching team or other-region registrations', async () => {
     const team = relation('team');
     team.workspace.userWorkspace.push({ status: 'IN_WORKSPACE' }, { status: 'INVITED' });
     regionalUser = makeUser([relation('private', true), team]);
@@ -151,10 +169,8 @@ describe('getRegionToken workspace registration recovery', () => {
       appToken: 'app-token',
       kubeconfig: 'test-kubeconfig'
     });
-    expect(usages).toEqual(
-      expect.arrayContaining([otherRegion, usage('private'), usage('team', 2)])
-    );
-    expect(usages).toHaveLength(3);
+    expect(usages).toEqual(expect.arrayContaining([otherRegion, usage('private')]));
+    expect(usages).toHaveLength(2);
     expect(mocks.regionalToken).toHaveBeenCalledWith(
       expect.objectContaining({ workspaceUid: 'private', workspaceId: 'ns-private' })
     );
@@ -162,11 +178,11 @@ describe('getRegionToken workspace registration recovery', () => {
     expect(mocks.prisma.userWorkspace.create).not.toHaveBeenCalled();
   });
 
-  it('repairs a missing team without overwriting an existing private registration', async () => {
+  it('does not recreate a missing team during login', async () => {
     regionalUser = makeUser([relation('private', true), relation('team')]);
     usages = [usage('private', 7)];
     await getRegionToken(login);
-    expect(usages).toEqual([usage('private', 7), usage('team')]);
+    expect(usages).toEqual([usage('private', 7)]);
   });
 
   it('repairs a missing private registration when a team is already registered', async () => {
@@ -188,8 +204,7 @@ describe('getRegionToken workspace registration recovery', () => {
     const results = await Promise.all([getRegionToken(login), getRegionToken(login)]);
     results.push(await getRegionToken(login));
     expect(results.every((r) => r?.token === 'regional-token')).toBe(true);
-    expect(usages).toHaveLength(2);
-    expect(usages).toEqual(expect.arrayContaining([usage('private'), usage('team')]));
+    expect(usages).toEqual([usage('private')]);
     expect(mocks.uuid).not.toHaveBeenCalled();
   });
 
@@ -232,9 +247,10 @@ describe('getRegionToken workspace registration recovery', () => {
 
   it('preserves the initialization gate', async () => {
     userInfo = { isInited: false };
+    regionalUser = null;
     await expect(getRegionToken(login)).resolves.toBeNull();
     expect(usages).toEqual([]);
-    expect(mocks.prisma.userCr.findUnique).not.toHaveBeenCalled();
+    expect(mocks.kubeconfig).not.toHaveBeenCalled();
   });
 
   it('returns null for an unknown global user', async () => {
@@ -294,9 +310,6 @@ describe('getRegionToken workspace registration recovery', () => {
     await expect(getRegionToken(login)).resolves.toHaveProperty('token', 'regional-token');
     expect(usages).toEqual([usage('private'), newOwnerUsage]);
     expect(mocks.globalPrisma.workspaceUsage.createMany).not.toHaveBeenCalled();
-    expect(mocks.globalPrisma.$transaction).toHaveBeenCalledWith(expect.any(Function), {
-      isolationLevel: 'Serializable'
-    });
   });
 
   it('rejects a private workspace registered to another user', async () => {
@@ -313,14 +326,15 @@ describe('getRegionToken workspace registration recovery', () => {
   it('preserves recovery when a recorded merge left private usage on the old account', async () => {
     const oldOwnerUsage = { ...usage('private'), userUid: 'former-owner' };
     usages = [oldOwnerUsage];
-    mocks.globalPrisma.mergeUserTransactionInfo.findFirst.mockResolvedValue({
+    mocks.globalPrisma.mergeUserTransactionInfo.findUnique.mockResolvedValue({
       userUid: login.userUid,
       mergeUserUid: 'former-owner'
     });
     await expect(getRegionToken(login)).resolves.toHaveProperty('token', 'regional-token');
     expect(usages).toEqual([oldOwnerUsage, usage('private')]);
-    expect(mocks.globalPrisma.mergeUserTransactionInfo.findFirst).toHaveBeenCalledWith({
-      where: { userUid: login.userUid, mergeUserUid: { in: ['former-owner'] } }
+    expect(mocks.globalPrisma.mergeUserTransactionInfo.findUnique).toHaveBeenCalledWith({
+      where: { mergeUserUid: 'former-owner' },
+      select: { userUid: true }
     });
     expect(mocks.uuid).not.toHaveBeenCalled();
   });
@@ -357,5 +371,133 @@ describe('getRegionToken workspace registration recovery', () => {
     await expect(getRegionToken(login)).resolves.toHaveProperty('token', 'regional-token');
     expect(usages).toEqual([usage('private')]);
     expect(mocks.globalPrisma.workspaceUsage.delete).not.toHaveBeenCalled();
+  });
+  it('recovers a private workspace across a proven A to B to C merge chain', async () => {
+    const old = { ...usage('private'), userUid: 'owner-A' };
+    usages = [old];
+    mocks.globalPrisma.mergeUserTransactionInfo.findUnique.mockImplementation(async ({ where }) =>
+      where.mergeUserUid === 'owner-A'
+        ? { userUid: 'owner-B' }
+        : where.mergeUserUid === 'owner-B'
+        ? { userUid: login.userUid }
+        : null
+    );
+    await expect(getRegionToken(login)).resolves.toHaveProperty('token');
+    expect(usages).toEqual([old, usage('private')]);
+    expect(mocks.uuid).not.toHaveBeenCalled();
+  });
+
+  it('rejects cyclic or unrelated merge history without issuing credentials', async () => {
+    usages = [{ ...usage('private'), userUid: 'owner-A' }];
+    mocks.globalPrisma.mergeUserTransactionInfo.findUnique.mockImplementation(
+      async ({ where }) => ({ userUid: where.mergeUserUid === 'owner-A' ? 'owner-B' : 'owner-A' })
+    );
+    await expect(getRegionToken(login)).rejects.toThrow(
+      'Private workspace is registered to another user'
+    );
+    expect(usages).toHaveLength(1);
+    expect(mocks.kubeconfig).not.toHaveBeenCalled();
+  });
+
+  it('does not resurrect a team deleted after the regional login snapshot was read', async () => {
+    regionalUser = makeUser([relation('private', true), relation('team')]);
+    usages = [usage('private')];
+    mocks.prisma.userCr.findUnique.mockImplementationOnce(async () => {
+      const snapshot = structuredClone(regionalUser);
+      regionalUser = makeUser([relation('private', true)]);
+      return snapshot;
+    });
+    await expect(getRegionToken(login)).resolves.toHaveProperty('token');
+    expect(usages).toEqual([usage('private')]);
+    expect(mocks.globalPrisma.workspaceUsage.createMany).not.toHaveBeenCalled();
+  });
+
+  const initialize = () =>
+    initRegionToken({ ...login, regionUid: 'current-region', workspaceName: 'chosen name' });
+
+  it.each(['normal', 'init'])(
+    'recovers false initialization through %s without deleting real registrations',
+    async (entry) => {
+      userInfo = { isInited: false };
+      regionalUser = makeUser([relation('private', true), relation('team')]);
+      regionalUser.userWorkspace[0].workspace.userWorkspace.push({ status: 'IN_WORKSPACE' });
+      const real = {
+        ...usage('other-private', 4, 'other-region'),
+        id: 'old-real',
+        createdAt: new Date(0)
+      };
+      const wrong = usage('wrong-random-workspace');
+      usages = [real, wrong, usage('team', 5)];
+      await expect(entry === 'init' ? initialize() : getRegionToken(login)).resolves.toHaveProperty(
+        'token'
+      );
+      expect(usages).toEqual([real, wrong, usage('team', 5), usage('private', 2)]);
+      expect(userInfo.isInited).toBe(true);
+      expect(mocks.globalPrisma.workspaceUsage.delete).not.toHaveBeenCalled();
+      expect(mocks.prisma.userWorkspace.create).not.toHaveBeenCalled();
+      expect(mocks.uuid).not.toHaveBeenCalled();
+      expect(mocks.globalPrisma.userInfo.updateMany.mock.invocationCallOrder[0]).toBeGreaterThan(
+        mocks.kubeconfig.mock.invocationCallOrder[0]
+      );
+    }
+  );
+
+  it('leaves an old other-region reservation untouched when no local private workspace exists', async () => {
+    userInfo = { isInited: false };
+    regionalUser = null;
+    const old = {
+      ...usage('other-private', 1, 'other-region'),
+      id: 'old-real',
+      createdAt: new Date(0)
+    };
+    usages = [old];
+    await expect(initialize()).resolves.toBeNull();
+    expect(usages).toEqual([old]);
+    expect(mocks.globalPrisma.workspaceUsage.delete).not.toHaveBeenCalled();
+    expect(mocks.prisma.userWorkspace.create).not.toHaveBeenCalled();
+    expect(userInfo.isInited).toBe(false);
+  });
+
+  it('initializes a genuine new user and safely repeats a completed initialization', async () => {
+    userInfo = { isInited: false };
+    regionalUser = null;
+    await expect(initialize()).resolves.toHaveProperty('token');
+    expect(mocks.prisma.userWorkspace.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          workspace: { create: expect.objectContaining({ displayName: 'chosen name' }) }
+        })
+      })
+    );
+    await expect(initialize()).resolves.toHaveProperty('token');
+    expect(usages).toEqual([usage('new-workspace')]);
+    expect(mocks.prisma.userWorkspace.create).toHaveBeenCalledOnce();
+    expect(userInfo.isInited).toBe(true);
+  });
+
+  it('resumes a local initialization reservation without choosing a team or another region', async () => {
+    userInfo = { isInited: false };
+    regionalUser = null;
+    usages = [usage('reserved-private')];
+    await initialize();
+    expect(usages).toEqual([usage('reserved-private')]);
+    expect(mocks.uuid).not.toHaveBeenCalled();
+    expect(mocks.regionalToken).toHaveBeenCalledWith(
+      expect.objectContaining({ workspaceUid: 'reserved-private' })
+    );
+  });
+
+  it('retains false state and existing registrations across kubeconfig failure, then recovers', async () => {
+    userInfo = { isInited: false };
+    usages = [usage('private', 4)];
+    mocks.kubeconfig.mockResolvedValue(null);
+    await expect(initialize()).rejects.toThrow('Failed to get user from k8s');
+    expect(userInfo.isInited).toBe(false);
+    expect(mocks.globalPrisma.userInfo.updateMany).not.toHaveBeenCalled();
+    expect(usages).toEqual([usage('private', 4)]);
+    mocks.kubeconfig.mockResolvedValue('test-kubeconfig');
+    await initialize();
+    expect(userInfo.isInited).toBe(true);
+    expect(usages).toEqual([usage('private', 4)]);
   });
 });

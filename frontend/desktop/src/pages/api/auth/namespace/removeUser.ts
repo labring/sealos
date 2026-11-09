@@ -69,9 +69,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           userCr: true
         }
       });
-      
+
       if (!ownerResult) {
         throw new Error('no owner in workspace');
+      }
+
+      const regionUid = getRegionUid();
+      if (ownerResult.isPrivate) {
+        // 登录可能正在恢复缺失的私有空间登记。先确认登记存在再解绑，
+        // 否则恢复流程会按旧成员快照写入 seat，而本请求已跳过了扣减。
+        const registeredOwner = await globalPrisma.workspaceUsage.findUnique({
+          where: {
+            regionUid_userUid_workspaceUid: {
+              regionUid,
+              userUid: ownerResult.userCr.userUid,
+              workspaceUid: ns_uid
+            }
+          }
+        });
+        if (!registeredOwner) {
+          return jsonRes(res, {
+            code: 409,
+            message: 'Workspace is not ready. Ask the workspace owner to sign in again, then retry.'
+          });
+        }
       }
 
       // try {
@@ -88,7 +109,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
 
       // modify role
-      const regionUid = getRegionUid();
       await globalPrisma.$transaction(async (tx) => {
         const ownerStatus = await tx.workspaceUsage.findUnique({
           where: {
