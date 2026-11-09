@@ -59,6 +59,8 @@ autoConfigEnabled: true
 desktopConfig:
   # Show account merge actions in binding dialogs (UI only).
   accountMergeEnabled: false
+  # Allow the admin User CR to obtain, initialize, and rotate kubeconfig through Desktop.
+  adminKubeconfigEnabled: false
   # Basic cloud configuration (auto-configured from sealos-config)
   cloudDomain: "127.0.0.1.nip.io"  # Auto-fetched from sealos-config.cloudDomain
   cloudPort: ""                     # Auto-fetched from sealos-config.cloudPort

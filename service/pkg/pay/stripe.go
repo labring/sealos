@@ -64,7 +64,8 @@ func buildURLs(
 	transaction *types.WorkspaceSubscriptionTransaction,
 	payApp types.PayApp,
 ) (string, string) {
-	// Example: https://cloud.sealos.io/?payId=examplePayId&workspaceId=ns-example&transactionId=00000000-0000-0000-0000-000000000000&stripeState=success&app=system-brain
+	// Example:
+	// https://cloud.sealos.io/?payId=examplePayId&workspaceId=ns-example&transactionId=00000000-0000-0000-0000-000000000000&stripeState=success&app=system-brain
 	baseURL := s.Domain + "/?payId=" + transaction.PayID + "&workspaceId=" + transaction.Workspace + "&transactionId=" + transaction.ID.String() + "&stripeState="
 	successURL := baseURL + "success"
 	cancelURL := baseURL + "cancel"
@@ -86,7 +87,8 @@ func (s *StripeService) CreateWorkspaceSubscriptionSession(
 	return s.CreateWorkspaceSubscriptionSessionWithPromotion(paymentReq, priceID, transaction, "")
 }
 
-// CreateWorkspaceSubscriptionSessionWithPromotion creates a Stripe Checkout Session with optional promotion code
+// CreateWorkspaceSubscriptionSessionWithPromotion creates a Stripe Checkout Session with optional
+// promotion code
 func (s *StripeService) CreateWorkspaceSubscriptionSessionWithPromotion(
 	paymentReq PaymentRequest,
 	priceID string,
@@ -109,7 +111,8 @@ func (s *StripeService) CreateWorkspaceSubscriptionSessionWithPromotion(
 	extra := &stripe.ExtraValues{
 		Values: url.Values{},
 	}
-	// extra.Add("subscription_data[backdate_start_date]", fmt.Sprintf("%d", time.Now().AddDate(0, 0, -1).Unix()))
+	// extra.Add("subscription_data[backdate_start_date]", fmt.Sprintf("%d", time.Now().AddDate(0,
+	// 0, -1).Unix()))
 	checkoutParams := &stripe.CheckoutSessionParams{
 		Params: stripe.Params{
 			Extra: extra,
@@ -144,11 +147,11 @@ func (s *StripeService) CreateWorkspaceSubscriptionSessionWithPromotion(
 		CancelURL:  stripe.String(cancelURL),
 		// BillingAddressCollection: stripe.String("required"),
 		AutomaticTax: &stripe.CheckoutSessionAutomaticTaxParams{
-			Enabled: stripe.Bool(false),
+			Enabled: new(false),
 		},
-		ExpiresAt: stripe.Int64(time.Now().UTC().Add(31 * time.Minute).Unix()),
+		ExpiresAt: new(time.Now().UTC().Add(31 * time.Minute).Unix()),
 	}
-	checkoutParams.SubscriptionData.BillingCycleAnchor = stripe.Int64(
+	checkoutParams.SubscriptionData.BillingCycleAnchor = new(
 		time.Now().UTC().AddDate(0, 0, 30).Unix(),
 	)
 
@@ -166,7 +169,7 @@ func (s *StripeService) CreateWorkspaceSubscriptionSessionWithPromotion(
 			},
 		}
 	} else {
-		checkoutParams.AllowPromotionCodes = stripe.Bool(true)
+		checkoutParams.AllowPromotionCodes = new(true)
 	}
 
 	// Create session using official SDK
@@ -271,11 +274,12 @@ func (s *StripeService) UpdatePlan(
 			"subscription_operator": string(types.SubscriptionTransactionTypeUpgraded),
 			"last_payment_id":       payReqID,
 		},
-		BillingCycleAnchorNow: stripe.Bool(true),
+		BillingCycleAnchorNow: new(true),
 		ProrationBehavior: stripe.String(
 			stripe.SubscriptionSchedulePhaseProrationBehaviorAlwaysInvoice,
 		),
-		// PaymentBehavior:   stripe.String(string(stripe.SubscriptionPaymentBehaviorDefaultIncomplete)),
+		// PaymentBehavior:
+		// stripe.String(string(stripe.SubscriptionPaymentBehaviorDefaultIncomplete)),
 	}
 
 	updatedSub, err := subscription.Update(subscriptionID, params)
@@ -321,7 +325,8 @@ func (s *StripeService) DowngradePlan(
 		ProrationBehavior: stripe.String(
 			stripe.SubscriptionSchedulePhaseProrationBehaviorAlwaysInvoice,
 		),
-		// PaymentBehavior:   stripe.String(string(stripe.SubscriptionPaymentBehaviorDefaultIncomplete)),
+		// PaymentBehavior:
+		// stripe.String(string(stripe.SubscriptionPaymentBehaviorDefaultIncomplete)),
 	}
 
 	updatedSub, err := subscription.Update(subscriptionID, params)
@@ -336,7 +341,8 @@ func (s *StripeService) UpdatePlanPricePreview(subscriptionID, newPriceID string
 	return s.UpdatePlanPricePreviewWithPromotion(subscriptionID, newPriceID, "")
 }
 
-// UpdatePlanPricePreviewWithPromotion previews subscription price changes with optional promotion code
+// UpdatePlanPricePreviewWithPromotion previews subscription price changes with optional promotion
+// code
 func (s *StripeService) UpdatePlanPricePreviewWithPromotion(
 	subscriptionID, newPriceID, promotionCode string,
 ) (int64, error) {
@@ -361,7 +367,7 @@ func (s *StripeService) UpdatePlanPricePreviewWithPromotion(
 			},
 			// ProrationDate:         stripe.Int64(time.Now().UTC().Unix()),
 			ProrationBehavior:     stripe.String("create_prorations"),
-			BillingCycleAnchorNow: stripe.Bool(true),
+			BillingCycleAnchorNow: new(true),
 			// Ensure billing cycle anchors to now for upgrade
 			// BillingCycleAnchor: stripe.Int64(time.Now().UTC().Unix()),
 		},
@@ -439,7 +445,8 @@ func (s *StripeService) CreatePortalSession(
 	return ps, nil
 }
 
-// CreateSubscriptionPortalSession creates a customer portal session for managing a specific subscription
+// CreateSubscriptionPortalSession creates a customer portal session for managing a specific
+// subscription
 func (s *StripeService) CreateSubscriptionPortalSession(
 	customerID, subscriptionID string,
 	redirectURL *string,
@@ -573,7 +580,7 @@ func (s *StripeService) CancelSubscription(subscriptionID string) (*stripe.Subsc
 	// 先查找是否存在
 
 	sub, err := subscription.Cancel(subscriptionID, &stripe.SubscriptionCancelParams{
-		InvoiceNow: stripe.Bool(true),
+		InvoiceNow: new(true),
 	})
 	if err != nil && !strings.Contains(err.Error(), "No such subscription") {
 		sub, _ = subscription.Get(subscriptionID, nil)
@@ -776,7 +783,7 @@ func (s *StripeService) GetCustomerInvoices(
 		Customer: stripe.String(customerID),
 	}
 	if limit > 0 {
-		params.Limit = stripe.Int64(limit)
+		params.Limit = new(limit)
 	}
 
 	invoiceCapacity := 10
@@ -813,7 +820,8 @@ func (s *StripeService) GetPromotionCode(code string) (*stripe.PromotionCode, er
 	return pc, nil
 }
 
-// ValidatePromotionCode validates a promotion code and checks if it's active and within validity period
+// ValidatePromotionCode validates a promotion code and checks if it's active and within validity
+// period
 func (s *StripeService) ValidatePromotionCode(code string) (*stripe.PromotionCode, error) {
 	pc, err := s.GetPromotionCode(code)
 	if err != nil {
@@ -838,7 +846,8 @@ func (s *StripeService) ValidatePromotionCode(code string) (*stripe.PromotionCod
 	return pc, nil
 }
 
-// CancelUnpaidUpgrade voids the unpaid invoice and rolls back the subscription to its previous state
+// CancelUnpaidUpgrade voids the unpaid invoice and rolls back the subscription to its previous
+// state
 func (s *StripeService) CancelUnpaidUpgrade(subscriptionID, invoiceID, oldPriceID string) error {
 	logrus.Infof(
 		"Starting CancelUnpaidUpgrade for subscription %s, invoice %s",
@@ -929,7 +938,12 @@ func (s *StripeService) CancelUnpaidUpgrade(subscriptionID, invoiceID, oldPriceI
 			return fmt.Errorf("failed to rollback subscription %s: %w", subscriptionID, err)
 		}
 	} else {
-		logrus.Infof("Successfully rolled back subscription %s to old price %s, plan %s", subscriptionID, oldPriceID, oldPlanName)
+		logrus.Infof(
+			"Successfully rolled back subscription %s to old price %s, plan %s",
+			subscriptionID,
+			oldPriceID,
+			oldPlanName,
+		)
 	}
 
 	// Step 6: Clear any pending payment intents related to this upgrade
@@ -1078,15 +1092,23 @@ func (s *StripeService) FinalizeUpgradeInvoice(invoiceID string) error {
 				err,
 			)
 		} else {
-			logrus.Infof("Successfully finalized upgrade invoice %s for subscription %s", invoiceID, subscriptionID)
+			logrus.Infof(
+				"Successfully finalized upgrade invoice %s for subscription %s",
+				invoiceID,
+				subscriptionID,
+			)
 		}
 	} else {
-		logrus.Infof("Successfully finalized upgrade invoice %s (could not determine subscription ID)", invoiceID)
+		logrus.Infof(
+			"Successfully finalized upgrade invoice %s (could not determine subscription ID)",
+			invoiceID,
+		)
 	}
 	return nil
 }
 
-// CreateUpgradeInvoice creates an invoice for subscription upgrade using UpdatePlan with incomplete payment
+// CreateUpgradeInvoice creates an invoice for subscription upgrade using UpdatePlan with incomplete
+// payment
 func (s *StripeService) CreateUpgradeInvoice(
 	subscriptionID, newPriceID, newPlanName, payReqID, promotionCode string,
 ) (string, string, error) {
@@ -1112,7 +1134,7 @@ func (s *StripeService) CreateUpgradeInvoice(
 				Price: stripe.String(newPriceID),
 			},
 		},
-		BillingCycleAnchorNow: stripe.Bool(true),
+		BillingCycleAnchorNow: new(true),
 		ProrationBehavior: stripe.String(
 			stripe.SubscriptionSchedulePhaseProrationBehaviorAlwaysInvoice,
 		),
@@ -1240,7 +1262,8 @@ func (s *StripeService) ConfirmInvoice(invoiceID string) error {
 		_, err = invoice.FinalizeInvoice(invoiceID, nil)
 		if err != nil {
 			// Check if the invoice was already finalized by another region
-			// Error message: "This invoice is already finalized, you can't re-finalize a non-draft invoice."
+			// Error message: "This invoice is already finalized, you can't re-finalize a non-draft
+			// invoice."
 			if strings.Contains(err.Error(), "already finalized") ||
 				strings.Contains(err.Error(), "non-draft") {
 				logrus.Infof("Invoice %s already finalized by another region, skipping", invoiceID)
@@ -1257,7 +1280,10 @@ func (s *StripeService) ConfirmInvoice(invoiceID string) error {
 				return fmt.Errorf("failed to finalize invoice %s: %w", invoiceID, err)
 			}
 		} else {
-			logrus.Infof("Successfully finalized invoice %s, status changed from draft to open", invoiceID)
+			logrus.Infof(
+				"Successfully finalized invoice %s, status changed from draft to open",
+				invoiceID,
+			)
 			inv.Status = "open" // Update status for next step
 		}
 	}

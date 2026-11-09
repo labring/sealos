@@ -107,6 +107,7 @@ desktopConfig:
   metaKeywords: "Sealos Cloud"
 
   signUpEnabled: true
+  adminKubeconfigEnabled: false
   baiduToken: ""
   bingAdTenant: ""
   bingAdClientId: ""

@@ -21,9 +21,9 @@ import (
 )
 
 type ObjectStorageTraffic struct {
-	Time   time.Time `json:"time"      bson:"time"`
-	User   string    `json:"user"      bson:"user"`
-	Bucket string    `json:"bucket"    bson:"bucket"`
+	Time   time.Time `json:"time"   bson:"time"`
+	User   string    `json:"user"   bson:"user"`
+	Bucket string    `json:"bucket" bson:"bucket"`
 	// bytes
 	TotalSent int64 `json:"totalSent" bson:"totalSent"`
 

@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"slices"
 	"strings"
 
 	authorizationapi "k8s.io/api/authorization/v1"
@@ -146,12 +147,7 @@ func AuthenticatePVC(ns, kc string, pvcUIDs []string) error {
 }
 
 func IsWhitelistKubernetesHost(host string) bool {
-	for _, h := range whiteListKubernetesHosts {
-		if h == host {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(whiteListKubernetesHosts, host)
 }
 
 func GetKubernetesHostFromEnv() string {

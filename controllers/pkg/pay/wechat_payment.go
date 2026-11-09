@@ -79,8 +79,8 @@ func QueryOrder(orderID string) (*payments.Transaction, error) {
 	svc := native.NativeApiService{Client: client}
 	resp, _, err := svc.QueryOrderByOutTradeNo(ctx,
 		native.QueryOrderByOutTradeNoRequest{
-			Mchid:      core.String(os.Getenv(MchID)),
-			OutTradeNo: core.String(orderID),
+			Mchid:      new(os.Getenv(MchID)),
+			OutTradeNo: new(orderID),
 		},
 	)
 	if err != nil {
@@ -112,33 +112,33 @@ func WechatPay(amount int64, user, tradeNO, describe, callback string) (string, 
 	svc := native.NativeApiService{Client: client}
 	resp, _, err := svc.Prepay(ctx,
 		native.PrepayRequest{
-			Appid:         core.String(os.Getenv(AppID)),
-			Mchid:         core.String(os.Getenv(MchID)),
-			Description:   core.String(describe),
-			OutTradeNo:    core.String(tradeNO),
-			TimeExpire:    core.Time(time.Now()),
-			Attach:        core.String(user),
-			NotifyUrl:     core.String(callback),
-			GoodsTag:      core.String("sealos recharge"),
-			SupportFapiao: core.Bool(false),
+			Appid:         new(os.Getenv(AppID)),
+			Mchid:         new(os.Getenv(MchID)),
+			Description:   new(describe),
+			OutTradeNo:    new(tradeNO),
+			TimeExpire:    new(time.Now()),
+			Attach:        new(user),
+			NotifyUrl:     new(callback),
+			GoodsTag:      new("sealos recharge"),
+			SupportFapiao: new(false),
 			Amount: &native.Amount{
-				Currency: core.String("CNY"),
-				Total:    core.Int64(amount),
+				Currency: new("CNY"),
+				Total:    new(amount),
 			},
 			Detail: &native.Detail{
 				CostPrice: core.Int64(608800),
 				GoodsDetail: []native.GoodsDetail{
 					{
-						GoodsName:        core.String("sealos cloud recharge"),
-						MerchantGoodsId:  core.String("ABC"),
+						GoodsName:        new("sealos cloud recharge"),
+						MerchantGoodsId:  new("ABC"),
 						Quantity:         core.Int64(1),
 						UnitPrice:        core.Int64(828800),
-						WechatpayGoodsId: core.String("1001"),
+						WechatpayGoodsId: new("1001"),
 					},
 				},
 			},
 			SettleInfo: &native.SettleInfo{
-				ProfitSharing: core.Bool(false),
+				ProfitSharing: new(false),
 			},
 		},
 	)

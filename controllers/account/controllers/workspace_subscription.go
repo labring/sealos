@@ -45,9 +45,7 @@ func NewWorkspaceSubscriptionProcessor(
 
 // Start 开始监听和处理工作空间订阅事务
 func (wsp *WorkspaceSubscriptionProcessor) Start(ctx context.Context) {
-	wsp.wg.Add(1)
-	go func() {
-		defer wsp.wg.Done()
+	wsp.wg.Go(func() {
 		ticker := time.NewTicker(wsp.pollInterval)
 		defer ticker.Stop()
 		idleCount := 0
@@ -76,7 +74,7 @@ func (wsp *WorkspaceSubscriptionProcessor) Start(ctx context.Context) {
 				}
 			}
 		}
-	}()
+	})
 }
 
 // Stop 停止处理器
@@ -190,7 +188,8 @@ func (r *AccountReconciler) updateWorkspaceQuotaLimit0(
 		//			if usedQuantity.Cmp(quantity) > 0 {
 		//				// TODO situations exceeding the quota need to be handled
 		//				// restart the space resource deploy sts
-		//				return fmt.Errorf("used resource %s exceeds the limit 0: used %s", usedRs, usedQuantity.String())
+		// 				return fmt.Errorf("used resource %s exceeds the limit 0: used %s", usedRs,
+		// usedQuantity.String())
 		//			}
 		//		}
 		//	}

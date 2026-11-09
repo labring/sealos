@@ -96,7 +96,3 @@ type DebtList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Debt `json:"items"`
 }
-
-func init() {
-	SchemeBuilder.Register(&Debt{}, &DebtList{})
-}

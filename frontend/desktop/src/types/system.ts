@@ -112,6 +112,7 @@ export type AuthConfigType = {
   billingToken?: string;
   callbackURL: string;
   signUpEnabled?: boolean;
+  adminKubeconfigEnabled?: boolean;
   baiduToken?: string;
   bingAd?: {
     tenant: string;
@@ -219,6 +220,7 @@ export type AuthClientConfigType = {
       'baiduToken',
       'bingAd',
       'signUpEnabled',
+      'adminKubeconfigEnabled',
       // OAuth2 IdP
       'oauth2idp',
       'idp.password.salt',

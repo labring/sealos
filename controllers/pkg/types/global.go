@@ -223,7 +223,7 @@ type Invoice struct {
 	Remark      string    `gorm:"type:text"                                                  json:"remark"      bson:"remark"`
 	TotalAmount int64     `gorm:"type:bigint;not null"                                       json:"totalAmount" bson:"totalAmount"`
 	// Pending, Completed, Rejected
-	Status InvoiceStatus `gorm:"type:text;not null"                                         json:"status"      bson:"status"`
+	Status InvoiceStatus `gorm:"type:text;not null" json:"status" bson:"status"`
 }
 
 type InvoicePayment struct {

@@ -92,9 +92,9 @@ type BillingRecordQueryItemInline struct {
 	AppType   string      `json:"appType,omitempty"   bson:"appType,omitempty"`
 	Costs     Costs       `json:"costs,omitempty"     bson:"costs,omitempty"`
 	// Amount = PaymentAmount + GiftAmount
-	Amount int64 `json:"amount,omitempty"    bson:"amount"`
+	Amount int64 `json:"amount,omitempty" bson:"amount"`
 	// when Type = Recharge, PaymentAmount is the amount of recharge
-	Payment *PaymentForQuery `json:"payment,omitempty"   bson:"payment,omitempty"`
+	Payment *PaymentForQuery `json:"payment,omitempty" bson:"payment,omitempty"`
 }
 
 type Costs map[string]int64

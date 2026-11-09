@@ -24,7 +24,7 @@ import (
 	"github.com/labring/sealos/controllers/user/pkg/usercount"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/controller/priorityqueue"
@@ -185,7 +185,7 @@ func TestLicenseLimitedUserRemainsNewAcrossRestart(t *testing.T) {
 
 	r := &UserReconciler{
 		Client:      cli,
-		Recorder:    record.NewFakeRecorder(2),
+		Recorder:    events.NewFakeRecorder(2),
 		userCounter: counter,
 	}
 	user := &userv1.User{}

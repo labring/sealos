@@ -107,6 +107,7 @@ desktopConfig:
 desktopConfig:
   guideEnabled: false # 启用用户引导
   accountMergeEnabled: false # Show account merge actions in binding dialogs; UI only
+  adminKubeconfigEnabled: false # Allow admin User CR kubeconfig access, initialization and rotation; server only
   apiEnabled: false # 启用 API 访问
   rechargeEnabled: false # 启用充值功能
   enterpriseRealNameAuthEnabled: false # 启用企业实名认证
@@ -118,6 +119,10 @@ desktopConfig:
 ```
 
 `accountMergeEnabled` maps to runtime config `common.accountMergeEnabled` and enables the UI only when its value is the boolean `true`. Compatible accounts get a merge confirmation; disabled or missing configuration keeps the account-already-bound notice. Both Chinese and English deployments use this flag. Helm updates roll the Pods; users must reload the page. Direct ConfigMap edits require a Desktop restart. Disabling the flag does not restrict the backend merge API, undo completed merges, or immediately update already-open pages.
+
+`adminKubeconfigEnabled` maps to runtime config `desktop.auth.adminKubeconfigEnabled`. It defaults to `false` and only the boolean `true` enables access. Disabled, missing, or invalid values keep kubeconfig access, initialization, and rotation blocked for `userCrName = admin`; ordinary users and `ns-admin` are unaffected. The flag is server-only, is omitted from client configuration, and cannot be overridden by request parameters. The existing `kcRotationEnabled` flag still controls only the frontend rotation button.
+
+This flag only removes the Desktop restriction; requests still follow the existing access, initialization, and rotation flows. Changing the config itself does not create the admin User CR or grant cluster permissions; existing credentials and RBAC determine the actual privileges. Helm config updates roll the Desktop Pods; direct ConfigMap edits require a Desktop restart. Disabling the flag blocks subsequent requests but does not revoke kubeconfigs already issued.
 
 ### 9. Common URLs 配置
 

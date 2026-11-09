@@ -70,7 +70,8 @@ const (
 Query the Charging status Order, and get it status, if success, add the Amount to Account Balance the set status to closed.
 */
 
-// Account is for user balance, when the balance is 0, the controller will warn the user and clean all
+// Account is for user balance, when the balance is 0, the controller will warn the user and clean
+// all
 // namespace create by the user.
 
 type Charge struct {
@@ -125,8 +126,4 @@ type AccountList struct {
 	metav1.TypeMeta `          json:",inline"`
 	metav1.ListMeta `          json:"metadata,omitempty"`
 	Items           []Account `json:"items"`
-}
-
-func init() {
-	SchemeBuilder.Register(&Account{}, &AccountList{})
 }

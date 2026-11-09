@@ -48,7 +48,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -81,7 +81,7 @@ const (
 // UserReconciler reconciles a User object
 type UserReconciler struct {
 	Logger      logr.Logger
-	Recorder    record.EventRecorder
+	Recorder    events.EventRecorder
 	cache       client.Reader
 	userCounter *usercount.Counter
 	config      *rest.Config
@@ -646,7 +646,7 @@ func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager, opts ratelimiter.Rat
 	}
 	r.Logger = ctrl.Log.WithName(controllerName)
 	if r.Recorder == nil {
-		r.Recorder = mgr.GetEventRecorderFor(controllerName)
+		r.Recorder = mgr.GetEventRecorder(controllerName)
 	}
 	if r.finalizer == nil {
 		r.finalizer = finalizer.NewFinalizer(r.Client, userFinalizerName).
@@ -838,9 +838,9 @@ func (r *UserReconciler) reconcile(ctx context.Context, obj client.Object) (ctrl
 			state.currentSecretName,
 		); err != nil {
 			r.Recorder.Eventf(
-				user,
+				user, nil,
 				v1.EventTypeWarning,
-				"CleanupLegacyBoundTokenSecrets",
+				"CleanupLegacyBoundTokenSecrets", "CleanupLegacyBoundTokenSecrets",
 				"Cleanup stale bound token secrets for %s is error: %v",
 				user.Name,
 				err,
@@ -870,9 +870,9 @@ func (r *UserReconciler) reconcile(ctx context.Context, obj client.Object) (ctrl
 			r.nextKubeConfigSync.Store(user.Name, time.Now())
 		}
 		r.Recorder.Eventf(
-			user,
+			user, nil,
 			v1.EventTypeWarning,
-			"SyncStatus",
+			"SyncStatus", "SyncStatus",
 			"Sync status %s is error: %v",
 			user.Name,
 			err,
@@ -1183,9 +1183,9 @@ func (r *UserReconciler) syncNamespace(
 		state.recordSyncError(err)
 		helper.SetConditionError(nsCondition, "SyncUserError", err)
 		r.Recorder.Eventf(
-			user,
+			user, nil,
 			v1.EventTypeWarning,
-			"syncUser",
+			"syncUser", "syncUser",
 			"Sync User namespace %s is error: %v",
 			user.Name,
 			err,
@@ -1228,9 +1228,9 @@ func (r *UserReconciler) createRole(
 		state.recordSyncError(err)
 		helper.SetConditionError(condition, "SyncUserError", err)
 		r.Recorder.Eventf(
-			user,
+			user, nil,
 			v1.EventTypeWarning,
-			"syncUserRole",
+			"syncUserRole", "syncUserRole",
 			"Sync User namespace role %s is error: %v",
 			user.Name,
 			err,
@@ -1292,9 +1292,9 @@ func (r *UserReconciler) syncRoleBinding(
 		state.recordSyncError(err)
 		helper.SetConditionError(rbCondition, "SyncUserError", err)
 		r.Recorder.Eventf(
-			user,
+			user, nil,
 			v1.EventTypeWarning,
-			"syncUserRoleBinding",
+			"syncUserRoleBinding", "syncUserRoleBinding",
 			"Sync User namespace role binding %s is error: %v",
 			user.Name,
 			err,
@@ -1333,9 +1333,9 @@ func (r *UserReconciler) syncClusterRoleBinding(
 			state.recordSyncError(err)
 			helper.SetConditionError(rbCondition, "SyncUserError", err)
 			r.Recorder.Eventf(
-				user,
+				user, nil,
 				v1.EventTypeWarning,
-				"syncUserClusterRoleBinding",
+				"syncUserClusterRoleBinding", "syncUserClusterRoleBinding",
 				"Remove User admin cluster role binding %s is error: %v",
 				user.Name,
 				err,
@@ -1386,9 +1386,9 @@ func (r *UserReconciler) syncClusterRoleBinding(
 		state.recordSyncError(err)
 		helper.SetConditionError(rbCondition, "SyncUserError", err)
 		r.Recorder.Eventf(
-			user,
+			user, nil,
 			v1.EventTypeWarning,
-			"syncUserClusterRoleBinding",
+			"syncUserClusterRoleBinding", "syncUserClusterRoleBinding",
 			"Sync User admin cluster role binding %s is error: %v",
 			user.Name,
 			err,
@@ -1469,9 +1469,9 @@ func (r *UserReconciler) syncServiceAccount(
 	}); err != nil {
 		helper.SetConditionError(saCondition, "SyncUserError", err)
 		r.Recorder.Eventf(
-			user,
+			user, nil,
 			v1.EventTypeWarning,
-			"syncUserServiceAccount",
+			"syncUserServiceAccount", "syncUserServiceAccount",
 			"Sync User namespace sa %s is error: %v",
 			user.Name,
 			err,
@@ -1508,9 +1508,9 @@ func (r *UserReconciler) syncKubeConfig(
 			saErr,
 		)
 		r.Recorder.Eventf(
-			user,
+			user, nil,
 			v1.EventTypeWarning,
-			"syncKubeConfig",
+			"syncKubeConfig", "syncKubeConfig",
 			"Sync User namespace  kubeconfig %s is error: %v",
 			user.Name,
 			saErr,
@@ -1524,9 +1524,9 @@ func (r *UserReconciler) syncKubeConfig(
 			state.recordSyncError(err)
 			helper.SetConditionError(userCondition, "SyncKubeConfigError", err)
 			r.Recorder.Eventf(
-				user,
+				user, nil,
 				v1.EventTypeWarning,
-				"syncKubeConfig",
+				"syncKubeConfig", "syncKubeConfig",
 				"Delete bound token secret %s is error: %v",
 				user.Name,
 				err,
@@ -1548,9 +1548,9 @@ func (r *UserReconciler) syncKubeConfig(
 		state.recordSyncError(err)
 		helper.SetConditionError(userCondition, "SyncKubeConfigError", err)
 		r.Recorder.Eventf(
-			user,
+			user, nil,
 			v1.EventTypeWarning,
-			"syncKubeConfig",
+			"syncKubeConfig", "syncKubeConfig",
 			"Sync KubeConfig apply %s is error: %v",
 			user.Name,
 			err,
@@ -1566,9 +1566,9 @@ func (r *UserReconciler) syncKubeConfig(
 			configErr,
 		)
 		r.Recorder.Eventf(
-			user,
+			user, nil,
 			v1.EventTypeWarning,
-			"syncKubeConfig",
+			"syncKubeConfig", "syncKubeConfig",
 			"Sync KubeConfig apply %s is error: %v",
 			user.Name,
 			configErr,
@@ -1580,9 +1580,9 @@ func (r *UserReconciler) syncKubeConfig(
 		state.recordSyncError(err)
 		helper.SetConditionError(userCondition, "OutputKubeConfigError", err)
 		r.Recorder.Eventf(
-			user,
+			user, nil,
 			v1.EventTypeWarning,
-			"syncKubeConfig",
+			"syncKubeConfig", "syncKubeConfig",
 			"Output KubeConfig apply %s is error: %v",
 			user.Name,
 			err,
@@ -1602,9 +1602,9 @@ func (r *UserReconciler) syncKubeConfig(
 			state.recordSyncError(err)
 			helper.SetConditionError(userCondition, "SyncKubeConfigError", err)
 			r.Recorder.Eventf(
-				user,
+				user, nil,
 				v1.EventTypeWarning,
-				"syncKubeConfig",
+				"syncKubeConfig", "syncKubeConfig",
 				"Get bound token secret %s is error: %v",
 				user.Name,
 				err,
@@ -1800,9 +1800,9 @@ func (r *UserReconciler) rejectReservedName(
 		return ctrl.Result{}, err
 	}
 	r.Recorder.Eventf(
-		user,
+		user, nil,
 		v1.EventTypeWarning,
-		"ReservedUserName",
+		"ReservedUserName", "ReservedUserName",
 		"User name %s is reserved; delete this User and recreate it with another name",
 		user.Name,
 	)
@@ -1851,9 +1851,9 @@ func (r *UserReconciler) handleLicenseLimit(
 		return false, err
 	}
 	r.Recorder.Eventf(
-		user,
+		user, nil,
 		v1.EventTypeWarning,
-		"LicenseLimitExceeded",
+		"LicenseLimitExceeded", "LicenseLimitExceeded",
 		"%s: %d",
 		licensegate.LimitMessage(),
 		licensegate.UserLimit(),

@@ -435,9 +435,7 @@ func convertAllDebtCr(account database.AccountV2, clt client.Client) error {
 	var errMu sync.Mutex
 
 	for range workerCount {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			var batch []*types.Debt
 
 			for debt := range tasks {
@@ -465,7 +463,7 @@ func convertAllDebtCr(account database.AccountV2, clt client.Client) error {
 					errMu.Unlock()
 				}
 			}
-		}()
+		})
 	}
 
 	for _, debt := range allDebts {
