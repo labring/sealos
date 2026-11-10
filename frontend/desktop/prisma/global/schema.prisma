@@ -614,11 +614,16 @@ enum ReferralStatus {
 
 // One dedicated invite code per inviter; enabled=false disables it
 model RegistrationInviteCode {
-  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  inviterUid String   @unique @db.Uuid
-  code       String   @unique
-  enabled    Boolean  @default(true)
-  createdAt  DateTime @default(now())
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  inviterUid          String   @unique @db.Uuid
+  code                String   @unique
+  enabled             Boolean  @default(true)
+  inviterRewardAmount BigInt   @default(5000000)
+  inviteeRewardAmount BigInt   @default(5000000)
+  ruleRevision        Int      @default(1)
+  remark              String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @default(now()) @updatedAt
 }
 
 // Referral relation: at most one row per invitee (unique inviteeUid makes it
@@ -626,14 +631,17 @@ model RegistrationInviteCode {
 // identity or self-invite is written as INELIGIBLE and permanently skipped by
 // compensation scans
 model RegistrationReferral {
-  id               String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  inviteeUid       String         @unique @db.Uuid
-  inviterUid       String         @db.Uuid
-  codeId           String         @db.Uuid
-  registeredAt     DateTime       @default(now())
-  status           ReferralStatus @default(PENDING)
-  ineligibleReason String?
-  createdAt        DateTime       @default(now())
+  id                  String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  inviteeUid          String         @unique @db.Uuid
+  inviterUid          String         @db.Uuid
+  codeId              String         @db.Uuid
+  inviterRewardAmount BigInt         @default(5000000)
+  inviteeRewardAmount BigInt         @default(5000000)
+  ruleRevision        Int            @default(1)
+  registeredAt        DateTime       @default(now())
+  status              ReferralStatus @default(PENDING)
+  ineligibleReason    String?
+  createdAt           DateTime       @default(now())
 
   @@index([inviterUid])
 }
@@ -663,21 +671,22 @@ model RegistrationSource {
 // A reward row exists iff the condition was ever satisfied; the businessKey
 // unique constraint makes issuance idempotent
 model ActivityRewardGrant {
-  id            String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  recipientUid  String               @db.Uuid
-  type          ActivityRewardType
-  referralId    String?              @db.Uuid
-  businessKey   String               @unique
-  identityKey   String?              @unique // first-login reward only; claims the identity permanently, survives account deletion
-  amount        BigInt
-  giftCodeId    String               @unique @db.Uuid
-  status        ActivityRewardStatus @default(READY)
-  failureReason String?
-  attemptCount  Int                  @default(0)
-  lastAttemptAt DateTime?
-  createdAt     DateTime             @default(now())
-  redeemedAt    DateTime?
-  ruleVersion   String               @default("2026-10-14.1")
+  id                   String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  recipientUid         String               @db.Uuid
+  type                 ActivityRewardType
+  referralId           String?              @db.Uuid
+  businessKey          String               @unique
+  identityKey          String?              @unique // first-login reward only; claims the identity permanently, survives account deletion
+  amount               BigInt
+  giftCodeId           String?              @unique @db.Uuid
+  accountTransactionId String?              @unique @db.Uuid
+  status               ActivityRewardStatus @default(READY)
+  failureReason        String?
+  attemptCount         Int                  @default(0)
+  lastAttemptAt        DateTime?
+  createdAt            DateTime             @default(now())
+  redeemedAt           DateTime?
+  ruleVersion          String               @default("2026-10-14.1")
 
   @@index([recipientUid, status])
   @@index([status, lastAttemptAt])
@@ -688,4 +697,28 @@ model ActivityRewardGrant {
 model ActivityRewardIdentityConfig {
   id     String @id
   pepper String
+}
+
+// KOL qualification is the successful, immutable one-time activation claim.
+enum KolActivationStatus {
+  UNUSED
+  ACTIVATED
+  REVOKED
+}
+
+model KolActivationCode {
+  id                  String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  codeHash            String              @unique
+  inviterRewardAmount BigInt
+  inviteeRewardAmount BigInt
+  ruleRevision        Int                 @default(1)
+  remark              String?
+  status              KolActivationStatus @default(UNUSED)
+  createdByUid        String              @db.Uuid
+  createdAt           DateTime            @default(now())
+  activatedByUid      String?             @unique @db.Uuid
+  activatedAt         DateTime?
+  revokedAt           DateTime?
+
+  @@index([status, createdAt])
 }

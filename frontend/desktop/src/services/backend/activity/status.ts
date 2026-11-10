@@ -13,7 +13,8 @@ import {
   referralInviterBusinessKey,
   REFERRAL_REWARD_AMOUNT
 } from './constants';
-import { readEligibilityFacts, hasIdentityConflict } from './rewards';
+import { readEligibilityFacts, readIdentityConfig, hasIdentityConflict } from './rewards';
+import { rewardIdentityKeys } from './identity.cjs';
 import { isActivityAvailable } from '@/services/enable';
 
 // First-login gift display status (amounts are credit-unit strings; the client
@@ -27,7 +28,7 @@ export type FirstLoginGiftStatus = {
 // Invitee gift display status: exists only when the user registered via an invite
 // link (null when there is no referral; the client hides the whole row)
 export type InviteeGiftStatus = {
-  status: 'ineligible' | 'pending_realname' | 'processing' | 'credited';
+  status: 'ineligible' | 'pending_realname' | 'processing' | 'credited' | 'no_reward';
   amount: string;
   creditedAt?: string;
 };
@@ -38,10 +39,14 @@ export type InviteSummary = {
   registeredCount: number;
   validCount: number;
   creditedAmount: string;
+  inviterRewardAmount: string;
+  inviteeRewardAmount: string;
+  codeEnabled: boolean;
 };
 
 export type ActivityStatusData = {
   available: boolean;
+  kol: { activated: boolean };
   firstLoginGift: FirstLoginGiftStatus;
   inviteeGift: InviteeGiftStatus | null;
   invite: InviteSummary;
@@ -52,16 +57,72 @@ export type InviteRecordStatus =
   | 'pending_realname'
   | 'processing'
   | 'credited'
-  | 'ineligible';
+  | 'ineligible'
+  | 'no_reward';
 
 export type InviteRecordItem = {
   invitee: string;
   registeredAt: string;
   status: InviteRecordStatus;
+  rewardAmount: string;
 };
 
+type ReferralIdentity = { id: string; inviteeUid: string; inviterUid: string; status: string };
+/** Batch qualification at a bounded size; zero rewards do not require monetary rows. */
+const qualifiedReferrals = async (referrals: ReferralIdentity[], inviterUid: string) => {
+  const result = new Set<string>();
+  if (!referrals.length) return result;
+  const [inviterFacts, config] = await Promise.all([
+    readEligibilityFacts(inviterUid),
+    readIdentityConfig()
+  ]);
+  // 单个 KOL 可能有大量注册记录；分批读事实，不能每人重复读配置或无限堆并发。
+  for (let start = 0; start < referrals.length; start += 500) {
+    const batch = referrals.slice(start, start + 500).filter((r) => r.status !== 'INELIGIBLE');
+    if (!batch.length) continue;
+    const uids = batch.map((r) => r.inviteeUid);
+    const [owners, sources, personal, enterprise] = await Promise.all([
+      globalPrisma.activityRewardGrant.findMany({
+        where: { businessKey: { in: uids.map(firstLoginBusinessKey) } },
+        select: { recipientUid: true, identityKey: true }
+      }),
+      globalPrisma.registrationSource.findMany({
+        where: { userUid: { in: uids }, source: 'API' },
+        select: { userUid: true }
+      }),
+      globalPrisma.userRealNameInfo.findMany({
+        where: { userUid: { in: uids } },
+        select: { userUid: true, isVerified: true, idCard: true }
+      }),
+      globalPrisma.enterpriseRealNameInfo.findMany({
+        where: { userUid: { in: uids } },
+        select: { userUid: true, isVerified: true, additionalInfo: true }
+      })
+    ]);
+    const ownerByUser = new Map(owners.map((r) => [r.recipientUid, r.identityKey]));
+    const apiUsers = new Set(sources.map((r) => r.userUid));
+    const personalByUser = new Map(personal.map((r) => [r.userUid, r]));
+    const enterpriseByUser = new Map(enterprise.map((r) => [r.userUid, r]));
+    for (const referral of batch) {
+      const ownerKey = ownerByUser.get(referral.inviteeUid);
+      if (apiUsers.has(referral.inviteeUid) || !ownerKey?.startsWith('v1:')) continue;
+      const identities = new Set([
+        ownerKey,
+        ...rewardIdentityKeys(
+          config.pepper,
+          personalByUser.get(referral.inviteeUid) ?? null,
+          enterpriseByUser.get(referral.inviteeUid) ?? null
+        )
+      ]);
+      if (!inviterFacts.identityKeys.some((key) => identities.has(key))) result.add(referral.id);
+    }
+  }
+  return result;
+};
+const hasReferralQualification = async (referral: ReferralIdentity) =>
+  (await qualifiedReferrals([referral], referral.inviterUid)).has(referral.id);
+
 const FIRST_LOGIN_AMOUNT_STRING = FIRST_LOGIN_REWARD_AMOUNT.toString(); // ¥10 in credit units, single source of truth
-const INVITEE_AMOUNT_STRING = REFERRAL_REWARD_AMOUNT.toString(); // ¥5 in credit units
 
 /**
  * Activity status summary (the `data` of the activity/status route).
@@ -109,9 +170,16 @@ export const getActivityStatusData = async (userUid: string): Promise<ActivitySt
   if (available && facts.source !== RegistrationSourceType.API) {
     const referral = await globalPrisma.registrationReferral.findUnique({
       where: { inviteeUid: userUid },
-      select: { id: true, status: true }
+      select: {
+        id: true,
+        inviteeUid: true,
+        inviterUid: true,
+        status: true,
+        inviteeRewardAmount: true
+      }
     });
     if (referral) {
+      const inviteeAmount = (referral.inviteeRewardAmount ?? REFERRAL_REWARD_AMOUNT).toString();
       const grant = await globalPrisma.activityRewardGrant.findUnique({
         where: { businessKey: referralInviteeBusinessKey(referral.id) }
       });
@@ -122,15 +190,20 @@ export const getActivityStatusData = async (userUid: string): Promise<ActivitySt
           creditedAt: grant.redeemedAt?.toISOString()
         };
       } else if (identityConflict || referral.status === 'INELIGIBLE') {
-        inviteeGift = { status: 'ineligible', amount: INVITEE_AMOUNT_STRING };
+        inviteeGift = { status: 'ineligible', amount: inviteeAmount };
+      } else if (
+        referral.inviteeRewardAmount === 0n &&
+        (await hasReferralQualification(referral))
+      ) {
+        inviteeGift = { status: 'no_reward', amount: '0' };
       } else if (grant) {
         inviteeGift = { status: 'processing', amount: grant.amount.toString() };
       } else if (!facts.isRealnameVerified && facts.hasClientLogin) {
-        inviteeGift = { status: 'pending_realname', amount: INVITEE_AMOUNT_STRING };
+        inviteeGift = { status: 'pending_realname', amount: inviteeAmount };
       } else {
         // Processing while either client login or realname verification is missing;
         // opening the client already reports the login fact
-        inviteeGift = { status: 'processing', amount: INVITEE_AMOUNT_STRING };
+        inviteeGift = { status: 'processing', amount: inviteeAmount };
       }
     }
   }
@@ -143,7 +216,7 @@ export const getActivityStatusData = async (userUid: string): Promise<ActivitySt
       : Promise.resolve(null),
     globalPrisma.registrationReferral.findMany({
       where: { inviterUid: userUid },
-      select: { id: true, inviteeUid: true, status: true }
+      select: { id: true, inviteeUid: true, inviterUid: true, status: true }
     }),
     globalPrisma.activityRewardGrant.findMany({
       where: {
@@ -155,16 +228,13 @@ export const getActivityStatusData = async (userUid: string): Promise<ActivitySt
     })
   ]);
 
-  // validCount = invitees who met the conditions (an existing invitee grant row
-  // means the conditions were once met)
-  let validCount = 0;
-  for (const referral of referrals) {
-    const inviteeGrant = await globalPrisma.activityRewardGrant.findUnique({
-      where: { businessKey: referralInviteeBusinessKey(referral.id) },
+  const validCount = (await qualifiedReferrals(referrals, userUid)).size;
+  const activated =
+    available &&
+    !!(await globalPrisma.kolActivationCode.findUnique({
+      where: { activatedByUid: userUid },
       select: { id: true }
-    });
-    if (inviteeGrant && referral.status !== 'INELIGIBLE') validCount += 1;
-  }
+    }));
 
   const creditedAmount = creditedGrants.reduce((sum, grant) => sum + grant.amount, 0n);
 
@@ -174,13 +244,16 @@ export const getActivityStatusData = async (userUid: string): Promise<ActivitySt
   // that are never granted.
   const invite: InviteSummary = {
     code: available ? inviteCode?.code ?? null : null,
-    inviteUrl: available && inviteCode ? buildInviteUrl(inviteCode.code) : null,
+    inviteUrl: available && inviteCode?.enabled ? buildInviteUrl(inviteCode.code) : null,
     registeredCount: referrals.length,
     validCount,
-    creditedAmount: creditedAmount.toString()
+    creditedAmount: creditedAmount.toString(),
+    inviterRewardAmount: (inviteCode?.inviterRewardAmount ?? REFERRAL_REWARD_AMOUNT).toString(),
+    inviteeRewardAmount: (inviteCode?.inviteeRewardAmount ?? REFERRAL_REWARD_AMOUNT).toString(),
+    codeEnabled: inviteCode?.enabled ?? true
   };
 
-  return { available, firstLoginGift, inviteeGift, invite };
+  return { available, kol: { activated }, firstLoginGift, inviteeGift, invite };
 };
 
 /**
@@ -199,6 +272,7 @@ export const getInviteRecordList = async (userUid: string, page: number, pageSiz
     })
   ]);
 
+  const qualified = await qualifiedReferrals(referrals, userUid);
   const items: InviteRecordItem[] = [];
   for (const referral of referrals) {
     const [inviteeUser, inviteeFacts, inviterGrant] = await Promise.all([
@@ -209,7 +283,7 @@ export const getInviteRecordList = async (userUid: string, page: number, pageSiz
       readEligibilityFacts(referral.inviteeUid),
       globalPrisma.activityRewardGrant.findUnique({
         where: { businessKey: referralInviterBusinessKey(referral.id) },
-        select: { status: true }
+        select: { status: true, amount: true }
       })
     ]);
 
@@ -222,12 +296,14 @@ export const getInviteRecordList = async (userUid: string, page: number, pageSiz
       (await hasIdentityConflict(referral.inviteeUid, inviteeFacts))
     ) {
       status = 'ineligible';
+    } else if (inviterGrant?.status === ActivityRewardStatus.REDEEMED) {
+      status = 'credited';
+    } else if (referral.inviterRewardAmount === 0n && qualified.has(referral.id)) {
+      status = 'no_reward';
     } else if (!inviteeFacts.hasClientLogin) {
       status = 'pending_client_login';
     } else if (!inviteeFacts.isRealnameVerified) {
       status = 'pending_realname';
-    } else if (inviterGrant?.status === ActivityRewardStatus.REDEEMED) {
-      status = 'credited';
     } else {
       status = 'processing';
     }
@@ -235,7 +311,12 @@ export const getInviteRecordList = async (userUid: string, page: number, pageSiz
     items.push({
       invitee: maskNickname(inviteeUser?.nickname),
       registeredAt: referral.registeredAt.toISOString(),
-      status
+      status,
+      rewardAmount: (
+        inviterGrant?.amount ??
+        referral.inviterRewardAmount ??
+        REFERRAL_REWARD_AMOUNT
+      ).toString()
     });
   }
 

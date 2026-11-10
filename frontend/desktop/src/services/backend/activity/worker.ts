@@ -187,12 +187,12 @@ const MISSING_REFERRAL_REWARDS_SQL = Prisma.sql`
       SELECT 1 FROM "RegistrationSource" s
       WHERE s."userUid" = r."inviteeUid" AND s."source" = 'API')
     AND (
-      (EXISTS (SELECT 1 FROM "User" u WHERE u."uid" = r."inviterUid")
+      (r."inviterRewardAmount" > 0 AND EXISTS (SELECT 1 FROM "User" u WHERE u."uid" = r."inviterUid")
        AND NOT EXISTS (SELECT 1 FROM "RegistrationSource" s WHERE s."userUid" = r."inviterUid" AND s."source" = 'API')
        AND NOT EXISTS (SELECT 1 FROM "ActivityRewardGrant" g
                   WHERE g."referralId" = r."id" AND g."type" = 'REFERRAL_INVITER'))
-      OR NOT EXISTS (SELECT 1 FROM "ActivityRewardGrant" g
-                     WHERE g."referralId" = r."id" AND g."type" = 'REFERRAL_INVITEE')
+      OR (r."inviteeRewardAmount" > 0 AND NOT EXISTS (SELECT 1 FROM "ActivityRewardGrant" g
+                     WHERE g."referralId" = r."id" AND g."type" = 'REFERRAL_INVITEE'))
     )
   ORDER BY r."registeredAt" DESC
   LIMIT 20

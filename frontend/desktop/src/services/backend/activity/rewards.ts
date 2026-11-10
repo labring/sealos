@@ -18,7 +18,7 @@ import {
   referralInviterBusinessKey,
   rewardAmount
 } from './constants';
-import { isUniqueConstraintError } from './registration';
+import { isUniqueConstraintError, type TransactionClient } from './registration';
 import { rewardIdentityKeys } from './identity.cjs';
 
 // Eligibility facts (all read server-side; the three reward types share one
@@ -34,33 +34,36 @@ type EligibilityFacts = {
   identityKeys: string[];
 };
 
-export const readIdentityConfig = async () => {
-  const config = await globalPrisma.activityRewardIdentityConfig.findUnique({
+export const readIdentityConfig = async (db: TransactionClient = globalPrisma) => {
+  const config = await db.activityRewardIdentityConfig.findUnique({
     where: { id: 'v1' }
   });
   if (!config) throw new Error('Activity identity configuration missing; apply migration first');
   return config;
 };
 
-export const readEligibilityFacts = async (userUid: string): Promise<EligibilityFacts> => {
+export const readEligibilityFacts = async (
+  userUid: string,
+  db: TransactionClient = globalPrisma
+): Promise<EligibilityFacts> => {
   const [sourceRow, personalRealname, enterpriseRealname, loginRecord, config] = await Promise.all([
-    globalPrisma.registrationSource.findUnique({
+    db.registrationSource.findUnique({
       where: { userUid },
       select: { source: true }
     }),
-    globalPrisma.userRealNameInfo.findUnique({
+    db.userRealNameInfo.findUnique({
       where: { userUid },
       select: { isVerified: true, idCard: true }
     }),
-    globalPrisma.enterpriseRealNameInfo.findUnique({
+    db.enterpriseRealNameInfo.findUnique({
       where: { userUid },
       select: { isVerified: true, additionalInfo: true }
     }),
-    globalPrisma.desktopLoginRecord.findUnique({
+    db.desktopLoginRecord.findUnique({
       where: { userUid },
       select: { userUid: true }
     }),
-    readIdentityConfig()
+    readIdentityConfig(db)
   ]);
   const identityKeys = rewardIdentityKeys(config.pepper, personalRealname, enterpriseRealname);
   return {
@@ -72,52 +75,124 @@ export const readEligibilityFacts = async (userUid: string): Promise<Eligibility
   };
 };
 
+const isRetryableTransactionError = (error: unknown) => {
+  if (typeof error !== 'object' || error === null || !('code' in error)) return false;
+  // PostgreSQL serializable conflicts from raw SELECT FOR UPDATE surface as P2010/40001.
+  return (
+    error.code === 'P2034' ||
+    (error.code === 'P2010' &&
+      'meta' in error &&
+      typeof error.meta === 'object' &&
+      error.meta !== null &&
+      'code' in error.meta &&
+      (error.meta.code === '40001' || error.meta.code === '40P01'))
+  );
+};
+
+type RewardRequest = {
+  recipientUid: string;
+  type: ActivityRewardType;
+  businessKey: string;
+  referralId?: string;
+  identityKey?: string;
+};
+const assertExistingReward = async (grant: ActivityRewardGrant, params: RewardRequest) => {
+  if (
+    grant.recipientUid !== params.recipientUid ||
+    grant.type !== params.type ||
+    (grant.referralId ?? undefined) !== params.referralId
+  )
+    throw new Error('Activity business key conflicts with reward recipient');
+  if (params.referralId) {
+    const referral = await globalPrisma.registrationReferral.findUnique({
+      where: { id: params.referralId }
+    });
+    const expected =
+      params.type === ActivityRewardType.REFERRAL_INVITER
+        ? referral?.inviterRewardAmount
+        : referral?.inviteeRewardAmount;
+    if (!referral || expected !== grant.amount)
+      throw new Error('Activity business key conflicts with reward snapshot');
+  }
+};
+
 type CreateRewardGrantResult = {
   grant: ActivityRewardGrant;
   // false = existing row hit via unique key (concurrent duplicate = already granted)
   created: boolean;
 };
 
-/**
- * Creates the reward row + activity gift code + creation audit in one
- * global-db transaction: the GiftCode is created first and the grant carries
- * its giftCodeId; the businessKey unique constraint provides idempotency.
- */
-const createRewardGrant = async (params: {
-  recipientUid: string;
-  type: ActivityRewardType;
-  businessKey: string;
-  referralId?: string;
-  identityKey?: string;
-}): Promise<CreateRewardGrantResult> => {
-  // Serve status polling from the existing row; without this pre-check, every
-  // poll would create a gift code and roll it back
+/** Compatibility phase: retain legacy gift-code writes until all readers support direct grants. */
+const createRewardGrant = async (params: RewardRequest): Promise<CreateRewardGrantResult> => {
   const existing = await globalPrisma.activityRewardGrant.findUnique({
     where: { businessKey: params.businessKey }
   });
-  if (existing) return { grant: existing, created: false };
-  if (params.identityKey) {
-    const owner = await globalPrisma.activityRewardGrant.findUnique({
-      where: { identityKey: params.identityKey }
-    });
-    if (owner) return { grant: owner, created: false };
+  if (existing) {
+    await assertExistingReward(existing, params);
+    return { grant: existing, created: false };
   }
-  const amount = rewardAmount(params.type);
   for (let attempt = 0; ; attempt++) {
     try {
       const grant = await globalPrisma.$transaction(
         async (tx) => {
-          // Activity gift codes carry no beneficiary field (decided 2026-10-14):
-          // anti-sniping relies on keeping the 24-char random code secret, never
-          // sending it to the client, and redeeming it as the beneficiary
-          // immediately after creation
+          const [user, source] = await Promise.all([
+            tx.user.findUnique({
+              where: { uid: params.recipientUid },
+              select: { uid: true, status: true }
+            }),
+            tx.registrationSource.findUnique({ where: { userUid: params.recipientUid } })
+          ]);
+          if (!user || user.status !== 'NORMAL_USER' || source?.source === 'API')
+            throw new Error('Activity recipient is ineligible');
+          let amount = rewardAmount(params.type);
+          let ruleVersion = ACTIVITY_RULE_VERSION;
           if (params.referralId) {
             const referral = await tx.registrationReferral.findUnique({
               where: { id: params.referralId }
             });
             if (!referral || referral.status === 'INELIGIBLE')
               throw new Error('Activity referral is ineligible');
+            const expectedUid =
+              params.type === ActivityRewardType.REFERRAL_INVITER
+                ? referral.inviterUid
+                : referral.inviteeUid;
+            if (expectedUid !== params.recipientUid)
+              throw new Error('Activity recipient does not match referral');
+            const owner = await tx.activityRewardGrant.findUnique({
+              where: { businessKey: firstLoginBusinessKey(referral.inviteeUid) }
+            });
+            if (
+              !owner?.identityKey?.startsWith('v1:') ||
+              owner.recipientUid !== referral.inviteeUid
+            )
+              throw new Error('Activity identity owner missing');
+            const [inviteeFacts, inviterFacts] = await Promise.all([
+              readEligibilityFacts(referral.inviteeUid, tx),
+              readEligibilityFacts(referral.inviterUid, tx)
+            ]);
+            if (
+              inviteeFacts.source === 'API' ||
+              inviterFacts.identityKeys.some((key) =>
+                new Set([...inviteeFacts.identityKeys, owner.identityKey]).has(key)
+              )
+            )
+              throw new Error('Activity referral identity conflict');
+            amount =
+              params.type === ActivityRewardType.REFERRAL_INVITER
+                ? referral.inviterRewardAmount
+                : referral.inviteeRewardAmount;
+            ruleVersion = `${referral.codeId}:${referral.ruleRevision}`;
+          } else {
+            const facts = await readEligibilityFacts(params.recipientUid, tx);
+            if (
+              !facts.hasClientLogin ||
+              !facts.isRealnameVerified ||
+              !params.identityKey ||
+              !facts.identityKeys.includes(params.identityKey)
+            )
+              throw new Error('Activity conditions not met');
           }
+          if (amount <= 0n) throw new Error('Zero reward must not enter monetary payout');
           const giftCode = await tx.giftCode.create({
             data: {
               code: generateActivityGiftCode(),
@@ -128,13 +203,11 @@ const createRewardGrant = async (params: {
           await tx.giftCodeCreation.create({
             data: {
               giftCodeId: giftCode.id,
-              // Audit records the beneficiary: a system-created activity code,
-              // not something disguised as a manual recharge
               createdByUserUid: params.recipientUid,
               rechargeType: RechargeCodeType.ACTIVITY_RECHARGE
             }
           });
-          return await tx.activityRewardGrant.create({
+          return tx.activityRewardGrant.create({
             data: {
               recipientUid: params.recipientUid,
               type: params.type,
@@ -144,7 +217,7 @@ const createRewardGrant = async (params: {
               amount,
               giftCodeId: giftCode.id,
               status: ActivityRewardStatus.READY,
-              ruleVersion: ACTIVITY_RULE_VERSION
+              ruleVersion
             }
           });
         },
@@ -153,30 +226,21 @@ const createRewardGrant = async (params: {
       return { grant, created: true };
     } catch (error) {
       if (isUniqueConstraintError(error)) {
-        // Unique-constraint conflict: businessKey / giftCodeId / random code
         const existing = await globalPrisma.activityRewardGrant.findUnique({
           where: { businessKey: params.businessKey }
         });
-        if (existing) return { grant: existing, created: false };
+        if (existing) {
+          await assertExistingReward(existing, params);
+          return { grant: existing, created: false };
+        }
         if (params.identityKey) {
           const owner = await globalPrisma.activityRewardGrant.findUnique({
             where: { identityKey: params.identityKey }
           });
           if (owner) return { grant: owner, created: false };
         }
-        // On a random-code collision, retry with a fresh code; the failed
-        // transaction leaves no orphaned code
-        if (attempt < 2) continue;
       }
-      if (
-        error &&
-        typeof error === 'object' &&
-        'code' in error &&
-        error.code === 'P2034' &&
-        attempt < 2
-      ) {
-        continue;
-      }
+      if (isRetryableTransactionError(error) && attempt < 4) continue;
       throw error;
     }
   }
@@ -217,7 +281,12 @@ const markRetryableFailure = async (grantId: string, reason: string) =>
  * (internal billing JWT), then mark REDEEMED on success.
  */
 export const redeemGrant = async (grant: ActivityRewardGrant): Promise<void> => {
-  if (grant.failureReason?.startsWith('conflict:')) return;
+  if (
+    !grant.giftCodeId ||
+    grant.status === ActivityRewardStatus.REDEEMED ||
+    grant.failureReason?.startsWith('conflict:')
+  )
+    return;
   if (grant.referralId) {
     const referral = await globalPrisma.registrationReferral.findUnique({
       where: { id: grant.referralId }
@@ -309,7 +378,7 @@ export const redeemGrant = async (grant: ActivityRewardGrant): Promise<void> => 
  */
 export const reconcileGrant = async (grant: ActivityRewardGrant): Promise<void> => {
   const fresh = await globalPrisma.activityRewardGrant.findUnique({ where: { id: grant.id } });
-  if (!fresh || fresh.status === ActivityRewardStatus.REDEEMED) return;
+  if (!fresh || !fresh.giftCodeId || fresh.status === ActivityRewardStatus.REDEEMED) return;
 
   const giftCode = await globalPrisma.giftCode.findUnique({
     where: { id: fresh.giftCodeId }
@@ -429,14 +498,19 @@ const grantReferralRewards = async (
     await invalidateReferral(referral.id, 'self_identity');
     return;
   }
-  const invitee = await createRewardGrant({
-    recipientUid: userUid,
-    type: ActivityRewardType.REFERRAL_INVITEE,
-    businessKey: referralInviteeBusinessKey(referral.id),
-    referralId: referral.id
-  });
-  if (invitee.created) await redeemGrant(invitee.grant);
-  if (inviterFacts.source !== RegistrationSourceType.API) {
+  if ((referral.inviteeRewardAmount ?? 5_000_000n) > 0n) {
+    const invitee = await createRewardGrant({
+      recipientUid: userUid,
+      type: ActivityRewardType.REFERRAL_INVITEE,
+      businessKey: referralInviteeBusinessKey(referral.id),
+      referralId: referral.id
+    });
+    if (invitee.created) await redeemGrant(invitee.grant);
+  }
+  if (
+    inviterFacts.source !== RegistrationSourceType.API &&
+    (referral.inviterRewardAmount ?? 5_000_000n) > 0n
+  ) {
     const inviter = await globalPrisma.user.findUnique({
       where: { uid: referral.inviterUid },
       select: { uid: true }
@@ -462,6 +536,13 @@ const grantForEligibleUser = async (userUid: string, facts: EligibilityFacts) =>
   // to the materials must not block backfill of an already-earned referral reward
   if (!existing && (!facts.hasClientLogin || !facts.isRealnameVerified || !facts.identityKey))
     return;
+  if (
+    existing &&
+    (existing.recipientUid !== userUid ||
+      existing.type !== ActivityRewardType.DESKTOP_FIRST_LOGIN ||
+      existing.referralId)
+  )
+    throw new Error('Activity first-login business key conflict');
   const firstLogin = existing
     ? { grant: existing, created: false }
     : await createRewardGrant({
@@ -505,6 +586,7 @@ export const checkAndGrantUserRewards = async (userUid: string): Promise<void> =
       JOIN "ActivityRewardGrant" owner ON owner."businessKey" = 'DESKTOP_FIRST_LOGIN:' || r."inviteeUid"::TEXT
       WHERE r."inviterUid" = ${userUid}::UUID AND r."status" != 'INELIGIBLE'
         AND owner."identityKey" LIKE 'v1:%'
+        AND r."inviterRewardAmount" > 0
         AND NOT EXISTS (SELECT 1 FROM "ActivityRewardGrant" g
           WHERE g."referralId" = r."id" AND g."type" = 'REFERRAL_INVITER')
       ORDER BY r."registeredAt" ASC, r."id" ASC LIMIT 20

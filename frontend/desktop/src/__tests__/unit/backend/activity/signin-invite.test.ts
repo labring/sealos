@@ -70,6 +70,11 @@ describe('signin invitation SSR', () => {
       inviterUid: 'inviter',
       code: CODE,
       enabled: true,
+      inviterRewardAmount: 5_000_000n,
+      inviteeRewardAmount: 5_000_000n,
+      ruleRevision: 1,
+      remark: null,
+      updatedAt: new Date(),
       createdAt: new Date()
     });
     vi.mocked(globalPrisma.user.findUnique).mockResolvedValue({ uid: 'inviter' } as any);

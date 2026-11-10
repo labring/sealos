@@ -1,4 +1,4 @@
-import { buildInviteUrl } from '@/services/backend/activity/constants';
+import { REFERRAL_REWARD_AMOUNT, buildInviteUrl } from '@/services/backend/activity/constants';
 import { ensureInviteCode } from '@/services/backend/activity/registration';
 import { readEligibilityFacts } from '@/services/backend/activity/rewards';
 import { isActivityAvailable } from '@/services/enable';
@@ -39,7 +39,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       code: 200,
       data: {
         code: inviteCode.code,
-        inviteUrl: buildInviteUrl(inviteCode.code)
+        inviteUrl: inviteCode.enabled ? buildInviteUrl(inviteCode.code) : null,
+        inviterRewardAmount: (inviteCode.inviterRewardAmount ?? REFERRAL_REWARD_AMOUNT).toString(),
+        inviteeRewardAmount: (inviteCode.inviteeRewardAmount ?? REFERRAL_REWARD_AMOUNT).toString(),
+        codeEnabled: inviteCode.enabled
       }
     });
   } catch (error) {
