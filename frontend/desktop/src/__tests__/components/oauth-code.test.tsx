@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { act } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
+import { page } from '@vitest/browser/context';
 import { RouterContext } from 'next/dist/shared/lib/router-context.shared-runtime';
 import type { NextRouter } from 'next/router';
 import OAuthCodePage from '@/pages/oauth2/code';
+import '@/styles/globals.css';
 import useSessionStore from '@/stores/session';
 import { consumePendingOauth2RedirectPath, setPendingOauth2RequestId } from '@/utils/oauth2';
 import { createInstance } from 'i18next';
@@ -48,9 +50,10 @@ describe('authorization code consent page', () => {
       session: { user: { name: 'Alice' } } as any
     });
   });
-  afterEach(() => {
+  afterEach(async () => {
     cleanup();
     vi.unstubAllGlobals();
+    await page.viewport(414, 896);
   });
 
   it('shows the authenticated account and honest access explanation', async () => {
@@ -63,8 +66,9 @@ describe('authorization code consent page', () => {
         )
     );
     renderPage();
+    expect(screen.getByRole('heading', { name: 'Authorize Application' })).toBeTruthy();
     await screen.findByText('Sealos Mobile');
-    expect(screen.getByText('Alice')).toBeTruthy();
+    expect(screen.getByText(/Currently signed in as: Alice/)).toBeTruthy();
     expect(screen.getByText(/does not restrict access to selected workspaces/)).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Approve' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Deny' })).toBeTruthy();
@@ -88,10 +92,76 @@ describe('authorization code consent page', () => {
     expect(screen.getByText(/本次授权不会将访问范围限制在指定的工作空间内/)).toBeTruthy();
     expect(screen.getByText('请仅在您本人发起此请求且信任此应用时同意授权。')).toBeTruthy();
     expect(screen.getByRole('button', { name: '拒绝' })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: '同意授权' }));
+    fireEvent.click(screen.getByRole('button', { name: '接受' }));
     expect(screen.getByRole('status').textContent).toBe('正在返回应用…');
-    expect((screen.getByRole('button', { name: '同意授权' }) as HTMLButtonElement).disabled).toBe(
-      true
+    expect((screen.getByRole('button', { name: '接受' }) as HTMLButtonElement).disabled).toBe(true);
+  });
+  it('matches the design geometry at desktop and mobile sizes', async () => {
+    await page.viewport(1096, 754);
+    await i18n.changeLanguage('zh');
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockImplementation(
+          async () =>
+            new Response(JSON.stringify({ client_name: 'Sealos Desktop', account: 'sealos_user' }))
+        )
+    );
+    renderPage();
+
+    const description = await screen.findByText(
+      /此应用将能够使用您现有的权限访问您的 Sealos 账号和资源/
+    );
+    const card = (await screen.findByRole('region', { name: '授权应用' })) as HTMLElement;
+    const wrapperRect = card.parentElement!.getBoundingClientRect();
+    const cardRect = card.getBoundingClientRect();
+    const cardStyle = getComputedStyle(card);
+    expect(cardRect.x - wrapperRect.x).toBe((wrapperRect.width - cardRect.width) / 2);
+    expect(cardRect.y - wrapperRect.y).toBe((wrapperRect.height - cardRect.height) / 2);
+    expect(cardRect.width).toBe(568);
+    expect(cardRect.height).toBe(372);
+    expect(cardStyle.padding).toBe('20px');
+    expect(cardStyle.rowGap).toBe('20px');
+    expect(cardStyle.borderRadius).toBe('20px');
+
+    const heading = screen.getByRole('heading', { name: '授权应用' });
+    const headingStyle = getComputedStyle(heading);
+    expect(headingStyle.fontSize).toBe('24px');
+    expect(headingStyle.lineHeight).toBe('28px');
+    expect(headingStyle.fontWeight).toBe('500');
+
+    const logo = card.querySelector<HTMLImageElement>('img[src="/icons/sealos-auth.svg"]');
+    expect(logo?.getBoundingClientRect().width).toBe(18);
+    expect(logo?.getBoundingClientRect().height).toBe(18);
+
+    expect(getComputedStyle(description).fontSize).toBe('14px');
+    expect(getComputedStyle(description).lineHeight).toBe('24px');
+
+    const deny = screen.getByRole('button', { name: '拒绝' });
+    const approve = screen.getByRole('button', { name: '接受' });
+    for (const button of [deny, approve]) {
+      const rect = button.getBoundingClientRect();
+      const style = getComputedStyle(button);
+      expect(rect.width).toBe(85);
+      expect(rect.height).toBe(36);
+      expect(style.borderRadius).toBe('999px');
+    }
+    expect(getComputedStyle(deny.parentElement!).gap).toBe('10px');
+
+    await act(async () => {
+      await i18n.changeLanguage('en');
+    });
+    await waitFor(() => expect(card.getBoundingClientRect().height).toBe(396));
+    expect(card.getBoundingClientRect().width).toBe(568);
+
+    await page.viewport(375, 812);
+    await waitFor(() => expect(card.getBoundingClientRect().width).toBe(343));
+    const mobileWrapperRect = card.parentElement!.getBoundingClientRect();
+    const mobileCardRect = card.getBoundingClientRect();
+    expect(mobileCardRect.x - mobileWrapperRect.x).toBe(16);
+    expect(mobileWrapperRect.width - (mobileCardRect.x - mobileWrapperRect.x) * 2).toBe(
+      mobileCardRect.width
     );
   });
   it('localizes missing requests', async () => {
@@ -120,11 +190,11 @@ describe('authorization code consent page', () => {
         .mockResolvedValueOnce(new Response('{}', { status: 500 }))
     );
     renderPage();
-    fireEvent.click(await screen.findByRole('button', { name: '同意授权' }));
+    fireEvent.click(await screen.findByRole('button', { name: '接受' }));
     expect((await screen.findByRole('alert')).textContent).toBe(
       '授权失败，请返回应用重新发起授权。'
     );
-    expect((screen.getByRole('button', { name: '同意授权' }) as HTMLButtonElement).disabled).toBe(
+    expect((screen.getByRole('button', { name: '接受' }) as HTMLButtonElement).disabled).toBe(
       false
     );
   });
