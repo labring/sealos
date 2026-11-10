@@ -6,6 +6,7 @@ import useSessionStore from '@/stores/session';
 import { setPendingCodeRequestId } from '@/utils/oauth2';
 import type { GetServerSideProps } from 'next';
 import { useTranslation } from 'next-i18next';
+import { trackWebVisitorLink } from '@/utils/app-visitor-link';
 
 type Context = {
   client_name: string;
@@ -71,6 +72,8 @@ export default function OAuthCodePage() {
     submitting.current = true;
     setBusy(true);
     setError('');
+    const submittedSession = useSessionStore.getState().session;
+    const submittedToken = useSessionStore.getState().token;
     try {
       const response = await fetch('/api/auth/oauth2/code/decision', {
         method: 'POST',
@@ -81,6 +84,20 @@ export default function OAuthCodePage() {
       const payload = await response.json();
       if (!response.ok)
         throw new Error(payload.error_description || t('common:oauth_code_decision_failed_retry'));
+      if (decision === 'approve') {
+        try {
+          const current = useSessionStore.getState();
+          if (
+            current.session === submittedSession &&
+            current.token === submittedToken &&
+            current.session?.user?.userUid === payload.analytics_context?.subject_id
+          ) {
+            await trackWebVisitorLink(payload.analytics_context);
+          }
+        } catch {
+          /* Analytics never blocks login. */
+        }
+      }
       window.location.assign(payload.redirect_uri);
     } catch (err) {
       setError(err instanceof Error ? err.message : t('common:oauth_code_decision_failed'));

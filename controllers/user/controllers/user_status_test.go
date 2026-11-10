@@ -28,7 +28,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -395,7 +395,7 @@ func TestKubeConfigSyncAddsFailureCondition(t *testing.T) {
 	user.Status.KubeConfig = "existing-kubeconfig"
 	user.Status.KubeConfigRefreshAt = &refreshAt
 	user.Status.ObservedCSRExpirationSeconds = userv1.DefaultCSRExpirationSeconds
-	r := &UserReconciler{Recorder: record.NewFakeRecorder(1)}
+	r := &UserReconciler{Recorder: events.NewFakeRecorder(1)}
 	state := &userReconcileState{}
 	r.syncKubeConfig(context.Background(), user, state)
 	if state.syncError == nil {
@@ -640,7 +640,7 @@ func TestRoleSyncFailureUpdatesRoleCondition(t *testing.T) {
 	r := &UserReconciler{
 		Client:   roleSyncErrorClient{Client: baseClient},
 		Scheme:   scheme,
-		Recorder: record.NewFakeRecorder(10),
+		Recorder: events.NewFakeRecorder(10),
 	}
 	state := &userReconcileState{}
 	r.syncRolesIfNeeded(context.Background(), user, state)
@@ -675,7 +675,7 @@ func TestRoleBindingSyncFailureRecordsRetryableError(t *testing.T) {
 	r := &UserReconciler{
 		Client:   roleBindingSyncErrorClient{Client: baseClient},
 		Scheme:   scheme,
-		Recorder: record.NewFakeRecorder(10),
+		Recorder: events.NewFakeRecorder(10),
 	}
 	state := &userReconcileState{}
 	r.syncRoleBindingIfNeeded(context.Background(), user, state)
@@ -1018,7 +1018,7 @@ func TestAdminPrivilegeMigrationPropagatesSyncError(t *testing.T) {
 	r := &UserReconciler{
 		Client:   failingClient,
 		Scheme:   scheme,
-		Recorder: record.NewFakeRecorder(10),
+		Recorder: events.NewFakeRecorder(10),
 	}
 	migration := &adminPrivilegeMigration{
 		client:                  failingClient,

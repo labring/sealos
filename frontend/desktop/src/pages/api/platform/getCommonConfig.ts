@@ -23,6 +23,7 @@ function genResCommonClientConfig(common: CommonConfigType): CommonClientConfigT
     realNameAuthEnabled: !!common.realNameAuthEnabled,
     realNameReward: common.realNameReward || 0,
     guideEnabled: !!common.guideEnabled,
+    accountMergeEnabled: common.accountMergeEnabled === true,
     rechargeEnabled: !!common.rechargeEnabled,
     cfSiteKey: common.cfSiteKey || '',
     licenseCheckEnabled: !!common.licenseCheckEnabled

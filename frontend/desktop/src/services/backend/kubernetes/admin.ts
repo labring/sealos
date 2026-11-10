@@ -24,6 +24,29 @@ const patchContentTypeMiddleware = (contentType: string) => ({
 
 const jsonPatchMiddleware = () => patchContentTypeMiddleware(k8s.PatchStrategy.JsonPatch);
 
+export const ADMIN_USER_CR_NAME = 'admin';
+
+export class KubeconfigAccessDeniedError extends Error {
+  readonly statusCode = 403;
+
+  constructor(userCrName: string) {
+    super('Kubeconfig access is forbidden for user ' + userCrName);
+    this.name = 'KubeconfigAccessDeniedError';
+  }
+}
+
+export const isAdminKubeconfigUser = (userCrName: string) => userCrName === ADMIN_USER_CR_NAME;
+
+export const isKubeconfigAccessDenied = (userCrName: string) =>
+  isAdminKubeconfigUser(userCrName) &&
+  global.AppConfig?.desktop?.auth?.adminKubeconfigEnabled !== true;
+
+const assertKubeconfigAccess = (userCrName: string) => {
+  if (isKubeconfigAccessDenied(userCrName)) {
+    throw new KubeconfigAccessDeniedError(userCrName);
+  }
+};
+
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
@@ -268,6 +291,7 @@ export const getUserCr = async (kc: KubeConfig, name: string) => {
 };
 // for enter user state
 export const getUserKubeconfigNotPatch = async (name: string) => {
+  assertKubeconfigAccess(name);
   const kc = K8sApiDefault();
   try {
     const userCr = await getUserCr(kc, name);
@@ -283,6 +307,7 @@ export const getUserKubeconfig = async (
   k8s_username: string,
   userType: 'subscription' | 'payg'
 ) => {
+  assertKubeconfigAccess(k8s_username);
   const kc = K8sApiDefault();
   const group = 'user.sealos.io';
   const version = 'v1';
@@ -399,9 +424,7 @@ export const setUserWorkspaceLock = async (namespace: string) => {
         readError.body &&
         typeof readError.body.message === 'string' &&
         readError.body.message.includes('not found') &&
-        (readError.code === 404 ||
-          readError.body.code === 404 ||
-          readError.body.code === '404')
+        (readError.code === 404 || readError.body.code === 404 || readError.body.code === '404')
       ) {
         console.log('setUserWorkspaceLock error: namespace not found');
         return true;
@@ -420,9 +443,7 @@ export const setUserWorkspaceLock = async (namespace: string) => {
         }
       },
       {
-        middleware: [
-          patchContentTypeMiddleware(k8s.PatchStrategy.StrategicMergePatch)
-        ]
+        middleware: [patchContentTypeMiddleware(k8s.PatchStrategy.StrategicMergePatch)]
       }
     );
     return (

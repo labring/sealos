@@ -4,7 +4,7 @@ import useSessionStore from '@/stores/session';
 import { useSigninFormStore } from '@/stores/signinForm';
 import { ApiResp } from '@/types';
 import { gtmLoginSuccess } from '@/utils/gtm';
-import { sessionConfig } from '@/utils/sessionConfig';
+import { loginSessionConfig } from '@/utils/sessionConfig';
 import { consumePendingOauth2RedirectPath } from '@/utils/oauth2';
 import { useGuideModalStore } from '@/stores/guideModal';
 import {
@@ -116,7 +116,7 @@ export function EmailCheckForm({ isModal = false, onBack }: EmailCheckFormProps)
           const initResult = await autoInitRegionToken();
 
           if (initResult?.data) {
-            const productUserTraits = await sessionConfig(initResult.data);
+            const productUserTraits = await loginSessionConfig(initResult.data);
             gtmLoginSuccess({
               user_type: 'new',
               method: 'email',
@@ -137,7 +137,7 @@ export function EmailCheckForm({ isModal = false, onBack }: EmailCheckFormProps)
       } else {
         const regionTokenRes = await getRegionToken();
         if (regionTokenRes?.data) {
-          const productUserTraits = await sessionConfig(regionTokenRes.data);
+          const productUserTraits = await loginSessionConfig(regionTokenRes.data);
           gtmLoginSuccess({
             user_type: 'existing',
             method: 'email',

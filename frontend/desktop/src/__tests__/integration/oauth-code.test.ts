@@ -66,6 +66,12 @@ const call = async (handler: any, options: any = {}) => {
   );
   return res;
 };
+// Node/Next allow multiple Set-Cookie headers; select the authorization cookie.
+const authorizationCookie = (res: any): string => {
+  const headers = res.headers['Set-Cookie'];
+  const values = Array.isArray(headers) ? headers : [headers];
+  return values.find((value: string) => value.startsWith('oauth_code_')) || '';
+};
 const query = () => ({
   response_type: 'code',
   client_id: clientId,
@@ -111,7 +117,7 @@ describe.skipIf(!databaseUrl)('authorization code HTTP contract', () => {
     expect(res.statusCode).toBe(302);
     expect(res.headers.Location).toMatch(/^\/oauth2\/code\?request_id=/);
     expect(res.headers['Cache-Control']).toBe('no-store');
-    expect(res.headers['Set-Cookie']).toContain('HttpOnly');
+    expect(authorizationCookie(res)).toContain('HttpOnly');
     expect(res.body).toBeUndefined();
   });
   it('approves a browser-bound request and exchanges the RFC PKCE vector for a usable token', async () => {
@@ -120,7 +126,7 @@ describe.skipIf(!databaseUrl)('authorization code HTTP contract', () => {
       started.headers.Location,
       'https://auth.example.test'
     ).searchParams.get('request_id');
-    const cookie = started.headers['Set-Cookie'].split(';')[0].split('=');
+    const cookie = authorizationCookie(started).split(';')[0].split('=');
     const decision = (await import('@/pages/api/auth/oauth2/code/decision')).default;
     const approved = await call(decision, {
       method: 'POST',
@@ -160,7 +166,7 @@ describe.skipIf(!databaseUrl)('authorization code HTTP contract', () => {
     const id = new URL(started.headers.Location, 'https://auth.example.test').searchParams.get(
       'request_id'
     );
-    const [cookieName, cookieValue] = started.headers['Set-Cookie'].split(';')[0].split('=');
+    const [cookieName, cookieValue] = authorizationCookie(started).split(';')[0].split('=');
     const decision = (await import('@/pages/api/auth/oauth2/code/decision')).default;
     const approved = await call(decision, {
       method: 'POST',
@@ -220,7 +226,7 @@ describe.skipIf(!databaseUrl)('authorization code HTTP contract', () => {
       started.headers.Location,
       'https://auth.example.test'
     ).searchParams.get('request_id')!;
-    const [name, value] = started.headers['Set-Cookie'].split(';')[0].split('=');
+    const [name, value] = authorizationCookie(started).split(';')[0].split('=');
     return {
       method: 'POST',
       body: { request_id, decision: 'approve' },
@@ -525,7 +531,7 @@ describe.skipIf(!databaseUrl)('authorization code HTTP contract', () => {
         query: { ...query(), client_id: loopbackId, redirect_uri: callbackUri }
       });
       expect(started.statusCode).toBe(302);
-      const [name, value] = started.headers['Set-Cookie'].split(';')[0].split('=');
+      const [name, value] = authorizationCookie(started).split(';')[0].split('=');
       const id = new URL(started.headers.Location, 'https://auth.example.test').searchParams.get(
         'request_id'
       );

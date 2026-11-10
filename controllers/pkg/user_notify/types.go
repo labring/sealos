@@ -94,7 +94,7 @@ type NotificationEvent struct {
 	UserUID   uuid.UUID                   `json:"user_uid"`
 	EventType EventType                   `json:"event_type"`
 	EventData map[string]any              `json:"event_data"`
-	Recipient types.NotificationRecipient `json:"recipient,omitempty"`
+	Recipient types.NotificationRecipient `json:"recipient"`
 	Methods   []NotificationMethod        `json:"methods"`
 	Priority  NotificationPriority        `json:"priority,omitempty"`
 	Timestamp time.Time                   `json:"timestamp"`

@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -348,7 +349,8 @@ func QueryUserUsageAndTraffic(client *MetricsClient) (Metrics, error) {
 			}
 			intValue := int64(floatValue)
 			if bucket := promMetrics.Labels["bucket"]; bucket != "" {
-				// fmt.Println("debug info", "type:", bucketMetric.Name, "promMetrics:", promMetrics)
+				// fmt.Println("debug info", "type:", bucketMetric.Name, "promMetrics:",
+				// promMetrics)
 				user := getUserWithBucket(bucket)
 				if user == "" {
 					// fmt.Println("debug info", "false bucket:", bucket)
@@ -369,7 +371,8 @@ func QueryUserUsageAndTraffic(client *MetricsClient) (Metrics, error) {
 				if bucketMetric.Name == "minio_bucket_traffic_sent_bytes" {
 					// Skip this data point to simulate loss
 					// if strings.HasPrefix(bucket, "961a5c2b") && rand.Intn(10) == 0 {
-					// 	fmt.Printf("Simulated data loss for bucket %s, value %d\n", bucket, intValue)
+					// 	fmt.Printf("Simulated data loss for bucket %s, value %d\n", bucket,
+					// intValue)
 					// 	continue
 					// }
 					metricData.Sent[bucket] += intValue
@@ -407,12 +410,7 @@ func isUsageBytesTargetMetric(name string) bool {
 	targetMetrics := []string{
 		"minio_bucket_usage_total_bytes",
 	}
-	for _, target := range targetMetrics {
-		if name == target {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(targetMetrics, name)
 }
 
 func isUsageAndTrafficBytesTargetMetric(name string) bool {
@@ -421,12 +419,7 @@ func isUsageAndTrafficBytesTargetMetric(name string) bool {
 		"minio_bucket_traffic_sent_bytes",
 		"minio_bucket_traffic_received_bytes",
 	}
-	for _, target := range targetMetrics {
-		if name == target {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(targetMetrics, name)
 }
 
 func getUserWithBucket(bucket string) string {
@@ -459,7 +452,8 @@ func getUserWithBucket(bucket string) string {
 // func GetUserBakFileSize(client *minio.Client) map[string]int64 {
 //	bucket := "file-backup"
 //	userUsageMap := make(map[string]int64)
-//	objectsCh := client.ListObjects(context.Background(), bucket, minio.ListObjectsOptions{Recursive: true})
+// 	objectsCh := client.ListObjects(context.Background(), bucket,
+// minio.ListObjectsOptions{Recursive: true})
 //	for object := range objectsCh {
 //		user := extractNamespace(object.Key)
 //		if user != "" {

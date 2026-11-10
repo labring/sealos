@@ -31,7 +31,6 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
-	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -82,13 +81,13 @@ var errFinalDeletionCancelled = errors2.New("final deletion cancelled by namespa
 //+kubebuilder:rbac:groups=batch,resources=cronjobs,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=apps.kubeblocks.io,resources=clusters,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=apps.kubeblocks.io,resources=clusters,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=apps.kubeblocks.io,resources=clusters/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=apps.kubeblocks.io,resources=opsrequests,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=apps.kubeblocks.io,resources=opsrequests,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=apps.kubeblocks.io,resources=opsrequests/status,verbs=get;update;watch
-//+kubebuilder:rbac:groups=app.sealos.io,resources=apps,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=app.sealos.io,resources=instances,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=app.sealos.io,resources=apps,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=app.sealos.io,resources=instances,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
 
 //nolint:gocyclo
 func (r *NamespaceReconciler) Reconcile(
@@ -296,7 +295,8 @@ func (r *NamespaceReconciler) Reconcile(
 				return "suspend/resume"
 			}(),
 		},
-		// Case 4: debt completion status handling network OR network completion status handling debt
+		// Case 4: debt completion status handling network OR network completion status handling
+		// debt
 		{
 			condition: func() bool {
 				// Subcase 4a: debt completed but network not completed
@@ -419,7 +419,8 @@ func (r *NamespaceReconciler) SuspendUserResource(ctx context.Context, namespace
 	// IMPORTANT: The order of operations matters!
 	// 1. suspendOrphanPod must run FIRST because it needs to recreate pods with the debt scheduler,
 	//    which requires pod creation permissions.
-	// 2. limitResourceQuotaCreate runs immediately after to quickly block all new resource creation,
+	// 2. limitResourceQuotaCreate runs immediately after to quickly block all new resource
+	// creation,
 	//    preventing any new workloads from being created during the suspension process.
 	pipelines := []func(context.Context, string) error{
 		r.suspendOrphanPod,          // Recreate orphan pods with debt scheduler (requires pod creation)
@@ -664,7 +665,8 @@ func (r *NamespaceReconciler) suspendKBCluster(ctx context.Context, namespace st
 			}
 		}
 
-		// Get current backup configuration (only once, used for both saving state and disabling backup)
+		// Get current backup configuration (only once, used for both saving state and disabling
+		// backup)
 		backupEnabled := false
 		backup, hasBackup, err := unstructured.NestedMap(cluster.Object, "spec", "backup")
 		if err != nil {
@@ -805,7 +807,8 @@ func (r *NamespaceReconciler) suspendKBCluster(ctx context.Context, namespace st
 //		return err
 //	}
 //	for _, kbCluster := range kbClusterList.Items {
-//		if kbCluster.Status.Phase == kbv1alpha1.StoppedClusterPhase || kbCluster.Status.Phase == kbv1alpha1.StoppingClusterPhase {
+// 		if kbCluster.Status.Phase == kbv1alpha1.StoppedClusterPhase || kbCluster.Status.Phase ==
+// kbv1alpha1.StoppingClusterPhase {
 //			continue
 //		}
 //		ops := kbv1alpha1.OpsRequest{}
@@ -820,7 +823,7 @@ func (r *NamespaceReconciler) suspendKBCluster(ctx context.Context, namespace st
 //			return nil
 //		})
 //		if err != nil {
-//			r.Log.Error(err, "create ops request failed", "ops", ops.Name, "namespace", ops.Namespace)
+// 			r.Log.Error(err, "create ops request failed", "ops", ops.Name, "namespace", ops.Namespace)
 //		}
 //	}
 //	return nil
@@ -848,7 +851,8 @@ func deployViaFrontend(annotations map[string]string) bool {
 	return hasMinReplicas || hasMaxReplicas || hasResize
 }
 
-// suspendHPA handles HPA suspension logic: reads HPA config, saves to pause annotation, and deletes HPA
+// suspendHPA handles HPA suspension logic: reads HPA config, saves to pause annotation, and deletes
+// HPA
 // Returns true if annotations were modified, false otherwise
 func (r *NamespaceReconciler) suspendHPA(
 	ctx context.Context,
@@ -1030,6 +1034,7 @@ func (r *NamespaceReconciler) suspendOrphanPod(ctx context.Context, namespace st
 		}
 		clone := pod.DeepCopy()
 		clone.ResourceVersion = ""
+		clone.Finalizers = nil
 		clone.Spec.NodeName = ""
 		clone.Status = corev1.PodStatus{}
 		clone.Spec.SchedulerName = v1.DebtSchedulerName
@@ -1037,7 +1042,12 @@ func (r *NamespaceReconciler) suspendOrphanPod(ctx context.Context, namespace st
 			clone.Annotations = make(map[string]string)
 		}
 		clone.Annotations[v1.PreviousSchedulerName] = pod.Spec.SchedulerName
-		err := r.recreatePod(ctx, pod, clone)
+		// Tenant-registered finalizers or a dropped watch stream must not
+		// hold this worker open: bound the recreate wait exactly like the
+		// resume path does.
+		podCtx, cancel := context.WithTimeout(ctx, recreatePodTimeout)
+		err := r.recreatePod(podCtx, pod, clone)
+		cancel()
 		if err != nil {
 			return fmt.Errorf("recreate unowned pod `%s` failed: %w", pod.Name, err)
 		}
@@ -1069,7 +1079,7 @@ func (r *NamespaceReconciler) resumeOrphanPod(ctx context.Context, namespace str
 	if err := r.Client.List(ctx, &list, client.InNamespace(namespace)); err != nil {
 		return err
 	}
-	deleteCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	deleteCtx, cancel := context.WithTimeout(ctx, recreatePodTimeout)
 	defer cancel()
 	for _, pod := range list.Items {
 		if pod.Status.Phase != v1.PodPhaseSuspended ||
@@ -1085,6 +1095,7 @@ func (r *NamespaceReconciler) resumeOrphanPod(ctx context.Context, namespace str
 		// Only resume orphan pods
 		clone := pod.DeepCopy()
 		clone.ResourceVersion = ""
+		clone.Finalizers = nil
 		clone.Spec.NodeName = ""
 		clone.Status = corev1.PodStatus{}
 		if scheduler, ok := clone.Annotations[v1.PreviousSchedulerName]; ok {
@@ -1101,6 +1112,11 @@ func (r *NamespaceReconciler) resumeOrphanPod(ctx context.Context, namespace str
 	return nil
 }
 
+// recreatePodTimeout bounds each delete-and-recreate wait so a
+// tenant-registered finalizer or a dropped watch stream can hold a
+// suspension worker for at most this long per pod.
+const recreatePodTimeout = 10 * time.Second
+
 func (r *NamespaceReconciler) recreatePod(
 	ctx context.Context,
 	oldPod corev1.Pod,
@@ -1111,11 +1127,20 @@ func (r *NamespaceReconciler) recreatePod(
 	if err != nil {
 		return fmt.Errorf("failed to start watch stream for pod %s: %w", oldPod.Name, err)
 	}
+	defer watcher.Stop()
 	ch := watcher.ResultChan()
 	err = r.Client.Delete(ctx, &oldPod)
 	if err != nil {
 		return fmt.Errorf("failed to delete pod %s: %w", oldPod.Name, err)
 	}
+	// A tenant-registered finalizer would keep the pod Terminating and the
+	// Deleted event would never arrive. The platform is deleting this pod as
+	// part of debt enforcement and recreating a neutralized clone, so strip
+	// finalizers immediately instead of waiting out the tenant.
+	if err := r.removePodFinalizers(ctx, oldPod); err != nil {
+		return err
+	}
+	recreated := false
 	for event := range ch {
 		if event.Type == watch.Deleted {
 			if val, ok := event.Object.(*corev1.Pod); ok && val.Name == oldPod.Name {
@@ -1123,11 +1148,51 @@ func (r *NamespaceReconciler) recreatePod(
 				if err != nil {
 					return fmt.Errorf("failed to recreate pod %s: %w", newPod.Name, err)
 				}
-				watcher.Stop()
+				recreated = true
 				break
 			}
 		}
 	}
+	if !recreated {
+		// The watch stream ended (context deadline, server-side watch
+		// timeout or connection drop) without the pod being deleted:
+		// report the failure so the reconcile requeues instead of
+		// reporting the suspension as complete.
+		return fmt.Errorf(
+			"watch for deletion of pod %s ended before the pod was deleted",
+			oldPod.Name,
+		)
+	}
+	return nil
+}
+
+// removePodFinalizers clears finalizers on a pod the platform just deleted
+// during debt suspension or resume. Pods handled by recreatePod are replaced
+// by platform-controlled clones, so tenant-registered finalizers must not
+// hold the deletion open. It is a no-op when the pod has no finalizers or is
+// already gone.
+func (r *NamespaceReconciler) removePodFinalizers(ctx context.Context, pod corev1.Pod) error {
+	current := &corev1.Pod{}
+	err := r.Client.Get(ctx, client.ObjectKeyFromObject(&pod), current)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			// The pod is already gone; nothing holds the deletion open.
+			return nil
+		}
+		return fmt.Errorf("failed to get pod %s for finalizer removal: %w", pod.Name, err)
+	}
+	if len(current.Finalizers) == 0 {
+		return nil
+	}
+	original := current.DeepCopy()
+	current.Finalizers = nil
+	if err := r.Client.Patch(ctx, current, client.MergeFrom(original)); err != nil {
+		return fmt.Errorf("failed to remove finalizers from pod %s: %w", pod.Name, err)
+	}
+	r.Log.Info(
+		"stripped finalizers from debt-managed pod",
+		"pod", pod.Name, "namespace", pod.Namespace,
+	)
 	return nil
 }
 
@@ -1538,7 +1603,7 @@ func (r *NamespaceReconciler) suspendOrphanCronJob(ctx context.Context, namespac
 
 		// Set suspend to true if not already suspended
 		if !currentlySuspended {
-			cronJob.Spec.Suspend = ptr.To(true)
+			cronJob.Spec.Suspend = new(true)
 			needsUpdate = true
 		}
 
@@ -1616,7 +1681,7 @@ func (r *NamespaceReconciler) resumeOrphanCronJob(ctx context.Context, namespace
 
 		// Restore original suspend state
 		if !originalState.Suspend {
-			cronJob.Spec.Suspend = ptr.To(originalState.Suspend)
+			cronJob.Spec.Suspend = new(originalState.Suspend)
 			needsUpdate = true
 		}
 
@@ -1741,7 +1806,7 @@ func (r *NamespaceReconciler) suspendOrphanDeployments(
 
 		// Set replicas to 0 if not already 0
 		if replicas != 0 {
-			deploy.Spec.Replicas = ptr.To(int32(0))
+			deploy.Spec.Replicas = new(int32(0))
 			needsUpdate = true
 		}
 
@@ -1817,7 +1882,7 @@ func (r *NamespaceReconciler) resumeOrphanDeployments(ctx context.Context, names
 
 		// Restore original replicas only if not 0
 		if originalState.Replicas != 0 {
-			deploy.Spec.Replicas = ptr.To(originalState.Replicas)
+			deploy.Spec.Replicas = new(originalState.Replicas)
 			needsUpdate = true
 		}
 
@@ -1827,7 +1892,8 @@ func (r *NamespaceReconciler) resumeOrphanDeployments(ctx context.Context, names
 			needsUpdate = true
 		}
 
-		// Restore HPA only if original replicas was not 0 (meaning it was actually running before suspension)
+		// Restore HPA only if original replicas was not 0 (meaning it was actually running before
+		// suspension)
 		// Call resumeHPA before update to modify annotations in one go
 		if originalState.Replicas != 0 {
 			hpaModified, err := r.resumeHPA(
@@ -1968,7 +2034,7 @@ func (r *NamespaceReconciler) suspendOrphanStatefulSets(
 
 		// Set replicas to 0 if not already 0
 		if replicas != 0 {
-			sts.Spec.Replicas = ptr.To(int32(0))
+			sts.Spec.Replicas = new(int32(0))
 			needsUpdate = true
 		}
 
@@ -2047,7 +2113,7 @@ func (r *NamespaceReconciler) resumeOrphanStatefulSets(
 
 		// Restore original replicas only if not 0
 		if originalState.Replicas != 0 {
-			sts.Spec.Replicas = ptr.To(originalState.Replicas)
+			sts.Spec.Replicas = new(originalState.Replicas)
 			needsUpdate = true
 		}
 
@@ -2057,7 +2123,8 @@ func (r *NamespaceReconciler) resumeOrphanStatefulSets(
 			needsUpdate = true
 		}
 
-		// Restore HPA only if original replicas was not 0 (meaning it was actually running before suspension)
+		// Restore HPA only if original replicas was not 0 (meaning it was actually running before
+		// suspension)
 		// Call resumeHPA before update to modify annotations in one go
 		if originalState.Replicas != 0 {
 			hpaModified, err := r.resumeHPA(
@@ -2174,7 +2241,7 @@ func (r *NamespaceReconciler) suspendOrphanReplicaSets(
 
 		// Set replicas to 0 if not already 0
 		if replicas != 0 {
-			rs.Spec.Replicas = ptr.To(int32(0))
+			rs.Spec.Replicas = new(int32(0))
 			needsUpdate = true
 		}
 
@@ -2247,7 +2314,7 @@ func (r *NamespaceReconciler) resumeOrphanReplicaSets(ctx context.Context, names
 
 		// Restore original replicas only if not 0
 		if originalState.Replicas != 0 {
-			rs.Spec.Replicas = ptr.To(originalState.Replicas)
+			rs.Spec.Replicas = new(originalState.Replicas)
 			needsUpdate = true
 		}
 
@@ -2783,7 +2850,7 @@ func (r *NamespaceReconciler) suspendOrphanJob(ctx context.Context, namespace st
 
 		// Set suspend to true if not already suspended
 		if !currentlySuspended {
-			job.Spec.Suspend = ptr.To(true)
+			job.Spec.Suspend = new(true)
 			needsUpdate = true
 		}
 
@@ -2858,7 +2925,7 @@ func (r *NamespaceReconciler) resumeOrphanJob(ctx context.Context, namespace str
 
 		// Restore original suspend state
 		if !originalState.Suspend {
-			job.Spec.Suspend = ptr.To(originalState.Suspend)
+			job.Spec.Suspend = new(originalState.Suspend)
 			needsUpdate = true
 		}
 

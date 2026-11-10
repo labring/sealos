@@ -3,6 +3,7 @@ import { Prisma } from 'prisma/global/generated/client';
 import { globalPrisma } from '../db/init';
 import { generateOAuth2AccessToken } from '../auth';
 import { OAuth2HttpError } from './errors';
+import { approveAnalyticsHandoff, redeemAnalyticsHandoff } from './analytics-cookie';
 
 export const CODE_REFRESH_PREFIX = 'sc_rt_';
 const hash = (value: string) => createHash('sha256').update(value).digest('hex');
@@ -78,7 +79,7 @@ const matchesRedirect = (raw: string, registered: string) => {
 };
 export const codeRedirect = (uri: string, fields: Record<string, string>) => {
   const target = new URL(uri);
-  for (const key of ['code', 'error', 'error_description', 'state'])
+  for (const key of ['code', 'error', 'error_description', 'state', 'analytics_token'])
     target.searchParams.delete(key);
   for (const [key, value] of Object.entries(fields)) target.searchParams.set(key, value);
   return target.toString();
@@ -200,7 +201,8 @@ export const decideCodeAuthorization = async (
   id: string,
   browserSecret: string,
   userUid: string,
-  approve: boolean
+  approve: boolean,
+  analytics?: { token?: string; cookie?: unknown }
 ) => {
   const request = await loadRequest(id, browserSecret);
   const client = await clientFor(request.clientId, 'authorization_code');
@@ -219,11 +221,17 @@ export const decideCodeAuthorization = async (
     });
     if (changed.count !== 1) fail();
   });
+  const attribution =
+    approve && analytics
+      ? approveAnalyticsHandoff(analytics.token, request, userUid, analytics.cookie, codeOrigin())
+      : undefined;
   return {
     redirect_uri: codeRedirect(request.redirectUri, {
       ...(approve ? { code } : { error: 'access_denied' }),
-      state: request.state
-    })
+      state: request.state,
+      ...(attribution ? { analytics_token: attribution.token } : {})
+    }),
+    ...(attribution ? { analytics_context: attribution.context } : {})
   };
 };
 
@@ -281,7 +289,16 @@ export const exchangeAuthorizationCode = async (params: Record<string, string>) 
         tokens: { create: { hash: hash(refresh) } }
       }
     });
-    return tokenResponse(user, client.clientId, refresh);
+    const attribution = redeemAnalyticsHandoff(
+      params.analytics_token,
+      request,
+      user.uid,
+      codeOrigin()
+    );
+    return {
+      ...tokenResponse(user, client.clientId, refresh),
+      ...(attribution ? { analytics_context: attribution } : {})
+    };
   });
 };
 export const refreshCodeToken = async (params: Record<string, string>) => {

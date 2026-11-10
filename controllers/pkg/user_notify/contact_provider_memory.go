@@ -17,6 +17,7 @@ package usernotify
 import (
 	"context"
 	"fmt"
+	"maps"
 	"sync"
 
 	"github.com/google/uuid"
@@ -71,9 +72,7 @@ func (p *MemoryContactProvider) GetAllContacts() map[uuid.UUID]*types.Notificati
 	defer p.mutex.RUnlock()
 
 	result := make(map[uuid.UUID]*types.NotificationRecipient)
-	for k, v := range p.contacts {
-		result[k] = v
-	}
+	maps.Copy(result, p.contacts)
 
 	return result
 }

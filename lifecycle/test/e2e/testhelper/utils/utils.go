@@ -152,6 +152,7 @@ func CheckErr(err error, explainErrMsg ...string) {
 			err = errors.New(strings.Join(explainErrMsg, "  ,"))
 		}
 		logger.Error(err)
+		logHostDiagnostics()
 	}
 	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 }

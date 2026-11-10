@@ -60,6 +60,13 @@ adminClusterAdmin:
 strictNamespacePodSecurity:
   enabled: true
 
+# Extra User names to reject in addition to the built-in reserved names
+# (user-controller-manager, default). Every User owns the ServiceAccount
+# user-system/<User.Name>, so any name matching a ServiceAccount deployed in
+# the user-system namespace must be listed here to prevent privilege
+# escalation.
+blockedUserNames: []
+
 # Cloud API server configuration
 # cloudAPIServerDomain is auto-configured by entrypoint.sh from sealos-config ConfigMap
 cloudAPIServerDomain: 127.0.0.1.nip.io

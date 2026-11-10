@@ -112,8 +112,8 @@ func main() {
 	setupLog.Info("ingress annotations:", "annotation", ingressAnnotationString)
 	ingressAnnotations := make(map[string]string)
 	if ingressAnnotationString != "" {
-		kvs := strings.Split(ingressAnnotationString, ",")
-		for _, kv := range kvs {
+		kvs := strings.SplitSeq(ingressAnnotationString, ",")
+		for kv := range kvs {
 			parts := strings.Split(kv, "=")
 			if len(parts) == 2 {
 				key := parts[0]
@@ -171,8 +171,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = builder.WebhookManagedBy(mgr).
-		For(&corev1.Namespace{}).
+	err = builder.WebhookManagedBy(mgr, &corev1.Namespace{}).
 		WithValidator(&v1.NamespaceValidator{Client: mgr.GetClient()}).
 		WithDefaulter(&v1.NamespaceMutator{Client: mgr.GetClient()}).
 		Complete()

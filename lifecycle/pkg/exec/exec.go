@@ -36,8 +36,16 @@ import (
 type Interface ssh.Interface
 
 type wrap struct {
+	ctx            context.Context
 	inner          ssh.Interface
 	localAddresses sets.Set[string]
+}
+
+func (w *wrap) WithContext(ctx context.Context) ssh.Interface {
+	bound := *w
+	bound.ctx = ctx
+	bound.inner = ssh.WithContext(ctx, w.inner)
+	return &bound
 }
 
 func New(inner ssh.Interface) (Interface, error) {
@@ -61,8 +69,12 @@ func (w *wrap) Ping(host string) error {
 
 func (w *wrap) Cmd(host string, command string) ([]byte, error) {
 	if w.isLocal(host) {
+		ctx := w.ctx
+		if ctx == nil {
+			ctx = context.Background()
+		}
 		// nosemgrep: go.lang.security.audit.dangerous-exec-command.dangerous-exec-command
-		b, err := exec.Command("/bin/bash", "-c", command).CombinedOutput()
+		b, err := exec.CommandContext(ctx, "/bin/bash", "-c", command).CombinedOutput()
 		return b, err
 	}
 	return w.inner.Cmd(host, command)
@@ -101,6 +113,9 @@ func (w *wrap) Copy(host string, src string, dest string) error {
 		warnIfNotAbs(src)
 		warnIfNotAbs(dest)
 		logger.Debug("copy files src %s to dst %s on %s locally", src, dest, host)
+		if w.ctx != nil {
+			return fileutil.RecursionCopyWithContext(w.ctx, src, dest)
+		}
 		return fileutil.RecursionCopy(src, dest)
 	}
 	return w.inner.Copy(host, src, dest)
@@ -111,6 +126,9 @@ func (w *wrap) Fetch(host string, src string, dest string) error {
 		warnIfNotAbs(src)
 		warnIfNotAbs(dest)
 		logger.Debug("fetch files src %s to dst %s on %s locally", src, dest, host)
+		if w.ctx != nil {
+			return fileutil.RecursionCopyWithContext(w.ctx, src, dest)
+		}
 		return fileutil.RecursionCopy(src, dest)
 	}
 	return w.inner.Fetch(host, src, dest)

@@ -25,14 +25,23 @@ func (c *Cockroach) GetWorkspaceSubscriptionPlan(
 	}
 	var plan types.WorkspaceSubscriptionPlan
 	if c.Localdb.Migrator().HasTable(&types.WorkspaceSubscriptionPlan{}) {
-		if err := c.Localdb.Preload("Prices").Where(types.WorkspaceSubscriptionPlan{Name: planName}).First(&plan).Error; err == nil {
+		if err := c.Localdb.Preload("Prices").
+			Where(types.WorkspaceSubscriptionPlan{Name: planName}).
+			First(&plan).
+			Error; err == nil {
 			c.workspaceSubPlans.Store(planName, &plan)
 			return &plan, nil
-		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		} else if !errors.Is(
+			err,
+			gorm.ErrRecordNotFound,
+		) {
 			return nil, fmt.Errorf("failed to get subscription plan from localdb: %w", err)
 		}
 	}
-	if err := c.DB.Preload("Prices").Where(types.WorkspaceSubscriptionPlan{Name: planName}).First(&plan).Error; err != nil {
+	if err := c.DB.Preload("Prices").
+		Where(types.WorkspaceSubscriptionPlan{Name: planName}).
+		First(&plan).
+		Error; err != nil {
 		return nil, fmt.Errorf("failed to get subscription plan: %w", err)
 	}
 	c.workspaceSubPlans.Store(planName, &plan)

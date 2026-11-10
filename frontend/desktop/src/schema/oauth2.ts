@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { AppAnalyticsContextSchema } from './app-attribution';
 
 export const OAuthClientTypeSchema = z.enum(['PUBLIC', 'CONFIDENTIAL']);
 
@@ -84,7 +85,8 @@ export const OAuth2TokenSuccessResponseSchema = z.object({
   access_token: z.string().min(1),
   refresh_token: z.string().min(1),
   token_type: z.literal('Bearer'),
-  expires_in: z.number().int().positive()
+  expires_in: z.number().int().positive(),
+  analytics_context: AppAnalyticsContextSchema.optional()
 });
 
 export const OAuth2ErrorCodeSchema = z.enum([

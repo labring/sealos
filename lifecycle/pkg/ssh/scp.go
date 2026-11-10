@@ -66,10 +66,14 @@ func (c *Client) newClientAndSftpClient(host string) (*ssh.Client, *sftp.Client,
 		err        error
 	)
 
-	hostsClientMap.Mux.Lock()
-	defer hostsClientMap.Mux.Unlock()
-	if hc, ok := hostsClientMap.ClientMap[host]; ok {
-		return hc.SSHClient, hc.SftpClient, err
+	// A context-bound operation owns its connection. Reusing a cached socket
+	// would cancel unrelated work and retain a closed client after lease loss.
+	if c.ctx == nil {
+		hostsClientMap.Mux.Lock()
+		defer hostsClientMap.Mux.Unlock()
+		if hc, ok := hostsClientMap.ClientMap[host]; ok {
+			return hc.SSHClient, hc.SftpClient, err
+		}
 	}
 	sshClient, err = c.connect(host)
 	if err != nil {
@@ -82,7 +86,11 @@ func (c *Client) newClientAndSftpClient(host string) (*ssh.Client, *sftp.Client,
 		sftpClient, err = sftp.NewClient(sshClient)
 	}
 
-	if err == nil {
+	if err != nil {
+		_ = sshClient.Close()
+		return nil, nil, err
+	}
+	if c.ctx == nil {
 		hc := HostClient{
 			SSHClient:  sshClient,
 			SftpClient: sftpClient,
@@ -104,9 +112,13 @@ func (c *Client) sftpConnect(host string) (sshClient *ssh.Client, sftpClient *sf
 // Copy is copy file or dir to remotePath, add md5 validate
 func (c *Client) Copy(host, localPath, remotePath string) error {
 	logger.Debug("remote copy files src %s to dst %s", localPath, remotePath)
-	_, sftpClient, err := c.sftpConnect(host)
+	sshClient, sftpClient, err := c.sftpConnect(host)
 	if err != nil {
 		return fmt.Errorf("failed to connect: %s", err)
+	}
+	if c.ctx != nil {
+		defer sshClient.Close()
+		defer sftpClient.Close()
 	}
 
 	f, err := os.Stat(localPath)
@@ -144,9 +156,13 @@ func (c *Client) Copy(host, localPath, remotePath string) error {
 
 func (c *Client) Fetch(host, src, dst string) error {
 	logger.Debug("fetch remote file %s to %s", src, dst)
-	_, sftpClient, err := c.sftpConnect(host)
+	sshClient, sftpClient, err := c.sftpConnect(host)
 	if err != nil {
 		return fmt.Errorf("failed to connect: %s", err)
+	}
+	if c.ctx != nil {
+		defer sshClient.Close()
+		defer sftpClient.Close()
 	}
 
 	rfp, err := sftpClient.Open(src)

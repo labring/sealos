@@ -39,15 +39,18 @@ import (
 )
 
 const (
-	// defaultImageListingPrefix is for avoiding Docker Hub's rate limit
-	defaultImageListingPrefix = "public.ecr.aws/docker/library/"
+	// defaultImageListingPrefix avoids remote pull quotas on shared CI runners:
+	// Docker Hub rate-limits anonymous pulls and the public ECR gallery caps
+	// anonymous data transfer, while mirror.gcr.io serves Docker Hub images
+	// without an anonymous quota.
+	defaultImageListingPrefix = "mirror.gcr.io/library/"
 )
 
 var defaultImageListingBenchmarkImages = []string{
 	defaultImageListingPrefix + "busybox:1",
 	defaultImageListingPrefix + "busybox:1-glibc",
 	defaultImageListingPrefix + "busybox:1-musl",
-	"docker.io/library/busybox:1.28",
+	defaultImageListingPrefix + "busybox:1.28",
 }
 var defaultImageNotExsitBenchmarkImages = []string{
 	"docker.io/library/kubernetes:v1.23.8",

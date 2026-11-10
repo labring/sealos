@@ -83,7 +83,3 @@ type OperationrequestList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Operationrequest `json:"items"`
 }
-
-func init() {
-	SchemeBuilder.Register(&Operationrequest{}, &OperationrequestList{})
-}

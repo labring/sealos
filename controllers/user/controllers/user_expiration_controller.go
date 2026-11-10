@@ -25,7 +25,7 @@ import (
 	"github.com/labring/sealos/controllers/user/controllers/helper/finalizer"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -33,7 +33,7 @@ import (
 // UserExpirationReconciler reconciles a Secret object
 type UserExpirationReconciler struct {
 	Logger   logr.Logger
-	Recorder record.EventRecorder
+	Recorder events.EventRecorder
 	config   *rest.Config
 	*runtime.Scheme
 	client.Client
@@ -80,7 +80,7 @@ func (r *UserExpirationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 	r.Logger = ctrl.Log.WithName(controllerName)
 	if r.Recorder == nil {
-		r.Recorder = mgr.GetEventRecorderFor(controllerName)
+		r.Recorder = mgr.GetEventRecorder(controllerName)
 	}
 	if r.finalizer == nil {
 		r.finalizer = finalizer.NewFinalizer(r.Client, "sealos.io/user.expiration.finalizers").

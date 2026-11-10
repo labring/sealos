@@ -40,9 +40,7 @@ func NewSubscriptionProcessor(reconciler *AccountReconciler) *SubscriptionProces
 
 // Start 开始监听和处理订阅事务
 func (sp *SubscriptionProcessor) Start(ctx context.Context) error {
-	sp.wg.Add(1)
-	go func() {
-		defer sp.wg.Done()
+	sp.wg.Go(func() {
 		ticker := time.NewTicker(sp.pollInterval)
 		defer ticker.Stop()
 
@@ -58,7 +56,7 @@ func (sp *SubscriptionProcessor) Start(ctx context.Context) error {
 				}
 			}
 		}
-	}()
+	})
 	return nil
 }
 
@@ -171,7 +169,8 @@ func (sp *SubscriptionProcessor) shouldProcessTransaction(tx *types.Subscription
 }
 
 // If the account service network is too slow, can synchronize the database
-// func (sp *SubscriptionProcessor) flushOtherDomainQuota(_ context.Context, userUID uuid.UUID) error {
+// func (sp *SubscriptionProcessor) flushOtherDomainQuota(_ context.Context, userUID uuid.UUID)
+// error {
 //	var regionTaskList []*types.AccountRegionUserTask
 //	for _, domain := range sp.allRegionDomain {
 //		if domain == sp.localDomain {

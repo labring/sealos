@@ -99,7 +99,3 @@ func (p *Payment) ToJSON() string {
 	}
 }`
 }
-
-func init() {
-	SchemeBuilder.Register(&Payment{}, &PaymentList{})
-}

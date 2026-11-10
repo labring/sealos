@@ -15,8 +15,10 @@
 package ssh
 
 import (
+	"context"
 	"fmt"
 	"io"
+	"net"
 	"os"
 	"strings"
 	"sync"
@@ -46,7 +48,32 @@ var hostsClientMap = &HostClientMap{
 func (c *Client) connect(host string) (*ssh.Client, error) {
 	ip, port := iputils.GetSSHHostIPAndPort(host)
 	addr := formalizeAddr(ip, port)
-	return ssh.Dial("tcp", addr, c.ClientConfig)
+	if c.ctx == nil {
+		return ssh.Dial("tcp", addr, c.ClientConfig)
+	}
+	dialer := net.Dialer{Timeout: c.Timeout}
+	conn, err := dialer.DialContext(c.ctx, "tcp", addr)
+	if err != nil {
+		return nil, err
+	}
+	// Closing the socket interrupts the handshake, commands and SFTP writes.
+	bound := &contextConn{Conn: conn, stop: context.AfterFunc(c.ctx, func() { _ = conn.Close() })}
+	connection, channels, requests, err := ssh.NewClientConn(bound, addr, c.ClientConfig)
+	if err != nil {
+		_ = bound.Close()
+		return nil, err
+	}
+	return ssh.NewClient(connection, channels, requests), nil
+}
+
+type contextConn struct {
+	net.Conn
+	stop func() bool
+}
+
+func (c *contextConn) Close() error {
+	c.stop()
+	return c.Conn.Close()
 }
 
 func newSession(client *ssh.Client) (*ssh.Session, error) {

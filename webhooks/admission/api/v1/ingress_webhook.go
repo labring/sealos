@@ -18,8 +18,8 @@ package v1
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"maps"
 	"net"
 	"os"
 	"strings"
@@ -28,7 +28,6 @@ import (
 	"github.com/labring/sealos/webhook/admission/pkg/code"
 	"github.com/miekg/dns"
 	netv1 "k8s.io/api/networking/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -40,9 +39,9 @@ import (
 // log is for logging in this package.
 var ilog = logf.Log.WithName("ingress-validating-webhook")
 
-//+kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
 
-//+kubebuilder:webhook:path=/mutate-networking-k8s-io-v1-ingress,mutating=true,failurePolicy=ignore,sideEffects=None,groups=networking.k8s.io,resources=ingresses,verbs=create;update,versions=v1,name=mingress.sealos.io,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=/mutate-networking-k8s-io-v1-ingress,mutating=true,failurePolicy=ignore,sideEffects=None,groups=networking.k8s.io,resources=ingresses,verbs=create;update,versions=v1,name=mingress.sealos.io,admissionReviewVersions=v1
 //+kubebuilder:object:generate=false
 
 type IngressMutator struct {
@@ -53,18 +52,12 @@ type IngressMutator struct {
 
 func (m *IngressMutator) SetupWithManager(mgr ctrl.Manager) error {
 	m.Client = mgr.GetClient()
-	return builder.WebhookManagedBy(mgr).
-		For(&netv1.Ingress{}).
+	return builder.WebhookManagedBy(mgr, &netv1.Ingress{}).
 		WithDefaulter(m).
 		Complete()
 }
 
-func (m *IngressMutator) Default(_ context.Context, obj runtime.Object) error {
-	i, ok := obj.(*netv1.Ingress)
-	if !ok {
-		return errors.New("obj convert Ingress is error")
-	}
-
+func (m *IngressMutator) Default(_ context.Context, i *netv1.Ingress) error {
 	for _, domain := range m.CnameDomains {
 		if isUserNamespace(i.Namespace) && hasSubDomain(i, domain) {
 			ilog.Info(
@@ -82,9 +75,7 @@ func (m *IngressMutator) Default(_ context.Context, obj runtime.Object) error {
 
 func (m *IngressMutator) mutateUserIngressAnnotations(i *netv1.Ingress) {
 	initAnnotationAndLabels(&i.ObjectMeta)
-	for k, v := range m.IngressAnnotations {
-		i.Annotations[k] = v
-	}
+	maps.Copy(i.Annotations, m.IngressAnnotations)
 }
 
 //+kubebuilder:object:generate=false
@@ -128,23 +119,17 @@ func (v *IngressValidator) SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 
-	return builder.WebhookManagedBy(mgr).
-		For(&netv1.Ingress{}).
+	return builder.WebhookManagedBy(mgr, &netv1.Ingress{}).
 		WithValidator(v).
 		Complete()
 }
 
-//+kubebuilder:webhook:path=/validate-networking-k8s-io-v1-ingress,mutating=false,failurePolicy=ignore,sideEffects=None,groups=networking.k8s.io,resources=ingresses,verbs=create;update;delete,versions=v1,name=vingress.sealos.io,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=/validate-networking-k8s-io-v1-ingress,mutating=false,failurePolicy=ignore,sideEffects=None,groups=networking.k8s.io,resources=ingresses,verbs=create;update;delete,versions=v1,name=vingress.sealos.io,admissionReviewVersions=v1
 
 func (v *IngressValidator) ValidateCreate(
 	ctx context.Context,
-	obj runtime.Object,
+	i *netv1.Ingress,
 ) (admission.Warnings, error) {
-	i, ok := obj.(*netv1.Ingress)
-	if !ok {
-		return nil, errors.New("obj convert Ingress is error")
-	}
-
 	ilog.Info("validating create", "ingress namespace", i.Namespace, "ingress name", i.Name)
 	err := v.validate(ctx, i)
 	return nil, err
@@ -152,16 +137,8 @@ func (v *IngressValidator) ValidateCreate(
 
 func (v *IngressValidator) ValidateUpdate(
 	ctx context.Context,
-	_, newObj runtime.Object,
+	_, ni *netv1.Ingress,
 ) (admission.Warnings, error) {
-	ni, ok := newObj.(*netv1.Ingress)
-	if !ok {
-		return nil, errors.New("obj convert Ingress is error")
-	}
-	// oi, ok := oldObj.(*netv1.Ingress)
-	// if !ok {
-	//	return errors.New("obj convert Ingress is error")
-	//}
 	ilog.Info("validating update", "ingress namespace", ni.Namespace, "ingress name", ni.Name)
 	err := v.validate(ctx, ni)
 	return nil, err
@@ -169,13 +146,8 @@ func (v *IngressValidator) ValidateUpdate(
 
 func (v *IngressValidator) ValidateDelete(
 	_ context.Context,
-	obj runtime.Object,
+	i *netv1.Ingress,
 ) (admission.Warnings, error) {
-	i, ok := obj.(*netv1.Ingress)
-	if !ok {
-		return nil, errors.New("obj convert Ingress is error")
-	}
-
 	ilog.Info("validating delete", "ingress namespace", i.Namespace, "ingress name", i.Name)
 	// delete ingress, pass validate
 	return nil, nil

@@ -130,7 +130,7 @@ type AppCostDetail struct {
 type WorkspaceAppCostWithResources struct {
 	AppName         string          `json:"app_name,omitempty"          bson:"app_name,omitempty"  example:"app"`
 	AppType         int32           `json:"app_type,omitempty"          bson:"app_type,omitempty"  example:"8"`
-	Time            time.Time       `json:"time,omitempty"              bson:"time,omitempty"      example:"2021-01-01T00:00:00Z"`
+	Time            time.Time       `json:"time"                        bson:"time,omitempty"      example:"2021-01-01T00:00:00Z"`
 	OrderID         string          `json:"order_id,omitempty"          bson:"order_id,omitempty"  example:"order_id"`
 	Namespace       string          `json:"namespace,omitempty"         bson:"namespace,omitempty" example:"ns-admin"`
 	Amount          int64           `json:"amount,omitempty"            bson:"amount,omitempty"    example:"100000000"`
@@ -339,7 +339,7 @@ type RechargeDiscountResp struct {
 }
 
 type NamespaceBillingHistoryResp struct {
-	Data    NamespaceBillingHistoryRespData `json:"data,omitempty"    bson:"data,omitempty"`
+	Data    NamespaceBillingHistoryRespData `json:"data"              bson:"data,omitempty"`
 	Message string                          `json:"message,omitempty" bson:"message"        example:"successfully retrieved namespace list"`
 }
 
@@ -348,7 +348,7 @@ type NamespaceBillingHistoryRespData struct {
 }
 
 type GetPropertiesResp struct {
-	Data    GetPropertiesRespData `json:"data,omitempty"    bson:"data,omitempty"`
+	Data    GetPropertiesRespData `json:"data"              bson:"data,omitempty"`
 	Message string                `json:"message,omitempty" bson:"message"        example:"successfully retrieved properties"`
 }
 
@@ -583,7 +583,7 @@ type UseGiftCodeRespData struct {
 }
 
 type UseGiftCodeResp struct {
-	Data    UseGiftCodeRespData `json:"data,omitempty"    bson:"data,omitempty"`
+	Data    UseGiftCodeRespData `json:"data"              bson:"data,omitempty"`
 	Message string              `json:"message,omitempty" bson:"message"        example:"Gift code successfully redeemed"`
 }
 
@@ -607,7 +607,7 @@ type GetRealNameInfoRespData struct {
 }
 
 type GetRealNameInfoResp struct {
-	Data    GetRealNameInfoRespData `json:"data,omitempty"    bson:"data,omitempty"`
+	Data    GetRealNameInfoRespData `json:"data"              bson:"data,omitempty"`
 	Message string                  `json:"message,omitempty" bson:"message"        example:"Successfully retrieved real name information"`
 }
 
@@ -955,7 +955,8 @@ type AdminWorkspaceSubscriptionAddReq struct {
 	RegionDomain string `json:"regionDomain,omitempty" bson:"regionDomain,omitempty" example:"example.com"`
 
 	// @Summary User ID
-	// @Description User ID who owns the workspace (optional, will default to workspace owner if not provided)
+	// @Description User ID who owns the workspace (optional, will default to workspace owner if not
+	// provided)
 	// @JSONSchema
 	UserUID uuid.UUID `json:"userUID,omitempty" bson:"userUID,omitempty" example:"user-123"`
 
@@ -965,12 +966,14 @@ type AdminWorkspaceSubscriptionAddReq struct {
 	PlanName string `json:"planName" bson:"planName" binding:"required" example:"premium"`
 
 	// @Summary Subscription period
-	// @Description Subscription period (1m for monthly, 1y for yearly, optional, will default to monthly)
+	// @Description Subscription period (1m for monthly, 1y for yearly, optional, will default to
+	// monthly)
 	// @JSONSchema
 	Period types.SubscriptionPeriod `json:"period,omitempty" bson:"period,omitempty" example:"1m"`
 
 	// @Summary Subscription operator
-	// @Description Subscription operator type (optional, will default to 'created' for new subscriptions)
+	// @Description Subscription operator type (optional, will default to 'created' for new
+	// subscriptions)
 	// @JSONSchema
 	Operator types.SubscriptionOperator `json:"operator,omitempty" bson:"operator,omitempty" example:"created"`
 
@@ -979,7 +982,8 @@ type AdminWorkspaceSubscriptionAddReq struct {
 	Description string `json:"description,omitempty" bson:"description,omitempty" example:"Internal admin subscription addition"`
 
 	// @Summary Skip quota check
-	// @Description Skip quota validation (optional, defaults to false, meaning quota check is performed by default)
+	// @Description Skip quota validation (optional, defaults to false, meaning quota check is
+	// performed by default)
 	// @JSONSchema
 	SkipQuotaCheck bool `json:"skipQuotaCheck,omitempty" bson:"skipQuotaCheck,omitempty" example:"false"`
 }

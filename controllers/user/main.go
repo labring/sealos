@@ -20,6 +20,7 @@ import (
 	"crypto/tls"
 	"flag"
 	"os"
+	"strings"
 	"time"
 
 	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
@@ -27,6 +28,7 @@ import (
 	"github.com/labring/sealos/controllers/user/controllers"
 	usercache "github.com/labring/sealos/controllers/user/controllers/cache"
 	ratelimiter "github.com/labring/sealos/controllers/user/controllers/helper/ratelimiter"
+	"github.com/labring/sealos/controllers/user/pkg/reserved"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -34,7 +36,6 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
-	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/config"
@@ -78,6 +79,7 @@ func main() {
 		enableHTTP2                bool
 		enableAdminClusterAdmin    bool
 		enableStrictNamespacePSA   bool
+		blockedUserNames           string
 		tlsOpts                    []func(*tls.Config)
 	)
 	flag.StringVar(
@@ -175,6 +177,15 @@ func main() {
 		true,
 		"Apply Pod Security labels to all ns-* namespaces, including namespaces without a Sealos User.",
 	)
+	flag.StringVar(
+		&blockedUserNames,
+		"blocked-user-names",
+		"",
+		"Comma-separated extra User names to reject in addition to the built-in reserved names "+
+			"("+strings.Join(reserved.DefaultNames(), ", ")+"). Every User owns the ServiceAccount "+
+			"user-system/<User.Name>, so names matching ServiceAccounts deployed in user-system "+
+			"must be blocked to prevent privilege escalation.",
+	)
 	rateLimiterOptions.BindFlags(flag.CommandLine)
 	opts := zap.Options{
 		Development: true,
@@ -183,6 +194,11 @@ func main() {
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+
+	reserved.SetExtraNames(strings.Split(blockedUserNames, ","))
+	if extras := reserved.ExtraNames(); len(extras) > 0 {
+		setupLog.Info("configured extra blocked user names", "names", extras)
+	}
 
 	// if the enable-http2 flag is false (the default), http/2 should be disabled
 	// due to its vulnerabilities. More specifically, disabling http/2 will
@@ -198,7 +214,8 @@ func main() {
 	if !enableHTTP2 {
 		tlsOpts = append(tlsOpts, disableHTTP2)
 	}
-	// Metrics endpoint is enabled in 'config/default/kustomization.yaml'. The Metrics options configure the server.
+	// Metrics endpoint is enabled in 'config/default/kustomization.yaml'. The Metrics options
+	// configure the server.
 	// More info:
 	// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.19.1/pkg/metrics/server
 	// - https://book.kubebuilder.io/reference/metrics.html
@@ -211,12 +228,14 @@ func main() {
 	if secureMetrics {
 		// FilterProvider is used to protect the metrics endpoint with authn/authz.
 		// These configurations ensure that only authorized users and service accounts
-		// can access the metrics endpoint. The RBAC are configured in 'config/rbac/kustomization.yaml'. More info:
+		// can access the metrics endpoint. The RBAC are configured in
+		// 'config/rbac/kustomization.yaml'. More info:
 		// https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.19.1/pkg/metrics/filters#WithAuthenticationAndAuthorization
 		metricsServerOptions.FilterProvider = filters.WithAuthenticationAndAuthorization
 
-		// TODO(user): If CertDir, CertName, and KeyName are not specified, controller-runtime will automatically
-		// generate self-signed certificates for the metrics server. While convenient for development and testing,
+		// TODO(user): If CertDir, CertName, and KeyName are not specified, controller-runtime will
+		// automatically generate self-signed certificates for the metrics server. While convenient
+		// for development and testing,
 		// this setup is not recommended for production.
 	}
 
@@ -242,7 +261,7 @@ func main() {
 		LeaderElectionReleaseOnCancel: true,
 		GracefulShutdownTimeout:       &gracefulShutdownTimeout,
 		Controller: config.Controller{
-			UsePriorityQueue: ptr.To(true),
+			UsePriorityQueue: new(true),
 		},
 	})
 	if err != nil {

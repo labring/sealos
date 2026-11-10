@@ -21,7 +21,8 @@ import (
 )
 
 // InstanceSpec defines the desired state of Instance
-// +kubebuilder:validation:XValidation:rule="'app_name' in self.defaults",message="defaults must have app_name key"
+// +kubebuilder:validation:XValidation:rule="'app_name' in self.defaults",message="defaults must
+// have app_name key"
 type InstanceSpec struct {
 	TemplateData `json:",inline"`
 }
@@ -48,8 +49,4 @@ type InstanceList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Instance `json:"items"`
-}
-
-func init() {
-	SchemeBuilder.Register(&Instance{}, &InstanceList{})
 }

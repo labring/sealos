@@ -76,7 +76,7 @@ type Price struct {
 
 // Composite index: category, property, time, speed up query
 type Monitor struct {
-	Time time.Time `json:"time"               bson:"time"`
+	Time time.Time `json:"time" bson:"time"`
 	// equal namespace
 	Category   string      `json:"category"           bson:"category"`
 	Type       uint8       `json:"type"               bson:"type"`
@@ -89,7 +89,7 @@ type Monitor struct {
 
 type ActiveBilling struct {
 	ID        primitive.ObjectID `json:"_id,omitempty"  bson:"_id,omitempty"`
-	Time      time.Time          `json:"time,omitempty" bson:"time"`
+	Time      time.Time          `json:"time"           bson:"time"`
 	Namespace string             `json:"namespace"      bson:"namespace"`
 	AppType   string             `json:"app_type"       bson:"app_type"`
 	AppName   string             `json:"app_name"       bson:"app_name"`
@@ -113,9 +113,9 @@ const (
 type BillingType int
 
 type Billing struct {
-	Time    time.Time   `json:"time"      bson:"time"`
-	OrderID string      `json:"order_id"  bson:"order_id"`
-	Type    common.Type `json:"type"      bson:"type"`
+	Time    time.Time   `json:"time"     bson:"time"`
+	OrderID string      `json:"order_id" bson:"order_id"`
+	Type    common.Type `json:"type"     bson:"type"`
 	// Name      string      `json:"name" bson:"name"`
 	Namespace string `json:"namespace" bson:"namespace"`
 	// Used       Used        `json:"used" bson:"used"`
@@ -125,12 +125,12 @@ type Billing struct {
 	AppName  string    `json:"app_name,omitempty"  bson:"app_name,omitempty"`
 	AppType  uint8     `json:"app_type,omitempty"  bson:"app_type,omitempty"`
 
-	Amount int64  `json:"amount"   bson:"amount,omitempty"`
-	Owner  string `json:"owner"    bson:"owner,omitempty"`
+	Amount int64  `json:"amount" bson:"amount,omitempty"`
+	Owner  string `json:"owner"  bson:"owner,omitempty"`
 	// 0: 未结算 1: 已结算
-	Status BillingStatus `json:"status"   bson:"status"`
+	Status BillingStatus `json:"status" bson:"status"`
 	// if type = Consumption, then payment is not nil
-	Payment *Payment `json:"payment"  bson:"payment,omitempty"`
+	Payment *Payment `json:"payment" bson:"payment,omitempty"`
 	// if type = Transfer, then transfer is not nil
 	Transfer *Transfer `json:"transfer" bson:"transfer,omitempty"`
 	Detail   string    `json:"detail"   bson:"detail,omitempty"`
@@ -224,11 +224,31 @@ const (
 )
 
 var AppType = map[string]uint8{
-	DB: db, APP: app, TERMINAL: terminal, JOB: job, OTHER: other, ObjectStorage: objectStorage, CVM: cvm, AppStore: appStore, DBBackup: dbBackup, DevBox: devBox, LLMToken: llmToken,
+	DB:            db,
+	APP:           app,
+	TERMINAL:      terminal,
+	JOB:           job,
+	OTHER:         other,
+	ObjectStorage: objectStorage,
+	CVM:           cvm,
+	AppStore:      appStore,
+	DBBackup:      dbBackup,
+	DevBox:        devBox,
+	LLMToken:      llmToken,
 }
 
 var AppTypeReverse = map[uint8]string{
-	db: DB, app: APP, terminal: TERMINAL, job: JOB, other: OTHER, objectStorage: ObjectStorage, cvm: CVM, appStore: AppStore, dbBackup: DBBackup, devBox: DevBox, llmToken: LLMToken,
+	db:            DB,
+	app:           APP,
+	terminal:      TERMINAL,
+	job:           JOB,
+	other:         OTHER,
+	objectStorage: ObjectStorage,
+	cvm:           CVM,
+	appStore:      AppStore,
+	dbBackup:      DBBackup,
+	devBox:        DevBox,
+	llmToken:      LLMToken,
 }
 
 // resource consumption
@@ -239,16 +259,16 @@ type UsedMap map[string]float64
 type PropertyType struct {
 	// For the monitoring storage enumeration type, use uint 8 to save memory
 	// 0 cpu, 1 memory, 2 storage, 3 network ... expandable
-	Name  string `json:"name"                  bson:"name"`
-	Alias string `json:"alias"                 bson:"alias"`
-	Enum  uint8  `json:"enum"                  bson:"enum"`
+	Name  string `json:"name"  bson:"name"`
+	Alias string `json:"alias" bson:"alias"`
+	Enum  uint8  `json:"enum"  bson:"enum"`
 	// AVG, SUM, DIF value. The cumulative value is the average value by default
-	PriceType string `json:"price_type,omitempty"  bson:"price_type,omitempty"`
+	PriceType string `json:"price_type,omitempty" bson:"price_type,omitempty"`
 	// Price = UsedAmount (avg || accumulated-value || difference-value) / Unit * UnitPrice
-	UnitPrice        float64           `json:"unit_price"            bson:"unit_price"`
-	ViewPrice        float64           `json:"view_price"            bson:"view_price"`
-	EncryptUnitPrice string            `json:"encrypt_unit_price"    bson:"encrypt_unit_price"`
-	Unit             resource.Quantity `json:"-"                     bson:"-"`
+	UnitPrice        float64           `json:"unit_price"         bson:"unit_price"`
+	ViewPrice        float64           `json:"view_price"         bson:"view_price"`
+	EncryptUnitPrice string            `json:"encrypt_unit_price" bson:"encrypt_unit_price"`
+	Unit             resource.Quantity `json:"-"                  bson:"-"`
 	// <digit>           ::= 0 | 1 | ... | 9
 	// <digits>          ::= <digit> | <digit><digits>
 	// <number>          ::= <digits> | <digits>.<digits> | <digits>. | .<digits>
@@ -264,7 +284,7 @@ type PropertyType struct {
 	//	(Note that 1024 = 1Ki but 1000 = 1k; I didn't choose the capitalization.)
 	//
 	// <decimalExponent> ::= "e" <signedNumber> | "E" <signedNumber>
-	UnitString string `json:"unit"                  bson:"unit"`
+	UnitString string `json:"unit" bson:"unit"`
 	// charging cycle second
 	UnitPeriod string `json:"unit_period,omitempty" bson:"unit_period,omitempty"`
 }

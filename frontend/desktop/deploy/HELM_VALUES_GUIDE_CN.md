@@ -106,6 +106,8 @@ desktopConfig:
 ```yaml
 desktopConfig:
   guideEnabled: false # 启用用户引导
+  accountMergeEnabled: false # 展示绑定弹窗中的账号合并操作，默认关闭；不限制后端合并接口
+  adminKubeconfigEnabled: false # 允许 admin User CR 获取、初始化和轮换 KC；仅后端生效
   apiEnabled: false # 启用 API 访问
   rechargeEnabled: false # 启用充值功能
   enterpriseRealNameAuthEnabled: false # 启用企业实名认证
@@ -114,6 +116,12 @@ desktopConfig:
   licenseCheckEnabled: false # 启用 License 检查
   activityEnabled: true # 桌面拉新奖励（邀请好友/首次登录礼）开关；仅 version "cn" 生效，false 关闭活动
 ```
+
+`accountMergeEnabled` 对应运行时配置 `common.accountMergeEnabled`，仅布尔值 `true` 开启。开启后，绑定可合并账号时显示确认操作；关闭或未配置时只提示账号已被绑定。适用于中英文版本。通过 Helm 更新配置会触发 Pod 滚动更新，用户刷新页面后生效；直接修改 ConfigMap 则需重启 Desktop。关闭开关不会撤销已完成的合并，也不会立即更新已打开的页面。
+
+`adminKubeconfigEnabled` 对应运行时配置 `desktop.auth.adminKubeconfigEnabled`，默认关闭，仅布尔值 `true` 开启。关闭、未配置或非法值均保持禁止 `userCrName = admin` 获取、初始化和轮换 kubeconfig；普通用户和 `ns-admin` 不受影响。此配置仅供后端读取，不下发给前端，也不能通过请求参数覆盖。现有 `kcRotationEnabled` 仍只控制前端轮换按钮。
+
+该开关只放开 Desktop 的限制，开启后仍走原有获取、初始化和轮换流程；配置变更本身不会创建 admin User CR 或授予集群权限，实际权限由现有凭证和 RBAC 决定。通过 Helm 更新会触发 Desktop Pod 滚动更新，直接修改 ConfigMap 则需重启 Desktop。关闭开关可重新禁止后续请求，但不会撤销已经发出的 kubeconfig。
 
 ### 9. Common URLs 配置
 

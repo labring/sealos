@@ -146,10 +146,6 @@ type UserList struct {
 	Items           []User `json:"items"`
 }
 
-func init() {
-	SchemeBuilder.Register(&User{}, &UserList{})
-}
-
 func (r *User) validateCSRExpirationSeconds() error {
 	if r.Spec.CSRExpirationSeconds == 0 {
 		return errors.New("csrExpirationSeconds is not allowed to be 0")

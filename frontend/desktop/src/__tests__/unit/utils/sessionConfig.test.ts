@@ -1,24 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/api/auth', () => ({
-  UserInfo: vi.fn(),
-  getPlanInfo: vi.fn()
-}));
+vi.mock('@/api/auth', () => {
+  const UserInfo = vi.fn(),
+    getPlanInfo = vi.fn();
+  return { UserInfo, getPlanInfo, _UserInfo: () => UserInfo, _getPlanInfo: () => getPlanInfo };
+});
 
 vi.mock('jwt-decode', () => ({
   jwtDecode: vi.fn()
 }));
 
-const mockSetToken = vi.fn();
-const mockSetSession = vi.fn();
-const mockSetHasEverLoggedIn = vi.fn();
+const mockSetConfiguredSession = vi.fn();
 
 vi.mock('@/stores/session', () => ({
   default: {
     getState: vi.fn(() => ({
-      setToken: mockSetToken,
-      setSession: mockSetSession,
-      setHasEverLoggedIn: mockSetHasEverLoggedIn
+      setConfiguredSession: mockSetConfiguredSession
     }))
   }
 }));
@@ -72,8 +69,7 @@ describe('sessionConfig', () => {
       appToken: 'app-token'
     });
 
-    expect(mockSetToken).toHaveBeenCalledWith('region-token');
-    expect(mockSetSession).toHaveBeenCalledWith({
+    expect(mockSetConfiguredSession).toHaveBeenCalledWith('region-token', {
       token: 'app-token',
       subscription: { planName: 'pro' },
       user: {
@@ -93,7 +89,6 @@ describe('sessionConfig', () => {
       },
       kubeconfig: 'kube-config'
     });
-    expect(mockSetHasEverLoggedIn).toHaveBeenCalledWith(true);
     expect(productUserTraits).toEqual({
       user_username: 'display-name',
       user_name: 'display-name',

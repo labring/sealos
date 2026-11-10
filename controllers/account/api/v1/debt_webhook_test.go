@@ -137,6 +137,27 @@ func TestHandle_UserControllerManagerBreaks(t *testing.T) {
 	}
 }
 
+// A tenant User whose name merely contains the controller ServiceAccount name
+// (user-controller-manager2) is a different identity: it must run the debt
+// checks instead of inheriting the controller's exemption. The Namespace
+// hard-deny gives a deterministic verdict without a client or DB.
+func TestHandle_UserControllerManagerSuperstringNotExempt(t *testing.T) {
+	d := &DebtValidate{}
+	for _, username := range []string{
+		"system:serviceaccount:user-system:user-controller-manager2",
+		"system:serviceaccount:user-system:xuser-controller-manager",
+		"system:serviceaccount:user-system:user-controller-manager-x",
+	} {
+		req := makeReqWithGroups(admissionv1.Create, []string{"system:serviceaccounts:user-system"})
+		req.UserInfo.Username = username
+		req.Kind.Kind = "Namespace"
+		resp := d.Handle(context.Background(), req)
+		if resp.Allowed {
+			t.Fatalf("colliding username %q should hit the debt checks, got allowed", username)
+		}
+	}
+}
+
 func TestHandle_UserSA_AdminBypass(t *testing.T) {
 	d := &DebtValidate{}
 	req := makeReqWithGroups(admissionv1.Create, []string{"system:serviceaccounts:user-system"})

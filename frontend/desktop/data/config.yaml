@@ -18,6 +18,7 @@ common:
   realNameReward: 0
   realNameCallbackUrl: "https://cloud.example.org/api/account/faceIdRealNameAuthCallback"
   guideEnabled: false
+  accountMergeEnabled: false
   apiEnabled: false
   rechargeEnabled: false
   cfSiteKey: ""
@@ -81,6 +82,7 @@ desktop:
     billingToken: ""
     callbackURL: "https://127.0.0.1.nip.io/callback"
     signUpEnabled: true
+    adminKubeconfigEnabled: false
     baiduToken: ""
     bingAd:
       tenant: ""

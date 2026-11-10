@@ -55,6 +55,7 @@ desktopConfig:
 
   # Feature flags
   guideEnabled: false
+  accountMergeEnabled: false
   apiEnabled: false
   rechargeEnabled: false
   enterpriseRealNameAuthEnabled: false
@@ -106,6 +107,7 @@ desktopConfig:
   metaKeywords: "Sealos Cloud"
 
   signUpEnabled: true
+  adminKubeconfigEnabled: false
   baiduToken: ""
   bingAdTenant: ""
   bingAdClientId: ""

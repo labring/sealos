@@ -23,6 +23,7 @@ import (
 )
 
 type clusterClient struct {
+	ctx      context.Context
 	cluster  *v1beta1.Cluster
 	isStdout bool
 	configs  map[string]*Option
@@ -93,6 +94,9 @@ func (cc *clusterClient) getClientForHost(host string) (Interface, error) {
 		cc.mutex.Lock()
 		cc.cache[sshConfig] = client
 		cc.mutex.Unlock()
+	}
+	if cc.ctx != nil {
+		return WithContext(cc.ctx, client), nil
 	}
 	return client, nil
 }

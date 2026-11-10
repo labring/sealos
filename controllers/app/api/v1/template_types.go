@@ -83,7 +83,8 @@ type TemplateData struct {
 }
 
 // TemplateSpec defines the desired state of Template
-// +kubebuilder:validation:XValidation:rule="'app_name' in self.defaults",message="defaults must have app_name key"
+// +kubebuilder:validation:XValidation:rule="'app_name' in self.defaults",message="defaults must
+// have app_name key"
 type TemplateSpec struct {
 	TemplateData `json:",inline"`
 }
@@ -110,8 +111,4 @@ type TemplateList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Template `json:"items"`
-}
-
-func init() {
-	SchemeBuilder.Register(&Template{}, &TemplateList{})
 }

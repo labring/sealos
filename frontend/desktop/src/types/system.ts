@@ -15,6 +15,7 @@ export type CommonConfigType = {
   realNameReward: number;
   realNameCallbackUrl?: string;
   guideEnabled: boolean;
+  accountMergeEnabled?: boolean;
   apiEnabled: boolean;
   rechargeEnabled: boolean;
   cfSiteKey?: string;
@@ -111,6 +112,7 @@ export type AuthConfigType = {
   billingToken?: string;
   callbackURL: string;
   signUpEnabled?: boolean;
+  adminKubeconfigEnabled?: boolean;
   baiduToken?: string;
   bingAd?: {
     tenant: string;
@@ -218,6 +220,7 @@ export type AuthClientConfigType = {
       'baiduToken',
       'bingAd',
       'signUpEnabled',
+      'adminKubeconfigEnabled',
       // OAuth2 IdP
       'oauth2idp',
       'idp.password.salt',
@@ -299,6 +302,7 @@ export const DefaultCommonClientConfig: CommonClientConfigType = {
   realNameAuthEnabled: false,
   realNameReward: 0,
   guideEnabled: false,
+  accountMergeEnabled: false,
   rechargeEnabled: false,
   cfSiteKey: '',
   licenseCheckEnabled: false

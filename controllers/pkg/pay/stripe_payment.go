@@ -51,19 +51,19 @@ func CreateCheckoutSession(
 		LineItems: []*stripe.CheckoutSessionLineItemParams{
 			{
 				PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
-					UnitAmount: stripe.Int64(amount),
-					Currency:   stripe.String(currency),
+					UnitAmount: new(amount),
+					Currency:   new(currency),
 					ProductData: &stripe.CheckoutSessionLineItemPriceDataProductDataParams{
-						Name: stripe.String("Sealos Recharge"),
+						Name: new("Sealos Recharge"),
 					},
 				},
 				Quantity: stripe.Int64(1),
 			},
 		},
 		Mode:                stripe.String(string(stripe.CheckoutSessionModePayment)),
-		AllowPromotionCodes: stripe.Bool(true),
-		SuccessURL:          stripe.String(successURL),
-		CancelURL:           stripe.String(cancelURL),
+		AllowPromotionCodes: new(true),
+		SuccessURL:          new(successURL),
+		CancelURL:           new(cancelURL),
 	}
 
 	s, err := session.New(params)
