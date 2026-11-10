@@ -4,8 +4,8 @@
 
 ## 分两阶段升级
 
-1. 先应用 Sealos Web 中新增的 global 数据库迁移，再部署兼容阶段提交到所有 Web 副本、活动补偿 worker 和其他读取 `ActivityRewardGrant` 的服务。此阶段 `giftCodeId` 已可空、能读取直接入账记录，但新奖励仍生成旧兑换码，原有未完成兑换码继续走旧核销与对账。确认旧副本与旧 worker 全部退出后，再开放 Admin 的 KOL 规则设置和激活码发放。
-2. 所有读方均已兼容后，部署直接入账阶段提交。新的正金额奖励在一个 global 数据库事务内写入业务账本、增加 `Account.balance`、写入 `AccountTransaction`。0 元只保存注册时的规则快照和既有实名主体资格，不创建金额为 0 的流水或兑换码。
+1. 先应用 Sealos Web 中新增的 global 数据库迁移，按目标数据库 provider 生成 Prisma 客户端，再部署兼容阶段提交 `d6f4b73f4`到所有 Web 副本、活动补偿 worker 和其他读取 `ActivityRewardGrant` 的服务。此阶段 `giftCodeId` 已可空、能读取直接入账记录，但新奖励仍生成旧兑换码，原有未完成兑换码继续走旧核销与对账。确认旧副本与旧 worker 全部退出后，再开放 Admin 的 KOL 规则设置和激活码发放。
+2. 所有读方均已兼容后，部署兼容提交之后的直接入账阶段提交（提交说明为 `feat(activity): credit rewards atomically with transaction receipts`）。新的正金额奖励在一个 global 数据库事务内写入业务账本、增加 `Account.balance`、写入 `AccountTransaction`。0 元只保存注册时的规则快照和既有实名主体资格，不创建金额为 0 的流水或兑换码。
 
 不能从迁移后的旧版本直接滚动到直接入账版本：旧 Prisma 客户端把 `giftCodeId` 视为非空，读到新记录会失败。直接入账阶段可以回退到兼容阶段，不能回退到兼容阶段之前的读方；已入账流水和账本不删除、不重新发放。
 

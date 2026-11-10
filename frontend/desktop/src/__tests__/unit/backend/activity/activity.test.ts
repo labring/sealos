@@ -227,7 +227,7 @@ describe('activity rewards eligibility', () => {
         amount: 5_000_000n
       })
     });
-    expect(callBillingService).toHaveBeenCalledTimes(1);
+    expect(callBillingService).not.toHaveBeenCalled();
   });
 
   it('does not grant anything for API-registered users', async () => {

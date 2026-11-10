@@ -20,8 +20,17 @@ vi.mock('@/services/backend/auth', () => ({ callBillingService: vi.fn() }));
 
 import { globalPrisma as db } from '@/services/backend/db/init';
 import { callBillingService } from '@/services/backend/auth';
-import { checkAndGrantUserRewards, redeemGrant } from '@/services/backend/activity/rewards';
+import {
+  checkAndGrantUserRewards,
+  redeemGrant,
+  readEligibilityFacts
+} from '@/services/backend/activity/rewards';
 import { getActivityStatusData, getInviteRecordList } from '@/services/backend/activity/status';
+import {
+  firstLoginBusinessKey,
+  referralInviterBusinessKey,
+  referralInviteeBusinessKey
+} from '@/services/backend/activity/constants';
 import { activityRewardJob } from '@/services/backend/activity/worker';
 
 const testUrl = process.env.ACTIVITY_TEST_DATABASE_URL;
@@ -48,6 +57,17 @@ const useCode = async (_path: unknown, identity: any, body: any) => {
 async function user(identity: string | null = ID, enterprise = false) {
   const uid = randomUUID();
   await db.user.create({ data: { uid, id: uid, name: uid, avatarUri: '', nickname: 'test' } });
+  await db.account.create({
+    data: {
+      userUid: uid,
+      balance: 0n,
+      deduction_balance: 0n,
+      activityBonus: 0n,
+      encryptBalance: '',
+      encryptDeductionBalance: '',
+      create_region_id: randomUUID()
+    }
+  });
   await db.desktopLoginRecord.create({ data: { userUid: uid } });
   if (enterprise)
     await db.enterpriseRealNameInfo.create({
@@ -67,12 +87,44 @@ async function invite(inviterUid: string, inviteeUid: string) {
   });
   return db.registrationReferral.create({ data: { inviterUid, inviteeUid, codeId: code.id } });
 }
+async function legacyGrant(
+  uid: string,
+  type: 'DESKTOP_FIRST_LOGIN' | 'REFERRAL_INVITER' | 'REFERRAL_INVITEE',
+  referralId?: string
+) {
+  const gift = await db.giftCode.create({
+    data: {
+      code: randomUUID(),
+      creditAmount: type === 'DESKTOP_FIRST_LOGIN' ? 10_000_000n : 5_000_000n
+    }
+  });
+  return db.activityRewardGrant.create({
+    data: {
+      recipientUid: uid,
+      type,
+      referralId,
+      businessKey:
+        type === 'DESKTOP_FIRST_LOGIN'
+          ? firstLoginBusinessKey(uid)
+          : type === 'REFERRAL_INVITER'
+          ? referralInviterBusinessKey(referralId!)
+          : referralInviteeBusinessKey(referralId!),
+      identityKey:
+        type === 'DESKTOP_FIRST_LOGIN' ? (await readEligibilityFacts(uid)).identityKey : undefined,
+      amount: gift.creditAmount,
+      giftCodeId: gift.id
+    }
+  });
+}
 suite('identity rewards against actual database', () => {
   beforeEach(async () => {
     billing.mockReset().mockImplementation(useCode);
     // Explicit disposable DB above; no production fixture or real billing is used.
     for (const table of [
       db.activityRewardGrant,
+      db.accountTransaction,
+      db.account,
+      db.kolActivationCode,
       db.giftCodeCreation,
       db.giftCode,
       db.registrationReferral,
@@ -105,11 +157,13 @@ suite('identity rewards against actual database', () => {
       expect(first).toHaveLength(1);
       expect(await db.activityRewardGrant.count({ where: { type: 'REFERRAL_INVITEE' } })).toBe(1);
       expect(await db.activityRewardGrant.count({ where: { type: 'REFERRAL_INVITER' } })).toBe(1);
-      expect(await db.giftCode.count()).toBe(3);
-      expect(await db.giftCodeCreation.count()).toBe(3);
-      expect(billing).toHaveBeenCalledTimes(3);
+      expect(await db.giftCode.count()).toBe(0);
+      expect(await db.accountTransaction.count()).toBe(3);
+      expect(await db.giftCodeCreation.count()).toBe(0);
+      expect(billing).not.toHaveBeenCalled();
       await Promise.all(ids.map(checkAndGrantUserRewards));
-      expect(await db.giftCode.count()).toBe(3);
+      expect(await db.giftCode.count()).toBe(0);
+      expect(await db.accountTransaction.count()).toBe(3);
       const denied = ids.find((uid) => uid !== first[0].recipientUid)!;
       const status = await getActivityStatusData(denied);
       expect(status.firstLoginGift.status).toBe('ineligible');
@@ -151,6 +205,7 @@ suite('identity rewards against actual database', () => {
     await checkAndGrantUserRewards(a);
     await db.userRealNameInfo.deleteMany({ where: { userUid: a } });
     await db.desktopLoginRecord.deleteMany({ where: { userUid: a } });
+    await db.account.delete({ where: { userUid: a } });
     await db.user.delete({ where: { uid: a } });
     const b = await user();
     await checkAndGrantUserRewards(b);
@@ -189,7 +244,8 @@ suite('identity rewards against actual database', () => {
       throw new Error('response lost');
     });
     const a = await user();
-    await checkAndGrantUserRewards(a);
+    const legacy = await legacyGrant(a, 'DESKTOP_FIRST_LOGIN');
+    await redeemGrant(legacy);
     await checkAndGrantUserRewards(a);
     expect((await db.activityRewardGrant.findFirstOrThrow()).status).toBe('REDEEMED');
     expect(await db.giftCode.count()).toBe(1);
@@ -199,7 +255,8 @@ suite('identity rewards against actual database', () => {
   it('retains the claim during billing failure and retries the original code', async () => {
     billing.mockRejectedValueOnce(new Error('billing unavailable'));
     const a = await user();
-    await checkAndGrantUserRewards(a);
+    const legacy = await legacyGrant(a, 'DESKTOP_FIRST_LOGIN');
+    await redeemGrant(legacy);
     const grant = await db.activityRewardGrant.findFirstOrThrow();
     expect(grant.status).toBe('READY');
     const b = await user();
@@ -238,7 +295,9 @@ suite('identity rewards against actual database', () => {
       invitee = await user();
     const referral = await invite(inviter, invitee);
     billing.mockRejectedValue(new Error('billing unavailable'));
-    await checkAndGrantUserRewards(invitee);
+    await legacyGrant(invitee, 'DESKTOP_FIRST_LOGIN');
+    await legacyGrant(invitee, 'REFERRAL_INVITEE', referral.id);
+    await legacyGrant(inviter, 'REFERRAL_INVITER', referral.id);
     expect(await db.activityRewardGrant.count()).toBe(3);
     await db.userRealNameInfo.update({ where: { userUid: inviter }, data: { idCard: ID } });
     await checkAndGrantUserRewards(invitee);
@@ -254,8 +313,7 @@ suite('identity rewards against actual database', () => {
   it('does not restart permanent conflicts from a stale grant snapshot', async () => {
     const a = await user();
     billing.mockRejectedValueOnce(new Error('billing unavailable'));
-    await checkAndGrantUserRewards(a);
-    const stale = await db.activityRewardGrant.findFirstOrThrow();
+    const stale = await legacyGrant(a, 'DESKTOP_FIRST_LOGIN');
     await db.activityRewardGrant.update({
       where: { id: stale.id },
       data: { status: 'RETRYABLE_FAILURE', failureReason: 'conflict:used_by_other' }
@@ -270,7 +328,9 @@ suite('identity rewards against actual database', () => {
       invitee = await user();
     const relation = await invite(inviter, invitee);
     billing.mockRejectedValue(new Error('billing unavailable'));
-    await checkAndGrantUserRewards(invitee);
+    await legacyGrant(invitee, 'DESKTOP_FIRST_LOGIN');
+    await legacyGrant(invitee, 'REFERRAL_INVITEE', relation.id);
+    await legacyGrant(inviter, 'REFERRAL_INVITER', relation.id);
     await db.userRealNameInfo.update({ where: { userUid: inviter }, data: { idCard: ID } });
     const pending = await db.activityRewardGrant.findMany({ where: { referralId: relation.id } });
     billing.mockReset().mockImplementation(useCode);

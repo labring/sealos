@@ -5,14 +5,12 @@ import {
   ActivityRewardGrant,
   ActivityRewardStatus,
   ActivityRewardType,
-  RechargeCodeType,
   RegistrationSourceType,
   Prisma
 } from 'prisma/global/generated/client';
-import { generateActivityGiftCode } from './codes';
+import { randomUUID } from 'node:crypto';
 import {
   ACTIVITY_RULE_VERSION,
-  activityGiftCodeComment,
   firstLoginBusinessKey,
   referralInviteeBusinessKey,
   referralInviterBusinessKey,
@@ -122,7 +120,7 @@ type CreateRewardGrantResult = {
   created: boolean;
 };
 
-/** Compatibility phase: retain legacy gift-code writes until all readers support direct grants. */
+/** New rewards commit the business claim, wallet increment and money receipt together. */
 const createRewardGrant = async (params: RewardRequest): Promise<CreateRewardGrantResult> => {
   const existing = await globalPrisma.activityRewardGrant.findUnique({
     where: { businessKey: params.businessKey }
@@ -193,33 +191,53 @@ const createRewardGrant = async (params: RewardRequest): Promise<CreateRewardGra
               throw new Error('Activity conditions not met');
           }
           if (amount <= 0n) throw new Error('Zero reward must not enter monetary payout');
-          const giftCode = await tx.giftCode.create({
+          // User 注册和钱包初始化不同步；等待既有初始化链路，不能在发奖时另建 Account。
+          await tx.$queryRaw`SELECT "userUid" FROM "Account" WHERE "userUid" = ${params.recipientUid}::UUID FOR UPDATE`;
+          const account = await tx.account.findUnique({ where: { userUid: params.recipientUid } });
+          if (!account || account.balance === null || account.deduction_balance === null)
+            throw new Error('Activity account is not initialized');
+          if (account.balance + amount > 9223372036854775807n)
+            throw new Error('Activity balance overflow');
+          const id = randomUUID();
+          const transactionId = randomUUID();
+          const redeemedAt = new Date();
+          // 唯一业务键及主体占用与余额在同一事务，冲突方不会留下加钱副作用。
+          const grant = await tx.activityRewardGrant.create({
             data: {
-              code: generateActivityGiftCode(),
-              creditAmount: amount,
-              comment: activityGiftCodeComment(params.type, params.businessKey)
-            }
-          });
-          await tx.giftCodeCreation.create({
-            data: {
-              giftCodeId: giftCode.id,
-              createdByUserUid: params.recipientUid,
-              rechargeType: RechargeCodeType.ACTIVITY_RECHARGE
-            }
-          });
-          return tx.activityRewardGrant.create({
-            data: {
+              id,
               recipientUid: params.recipientUid,
               type: params.type,
               referralId: params.referralId,
               businessKey: params.businessKey,
               identityKey: params.identityKey,
               amount,
-              giftCodeId: giftCode.id,
-              status: ActivityRewardStatus.READY,
+              accountTransactionId: transactionId,
+              status: ActivityRewardStatus.REDEEMED,
+              redeemedAt,
               ruleVersion
             }
           });
+          const after = await tx.account.update({
+            where: { userUid: params.recipientUid },
+            data: {
+              balance: { increment: amount },
+              updated_at: redeemedAt
+            }
+          });
+          await tx.accountTransaction.create({
+            data: {
+              id: transactionId,
+              type: 'ActivityReward',
+              userUid: params.recipientUid,
+              billing_id: id,
+              balance_before: account.balance,
+              balance: after.balance!,
+              deduction_balance_before: account.deduction_balance,
+              deduction_balance: account.deduction_balance,
+              message: `activity:${params.type}:${params.businessKey}`
+            }
+          });
+          return grant;
         },
         { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
       );

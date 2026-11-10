@@ -183,4 +183,168 @@ suite('KOL activation against actual database', () => {
     ).rejects.toThrow('revoked_code');
     expect(await db.registrationInviteCode.count()).toBe(0);
   });
+
+  it('binds both monetary snapshots at registration and atomically pays them without codes', async () => {
+    const inviter = await user();
+    await wallet(inviter);
+    const invitee = await eligible('11010119900101001X');
+    const code = await db.registrationInviteCode.create({
+      data: {
+        inviterUid: inviter,
+        code: 'ABC23456',
+        inviterRewardAmount: 10_000_000n,
+        inviteeRewardAmount: 5_000_000n,
+        ruleRevision: 2
+      }
+    });
+    await db.$transaction((tx) =>
+      attachRegistrationInTransaction(tx, invitee, { source: 'WEB', inviteCode: code.code })
+    );
+    await db.registrationInviteCode.update({
+      where: { id: code.id },
+      data: {
+        inviterRewardAmount: 20_000_000n,
+        inviteeRewardAmount: 0n,
+        enabled: false,
+        ruleRevision: 3
+      }
+    });
+    await Promise.all(Array.from({ length: 6 }, () => checkAndGrantUserRewards(invitee)));
+    const referral = await db.registrationReferral.findUniqueOrThrow({
+      where: { inviteeUid: invitee }
+    });
+    expect([
+      referral.inviterRewardAmount,
+      referral.inviteeRewardAmount,
+      referral.ruleRevision
+    ]).toEqual([10_000_000n, 5_000_000n, 2]);
+    expect((await db.account.findUniqueOrThrow({ where: { userUid: inviter } })).balance).toBe(
+      110_000_000n
+    );
+    const account = await db.account.findUniqueOrThrow({ where: { userUid: invitee } });
+    expect(account.balance).toBe(115_000_000n);
+    expect(account.deduction_balance).toBe(7_000_000n);
+    expect(account.activityBonus).toBe(0n);
+    expect(await db.giftCode.count()).toBe(0);
+    expect(callBillingService).not.toHaveBeenCalled();
+    const receipts = await db.accountTransaction.findMany({ where: { userUid: invitee } });
+    expect(receipts).toHaveLength(2);
+    expect(
+      receipts.map((r) => r.balance - r.balance_before!).sort((a, b) => (a < b ? -1 : 1))
+    ).toEqual([5_000_000n, 10_000_000n]);
+    const grants = await db.activityRewardGrant.findMany();
+    expect(grants).toHaveLength(3);
+    expect(
+      grants.every((g) => g.status === 'REDEEMED' && !!g.accountTransactionId && !g.giftCodeId)
+    ).toBe(true);
+    expect((await getInviteRecordList(inviter, 1, 10)).items[0]).toMatchObject({
+      status: 'credited',
+      rewardAmount: '10000000'
+    });
+    expect((await getActivityStatusData(inviter)).invite.inviteUrl).toBeNull();
+  }, 30000);
+
+  it.each(['recipient', 'amount'])(
+    'stops a conflicting %s business claim before another payout',
+    async (conflict) => {
+      const inviter = await user();
+      await wallet(inviter);
+      const invitee = await eligible('11010119900101001X');
+      await checkAndGrantUserRewards(invitee);
+      const code = await db.registrationInviteCode.create({
+        data: { inviterUid: inviter, code: 'ABC23456' }
+      });
+      await db.$transaction((tx) =>
+        attachRegistrationInTransaction(tx, invitee, { source: 'WEB', inviteCode: code.code })
+      );
+      const referral = await db.registrationReferral.findUniqueOrThrow({
+        where: { inviteeUid: invitee }
+      });
+      await db.activityRewardGrant.create({
+        data: {
+          recipientUid: conflict === 'recipient' ? inviter : invitee,
+          type: 'REFERRAL_INVITEE',
+          referralId: referral.id,
+          businessKey: `REFERRAL_INVITEE:${referral.id}`,
+          amount: conflict === 'amount' ? 1n : referral.inviteeRewardAmount,
+          status: 'REDEEMED'
+        }
+      });
+      await checkAndGrantUserRewards(invitee);
+      expect((await db.account.findUniqueOrThrow({ where: { userUid: inviter } })).balance).toBe(
+        100_000_000n
+      );
+      expect(await db.activityRewardGrant.count()).toBe(2);
+      expect(await db.accountTransaction.count()).toBe(1);
+    }
+  );
+
+  it('counts eligible zero rewards without money rows and does not retry them', async () => {
+    const inviter = await user();
+    const invitee = await eligible('110101199001010028');
+    const code = await db.registrationInviteCode.create({
+      data: {
+        inviterUid: inviter,
+        code: 'ABC23456',
+        inviterRewardAmount: 0n,
+        inviteeRewardAmount: 0n
+      }
+    });
+    await db.$transaction((tx) =>
+      attachRegistrationInTransaction(tx, invitee, { source: 'WEB', inviteCode: code.code })
+    );
+    await checkAndGrantUserRewards(invitee);
+    await checkAndGrantUserRewards(invitee);
+    expect(await db.activityRewardGrant.count()).toBe(1);
+    expect(await db.accountTransaction.count()).toBe(1);
+    expect((await getActivityStatusData(inviter)).invite).toMatchObject({
+      validCount: 1,
+      creditedAmount: '0'
+    });
+    expect((await getActivityStatusData(invitee)).inviteeGift).toMatchObject({
+      status: 'no_reward',
+      amount: '0'
+    });
+    expect((await getInviteRecordList(inviter, 1, 10)).items[0]).toMatchObject({
+      status: 'no_reward',
+      rewardAmount: '0'
+    });
+  });
+
+  it('waits for wallet initialization without leaving a reward claim and then recovers', async () => {
+    const uid = await eligible('11010119900101001X');
+    await db.account.delete({ where: { userUid: uid } });
+    await checkAndGrantUserRewards(uid);
+    expect(await db.activityRewardGrant.count()).toBe(0);
+    expect(await db.accountTransaction.count()).toBe(0);
+    await wallet(uid);
+    await checkAndGrantUserRewards(uid);
+    expect((await db.account.findUniqueOrThrow({ where: { userUid: uid } })).balance).toBe(
+      110_000_000n
+    );
+    expect(await db.activityRewardGrant.count()).toBe(1);
+  });
+
+  it('rolls back the balance and identity claim when writing the money receipt fails', async () => {
+    const uid = await eligible('11010119900101001X');
+    await db.$executeRawUnsafe(
+      `ALTER TABLE "AccountTransaction" ADD CONSTRAINT "kol_test_fail_receipt" CHECK (type <> 'ActivityReward')`
+    );
+    try {
+      await checkAndGrantUserRewards(uid);
+      expect((await db.account.findUniqueOrThrow({ where: { userUid: uid } })).balance).toBe(
+        100_000_000n
+      );
+      expect(await db.activityRewardGrant.count()).toBe(0);
+      expect(await db.accountTransaction.count()).toBe(0);
+    } finally {
+      await db.$executeRawUnsafe(
+        'ALTER TABLE "AccountTransaction" DROP CONSTRAINT "kol_test_fail_receipt"'
+      );
+    }
+    await checkAndGrantUserRewards(uid);
+    expect((await db.account.findUniqueOrThrow({ where: { userUid: uid } })).balance).toBe(
+      110_000_000n
+    );
+  });
 });
