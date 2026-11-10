@@ -7,6 +7,8 @@ import { getGlobalToken } from '@/services/backend/globalAuth';
 import { ProviderType } from 'prisma/global/generated/client';
 import { getRegionToken } from '@/services/backend/regionAuth';
 import { webRegistrationFromRequest } from '@/services/backend/activity/registration';
+import { issueWebSession } from '@/services/backend/web-session';
+import { codeOrigin } from '@/services/backend/oauth2/authorization-code';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -61,6 +63,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         code: 401,
         message: 'Unauthorized'
       });
+
+    if (
+      _data.user?.userUid &&
+      (req.headers.origin === codeOrigin() || req.headers['sec-fetch-site'] === 'same-origin')
+    )
+      await issueWebSession(res, _data.user.userUid);
 
     const data = await getRegionToken({
       userUid: _data.user!.userUid,

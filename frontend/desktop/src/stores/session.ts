@@ -6,6 +6,7 @@ import { immer } from 'zustand/middleware/immer';
 import { nanoid } from 'nanoid';
 import { setSharedAuthCookie } from '@/utils/cookieUtils';
 import { clearWebAnalyticsIdentity } from '@/utils/app-visitor-link';
+import type { WebSessionCredentials } from '@/types/web-session';
 
 export type OauthAction = 'LOGIN' | 'BIND' | 'UNBIND' | 'PROXY';
 
@@ -17,6 +18,7 @@ type SessionState = {
   firstUse: Date | null;
   hasEverLoggedIn: boolean;
   setSession: (ss: Session) => void;
+  setConfiguredSession: (token: string, session: Session) => void;
   setSessionProp: <T extends keyof Session>(key: T, value: Session[T]) => void;
   delSession: () => void;
   setFirstUse: (d: Date | null) => void;
@@ -33,6 +35,7 @@ type SessionState = {
   setProvider: (provider?: OauthProvider) => void;
   setToken: (token: string, rememberMe?: boolean) => void; // Sets region token
   setGlobalToken: (token: string) => void; // Sets global token and cookie
+  applyRenewedCredentials: (credentials: WebSessionCredentials) => boolean;
   lastWorkSpaceId: string;
   setWorkSpaceId: (id: string) => void;
   setGuestSession: () => void;
@@ -70,6 +73,10 @@ const useSessionStore = create<SessionState>()(
       setSession: (ss: Session) => {
         if (get().session?.user?.userUid !== ss.user?.userUid) clearWebAnalyticsIdentity();
         set({ session: ss });
+      },
+      setConfiguredSession: (token, session) => {
+        if (get().session?.user?.userUid !== session.user?.userUid) clearWebAnalyticsIdentity();
+        set({ token, session, hasEverLoggedIn: true });
       },
       setSessionProp: <T extends keyof Session>(key: T, value: Session[T]) => {
         if (key === 'user' && get().session?.user?.userUid !== (value as Session['user'])?.userUid)
@@ -121,6 +128,22 @@ const useSessionStore = create<SessionState>()(
         if (typeof window !== 'undefined') {
           setSharedAuthCookie(token);
         }
+      },
+      applyRenewedCredentials: (credentials) => {
+        const session = get().session;
+        if (
+          session?.user?.userUid !== credentials.userUid ||
+          session.user.ns_uid !== credentials.workspaceUid
+        )
+          return false;
+        // 一次提交整套凭证，不能先把请求 token 暂时写成 global token。
+        set({
+          globalToken: credentials.globalToken,
+          token: credentials.token,
+          session: { ...session, token: credentials.appToken, kubeconfig: credentials.kubeconfig }
+        });
+        if (typeof window !== 'undefined') setSharedAuthCookie(credentials.globalToken);
+        return true;
       },
       setWorkSpaceId: (id) => {
         set({ lastWorkSpaceId: id });

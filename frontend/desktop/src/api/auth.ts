@@ -313,11 +313,13 @@ export const getBanksListRequest = _getBanksListRequest(request);
 
 export const getAmount = _getAmount(request);
 
-export const getPlanInfo = (workspace: string) =>
+export const _getPlanInfo = (request: AxiosInstance) => (workspace: string) =>
   request<SubscriptionInfoResponse>('/api/plan/info', {
     method: 'POST',
     data: { workspace }
   });
+
+export const getPlanInfo = _getPlanInfo(request);
 
 export const getWorkspacesPlans = (workspaces: string[]) =>
   request<WorkspacesPlansResponse>('/api/plan/workspaces-plans', {

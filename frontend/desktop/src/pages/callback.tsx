@@ -12,7 +12,7 @@ import {
   unBindRequest,
   autoInitRegionToken
 } from '@/api/auth';
-import { getAdClickData, getUserSemData, sessionConfig } from '@/utils/sessionConfig';
+import { getAdClickData, getUserSemData, loginSessionConfig } from '@/utils/sessionConfig';
 import useCallbackStore, { MergeUserStatus } from '@/stores/callback';
 import { ProviderType } from 'prisma/global/generated/client';
 import request from '@/services/request';
@@ -150,7 +150,7 @@ export default function Callback() {
                   const initResult = await autoInitRegionToken();
 
                   if (initResult?.data) {
-                    const productUserTraits = await sessionConfig(initResult.data);
+                    const productUserTraits = await loginSessionConfig(initResult.data);
                     gtmLoginSuccess({
                       user_type: 'new',
                       method: 'oauth2',
@@ -169,7 +169,7 @@ export default function Callback() {
               }
               const regionTokenRes = await getRegionToken();
               if (regionTokenRes?.data) {
-                const productUserTraits = await sessionConfig(regionTokenRes.data);
+                const productUserTraits = await loginSessionConfig(regionTokenRes.data);
                 gtmLoginSuccess({
                   user_type: 'existing',
                   method: 'oauth2',

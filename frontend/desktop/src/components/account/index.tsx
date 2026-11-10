@@ -3,8 +3,6 @@ import { useCopyData } from '@/hooks/useCopyData';
 import { useConfigStore } from '@/stores/config';
 import useSessionStore from '@/stores/session';
 import download from '@/utils/downloadFIle';
-import { clearSharedAuthCookie } from '@/utils/cookieUtils';
-import { clearPersistedMarketingQuery } from '@/utils/marketing-attribution';
 import {
   Box,
   Center,
@@ -57,6 +55,7 @@ import { getPlanBackgroundClass } from '@/utils/styling';
 import { AlertSettings } from './AlertSettings';
 import { rotateKubeconfig } from '@/api/auth';
 import { useDesktopConfigStore } from '@/stores/desktopConfig';
+import { clearWebCredentials, revokeWebSession } from '@/services/web-session';
 
 const baseItemStyle = {
   minW: '36px',
@@ -74,7 +73,7 @@ export default function Account() {
   const router = useRouter();
   const { copyData } = useCopyData();
   const { t } = useTranslation();
-  const { delSession, session, setToken, setSessionProp } = useSessionStore();
+  const { session, setSessionProp } = useSessionStore();
   const user = session?.user;
   const queryclient = useQueryClient();
   const kubeconfig = session?.kubeconfig || '';
@@ -98,14 +97,16 @@ export default function Account() {
   const communityQRCodeImage = layoutConfig?.common.communityQRCodeImage;
   const communityLink = layoutConfig?.common.communityLink;
 
-  const logout = (e: React.MouseEvent<HTMLElement>) => {
+  const logout = async (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
-    clearSharedAuthCookie(); // Clear shared cookie for cross-domain logout
-    clearPersistedMarketingQuery();
-    delSession();
+    try {
+      await revokeWebSession();
+    } catch {
+      // 离线仍允许本地退出；清空会话后不会在后台自动恢复旧账号。
+    }
+    clearWebCredentials();
     queryclient.clear();
     router.replace('/signin');
-    setToken('');
   };
 
   const handleRotateKubeconfig = async (e: React.MouseEvent<HTMLDivElement>) => {

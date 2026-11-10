@@ -39,12 +39,18 @@ const { checkSessionStatus, nsListRequest, init, state, appState, config, router
     };
   }
 );
-vi.mock('@/api/auth', () => ({
-  checkSessionStatus,
-  UserInfo: async () => ({ data: { info: { oauthProvider: [] } } }),
-  getPlanInfo: vi.fn(),
-  issueMarketingConsentToken: vi.fn()
-}));
+vi.mock('@/api/auth', () => {
+  const UserInfo = async () => ({ data: { info: { oauthProvider: [] } } });
+  const getPlanInfo = vi.fn();
+  return {
+    checkSessionStatus,
+    UserInfo,
+    getPlanInfo,
+    _UserInfo: () => UserInfo,
+    _getPlanInfo: () => getPlanInfo,
+    issueMarketingConsentToken: vi.fn()
+  };
+});
 vi.mock('@/api/namespace', () => ({
   nsListRequest,
   switchRequest: vi.fn()

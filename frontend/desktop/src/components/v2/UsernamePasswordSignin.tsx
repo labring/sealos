@@ -22,7 +22,7 @@ import { useMutation } from '@tanstack/react-query';
 
 import { passwordLoginRequest, autoInitRegionToken } from '@/api/auth';
 import useSessionStore from '@/stores/session';
-import { getAdClickData, getUserSemData, sessionConfig } from '@/utils/sessionConfig';
+import { getAdClickData, getUserSemData, loginSessionConfig } from '@/utils/sessionConfig';
 import { consumePendingOauth2RedirectPath } from '@/utils/oauth2';
 import { SemData } from '@/types/sem';
 import { AdClickData } from '@/types/adClick';
@@ -87,7 +87,7 @@ export default function UsernamePasswordSignin({ onBack }: UsernamePasswordSigni
             const initResult = await autoInitRegionToken();
 
             if (initResult?.data) {
-              await sessionConfig(initResult.data);
+              await loginSessionConfig(initResult.data);
               const { setInitGuide } = useGuideModalStore.getState();
               setInitGuide(true);
               await router.replace(postLoginRedirect);
@@ -99,7 +99,7 @@ export default function UsernamePasswordSignin({ onBack }: UsernamePasswordSigni
         } else {
           const regionTokenRes = await getRegionToken();
           if (regionTokenRes?.data) {
-            await sessionConfig(regionTokenRes.data);
+            await loginSessionConfig(regionTokenRes.data);
             await router.replace(postLoginRedirect);
           }
         }
