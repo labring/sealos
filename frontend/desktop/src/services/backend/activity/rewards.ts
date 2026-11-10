@@ -87,6 +87,9 @@ const isRetryableTransactionError = (error: unknown) => {
   );
 };
 
+// Trusted business facts conflict: never continue to the other side after this.
+class RewardConflictError extends Error {}
+
 type RewardRequest = {
   recipientUid: string;
   type: ActivityRewardType;
@@ -100,7 +103,7 @@ const assertExistingReward = async (grant: ActivityRewardGrant, params: RewardRe
     grant.type !== params.type ||
     (grant.referralId ?? undefined) !== params.referralId
   )
-    throw new Error('Activity business key conflicts with reward recipient');
+    throw new RewardConflictError('Activity business key conflicts with reward recipient');
   if (params.referralId) {
     const referral = await globalPrisma.registrationReferral.findUnique({
       where: { id: params.referralId }
@@ -110,7 +113,7 @@ const assertExistingReward = async (grant: ActivityRewardGrant, params: RewardRe
         ? referral?.inviterRewardAmount
         : referral?.inviteeRewardAmount;
     if (!referral || expected !== grant.amount)
-      throw new Error('Activity business key conflicts with reward snapshot');
+      throw new RewardConflictError('Activity business key conflicts with reward snapshot');
   }
 };
 
@@ -141,7 +144,7 @@ const createRewardGrant = async (params: RewardRequest): Promise<CreateRewardGra
             tx.registrationSource.findUnique({ where: { userUid: params.recipientUid } })
           ]);
           if (!user || user.status !== 'NORMAL_USER' || source?.source === 'API')
-            throw new Error('Activity recipient is ineligible');
+            throw new RewardConflictError('Activity recipient is ineligible');
           let amount = rewardAmount(params.type);
           let ruleVersion = ACTIVITY_RULE_VERSION;
           if (params.referralId) {
@@ -149,13 +152,13 @@ const createRewardGrant = async (params: RewardRequest): Promise<CreateRewardGra
               where: { id: params.referralId }
             });
             if (!referral || referral.status === 'INELIGIBLE')
-              throw new Error('Activity referral is ineligible');
+              throw new RewardConflictError('Activity referral is ineligible');
             const expectedUid =
               params.type === ActivityRewardType.REFERRAL_INVITER
                 ? referral.inviterUid
                 : referral.inviteeUid;
             if (expectedUid !== params.recipientUid)
-              throw new Error('Activity recipient does not match referral');
+              throw new RewardConflictError('Activity recipient does not match referral');
             const owner = await tx.activityRewardGrant.findUnique({
               where: { businessKey: firstLoginBusinessKey(referral.inviteeUid) }
             });
@@ -163,7 +166,7 @@ const createRewardGrant = async (params: RewardRequest): Promise<CreateRewardGra
               !owner?.identityKey?.startsWith('v1:') ||
               owner.recipientUid !== referral.inviteeUid
             )
-              throw new Error('Activity identity owner missing');
+              throw new RewardConflictError('Activity identity owner missing');
             const [inviteeFacts, inviterFacts] = await Promise.all([
               readEligibilityFacts(referral.inviteeUid, tx),
               readEligibilityFacts(referral.inviterUid, tx)
@@ -174,7 +177,7 @@ const createRewardGrant = async (params: RewardRequest): Promise<CreateRewardGra
                 new Set([...inviteeFacts.identityKeys, owner.identityKey]).has(key)
               )
             )
-              throw new Error('Activity referral identity conflict');
+              throw new RewardConflictError('Activity referral identity conflict');
             amount =
               params.type === ActivityRewardType.REFERRAL_INVITER
                 ? referral.inviterRewardAmount
@@ -188,9 +191,10 @@ const createRewardGrant = async (params: RewardRequest): Promise<CreateRewardGra
               !params.identityKey ||
               !facts.identityKeys.includes(params.identityKey)
             )
-              throw new Error('Activity conditions not met');
+              throw new RewardConflictError('Activity conditions not met');
           }
-          if (amount <= 0n) throw new Error('Zero reward must not enter monetary payout');
+          if (amount <= 0n)
+            throw new RewardConflictError('Zero reward must not enter monetary payout');
           // User 注册和钱包初始化不同步；等待既有初始化链路，不能在发奖时另建 Account。
           await tx.$queryRaw`SELECT "userUid" FROM "Account" WHERE "userUid" = ${params.recipientUid}::UUID FOR UPDATE`;
           const account = await tx.account.findUnique({ where: { userUid: params.recipientUid } });
@@ -487,6 +491,21 @@ const invalidateReferral = async (id: string, reason: string) => {
   );
 };
 
+/** A wallet failure rolls back only this side; the missing grant remains compensatable. */
+const payoutReferralSide = async (params: RewardRequest) => {
+  try {
+    const reward = await createRewardGrant(params);
+    if (reward.created) await redeemGrant(reward.grant);
+  } catch (error) {
+    if (error instanceof RewardConflictError) throw error;
+    console.error('Activity referral payout deferred', {
+      recipientUid: params.recipientUid,
+      type: params.type,
+      error
+    });
+  }
+};
+
 /** Backfill both-side referral rewards for the identity owner; no recursion into ancestors. */
 const grantReferralRewards = async (
   userUid: string,
@@ -517,13 +536,12 @@ const grantReferralRewards = async (
     return;
   }
   if ((referral.inviteeRewardAmount ?? 5_000_000n) > 0n) {
-    const invitee = await createRewardGrant({
+    await payoutReferralSide({
       recipientUid: userUid,
       type: ActivityRewardType.REFERRAL_INVITEE,
       businessKey: referralInviteeBusinessKey(referral.id),
       referralId: referral.id
     });
-    if (invitee.created) await redeemGrant(invitee.grant);
   }
   if (
     inviterFacts.source !== RegistrationSourceType.API &&
@@ -534,13 +552,12 @@ const grantReferralRewards = async (
       select: { uid: true }
     });
     if (inviter) {
-      const grant = await createRewardGrant({
+      await payoutReferralSide({
         recipientUid: referral.inviterUid,
         type: ActivityRewardType.REFERRAL_INVITER,
         businessKey: referralInviterBusinessKey(referral.id),
         referralId: referral.id
       });
-      if (grant.created) await redeemGrant(grant.grant);
     }
   }
 };
@@ -560,7 +577,7 @@ const grantForEligibleUser = async (userUid: string, facts: EligibilityFacts) =>
       existing.type !== ActivityRewardType.DESKTOP_FIRST_LOGIN ||
       existing.referralId)
   )
-    throw new Error('Activity first-login business key conflict');
+    throw new RewardConflictError('Activity first-login business key conflict');
   const firstLogin = existing
     ? { grant: existing, created: false }
     : await createRewardGrant({

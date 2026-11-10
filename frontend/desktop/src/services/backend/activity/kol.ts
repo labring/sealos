@@ -44,7 +44,10 @@ export const previewKolActivation = async (userUid: string, code: string) => {
   ]);
   if (!activation) throw new KolActivationError('invalid_code');
   if (activation.status === 'REVOKED') throw new KolActivationError('revoked_code');
-  if (activation.status === 'ACTIVATED') throw new KolActivationError('used_code');
+  if (activation.status === 'ACTIVATED')
+    throw new KolActivationError(
+      activation.activatedByUid === userUid ? 'already_activated' : 'used_code'
+    );
   if (own) throw new KolActivationError('already_activated');
   return {
     account: { userUid: user.uid, userId: user.id, nickname: user.nickname },

@@ -127,6 +127,16 @@ suite('KOL activation against actual database', () => {
     expect(await db.account.count()).toBe(0);
     expect(await db.activityRewardGrant.count()).toBe(0);
   });
+  it('previews a used activation as already activated only for its owner', async () => {
+    const owner = await user();
+    const other = await user();
+    await activation(owner);
+    await activateKol(owner, { code: CODE, ruleRevision: 1, expectedUserUid: owner });
+    await expect(previewKolActivation(owner, CODE)).rejects.toThrow('already_activated');
+    await expect(previewKolActivation(other, CODE)).rejects.toThrow('used_code');
+    expect(await db.kolActivationCode.count({ where: { status: 'ACTIVATED' } })).toBe(1);
+  });
+
   it('claims one activation for only one registered account under concurrent requests', async () => {
     const a = await user(),
       b = await user();
@@ -276,6 +286,73 @@ suite('KOL activation against actual database', () => {
       );
       expect(await db.activityRewardGrant.count()).toBe(2);
       expect(await db.accountTransaction.count()).toBe(1);
+    }
+  );
+
+  it.each([
+    ['invitee', 'missing_wallet'],
+    ['inviter', 'missing_wallet'],
+    ['invitee', 'overflow'],
+    ['inviter', 'overflow'],
+    ['invitee', 'receipt_failure'],
+    ['inviter', 'receipt_failure']
+  ])(
+    'pays the other side when %s has %s and compensates only the failed side',
+    async (side, failure) => {
+      const inviter = await user();
+      await wallet(inviter);
+      const invitee = await eligible('11010119900101001X');
+      await checkAndGrantUserRewards(invitee);
+      const code = await db.registrationInviteCode.create({
+        data: { inviterUid: inviter, code: 'ABC23456' }
+      });
+      await db.$transaction((tx) =>
+        attachRegistrationInTransaction(tx, invitee, { source: 'WEB', inviteCode: code.code })
+      );
+      const blocked = side === 'invitee' ? invitee : inviter;
+      const other = side === 'invitee' ? inviter : invitee;
+      const before = (await db.account.findUniqueOrThrow({ where: { userUid: blocked } })).balance!;
+      const otherBefore = (await db.account.findUniqueOrThrow({ where: { userUid: other } }))
+        .balance!;
+      if (failure === 'missing_wallet') await db.account.delete({ where: { userUid: blocked } });
+      else if (failure === 'overflow')
+        await db.account.update({
+          where: { userUid: blocked },
+          data: { balance: 9223372036854775807n }
+        });
+      else
+        await db.$executeRawUnsafe(
+          `ALTER TABLE "AccountTransaction" ADD CONSTRAINT "kol_test_single_receipt" CHECK ("userUid" <> '${blocked}'::UUID OR "message" NOT LIKE 'activity:REFERRAL_%')`
+        );
+      try {
+        await checkAndGrantUserRewards(invitee);
+        expect((await db.account.findUniqueOrThrow({ where: { userUid: other } })).balance).toBe(
+          otherBefore + 5_000_000n
+        );
+        expect(
+          await db.activityRewardGrant.count({
+            where: { type: side === 'invitee' ? 'REFERRAL_INVITEE' : 'REFERRAL_INVITER' }
+          })
+        ).toBe(0);
+        expect(await db.accountTransaction.count()).toBe(2);
+      } finally {
+        if (failure === 'receipt_failure')
+          await db.$executeRawUnsafe(
+            'ALTER TABLE "AccountTransaction" DROP CONSTRAINT "kol_test_single_receipt"'
+          );
+      }
+      if (failure === 'missing_wallet') await wallet(blocked);
+      else if (failure === 'overflow')
+        await db.account.update({ where: { userUid: blocked }, data: { balance: before } });
+      await checkAndGrantUserRewards(invitee);
+      expect((await db.account.findUniqueOrThrow({ where: { userUid: blocked } })).balance).toBe(
+        (failure === 'missing_wallet' ? 100_000_000n : before) + 5_000_000n
+      );
+      expect((await db.account.findUniqueOrThrow({ where: { userUid: other } })).balance).toBe(
+        otherBefore + 5_000_000n
+      );
+      expect(await db.activityRewardGrant.count()).toBe(3);
+      expect(await db.accountTransaction.count()).toBe(3);
     }
   );
 
