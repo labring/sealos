@@ -18,6 +18,7 @@ common:
   realNameReward: 0
   realNameCallbackUrl: "https://cloud.example.org/api/account/faceIdRealNameAuthCallback"
   guideEnabled: false
+  accountMergeEnabled: false
   apiEnabled: false
   rechargeEnabled: false
   cfSiteKey: ""

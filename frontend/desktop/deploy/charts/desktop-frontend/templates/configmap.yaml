@@ -26,6 +26,7 @@ data:
 
     common:
       guideEnabled: {{ .Values.desktopConfig.guideEnabled }}
+      accountMergeEnabled: {{ .Values.desktopConfig.accountMergeEnabled | default false }}
       apiEnabled: {{ .Values.desktopConfig.apiEnabled }}
       rechargeEnabled: {{ .Values.desktopConfig.rechargeEnabled }}
       enterpriseRealNameAuthEnabled: {{ .Values.desktopConfig.enterpriseRealNameAuthEnabled }}
