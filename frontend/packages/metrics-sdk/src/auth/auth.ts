@@ -212,9 +212,9 @@ export class AuthService {
       };
 
       try {
-        const response = await authApi.createSelfSubjectAccessReview(review);
+        const response = await authApi.createSelfSubjectAccessReview({ body: review });
 
-        if (!response.body.status?.allowed) {
+        if (!response.status?.allowed) {
           if (this.cacheTTL > 0) {
             this.authCache.set(ns, {
               allowed: false,

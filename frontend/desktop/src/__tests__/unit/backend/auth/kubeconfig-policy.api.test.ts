@@ -54,13 +54,11 @@ beforeEach(() => {
   auth.verifyRegionalJwt.mockResolvedValue(regionUser);
   getRegionToken.mockResolvedValue({ token: 'test-region-token' });
   client.getClusterCustomObject.mockResolvedValue({
-    body: {
-      status: {
-        kubeConfig: JSON.stringify({
-          contexts: [{ context: { namespace: 'ns-admin' } }],
-          users: [{ name: 'admin', user: { token: 'test-user-token' } }]
-        })
-      }
+    status: {
+      kubeConfig: JSON.stringify({
+        contexts: [{ context: { namespace: 'ns-admin' } }],
+        users: [{ name: 'admin', user: { token: 'test-user-token' } }]
+      })
     }
   });
 });
@@ -89,12 +87,12 @@ describe('admin kubeconfig API policy', () => {
       const returned = yaml.load(res.body.data.kubeconfig) as any;
       expect(returned.contexts[0].context.namespace).toBe('other-workspace');
       expect(returned.users[0].user.token).toBe('test-user-token');
-      expect(client.getClusterCustomObject).toHaveBeenCalledWith(
-        'user.sealos.io',
-        'v1',
-        'users',
-        'admin'
-      );
+      expect(client.getClusterCustomObject).toHaveBeenCalledWith({
+        group: 'user.sealos.io',
+        version: 'v1',
+        plural: 'users',
+        name: 'admin'
+      });
     }
   );
 

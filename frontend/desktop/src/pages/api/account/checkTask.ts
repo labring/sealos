@@ -32,57 +32,45 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     const [deployments, statefulsets, instances, clusters, devboxes] = await Promise.all([
-      k8sApp.listNamespacedDeployment(
+      k8sApp.listNamespacedDeployment({
         namespace,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        `!${templateDeployKey}`
-      ),
-      k8sApp.listNamespacedStatefulSet(
+        labelSelector: `!${templateDeployKey}`
+      }),
+      k8sApp.listNamespacedStatefulSet({
         namespace,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        `!${templateDeployKey}`
-      ),
-      k8sCustomObjects.listNamespacedCustomObject(
-        'app.sealos.io',
-        'v1',
+        labelSelector: `!${templateDeployKey}`
+      }),
+      k8sCustomObjects.listNamespacedCustomObject({
+        group: 'app.sealos.io',
+        version: 'v1',
         namespace,
-        'instances'
-      ) as any,
-      k8sCustomObjects.listNamespacedCustomObject(
-        'apps.kubeblocks.io',
-        'v1alpha1',
+        plural: 'instances'
+      }),
+      k8sCustomObjects.listNamespacedCustomObject({
+        group: 'apps.kubeblocks.io',
+        version: 'v1alpha1',
         namespace,
-        'clusters',
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        `!${templateDeployKey}`
-      ) as any,
-      k8sCustomObjects.listNamespacedCustomObject(
-        'devbox.sealos.io',
-        'v1alpha1',
+        plural: 'clusters',
+        labelSelector: `!${templateDeployKey}`
+      }),
+      k8sCustomObjects.listNamespacedCustomObject({
+        group: 'devbox.sealos.io',
+        version: 'v1alpha1',
         namespace,
-        'devboxes'
-      ) as any
+        plural: 'devboxes'
+      })
     ]);
 
     const tasksToUpdate = userTasks.filter((userTask) => {
       switch (userTask.task.taskType) {
         case TaskType.LAUNCHPAD:
-          return deployments.body.items.length > 0 || statefulsets.body.items.length > 0;
+          return deployments.items.length > 0 || statefulsets.items.length > 0;
         case TaskType.APPSTORE:
-          return instances.body.items.length > 0;
+          return instances.items.length > 0;
         case TaskType.DATABASE:
-          return clusters.body.items.length > 0;
+          return clusters.items.length > 0;
         case TaskType.DEVBOX:
-          return devboxes.body.items.length > 0;
+          return devboxes.items.length > 0;
         default:
           return false;
       }

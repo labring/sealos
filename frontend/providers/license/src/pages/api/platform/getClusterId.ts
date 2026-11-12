@@ -18,44 +18,43 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   try {
     const defaultKc = K8sApiDefault();
 
-    const result = await defaultKc.makeApiClient(k8s.CoreV1Api).readNamespace('kube-system');
-    const systemId = result?.body?.metadata?.uid?.substring(0, 8) || '';
+    const result = await defaultKc
+      .makeApiClient(k8s.CoreV1Api)
+      .readNamespace({ name: 'kube-system' });
+    const systemId = result?.metadata?.uid?.substring(0, 8) || '';
 
-    const nodesResult = await defaultKc.makeApiClient(k8s.CoreV1Api).listNode();
-    const nodeCount = nodesResult.body.items.length;
+    const nodesResult = await defaultKc.makeApiClient(k8s.CoreV1Api).listNode({});
+    const nodeCount = nodesResult.items.length;
 
     // Fetch users (workspaces) count, requesting only metadata to avoid large status payloads
-    // @ts-ignore
     const usersResult = await defaultKc
       .makeApiClient(k8s.CustomObjectsApi)
       .listClusterCustomObject(
-        'user.sealos.io',
-        'v1',
-        'users',
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
+        { group: 'user.sealos.io', version: 'v1', plural: 'users' },
         {
-          headers: {
-            Accept:
-              'application/json;as=PartialObjectMetadataList;v=v1;g=meta.k8s.io,application/json'
-          }
+          middleware: [
+            {
+              pre: (context) =>
+                new k8s.Observable(
+                  Promise.resolve(context).then((ctx) => {
+                    ctx.setHeaderParam(
+                      'Accept',
+                      'application/json;as=PartialObjectMetadataList;v=v1;g=meta.k8s.io,application/json'
+                    );
+                    return ctx;
+                  })
+                ),
+              post: (context) => new k8s.Observable(Promise.resolve(context))
+            }
+          ]
         }
       );
-    // @ts-ignore
-    const totalWorkspaces = usersResult?.body?.items?.length || 0;
+    const totalWorkspaces = (usersResult as any)?.items?.length || 0;
 
     let totalCpu = new Decimal(0);
     let totalMemoryKi = new Decimal(0);
 
-    nodesResult.body.items.forEach((node) => {
+    nodesResult.items.forEach((node: k8s.V1Node) => {
       if (!node?.status?.capacity) return;
       const cpu = new Decimal(node.status.capacity.cpu);
       const memoryKi = new Decimal(node.status.capacity.memory.replace('Ki', ''));

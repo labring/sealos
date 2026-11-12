@@ -74,7 +74,7 @@ export async function createYaml(
         JSON.stringify(spec);
       console.log('create yaml: ', spec.kind);
       const response = await client.create(spec);
-      created.push(response.body);
+      created.push(response);
     }
   } catch (error: any) {
     console.log('create error');
@@ -112,7 +112,7 @@ export async function updateYaml(
 
       console.log('update yaml: ', spec.kind);
       const response = await client.create(spec);
-      created.push(response.body);
+      created.push(response);
     }
   } catch (error: any) {
     /* delete success specs */
@@ -149,17 +149,17 @@ export async function replaceYaml(
 
     try {
       // @ts-ignore
-      const { body } = await client.read(spec);
+      const existing = await client.read(spec);
       console.log('replace yaml: ', spec.kind);
       // update resource
       const response = await client.replace({
         ...spec,
         metadata: {
           ...spec.metadata,
-          resourceVersion: body.metadata?.resourceVersion
+          resourceVersion: existing.metadata?.resourceVersion
         }
       });
-      succeed.push(response.body);
+      succeed.push(response);
     } catch (e: any) {
       // console.error(e?.body || e, "<=replace error")
       // no yaml, create it
@@ -167,7 +167,7 @@ export async function replaceYaml(
         try {
           console.log('create yaml: ', spec.kind);
           const response = await client.create(spec);
-          succeed.push(response.body);
+          succeed.push(response);
         } catch (error: any) {
           // console.error(error, '<=create error')
           return Promise.reject(error);

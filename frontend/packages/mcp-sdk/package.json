@@ -49,6 +49,6 @@
     "zod": "^3.22.0"
   },
   "peerDependencies": {
-    "@kubernetes/client-node": "^0.18.1"
+    "@kubernetes/client-node": ">=0.18.1 <2.0.0"
   }
 }

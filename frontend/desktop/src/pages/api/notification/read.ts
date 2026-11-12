@@ -36,7 +36,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     for (const n of name) {
       try {
         const temp = await UpdateCRD(kc, meta, n, patch);
-        results.push(temp?.body);
+        results.push(temp);
       } catch (err: any) {
         if (err?.body?.code === 403) {
           return jsonRes(res, {

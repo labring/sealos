@@ -79,23 +79,17 @@ const listNotifications = async (namespace: string): Promise<NotificationCR[]> =
   const k8sApi = kc.makeApiClient(k8s.CustomObjectsApi);
 
   try {
-    const response = (await k8sApi.listNamespacedCustomObject(
-      'notification.sealos.io',
-      'v1',
+    const response = (await k8sApi.listNamespacedCustomObject({
+      group: 'notification.sealos.io',
+      version: 'v1',
       namespace,
-      'notifications',
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      `${LicenseFrontendKey}`
-    )) as {
-      body: {
-        items: NotificationCR[];
-      };
+      plural: 'notifications',
+      labelSelector: `${LicenseFrontendKey}`
+    })) as {
+      items: NotificationCR[];
     };
 
-    const notifications = response.body.items;
+    const notifications = response.items;
 
     return notifications;
   } catch (err) {
@@ -110,13 +104,13 @@ const deleteNotification = async (namespace: string, name: string) => {
   const k8sApi = kc.makeApiClient(k8s.CustomObjectsApi);
 
   try {
-    await k8sApi.deleteNamespacedCustomObject(
-      'notification.sealos.io',
-      'v1',
+    await k8sApi.deleteNamespacedCustomObject({
+      group: 'notification.sealos.io',
+      version: 'v1',
       namespace,
-      'notifications',
+      plural: 'notifications',
       name
-    );
+    });
   } catch (err) {
     throw err;
   }
@@ -128,12 +122,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     const response = (await defaultKc
       .makeApiClient(k8s.CustomObjectsApi)
-      .listClusterCustomObject('license.sealos.io', 'v1', 'licenses')) as {
-      body: {
-        items: LicenseCR[];
-      };
+      .listClusterCustomObject({
+        group: 'license.sealos.io',
+        version: 'v1',
+        plural: 'licenses'
+      })) as {
+      items: LicenseCR[];
     };
-    const licenses = response.body.items.filter((item) => item.status.phase === 'Active');
+    const licenses = response.items.filter((item) => item.status.phase === 'Active');
 
     // Delete Old Notifications
     const notifications = await listNotifications('sealos');

@@ -100,7 +100,7 @@ async function requestJson(
       'Content-Length': Buffer.byteLength(body)
     }
   };
-  await kc.applytoHTTPSOptions(options);
+  await kc.applyToHTTPSOptions(options);
   return new Promise((resolve, reject) => {
     const req = request(url, options, (res) => {
       let responseBody = '';

@@ -10,22 +10,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       kubeconfig: await authSession(req)
     });
 
-    const response = (await k8sCustomObjects.listNamespacedCustomObject(
-      'license.sealos.io',
-      'v1',
+    const response = (await k8sCustomObjects.listNamespacedCustomObject({
+      group: 'license.sealos.io',
+      version: 'v1',
       namespace,
-      'licenses',
-      undefined,
-      undefined,
-      undefined,
-      undefined
-    )) as {
-      body: {
-        items: LicenseCR[];
-      };
+      plural: 'licenses'
+    })) as {
+      items: LicenseCR[];
     };
 
-    const result = response.body.items.filter((item) => item.status.phase === 'Active');
+    const result = response.items.filter((item) => item.status.phase === 'Active');
 
     jsonRes(res, {
       data: result

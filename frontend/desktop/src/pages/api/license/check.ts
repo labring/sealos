@@ -10,17 +10,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const response = (await defaultKc
       .makeApiClient(k8s.CustomObjectsApi)
-      .listNamespacedCustomObject('license.sealos.io', 'v1', 'ns-admin', 'licenses')) as {
-      body: {
-        items: LicenseCR[];
-      };
+      .listNamespacedCustomObject({
+        group: 'license.sealos.io',
+        version: 'v1',
+        namespace: 'ns-admin',
+        plural: 'licenses'
+      })) as {
+      items: LicenseCR[];
     };
 
     console.log(response, 'response');
 
     // Filter for active licenses
     const activeLicenses =
-      response.body.items.filter((item) => item.status?.phase === 'Active') || [];
+      response.items.filter((item) => item.status?.phase === 'Active') || [];
 
     jsonRes(res, {
       data: {
