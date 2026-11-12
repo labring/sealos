@@ -130,7 +130,7 @@ Have a look through [existing issues](https://github.com/labring/sealos/issues?q
 
 📖 [See contribution guide →](./CONTRIBUTING.md)
 
-🔧 [See development guide →](./DEVELOPGUIDE.md)
+🔧 [See development guide →](./lifecycle/DEVELOPGUIDE.md)
 
 ## Links
 
