@@ -25,7 +25,7 @@
 
 真实数据库测试只接受本机 `127.0.0.1/activity_test`，每个文件会清理该测试库业务表；同一个库内顺序运行，禁止连接已有集群或生产库。通过 `ACTIVITY_TEST_DATABASE_URL` 和 `ACTIVITY_TEST_PROVIDER=postgresql|cockroachdb` 选择测试数据库。
 
-CI 的 `Activity Rewards Database Tests` 使用临时 PostgreSQL 16 和 CockroachDB 24.3，分别应用完整迁移并运行以下两份集成测试；数据库地址不能为空。这两项和普通单测、类型检查均通过后再合并。
+本地验证使用临时 PostgreSQL 16 和 CockroachDB 24.3，分别应用完整迁移并串行运行以下两份集成测试；数据库地址不能为空。数据库测试、普通单测和类型检查均通过后再合并。
 
 ```sh
 pnpm exec vitest run --project unit --maxWorkers=1 --no-file-parallelism src/__tests__/unit/backend/activity/kol.integration.test.ts src/__tests__/unit/backend/activity/identity.integration.test.ts
