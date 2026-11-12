@@ -1,24 +1,31 @@
-import { Button, Tooltip, TooltipTrigger, TooltipContent } from '@sealos/shadcn-ui';
+import { Button, Skeleton, Tooltip, TooltipTrigger, TooltipContent } from '@sealos/shadcn-ui';
 import { displayMoney, formatMoney } from '@/utils/format';
 import GiftCode from '@/components/cost_overview/components/GiftCode';
 import { useTranslation } from 'next-i18next';
 import CurrencySymbol from '../CurrencySymbol';
-import { HelpCircle } from 'lucide-react';
+import { HelpCircle, RefreshCw } from 'lucide-react';
 
 interface BalanceSectionProps {
-  balance: number;
+  balance: number | null;
+  isError?: boolean;
+  isLoading?: boolean;
   rechargeEnabled: boolean;
   subscriptionEnabled?: boolean;
   onTopUpClick: () => void;
+  onRetry?: () => void;
 }
 
 export function BalanceSection({
   balance,
+  isError = false,
+  isLoading = false,
   rechargeEnabled,
   subscriptionEnabled = false,
-  onTopUpClick
+  onTopUpClick,
+  onRetry
 }: BalanceSectionProps) {
   const { t } = useTranslation();
+  const errorLabel = `${t('common:error')}: ${t('common:balance')}`;
 
   return (
     <div className="p-2 border rounded-2xl">
@@ -39,10 +46,30 @@ export function BalanceSection({
               </Tooltip>
             )}
           </div>
-          <span className="text-foreground text-2xl font-semibold leading-none">
-            <CurrencySymbol className="size-5" />
-            <span>{displayMoney(formatMoney(balance))}</span>
-          </span>
+          {isLoading ? (
+            <Skeleton aria-label={t('common:balance')} className="h-7 w-32" />
+          ) : isError || balance === null ? (
+            <div className="flex h-7 items-center gap-2" role="status" aria-label={errorLabel}>
+              <span className="text-foreground text-2xl font-semibold leading-none">--</span>
+              {onRetry && (
+                <Button
+                  aria-label={errorLabel}
+                  className="size-7"
+                  size="icon"
+                  title={errorLabel}
+                  variant="ghost"
+                  onClick={onRetry}
+                >
+                  <RefreshCw className="size-4" />
+                </Button>
+              )}
+            </div>
+          ) : (
+            <span className="text-foreground text-2xl font-semibold leading-none">
+              <CurrencySymbol className="size-5" />
+              <span>{displayMoney(formatMoney(balance))}</span>
+            </span>
+          )}
         </div>
 
         <div className="flex gap-4 items-center">
