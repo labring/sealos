@@ -24,6 +24,8 @@ vi.mock('@/services/backend/db/init', () => ({
     giftCodeCreation: { create: vi.fn() },
     activityRewardGrant: {
       findUnique: vi.fn(),
+      findUniqueOrThrow: vi.fn(),
+      update: vi.fn(),
       create: vi.fn(),
       updateMany: vi.fn(),
       findMany: vi.fn()
@@ -172,7 +174,10 @@ describe('activity rewards eligibility', () => {
       codeId: 'code-id',
       status: 'PENDING'
     });
-    (globalPrisma.$queryRaw as any).mockResolvedValue([{ inviteeUid }]);
+    (globalPrisma.$queryRaw as any).mockResolvedValue([
+      { id: REFERRAL_ID, inviteeUid, rewardCheckedAt: new Date(0) }
+    ]);
+    (globalPrisma.registrationReferral.updateMany as any).mockResolvedValue({ count: 1 });
     (globalPrisma.activityRewardGrant.findUnique as any).mockImplementation(
       async ({ where }: any) => {
         if (where.businessKey === firstLoginBusinessKey(inviteeUid))
@@ -203,6 +208,14 @@ describe('activity rewards eligibility', () => {
       ...data,
       id: 'grant'
     }));
+    (globalPrisma.activityRewardGrant.findUniqueOrThrow as any).mockResolvedValue({
+      id: 'grant',
+      recipientUid: USER_UID,
+      type: 'REFERRAL_INVITER',
+      referralId: REFERRAL_ID,
+      businessKey: referralInviterBusinessKey(REFERRAL_ID),
+      amount: 5_000_000n
+    });
     (globalPrisma.activityRewardGrant.updateMany as any).mockResolvedValue({ count: 1 });
     (globalPrisma.giftCode.findUnique as any).mockResolvedValue({ code: 'private-gift-code' });
     (globalPrisma.user.findUnique as any).mockResolvedValue({

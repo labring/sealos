@@ -21,7 +21,7 @@ export const kolHandler =
           !Number.isSafeInteger(ruleRevision) ||
           ruleRevision < 1)
       ) {
-        throw new KolActivationError('rule_changed');
+        throw new KolActivationError('rule_changed', 409);
       }
       const data =
         action === 'preview'

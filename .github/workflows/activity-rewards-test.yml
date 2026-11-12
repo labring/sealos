@@ -1,0 +1,99 @@
+name: Activity Rewards Database Tests
+
+on:
+  pull_request:
+    paths:
+      - "frontend/desktop/**"
+      - "frontend/packages/**"
+      - "frontend/pnpm-lock.yaml"
+      - ".github/workflows/activity-rewards-test.yml"
+  push:
+    branches: [main]
+    paths:
+      - "frontend/desktop/**"
+      - "frontend/packages/**"
+      - "frontend/pnpm-lock.yaml"
+      - ".github/workflows/activity-rewards-test.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  database:
+    name: activity-rewards (${{ matrix.provider }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - provider: postgresql
+            schema: prisma/providers/postgresql/global/schema.prisma
+            url: postgresql://activity:activity_test@127.0.0.1:5432/activity_test
+          - provider: cockroachdb
+            schema: prisma/global/schema.prisma
+            url: postgresql://root@127.0.0.1:26257/activity_test?sslmode=disable
+    env:
+      GLOBAL_DATABASE_URL: ${{ matrix.url }}
+      ACTIVITY_TEST_DATABASE_URL: ${{ matrix.url }}
+      ACTIVITY_TEST_PROVIDER: ${{ matrix.provider }}
+    defaults:
+      run:
+        working-directory: frontend/desktop
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 8.9.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.20.2
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - name: Install and generate clients
+        run: |
+          pnpm --dir .. install --frozen-lockfile --ignore-scripts
+          pnpm gen:all
+          pnpm --dir .. run gen:theme-typings
+          pnpm --dir .. run build-packages
+      - name: Unit tests and typecheck
+        run: |
+          env -u ACTIVITY_TEST_DATABASE_URL pnpm test:ci
+          pnpm exec tsc --noEmit --pretty false
+      - name: Start disposable database
+        run: |
+          if [[ "$ACTIVITY_TEST_PROVIDER" == postgresql ]]; then
+            docker run -d --name activity-db -p 127.0.0.1:5432:5432 \
+              -e POSTGRES_USER=activity -e POSTGRES_PASSWORD=activity_test -e POSTGRES_DB=activity_test postgres:16-alpine
+            for attempt in {1..60}; do
+              if docker exec activity-db pg_isready -U activity; then exit 0; fi
+              sleep 1
+            done
+          else
+            docker run -d --name activity-db -p 127.0.0.1:26257:26258 cockroachdb/cockroach:v24.3.0 \
+              start-single-node --insecure --listen-addr=127.0.0.1:26257 --sql-addr=0.0.0.0:26258 \
+              --http-addr=127.0.0.1:8080 --store=type=mem,size=1GiB --cache=64MiB --max-sql-memory=128MiB
+            for attempt in {1..60}; do
+              if docker exec activity-db cockroach sql --insecure --host=127.0.0.1:26258 --execute='CREATE DATABASE IF NOT EXISTS activity_test'; then exit 0; fi
+              sleep 1
+            done
+          fi
+          docker logs activity-db
+          exit 1
+      - name: Apply all migrations and run actual money regressions
+        env:
+          TEST_SCHEMA: ${{ matrix.schema }}
+        run: |
+          test -n "$ACTIVITY_TEST_DATABASE_URL"
+          pnpm exec prisma migrate deploy --schema "$TEST_SCHEMA"
+          pnpm exec vitest run --project unit --maxWorkers=1 --no-file-parallelism \
+            src/__tests__/unit/backend/activity/kol.integration.test.ts \
+            src/__tests__/unit/backend/activity/identity.integration.test.ts
+      - name: Database logs on failure
+        if: failure()
+        run: docker logs --tail 100 activity-db || true
+      - name: Remove disposable database
+        if: always()
+        run: docker rm -f activity-db || true

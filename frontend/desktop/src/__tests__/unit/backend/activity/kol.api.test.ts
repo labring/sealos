@@ -57,6 +57,18 @@ describe('KOL activation HTTP boundary', () => {
     expect(res.setHeader).toHaveBeenCalledWith('Cache-Control', 'no-store');
     expect(activateKol).not.toHaveBeenCalled();
   });
+  it.each([
+    { code },
+    { code, expectedUserUid: 'signed-in-user', ruleRevision: 0 },
+    { code, expectedUserUid: 'signed-in-user', ruleRevision: 1.5 }
+  ])('returns the same rule_changed conflict for an invalid confirmation (%j)', async (body) => {
+    expect((await request(activate, body)).json).toHaveBeenCalledWith({
+      code: 409,
+      message: 'rule_changed',
+      data: null
+    });
+    expect(activateKol).not.toHaveBeenCalled();
+  });
   it('activates only the authenticated account and passes confirmation to the service', async () => {
     vi.mocked(activateKol).mockResolvedValue({ activated: true });
     const res = await request(activate, {

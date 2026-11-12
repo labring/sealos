@@ -133,14 +133,35 @@ export const activateKol = async (
 export const reserveKolAttempt = async (userUid: string) => {
   const now = Date.now();
   const bucket = Math.floor(now / 60_000);
-  const record = await globalPrisma.oAuthCodeRateLimit.upsert({
-    where: { key: `kol:${userUid}:${bucket}` },
-    create: {
-      key: `kol:${userUid}:${bucket}`,
-      count: 1,
-      expiresAt: new Date((bucket + 2) * 60_000)
-    },
-    update: { count: { increment: 1 } }
-  });
-  if (record.count > 10) throw new KolActivationError('rate_limited', 429);
+  const key = `kol:${userUid}:${bucket}`;
+  const expiresAt = new Date((bucket + 2) * 60_000);
+  for (let attempt = 0; ; attempt++) {
+    try {
+      // Prisma 5 的 upsert 在竞争创建时可抛唯一冲突；让数据库用单条语句原子累计。
+      const [record] = await globalPrisma.$queryRaw<{ count: number }[]>`
+        INSERT INTO "OAuthCodeRateLimit" ("key", "count", "expiresAt")
+        VALUES (${key}, 1, ${expiresAt})
+        ON CONFLICT ("key") DO UPDATE SET "count" = "OAuthCodeRateLimit"."count" + 1
+        RETURNING "count"
+      `;
+      if (!record || record.count > 10) throw new KolActivationError('rate_limited', 429);
+      return;
+    } catch (error) {
+      const retryable =
+        error &&
+        typeof error === 'object' &&
+        'code' in error &&
+        (error.code === 'P2034' ||
+          (error.code === 'P2010' &&
+            'meta' in error &&
+            typeof error.meta === 'object' &&
+            error.meta !== null &&
+            'code' in error.meta &&
+            (error.meta.code === '40001' || error.meta.code === '40P01')));
+      if (!retryable || attempt >= 4) throw error;
+      await new Promise<void>((resolve) =>
+        setTimeout(resolve, 20 * 2 ** attempt + Math.floor(Math.random() * 20))
+      );
+    }
+  }
 };

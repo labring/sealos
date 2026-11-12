@@ -639,9 +639,12 @@ model RegistrationReferral {
   registeredAt        DateTime       @default(now())
   status              ReferralStatus @default(PENDING)
   ineligibleReason    String?
+  rewardCheckedAt     DateTime       @default(now())
   createdAt           DateTime       @default(now())
 
   @@index([inviterUid])
+  @@index([rewardCheckedAt, id])
+  @@index([inviterUid, rewardCheckedAt, id])
 }
 
 // Client login fact: the userUid primary key is naturally idempotent; duplicate
