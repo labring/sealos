@@ -111,13 +111,23 @@ export const attachRegistrationInTransaction = async (
     data: { userUid, source }
   });
 
+  if (source === 'API') return;
   const inviteCode = registration?.inviteCode?.trim();
   if (!inviteCode) return;
 
   try {
+    // 锁住当前规则，注册快照不能与运营改价/停用交错。
+    await tx.$queryRaw`SELECT id FROM "RegistrationInviteCode" WHERE code = ${inviteCode} FOR UPDATE`;
     const code = await tx.registrationInviteCode.findUnique({
       where: { code: inviteCode },
-      select: { id: true, inviterUid: true, enabled: true }
+      select: {
+        id: true,
+        inviterUid: true,
+        enabled: true,
+        inviterRewardAmount: true,
+        inviteeRewardAmount: true,
+        ruleRevision: true
+      }
     });
     // Validate the invite code server-side; never trust a client-supplied inviterUid
     if (!code || !code.enabled) {
@@ -143,7 +153,10 @@ export const attachRegistrationInTransaction = async (
       data: {
         inviteeUid: userUid,
         inviterUid: code.inviterUid,
-        codeId: code.id
+        codeId: code.id,
+        inviterRewardAmount: code.inviterRewardAmount,
+        inviteeRewardAmount: code.inviteeRewardAmount,
+        ruleRevision: code.ruleRevision
       }
     });
   } catch (error) {

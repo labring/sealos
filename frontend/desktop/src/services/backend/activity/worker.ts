@@ -2,6 +2,7 @@ import { globalPrisma } from '@/services/backend/db/init';
 import { ActivityRewardStatus, Prisma } from 'prisma/global/generated/client';
 import { checkAndGrantUserRewards, reconcileGrant, redeemGrant } from './rewards';
 import { isActivityAvailable } from '@/services/enable';
+import { takeMissingReferralRewards } from './referral-scan';
 
 // Per-run cap so large tables cannot stall the cron cycle
 const BATCH_LIMIT = 50;
@@ -97,11 +98,6 @@ export const activityRewardJob = async () => {
   }
 };
 
-type MissingGrantReferral = {
-  id: string;
-  inviteeUid: string;
-};
-
 // If the first-login reward transaction failed there is no grant row yet, so
 // recovery must scan persisted login facts rather than referrals alone.
 // Filter out API-sourced, unverified and deleted accounts first so ineligible
@@ -174,41 +170,9 @@ const scanMissingFirstLoginRewards = async () => {
   }
 };
 
-// The invitee's first-login ownership proof (identityKey) once succeeded.
-// Records without one rotate through the first-login scan and must not fill
-// the referral batch. API-sourced or deleted inviters get no inviter reward
-// rebuilt, but an eligible invitee reward still can be.
-const MISSING_REFERRAL_REWARDS_SQL = Prisma.sql`
-  SELECT r."id", r."inviteeUid"
-  FROM "RegistrationReferral" r
-  JOIN "ActivityRewardGrant" owner ON owner."businessKey" = 'DESKTOP_FIRST_LOGIN:' || r."inviteeUid"::TEXT
-  WHERE r."status" != 'INELIGIBLE' AND owner."identityKey" LIKE 'v1:%'
-    AND NOT EXISTS (
-      SELECT 1 FROM "RegistrationSource" s
-      WHERE s."userUid" = r."inviteeUid" AND s."source" = 'API')
-    AND (
-      (EXISTS (SELECT 1 FROM "User" u WHERE u."uid" = r."inviterUid")
-       AND NOT EXISTS (SELECT 1 FROM "RegistrationSource" s WHERE s."userUid" = r."inviterUid" AND s."source" = 'API')
-       AND NOT EXISTS (SELECT 1 FROM "ActivityRewardGrant" g
-                  WHERE g."referralId" = r."id" AND g."type" = 'REFERRAL_INVITER'))
-      OR NOT EXISTS (SELECT 1 FROM "ActivityRewardGrant" g
-                     WHERE g."referralId" = r."id" AND g."type" = 'REFERRAL_INVITEE')
-    )
-  ORDER BY r."registeredAt" DESC
-  LIMIT 20
-`;
-
-/**
- * Missing-reward scan: run checkAndGrantUserRewards (idempotent) once as the
- * invitee, covering the invitee's first-login and invitee rewards and directly
- * rebuilding the inviter's. Every hit is self-healing — once rebuilt the
- * referral no longer matches the scan; during payment outages it keeps
- * matching and is drained by the backoff of the retry path above.
- */
+// Advance durable scan rotation before any payout attempt.
 const scanMissingReferralRewards = async () => {
-  const referrals: MissingGrantReferral[] = await globalPrisma.$queryRaw(
-    MISSING_REFERRAL_REWARDS_SQL
-  );
+  const referrals = await takeMissingReferralRewards();
   for (const referral of referrals) {
     await checkAndGrantUserRewards(referral.inviteeUid).catch((error) => {
       console.error('[activityRewardJob] rebuild missing referral rewards failed', {

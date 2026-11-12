@@ -1,17 +1,21 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ActivityRewardStatus, Prisma } from 'prisma/global/generated/client';
 
-const { findGrants, queryRaw, grantUserRewards, updateLoginRecord } = vi.hoisted(() => ({
-  findGrants: vi.fn(),
-  queryRaw: vi.fn(),
-  grantUserRewards: vi.fn(),
-  updateLoginRecord: vi.fn()
-}));
+const { findGrants, queryRaw, grantUserRewards, updateLoginRecord, updateReferral } = vi.hoisted(
+  () => ({
+    findGrants: vi.fn(),
+    queryRaw: vi.fn(),
+    grantUserRewards: vi.fn(),
+    updateLoginRecord: vi.fn(),
+    updateReferral: vi.fn()
+  })
+);
 
 vi.mock('@/services/backend/db/init', () => ({
   globalPrisma: {
     activityRewardGrant: { findMany: findGrants },
     desktopLoginRecord: { updateMany: updateLoginRecord },
+    registrationReferral: { updateMany: updateReferral },
     $queryRaw: queryRaw
   }
 }));
@@ -102,6 +106,7 @@ describe('activity reward compensation worker', () => {
     queryRaw.mockResolvedValue([]);
     grantUserRewards.mockResolvedValue(undefined);
     updateLoginRecord.mockResolvedValue({ count: 1 });
+    updateReferral.mockResolvedValue({ count: 1 });
   });
 
   it('retries eligible rewards behind a full batch of permanent conflicts', async () => {
@@ -178,11 +183,13 @@ describe('activity reward compensation worker', () => {
 
   it('rebuilds missing referral rewards found by the scan', async () => {
     seedRetryQueue([]);
-    queryRaw
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([
-        { id: 'referral-1', inviteeUid: '00000000-0000-4000-8000-00000000000a' }
-      ]);
+    queryRaw.mockResolvedValueOnce([]).mockResolvedValueOnce([
+      {
+        id: 'referral-1',
+        rewardCheckedAt: new Date(NOW - 1000),
+        inviteeUid: '00000000-0000-4000-8000-00000000000a'
+      }
+    ]);
 
     await activityRewardJob();
 
@@ -238,7 +245,9 @@ describe('activity reward compensation worker', () => {
     const inviteeUid = 'referral-user';
     queryRaw
       .mockResolvedValueOnce([{ userUid: blockedUser }, { userUid: nextUser }])
-      .mockResolvedValueOnce([{ id: 'referral-1', inviteeUid }]);
+      .mockResolvedValueOnce([
+        { id: 'referral-1', rewardCheckedAt: new Date(NOW - 1000), inviteeUid }
+      ]);
     updateLoginRecord
       .mockRejectedValueOnce(conflict)
       .mockRejectedValueOnce(conflict)
@@ -310,7 +319,9 @@ describe('activity reward compensation worker', () => {
     const inviteeUid = '00000000-0000-4000-8000-00000000000a';
     queryRaw
       .mockRejectedValueOnce(new Error('first-login scan failed'))
-      .mockResolvedValueOnce([{ id: 'referral-1', inviteeUid }]);
+      .mockResolvedValueOnce([
+        { id: 'referral-1', rewardCheckedAt: new Date(NOW - 1000), inviteeUid }
+      ]);
 
     await activityRewardJob();
 

@@ -5,7 +5,8 @@ vi.mock('@/services/backend/db/init', () => ({
   globalPrisma: {
     activityRewardIdentityConfig: { findUnique: vi.fn() },
     $queryRaw: vi.fn(),
-    registrationSource: { findUnique: vi.fn(), create: vi.fn() },
+    registrationSource: { findUnique: vi.fn(), create: vi.fn(), findMany: vi.fn() },
+    kolActivationCode: { findUnique: vi.fn() },
     userRealNameInfo: { findUnique: vi.fn() },
     enterpriseRealNameInfo: { findUnique: vi.fn() },
     desktopLoginRecord: { findUnique: vi.fn() },
@@ -18,9 +19,13 @@ vi.mock('@/services/backend/db/init', () => ({
     },
     user: { findUnique: vi.fn() },
     giftCode: { findUnique: vi.fn(), create: vi.fn() },
+    account: { findUnique: vi.fn(), update: vi.fn() },
+    accountTransaction: { create: vi.fn() },
     giftCodeCreation: { create: vi.fn() },
     activityRewardGrant: {
       findUnique: vi.fn(),
+      findUniqueOrThrow: vi.fn(),
+      update: vi.fn(),
       create: vi.fn(),
       updateMany: vi.fn(),
       findMany: vi.fn()
@@ -163,20 +168,35 @@ describe('activity rewards eligibility', () => {
       id: REFERRAL_ID,
       inviteeUid,
       inviterUid: USER_UID,
+      inviterRewardAmount: 5_000_000n,
+      inviteeRewardAmount: 5_000_000n,
+      ruleRevision: 1,
+      codeId: 'code-id',
       status: 'PENDING'
     });
-    (globalPrisma.$queryRaw as any).mockResolvedValue([{ inviteeUid }]);
+    (globalPrisma.$queryRaw as any).mockResolvedValue([
+      { id: REFERRAL_ID, inviteeUid, rewardCheckedAt: new Date(0) }
+    ]);
+    (globalPrisma.registrationReferral.updateMany as any).mockResolvedValue({ count: 1 });
     (globalPrisma.activityRewardGrant.findUnique as any).mockImplementation(
       async ({ where }: any) => {
         if (where.businessKey === firstLoginBusinessKey(inviteeUid))
           return {
             id: 'first',
             recipientUid: inviteeUid,
+            type: 'DESKTOP_FIRST_LOGIN',
             identityKey: 'v1:owned',
             status: 'REDEEMED'
           };
         if (where.businessKey?.startsWith('REFERRAL_INVITEE:'))
-          return { id: 'invitee', status: 'REDEEMED' };
+          return {
+            id: 'invitee',
+            recipientUid: inviteeUid,
+            type: 'REFERRAL_INVITEE',
+            referralId: REFERRAL_ID,
+            amount: 5_000_000n,
+            status: 'REDEEMED'
+          };
         return null;
       }
     );
@@ -188,9 +208,26 @@ describe('activity rewards eligibility', () => {
       ...data,
       id: 'grant'
     }));
+    (globalPrisma.activityRewardGrant.findUniqueOrThrow as any).mockResolvedValue({
+      id: 'grant',
+      recipientUid: USER_UID,
+      type: 'REFERRAL_INVITER',
+      referralId: REFERRAL_ID,
+      businessKey: referralInviterBusinessKey(REFERRAL_ID),
+      amount: 5_000_000n
+    });
     (globalPrisma.activityRewardGrant.updateMany as any).mockResolvedValue({ count: 1 });
     (globalPrisma.giftCode.findUnique as any).mockResolvedValue({ code: 'private-gift-code' });
-    (globalPrisma.user.findUnique as any).mockResolvedValue({ uid: USER_UID, name: 'inviter' });
+    (globalPrisma.user.findUnique as any).mockResolvedValue({
+      uid: USER_UID,
+      name: 'inviter',
+      status: 'NORMAL_USER'
+    });
+    (globalPrisma.account.findUnique as any).mockResolvedValue({
+      balance: 0n,
+      deduction_balance: 0n
+    });
+    (globalPrisma.account.update as any).mockResolvedValue({ balance: 5_000_000n });
 
     await checkAndGrantUserRewards(USER_UID);
 
@@ -203,7 +240,7 @@ describe('activity rewards eligibility', () => {
         amount: 5_000_000n
       })
     });
-    expect(callBillingService).toHaveBeenCalledTimes(1);
+    expect(callBillingService).not.toHaveBeenCalled();
   });
 
   it('does not grant anything for API-registered users', async () => {
@@ -238,7 +275,10 @@ describe('activity status presentation', () => {
     (globalPrisma.userRealNameInfo.findUnique as any).mockResolvedValue(null);
     (globalPrisma.enterpriseRealNameInfo.findUnique as any).mockResolvedValue(null);
     (globalPrisma.desktopLoginRecord.findUnique as any).mockResolvedValue(null);
-    (globalPrisma.registrationInviteCode.findUnique as any).mockResolvedValue({ code: 'ABCD2345' });
+    (globalPrisma.registrationInviteCode.findUnique as any).mockResolvedValue({
+      code: 'ABCD2345',
+      enabled: true
+    });
     (globalPrisma.registrationReferral.findMany as any).mockResolvedValue([]);
     (globalPrisma.activityRewardGrant.findMany as any).mockResolvedValue([]);
 
@@ -275,6 +315,7 @@ describe('activity status presentation', () => {
 
 describe('registration attribution', () => {
   const makeTx = () => ({
+    $queryRaw: vi.fn(),
     registrationSource: { create: vi.fn() },
     registrationInviteCode: { findUnique: vi.fn() },
     user: { findUnique: vi.fn() },
@@ -325,7 +366,10 @@ describe('registration attribution', () => {
     tx.registrationInviteCode.findUnique.mockResolvedValue({
       id: 'code-id',
       inviterUid,
-      enabled: true
+      enabled: true,
+      inviterRewardAmount: 10_000_000n,
+      inviteeRewardAmount: 0n,
+      ruleRevision: 2
     });
     tx.user.findUnique.mockResolvedValue({ uid: inviterUid });
 
@@ -338,7 +382,10 @@ describe('registration attribution', () => {
       data: {
         inviteeUid: USER_UID,
         inviterUid,
-        codeId: 'code-id'
+        codeId: 'code-id',
+        inviterRewardAmount: 10_000_000n,
+        inviteeRewardAmount: 0n,
+        ruleRevision: 2
       }
     });
   });
