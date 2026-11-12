@@ -1,14 +1,19 @@
 import { BaseMetricsService } from './base';
 import { AuthService } from '../auth/auth';
 import { MinioQueryParams } from '../types/minio';
-import { QueryResponse } from '../types/common';
+import { MetricsAuthConfig, QueryResponse } from '../types/common';
 import { MINIO_QUERIES } from '../constants/promql';
 
 export class MinioService extends BaseMetricsService {
   private minioInstance: string;
 
-  constructor(baseURL: string, authService: AuthService, minioInstance?: string) {
-    super(baseURL, authService);
+  constructor(
+    baseURL: string,
+    authService: AuthService,
+    metricsAuth: MetricsAuthConfig,
+    minioInstance?: string
+  ) {
+    super(baseURL, authService, metricsAuth);
     this.minioInstance = minioInstance || process.env.OBJECT_STORAGE_INSTANCE || '';
   }
 

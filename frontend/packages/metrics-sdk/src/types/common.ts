@@ -23,6 +23,11 @@ export interface AuthConfig {
   kubeconfig: string;
 }
 
+export interface MetricsAuthConfig {
+  username: string;
+  password: string;
+}
+
 export interface BaseQueryParams {
   namespace?: string;
   range?: TimeRange;

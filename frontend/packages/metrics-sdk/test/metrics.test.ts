@@ -2,10 +2,12 @@ import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { once } from 'node:events';
 import { test } from 'node:test';
-import { MetricsClient, AuthService } from '../src';
+import { MetricsClient, AuthService, type MetricsAuthConfig } from '../src';
 import { injectNamespace } from '../src/utils/promql';
 
-async function fixture() {
+const fixtureMetricsAuth = { username: 'fixture-metrics-user', password: 'fictional-password' };
+
+async function fixture(metricsAuth = fixtureMetricsAuth) {
   const queries: { path: string; form: URLSearchParams }[] = [];
   const reviews: { namespace: string; authorization?: string }[] = [];
   let readyRequests = 0;
@@ -25,7 +27,14 @@ async function fixture() {
       reviews.push({ namespace: ns, authorization: req.headers.authorization });
       res.setHeader('Content-Type', 'application/json');
       res.end(JSON.stringify({ ...review, status: { allowed: ns !== 'denied' } }));
-    } else if (req.url?.startsWith('/select/0/prometheus/api/v1/')) {
+    } else if (req.url?.startsWith('/prometheus/api/v1/')) {
+      if (
+        req.headers.authorization !==
+        `Basic ${Buffer.from(`${metricsAuth.username}:${metricsAuth.password}`).toString('base64')}`
+      ) {
+        res.writeHead(401).end('Metrics Basic authentication required');
+        return;
+      }
       queries.push({ path: req.url, form: new URLSearchParams(body) });
       res.setHeader('Content-Type', 'application/json');
       res.end(JSON.stringify(queryError ? { status: 'error', error: 'bad query' } : response));
@@ -50,7 +59,8 @@ async function fixture() {
   });
   const config = {
     kubeconfig,
-    metricsURL: `${origin}/select/0/prometheus`,
+    metricsURL: `${origin}/prometheus`,
+    metricsAuth,
     whitelistKubernetesHosts: [`${origin}/k8s`]
   };
   return {
@@ -77,6 +87,44 @@ async function fixture() {
 const latestQuery = (f: Awaited<ReturnType<typeof fixture>>) =>
   f.queries.at(-1)!.form.get('query')!;
 
+test('metrics credentials are supplied per client and incorrect credentials are rejected', async () => {
+  const first = await fixture();
+  const second = await fixture({
+    username: 'other-fixture-user',
+    password: 'other-fictional-password'
+  });
+  try {
+    await Promise.all([
+      first.client.raw.query({ query: 'up{}' }),
+      second.client.raw.query({ query: 'up{}' })
+    ]);
+    assert.equal(first.queries.length, 1);
+    assert.equal(second.queries.length, 1);
+    const wrong = new MetricsClient({ ...first.config, metricsAuth: second.config.metricsAuth });
+    await assert.rejects(wrong.raw.query({ query: 'up{}' }), /Basic authentication required/);
+    assert.equal(first.queries.length, 1);
+  } finally {
+    await Promise.all([first.close(), second.close()]);
+  }
+});
+
+test('missing or incomplete metrics credentials fail before any network requests', () => {
+  for (const metricsAuth of [
+    undefined,
+    {},
+    { username: 'fixture-user' },
+    { password: 'fictional-password' },
+    { username: '', password: 'fictional-password' },
+    { username: 'fixture-user', password: '' }
+  ]) {
+    assert.throws(
+      () =>
+        new MetricsClient({ kubeconfig: 'unused', metricsAuth: metricsAuth as MetricsAuthConfig }),
+      /metricsAuth.username and metricsAuth.password are required/
+    );
+  }
+});
+
 test('legacy DevBox CPU query preserves names, scoped VM URL, ranges and auth cache', async () => {
   const f = await fixture();
   try {
@@ -87,7 +135,7 @@ test('legacy DevBox CPU query preserves names, scoped VM URL, ranges and auth ca
     };
     const result = await f.client.launchpad.query(params);
     assert.deepEqual(result, f.response);
-    assert.equal(f.queries[0].path, '/select/0/prometheus/api/v1/query_range');
+    assert.equal(f.queries[0].path, '/prometheus/api/v1/query_range');
     assert.equal(f.queries[0].form.get('start'), '0');
     assert.equal(f.queries[0].form.get('step'), '1m');
     assert.match(latestQuery(f), /pod=~"my-app-hash\.\*"/);
@@ -113,7 +161,7 @@ test('application memory uses corrected recording rule; bare pod names retain th
       assert.match(latestQuery(f), /container!="",image!=""/);
       assert.match(latestQuery(f), /pod=~"app\.\*"/);
       assert.equal(f.queries.at(-1)!.form.get('time'), '0');
-      assert.equal(f.queries.at(-1)!.path, '/select/0/prometheus/api/v1/query');
+      assert.equal(f.queries.at(-1)!.path, '/prometheus/api/v1/query');
     }
   } finally {
     await f.close();
@@ -309,7 +357,10 @@ test('non-200 readiness and 200 Prometheus errors are rejected', async () => {
 });
 
 test('empty credentials and invalid namespace fail clearly', () => {
-  assert.throws(() => new MetricsClient({ kubeconfig: '' }), /kubeconfig is required/);
+  assert.throws(
+    () => new MetricsClient({ kubeconfig: '', metricsAuth: fixtureMetricsAuth }),
+    /kubeconfig is required/
+  );
   const auth = new AuthService('unused');
   assert.equal(auth.resolveNamespace(' demo '), 'demo');
   assert.throws(() => auth.resolveNamespace('other|demo'), /Invalid namespace/);

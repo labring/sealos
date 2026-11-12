@@ -40,9 +40,16 @@ pnpm --dir frontend --filter @labring/sealos-metrics-sdk test:package
 ```ts
 import { MetricsClient } from '@labring/sealos-metrics-sdk';
 
+const username = process.env.METRICS_USERNAME;
+const password = process.env.METRICS_PASSWORD;
+if (!username || !password) {
+  throw new Error('METRICS_USERNAME and METRICS_PASSWORD must be configured on the server');
+}
+
 const client = new MetricsClient({
   kubeconfig,
-  metricsURL: 'http://vmselect.vm.svc:8481/select/0/prometheus'
+  metricsAuth: { username, password },
+  metricsURL: 'http://vmauth-auth.vm.svc:8427/prometheus'
 });
 await client.database.query({
   namespace: 'ns-example',
@@ -62,7 +69,9 @@ await client.database.query({
 
 ## 配置与鉴权
 
-`kubeconfig` 必填。namespace 可显式传入，或从当前 context 读取。指标地址优先级为 `metricsURL` 参数、`METRICS_URL` 环境变量、默认地址 `http://vmselect-vm-stack-victoria-metrics-k8s-stack.vm.svc.cluster.local:8481/select/0/prometheus`。
+`metricsAuth: { username, password }` 为必填参数，用于所有指标请求的 HTTP Basic Auth。调用方必须从服务端配置读取凭证（例如通过 Kubernetes Secret 注入 `METRICS_USERNAME` / `METRICS_PASSWORD`），再显式传入 SDK。SDK 没有默认账号密码，缺失或为空时在初始化阶段报错。不要从浏览器请求中接收这组服务凭证。Kubernetes readiness 与 namespace 权限检查仍使用调用方的 kubeconfig。直接创建各 Service 时也需将 `metricsAuth` 作为第三个参数，`MinioService` 的 `minioInstance` 调整为第四个参数。
+
+`kubeconfig` 必填。namespace 可显式传入，或从当前 context 读取。指标地址优先级为 `metricsURL` 参数、`METRICS_URL` 环境变量、默认地址 `http://vmauth-auth.vm.svc:8427/prometheus`。
 
 `whitelistKubernetesHosts` 参数优先于逗号分隔的 `WHITELIST_KUBERNETES_HOSTS`。不在白名单的 API Server 被改写为 `KUBERNETES_SERVICE_HOST` / `KUBERNETES_SERVICE_PORT`。本地开发应显式允许测试 API Server。
 

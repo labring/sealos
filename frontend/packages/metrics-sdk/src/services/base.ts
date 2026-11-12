@@ -1,6 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
 import { URLSearchParams } from 'url';
-import { TimeRange } from '../types/common';
+import { MetricsAuthConfig, TimeRange } from '../types/common';
 import { AuthService } from '../auth/auth';
 import { injectNamespace } from '../utils/promql';
 
@@ -9,12 +9,21 @@ export abstract class BaseMetricsService {
   protected authService: AuthService;
   protected baseURL: string;
 
-  constructor(baseURL: string, authService: AuthService) {
+  constructor(baseURL: string, authService: AuthService, metricsAuth: MetricsAuthConfig) {
+    if (
+      typeof metricsAuth?.username !== 'string' ||
+      !metricsAuth.username ||
+      typeof metricsAuth?.password !== 'string' ||
+      !metricsAuth.password
+    ) {
+      throw new Error('metricsAuth.username and metricsAuth.password are required');
+    }
     this.baseURL = baseURL;
     this.authService = authService;
     this.client = axios.create({
       baseURL,
       timeout: 30000,
+      auth: metricsAuth,
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
       }
