@@ -41,9 +41,16 @@ pnpm --dir frontend --filter @labring/sealos-metrics-sdk test:package
 ```ts
 import { MetricsClient } from '@labring/sealos-metrics-sdk';
 
+const username = process.env.METRICS_USERNAME;
+const password = process.env.METRICS_PASSWORD;
+if (!username || !password) {
+  throw new Error('METRICS_USERNAME and METRICS_PASSWORD must be configured on the server');
+}
+
 const client = new MetricsClient({
   kubeconfig,
-  metricsURL: 'http://vmselect.vm.svc:8481/select/0/prometheus'
+  metricsAuth: { username, password },
+  metricsURL: 'http://vmauth-auth.vm.svc:8427/prometheus'
 });
 await client.database.query({
   namespace: 'ns-example',
@@ -63,7 +70,9 @@ Run the SDK on a Node.js server, for example in a Next.js API route. Install wit
 
 ## Configuration and authentication
 
-`kubeconfig` is required. Namespace can be explicit or read from its current context. `metricsURL` overrides `METRICS_URL`; the fallback is `http://vmselect-vm-stack-victoria-metrics-k8s-stack.vm.svc.cluster.local:8481/select/0/prometheus`.
+`metricsAuth: { username, password }` is required for HTTP Basic authentication on all Metrics API requests. The caller must read these credentials from server-side configuration (for example, `METRICS_USERNAME` / `METRICS_PASSWORD` injected from a Kubernetes Secret) and pass them to the SDK. There are no default credentials; missing or empty values fail at construction. Do not accept these service credentials from browser requests. Kubernetes readiness and namespace permission checks still use the caller's kubeconfig. Direct service constructors also require `metricsAuth` as their third argument; `MinioService` takes `minioInstance` as the fourth argument.
+
+`kubeconfig` is required. Namespace can be explicit or read from its current context. `metricsURL` overrides `METRICS_URL`; the fallback is `http://vmauth-auth.vm.svc:8427/prometheus`.
 
 `whitelistKubernetesHosts` overrides comma-separated `WHITELIST_KUBERNETES_HOSTS`. API servers outside that list are rewritten to `KUBERNETES_SERVICE_HOST` / `KUBERNETES_SERVICE_PORT`. Explicitly allow a test API server for local development.
 

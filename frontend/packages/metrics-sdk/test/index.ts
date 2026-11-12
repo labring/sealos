@@ -21,6 +21,13 @@ async function testMetricsSDK() {
     process.exit(1);
   }
 
+  const username = process.env.METRICS_USERNAME;
+  const password = process.env.METRICS_PASSWORD;
+  if (!username || !password) {
+    throw new Error('METRICS_USERNAME and METRICS_PASSWORD must be configured on the server');
+  }
+  const metricsAuth = { username, password };
+
   const namespace = process.env.TEST_NAMESPACE || 'default';
   const podName = process.env.TEST_POD_NAME || process.env.TEST_LAUNCHPAD_NAME || '';
   const dbCluster = process.env.TEST_DB_CLUSTER || '';
@@ -29,6 +36,7 @@ async function testMetricsSDK() {
   try {
     const client = new MetricsClient({
       kubeconfig,
+      metricsAuth,
       metricsURL: process.env.METRICS_URL
     });
     console.log('✅ MetricsClient initialized\n');

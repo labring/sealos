@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.2
+
+- Route Metrics API requests through `http://vmauth-auth.vm.svc:8427/prometheus` and require caller-supplied `metricsAuth` credentials for every metrics service. Callers must load these from server-side configuration; no credentials are bundled in the SDK. Direct service constructors require credentials as their third argument (`MinioService` moves `minioInstance` to the fourth).
+
 ## 0.2.0
 
 - Restore the SDK from the source commit of npm 0.1.0 (`382cef7f7bf3c134f08e637e36310f33562699a7`).

@@ -15,6 +15,13 @@ async function testAuthCache() {
     process.exit(1);
   }
 
+  const username = process.env.METRICS_USERNAME;
+  const password = process.env.METRICS_PASSWORD;
+  if (!username || !password) {
+    throw new Error('METRICS_USERNAME and METRICS_PASSWORD must be configured on the server');
+  }
+  const metricsAuth = { username, password };
+
   const namespace = process.env.TEST_NAMESPACE || 'default';
   const podName = process.env.TEST_POD_NAME || process.env.TEST_LAUNCHPAD_NAME || '';
 
@@ -28,6 +35,7 @@ async function testAuthCache() {
 
     const client = new MetricsClient({
       kubeconfig,
+      metricsAuth,
       metricsURL: process.env.METRICS_URL
     });
 
@@ -88,6 +96,7 @@ async function testAuthCache() {
 
     const clientNoCache = new MetricsClient({
       kubeconfig,
+      metricsAuth,
       metricsURL: process.env.METRICS_URL,
       authCacheTTL: 0
     });
@@ -131,6 +140,7 @@ async function testAuthCache() {
 
     const clientShortTTL = new MetricsClient({
       kubeconfig,
+      metricsAuth,
       metricsURL: process.env.METRICS_URL,
       authCacheTTL: 10000 // 10 seconds
     });
