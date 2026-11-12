@@ -36,6 +36,7 @@ import { Skeleton } from '@sealos/shadcn-ui';
 import { UpgradePlanDialog } from '@/components/plan/UpgradePlanDialog';
 import { gtmSubscribeCheckout, gtmSubscribeSuccess } from '@/utils/gtm';
 import { openInNewWindow } from '@/utils/windowUtils';
+import { getSubscriptionOperator } from '@/utils/subscription';
 
 export default function Plan() {
   const router = useRouter();
@@ -594,17 +595,11 @@ export default function Plan() {
     const currentPlanObj = plansData?.plans?.find(
       (p) => p.Name === subscriptionData?.subscription?.PlanName
     );
-    const inDebt = subscriptionData?.subscription?.Status?.toLowerCase() === 'debt';
-    const getOperator = () => {
-      // If in debt state, always use 'created' operation
-      if (inDebt) return 'created';
-      if (!currentPlanObj) return 'created';
-      if (currentPlanObj.UpgradePlanList?.includes(plan.Name)) return 'upgraded';
-      if (currentPlanObj.DowngradePlanList?.includes(plan.Name)) return 'downgraded';
-      return 'upgraded';
-    };
-
-    const operator = getOperator();
+    const operator = getSubscriptionOperator(
+      subscriptionData?.subscription?.Status,
+      currentPlanObj,
+      plan.Name
+    );
     const subscriptionType: 'new' | 'upgrade' | 'downgrade' =
       operator === 'created' ? 'new' : operator === 'downgraded' ? 'downgrade' : 'upgrade';
 
