@@ -18,10 +18,8 @@ const nextConfig = {
     return config;
   },
   transpilePackages: ['@sealos/ui'],
-  experimental: {
-    // this includes files from the monorepo base two directories up
-    outputFileTracingRoot: path.join(__dirname, '../../')
-  }
+  // Include files from the monorepo base two directories up.
+  outputFileTracingRoot: path.join(__dirname, '../../')
 };
 
 module.exports = nextConfig;
