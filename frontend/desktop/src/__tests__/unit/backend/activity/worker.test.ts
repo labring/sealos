@@ -14,8 +14,8 @@ const { findGrants, queryRaw, grantUserRewards, updateLoginRecord, updateReferra
 vi.mock('@/services/backend/db/init', () => ({
   globalPrisma: {
     activityRewardGrant: { findMany: findGrants },
-    desktopLoginRecord: { updateMany: updateLoginRecord },
     registrationReferral: { updateMany: updateReferral },
+    $executeRaw: updateLoginRecord,
     $queryRaw: queryRaw
   }
 }));
@@ -105,7 +105,7 @@ describe('activity reward compensation worker', () => {
     vi.mocked(redeemGrant).mockResolvedValue(undefined);
     queryRaw.mockResolvedValue([]);
     grantUserRewards.mockResolvedValue(undefined);
-    updateLoginRecord.mockResolvedValue({ count: 1 });
+    updateLoginRecord.mockResolvedValue(1);
     updateReferral.mockResolvedValue({ count: 1 });
   });
 
@@ -202,11 +202,41 @@ describe('activity reward compensation worker', () => {
     // without a referral or another login, the cron must rebuild the reward.
     seedRetryQueue([]);
     const userUid = '00000000-0000-4000-8000-00000000000b';
-    queryRaw.mockResolvedValueOnce([{ userUid }]).mockResolvedValueOnce([]);
+    queryRaw.mockResolvedValueOnce([{ userUid, rewardCheckedAt: null }]).mockResolvedValueOnce([]);
 
     await activityRewardJob();
 
     expect(grantUserRewards).toHaveBeenCalledExactlyOnceWith(userUid);
+  });
+
+  it('skips a first-login candidate claimed by another replica without blocking the batch', async () => {
+    seedRetryQueue([]);
+    queryRaw.mockResolvedValueOnce([
+      { userUid: 'claimed-user', rewardCheckedAt: null },
+      { userUid: 'next-user', rewardCheckedAt: null }
+    ]);
+    updateLoginRecord.mockResolvedValueOnce(0);
+
+    await activityRewardJob();
+
+    expect(grantUserRewards.mock.calls).toEqual([['next-user']]);
+    expect(console.error).not.toHaveBeenCalled();
+  });
+
+  it('stops retrying a claim when a competing replica wins after a write conflict', async () => {
+    seedRetryQueue([]);
+    queryRaw.mockResolvedValueOnce([{ userUid: 'claimed-user', rewardCheckedAt: null }]);
+    updateLoginRecord
+      .mockRejectedValueOnce(Object.assign(new Error('write conflict'), { code: 'P2034' }))
+      .mockResolvedValueOnce(0);
+
+    const job = activityRewardJob();
+    await vi.runAllTimersAsync();
+    await job;
+
+    expect(updateLoginRecord).toHaveBeenCalledTimes(2);
+    expect(grantUserRewards).not.toHaveBeenCalled();
+    expect(console.error).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -217,7 +247,7 @@ describe('activity reward compensation worker', () => {
     vi.spyOn(Math, 'random').mockReturnValue(random);
     const userUid = 'first-login-user';
     const conflict = Object.assign(new Error('write conflict'), { code: 'P2034' });
-    queryRaw.mockResolvedValueOnce([{ userUid }]).mockResolvedValueOnce([]);
+    queryRaw.mockResolvedValueOnce([{ userUid, rewardCheckedAt: null }]).mockResolvedValueOnce([]);
     updateLoginRecord.mockRejectedValueOnce(conflict).mockRejectedValueOnce(conflict);
 
     const job = activityRewardJob();
@@ -244,7 +274,10 @@ describe('activity reward compensation worker', () => {
     const nextUser = 'next-user';
     const inviteeUid = 'referral-user';
     queryRaw
-      .mockResolvedValueOnce([{ userUid: blockedUser }, { userUid: nextUser }])
+      .mockResolvedValueOnce([
+        { userUid: blockedUser, rewardCheckedAt: null },
+        { userUid: nextUser, rewardCheckedAt: null }
+      ])
       .mockResolvedValueOnce([
         { id: 'referral-1', rewardCheckedAt: new Date(NOW - 1000), inviteeUid }
       ]);
@@ -264,7 +297,9 @@ describe('activity reward compensation worker', () => {
       { userUid: blockedUser, code: 'P2034', attempts: 3, error: conflict }
     );
 
-    queryRaw.mockResolvedValueOnce([{ userUid: blockedUser }]).mockResolvedValueOnce([]);
+    queryRaw
+      .mockResolvedValueOnce([{ userUid: blockedUser, rewardCheckedAt: null }])
+      .mockResolvedValueOnce([]);
     await activityRewardJob();
 
     expect(updateLoginRecord).toHaveBeenCalledTimes(5);
@@ -272,13 +307,43 @@ describe('activity reward compensation worker', () => {
   });
 
   it.each([
+    { code: 'P2034' },
+    { code: 'P2010', meta: { code: '40001' } },
+    { code: 'P2010', meta: { code: '40P01' } }
+  ])('retries only rolled-back claim conflicts (%j)', async (details) => {
+    seedRetryQueue([]);
+    const candidate = { userUid: 'retry-user', rewardCheckedAt: new Date(NOW - 120_000) };
+    queryRaw.mockResolvedValueOnce([candidate]);
+    updateLoginRecord.mockRejectedValueOnce(Object.assign(new Error('conflict'), details));
+
+    const job = activityRewardJob();
+    await vi.runAllTimersAsync();
+    await job;
+
+    expect(updateLoginRecord).toHaveBeenCalledTimes(2);
+    expect(updateLoginRecord.mock.calls[0][0].values).toEqual([
+      candidate.userUid,
+      candidate.rewardCheckedAt
+    ]);
+    expect(updateLoginRecord.mock.calls[1][0].values).toEqual(
+      updateLoginRecord.mock.calls[0][0].values
+    );
+    expect(grantUserRewards).toHaveBeenCalledExactlyOnceWith(candidate.userUid);
+    expect(console.error).not.toHaveBeenCalled();
+  });
+
+  it.each([
     Object.assign(new Error('connection timed out'), { code: 'P2024' }),
+    Object.assign(new Error('query canceled'), { code: 'P2010', meta: { code: 'XXUUU' } }),
     new Error('unexpected failure'),
     null
   ])('skips a failed user without retrying non-conflict errors (%s)', async (error) => {
     seedRetryQueue([]);
     queryRaw
-      .mockResolvedValueOnce([{ userUid: 'failed-user' }, { userUid: 'next-user' }])
+      .mockResolvedValueOnce([
+        { userUid: 'failed-user', rewardCheckedAt: null },
+        { userUid: 'next-user', rewardCheckedAt: null }
+      ])
       .mockResolvedValueOnce([]);
     updateLoginRecord.mockRejectedValueOnce(error);
 
@@ -301,7 +366,10 @@ describe('activity reward compensation worker', () => {
   it('does not retry reward granting when it fails with P2034', async () => {
     seedRetryQueue([]);
     queryRaw
-      .mockResolvedValueOnce([{ userUid: 'failed-user' }, { userUid: 'next-user' }])
+      .mockResolvedValueOnce([
+        { userUid: 'failed-user', rewardCheckedAt: null },
+        { userUid: 'next-user', rewardCheckedAt: null }
+      ])
       .mockResolvedValueOnce([]);
     grantUserRewards.mockRejectedValueOnce(
       Object.assign(new Error('reward conflict'), { code: 'P2034' })
