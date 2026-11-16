@@ -1,6 +1,7 @@
 /** Real PG/CRDB regression tests. Only accepts the disposable local activity_test database. */
 import { randomUUID } from 'node:crypto';
-import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { Prisma } from 'prisma/global/generated/client';
 
 vi.mock('@/services/backend/db/init', async () => {
   const options = {
@@ -140,6 +141,100 @@ suite('identity rewards against actual database', () => {
     global.AppConfig = { cloud: { domain: 'example.test' } } as any;
   });
   afterAll(() => db.$disconnect());
+  afterEach(() => vi.restoreAllMocks());
+
+  it.each([null, new Date('2026-10-14T00:00:00Z')])(
+    'claims the same first-login snapshot only once across concurrent workers (%s)',
+    async (rewardCheckedAt) => {
+      const uid = await user();
+      await db.desktopLoginRecord.update({ where: { userUid: uid }, data: { rewardCheckedAt } });
+      const query = db.$queryRaw.bind(db);
+      const execute = db.$executeRaw.bind(db);
+      let readers = 0;
+      let release!: () => void;
+      const bothRead = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      const claims: number[] = [];
+
+      // Both real DB queries must read the same cursor before either worker
+      // writes, so the test always exercises a stale candidate, not lucky timing.
+      vi.spyOn(db, '$queryRaw').mockImplementation(
+        (sql, ...values) =>
+          query(sql, ...values).then(async (rows) => {
+            if ('sql' in sql && sql.sql.includes('FROM "DesktopLoginRecord"')) {
+              if (++readers === 2) release();
+              await bothRead;
+            }
+            return rows;
+          }) as ReturnType<typeof db.$queryRaw>
+      );
+      vi.spyOn(db, '$executeRaw').mockImplementation(
+        (sql, ...values) =>
+          execute(sql, ...values).then((count) => {
+            if ('sql' in sql && sql.sql.includes('UPDATE "DesktopLoginRecord"')) claims.push(count);
+            return count;
+          }) as ReturnType<typeof db.$executeRaw>
+      );
+      const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      await Promise.all([activityRewardJob(), activityRewardJob()]);
+
+      expect(claims.sort()).toEqual([0, 1]);
+      expect(await db.activityRewardGrant.count()).toBe(1);
+      expect(await db.accountTransaction.count()).toBe(1);
+      expect(errors).not.toHaveBeenCalled();
+    },
+    30000
+  );
+
+  it('uses database time for the cooldown and retries an interrupted claim after expiry', async () => {
+    const uid = await user();
+    // Durable state left by an interrupted worker: claimed, but no reward row.
+    await db.$executeRaw(Prisma.sql`
+      UPDATE "DesktopLoginRecord"
+      SET "rewardCheckedAt" = (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')
+      WHERE "userUid" = ${uid}::UUID
+    `);
+    const initial = await db.desktopLoginRecord.findUniqueOrThrow({ where: { userUid: uid } });
+    // App clock skew must not bypass the database cooldown.
+    vi.spyOn(Date, 'now').mockReturnValue(Date.now() + 24 * 60 * 60 * 1000);
+    await activityRewardJob();
+    expect(await db.activityRewardGrant.count()).toBe(0);
+    expect(
+      (await db.desktopLoginRecord.findUniqueOrThrow({ where: { userUid: uid } })).rewardCheckedAt
+    ).toEqual(initial.rewardCheckedAt);
+
+    await db.$executeRaw(Prisma.sql`
+      UPDATE "DesktopLoginRecord"
+      SET "rewardCheckedAt" = (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') - INTERVAL '61 seconds'
+      WHERE "userUid" = ${uid}::UUID
+    `);
+    // A slow app clock must neither block recovery nor stamp a stale cursor.
+    vi.mocked(Date.now).mockReturnValue(0);
+    await activityRewardJob();
+    expect(await db.activityRewardGrant.count()).toBe(1);
+    expect(await db.accountTransaction.count()).toBe(1);
+    const recovered = await db.desktopLoginRecord.findUniqueOrThrow({ where: { userUid: uid } });
+    expect(recovered.rewardCheckedAt!.getTime()).toBeGreaterThanOrEqual(
+      initial.rewardCheckedAt!.getTime()
+    );
+    await activityRewardJob();
+    expect(await db.accountTransaction.count()).toBe(1);
+  });
+
+  it('does not let recently checked users consume the first-login scan batch', async () => {
+    for (let i = 0; i < 20; i++) await user(null);
+    await db.$executeRaw(Prisma.sql`
+      UPDATE "DesktopLoginRecord" SET "rewardCheckedAt" = (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')
+    `);
+    const uid = await user();
+
+    await activityRewardJob();
+
+    expect(await db.activityRewardGrant.count()).toBe(1);
+    expect((await db.activityRewardGrant.findFirstOrThrow()).recipientUid).toBe(uid);
+  }, 30000);
 
   it.each([false, true])(
     'concurrent accounts with the same subject (enterprise=%s) get one set of awards',
