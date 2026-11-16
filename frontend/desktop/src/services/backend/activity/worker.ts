@@ -10,7 +10,10 @@ const BATCH_LIMIT = 50;
 // redemption: reconcile first, then record success or roll back
 const REDEEMING_STUCK_MS = 5 * 60 * 1000;
 const FIRST_LOGIN_SCAN_WRITE_ATTEMPTS = 3;
+const FIRST_LOGIN_SCAN_BATCH_LIMIT = 20;
 const FIRST_LOGIN_SCAN_COOLDOWN = Prisma.sql`INTERVAL '60 seconds'`;
+// Allow timestamp rounding and small clock differences between DB nodes.
+const FIRST_LOGIN_SCAN_CLOCK_TOLERANCE = Prisma.sql`INTERVAL '1 second'`;
 const retryBackoffMs = (attemptCount: number) =>
   Math.min(2 ** attemptCount * 60 * 1000, 30 * 60 * 1000);
 
@@ -105,8 +108,7 @@ export const activityRewardJob = async () => {
 // records cannot fill the compensation batch.
 type FirstLoginScanCandidate = { userUid: string; rewardCheckedAt: Date | null };
 
-const MISSING_FIRST_LOGIN_REWARDS_SQL = Prisma.sql`
-  SELECT d."userUid", d."rewardCheckedAt"
+const FIRST_LOGIN_SCAN_ELIGIBILITY_SQL = Prisma.sql`
   FROM "DesktopLoginRecord" d
   JOIN "User" u ON u."uid" = d."userUid"
   WHERE (
@@ -121,10 +123,37 @@ const MISSING_FIRST_LOGIN_REWARDS_SQL = Prisma.sql`
     AND NOT EXISTS (
       SELECT 1 FROM "ActivityRewardGrant" g
       WHERE g."recipientUid" = d."userUid" AND g."type" = 'DESKTOP_FIRST_LOGIN')
-    AND (d."rewardCheckedAt" IS NULL
-      OR d."rewardCheckedAt" <= (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') - ${FIRST_LOGIN_SCAN_COOLDOWN})
-  ORDER BY d."rewardCheckedAt" ASC NULLS FIRST, d."userUid" ASC
-  LIMIT 20
+`;
+
+const FIRST_LOGIN_SCAN_DUE_SQL = Prisma.sql`(d."rewardCheckedAt" IS NULL
+  OR d."rewardCheckedAt" <= (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') - ${FIRST_LOGIN_SCAN_COOLDOWN})`;
+const FIRST_LOGIN_SCAN_FUTURE_SQL = Prisma.sql`d."rewardCheckedAt" >
+  (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') + ${FIRST_LOGIN_SCAN_CLOCK_TOLERANCE}`;
+
+// Old workers stamped cursors using app time. Recover future cursors first so
+// they cannot sit behind an endless rotation of ordinary candidates. Each range
+// keeps its indexed ordering; the final sort sees at most two bounded batches.
+const MISSING_FIRST_LOGIN_REWARDS_SQL = Prisma.sql`
+  SELECT "userUid", "rewardCheckedAt"
+  FROM (
+    (
+      SELECT d."userUid", d."rewardCheckedAt", 0 AS priority
+      ${FIRST_LOGIN_SCAN_ELIGIBILITY_SQL}
+      AND ${FIRST_LOGIN_SCAN_FUTURE_SQL}
+      ORDER BY d."rewardCheckedAt" ASC, d."userUid" ASC
+      LIMIT ${FIRST_LOGIN_SCAN_BATCH_LIMIT}
+    )
+    UNION ALL
+    (
+      SELECT d."userUid", d."rewardCheckedAt", 1 AS priority
+      ${FIRST_LOGIN_SCAN_ELIGIBILITY_SQL}
+      AND ${FIRST_LOGIN_SCAN_DUE_SQL}
+      ORDER BY d."rewardCheckedAt" ASC NULLS FIRST, d."userUid" ASC
+      LIMIT ${FIRST_LOGIN_SCAN_BATCH_LIMIT}
+    )
+  ) candidates
+  ORDER BY priority ASC, "rewardCheckedAt" ASC NULLS FIRST, "userUid" ASC
+  LIMIT ${FIRST_LOGIN_SCAN_BATCH_LIMIT}
 `;
 
 // Claim the exact scan snapshot before dispatch. Database time keeps the cooldown
@@ -137,13 +166,12 @@ const advanceFirstLoginScan = async ({
   for (let attempts = 1; ; attempts++) {
     try {
       const updated = await globalPrisma.$executeRaw(Prisma.sql`
-        UPDATE "DesktopLoginRecord"
+        UPDATE "DesktopLoginRecord" AS d
         SET "rewardCheckedAt" = (CURRENT_TIMESTAMP AT TIME ZONE 'UTC'),
             "updatedAt" = (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')
-        WHERE "userUid" = ${userUid}::UUID
-          AND "rewardCheckedAt" IS NOT DISTINCT FROM ${rewardCheckedAt}::TIMESTAMP
-          AND ("rewardCheckedAt" IS NULL
-            OR "rewardCheckedAt" <= (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') - ${FIRST_LOGIN_SCAN_COOLDOWN})
+        WHERE d."userUid" = ${userUid}::UUID
+          AND d."rewardCheckedAt" IS NOT DISTINCT FROM ${rewardCheckedAt}::TIMESTAMP
+          AND (${FIRST_LOGIN_SCAN_DUE_SQL} OR ${FIRST_LOGIN_SCAN_FUTURE_SQL})
       `);
       return updated === 1;
     } catch (error) {

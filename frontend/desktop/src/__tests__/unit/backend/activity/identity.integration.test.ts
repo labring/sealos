@@ -143,7 +143,7 @@ suite('identity rewards against actual database', () => {
   afterAll(() => db.$disconnect());
   afterEach(() => vi.restoreAllMocks());
 
-  it.each([null, new Date('2026-10-14T00:00:00Z')])(
+  it.each([null, new Date('2026-10-14T00:00:00Z'), new Date('2099-01-01T00:00:00Z')])(
     'claims the same first-login snapshot only once across concurrent workers (%s)',
     async (rewardCheckedAt) => {
       const uid = await user();
@@ -235,6 +235,55 @@ suite('identity rewards against actual database', () => {
     expect(await db.activityRewardGrant.count()).toBe(1);
     expect((await db.activityRewardGrant.findFirstOrThrow()).recipientUid).toBe(uid);
   }, 30000);
+
+  it('recovers a historical future cursor ahead of a full batch of old cursors', async () => {
+    for (let i = 0; i < 20; i++) await user(null);
+    await db.$executeRaw(Prisma.sql`
+      UPDATE "DesktopLoginRecord"
+      SET "rewardCheckedAt" = (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') - INTERVAL '61 seconds'
+    `);
+    const uid = await user();
+    await db.$executeRaw(Prisma.sql`
+      UPDATE "DesktopLoginRecord"
+      SET "rewardCheckedAt" = (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') + INTERVAL '1 day'
+      WHERE "userUid" = ${uid}::UUID
+    `);
+
+    await activityRewardJob();
+
+    expect(await db.activityRewardGrant.count()).toBe(1);
+    expect((await db.activityRewardGrant.findFirstOrThrow()).recipientUid).toBe(uid);
+    const [cursor] = await db.$queryRaw<{ age: number }[]>(Prisma.sql`
+      SELECT EXTRACT(EPOCH FROM ((CURRENT_TIMESTAMP AT TIME ZONE 'UTC') - "rewardCheckedAt"))::FLOAT AS age
+      FROM "DesktopLoginRecord" WHERE "userUid" = ${uid}::UUID
+    `);
+    expect(cursor.age).toBeGreaterThanOrEqual(-1);
+    expect(cursor.age).toBeLessThan(60);
+    const [batch] = await db.$queryRaw<{ remaining: number }[]>(Prisma.sql`
+      SELECT COUNT(*)::FLOAT AS remaining FROM "DesktopLoginRecord"
+      WHERE "rewardCheckedAt" <= (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') - INTERVAL '60 seconds'
+    `);
+    expect(batch.remaining).toBe(1); // One future + nineteen normal claims keep the twenty-row cap.
+    await activityRewardJob();
+    expect(await db.accountTransaction.count()).toBe(1);
+  }, 30000);
+
+  it('keeps subsecond future cursors in cooldown instead of treating them as corrupt', async () => {
+    const uid = await user();
+    await db.$executeRaw(Prisma.sql`
+      UPDATE "DesktopLoginRecord"
+      SET "rewardCheckedAt" = (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') + INTERVAL '500 milliseconds'
+      WHERE "userUid" = ${uid}::UUID
+    `);
+    const before = await db.desktopLoginRecord.findUniqueOrThrow({ where: { userUid: uid } });
+
+    await Promise.all([activityRewardJob(), activityRewardJob()]);
+
+    expect(await db.activityRewardGrant.count()).toBe(0);
+    expect(
+      (await db.desktopLoginRecord.findUniqueOrThrow({ where: { userUid: uid } })).rewardCheckedAt
+    ).toEqual(before.rewardCheckedAt);
+  });
 
   it.each([false, true])(
     'concurrent accounts with the same subject (enterprise=%s) get one set of awards',
