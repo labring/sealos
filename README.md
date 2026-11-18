@@ -8,9 +8,13 @@
     </picture>
   </a>
   
-# 🚀 Develop, deploy, and scale in one seamless cloud platform ☁️
+# Sealos — Your Ops Agent for full-stack apps
 
-Sealos['siːləs] is an AI-native Cloud Operating System built on Kubernetes that unifies the entire application lifecycle, from development in cloud IDEs to production deployment and management. It is perfect for building and scaling modern AI applications, SaaS platforms, managed databases (MySQL, PostgreSQL, Redis, MongoDB) and complex microservice architectures.
+Deploy from your desktop and keep your apps running with an AI Ops Agent. Sealos brings app hosting, databases, object storage and AI model access into one workspace, powered by Kubernetes.
+
+<a href="https://github.com/sealox/sealox-releases/releases/latest"><img src="https://img.shields.io/badge/Download-Sealos_Desktop-2563EB?style=for-the-badge&amp;logo=github&amp;logoColor=white" alt="Download Sealos Desktop" /></a>
+
+[Website](https://sealos.io/) · [Documentation](https://sealos.io/docs) · [简体中文](./README_zh.md)
 
 </div>
 
@@ -46,72 +50,34 @@ Sealos['siːləs] is an AI-native Cloud Operating System built on Kubernetes tha
   <a href="./README_zh.md">简体中文</a>
 </div>
 
-<br />
+## Start with Sealos Desktop
 
-<div align="center">
+1. [Download Sealos Desktop](https://github.com/sealox/sealox-releases/releases/latest) and choose the installer for your system.
+2. Sign in, open a local folder, paste a GitHub repository URL, or choose an application template.
+3. Describe your deployment and database needs, review the agent's plan, and approve it.
+4. Open your live app, then manage its services and ask the agent for help from the same project.
 
-[![Deploy on Sealos][deploy-badge]][deploy-link]
+> The desktop app is your control center. Deployed services run in your chosen Sealos Cloud region.
 
-https://github.com/user-attachments/assets/cc8599da-6c3e-4503-bb53-55e13bf61ef6
+## What you can do from your desktop
 
-<img width="916" alt="image" src="https://github.com/labring/sealos/assets/8912557/9e8c1d76-718e-4910-a9ab-94f220a61a9c">
+| Capability | How it helps |
+| --- | --- |
+| Local project deployment | Publish a codebase or a single HTML page to a public HTTPS URL. |
+| GitHub deployment | Choose a repository and branch; Sealos handles the build and port detection. |
+| Application templates | Launch tools such as Dify, n8n, WordPress and Open WebUI. |
+| Project operations | Inspect service status, logs and metrics, open container terminals, and roll back deployments. |
+| AI troubleshooting | Investigate failures with logs and metrics, then review proposed fixes before they run. |
+| Live page updates | Select a page element, describe a change, and publish a new revision with rollback available. |
 
-</div>
+## Your stack in one workspace
 
-## Get started
+- **Databases:** PostgreSQL, MySQL, MongoDB and Redis, with connection strings wired into your apps and daily backups.
+- **Object storage:** S3-compatible buckets for uploads and assets.
+- **AI Gateway:** Access multiple model providers through one endpoint and key.
+- **Team workspaces:** Share projects while each member uses their own credentials.
 
-### Create your Development Environment in Sealos with just one click
-
-1. Open Sealos Devbox.
-
- <img width="914" height="331" alt="image" src="https://github.com/user-attachments/assets/cbc2982b-d40a-458b-9c07-078bd9e36a3b" />
-
-2. Create a development environment, choosing from a range of languages and frameworks.
-
- <img width="1147" alt="image" src="https://github.com/user-attachments/assets/6075bbb0-4765-4786-9154-3adaa139900c">
-
-3. Access your environment from a selection of IDEs, such as VSCode and Cursor.
-
-    <img width="864" alt="image" src="https://github.com/user-attachments/assets/e5f9dcdc-5149-4e43-aa13-6c17507fbe9f">
-
-    <img width="1024" alt="image" src="https://github.com/user-attachments/assets/9a985280-6ff2-48dc-83b9-9abd8f93af17">
-
-### Create your Database on Sealos
-
-1. Open Sealos database.
-
- <img width="824" height="256" alt="image" src="https://github.com/user-attachments/assets/4f28b15f-c453-4110-93ae-ce0e72caea48" />
-
-2. Create your database.
-
- <img width="874" alt="image" src="https://github.com/user-attachments/assets/4cc88a54-70e6-458f-9766-4578774e7f81">
-
-3. View your database and access details.
-
- <img width="1430" alt="image" src="https://github.com/user-attachments/assets/bcf54218-f4f4-4c89-a107-0bbde6f92d67">
-
-### Deploy your Docker Image on Sealos
-
-1. Open Sealos App Launchpad.
-
- <img width="885" height="191" alt="image" src="https://github.com/user-attachments/assets/3134922a-75b4-4c3b-a3e4-6c402f171dff" />
-
-2. Deploy the Docker image using a Kubernetes Deployment and expose it with an Ingress.
-
- <img width="971" alt="image" src="https://github.com/user-attachments/assets/a291571f-d9fe-42e5-812e-3d8f274a97ca">
-
-3. View your app details and access your service.
-
- <img width="1016" alt="image" src="https://github.com/user-attachments/assets/a54884cf-a1e8-4178-88af-655234ec7eef">
-
-## 💡 Core features
-
-- Integrated Cloud IDEs: Zero-setup, collaborative development in the cloud. Eliminate local environment inconsistencies with DevBox.
-- Managed Databases & Storage: Production-ready PostgreSQL, MySQL, MongoDB, Redis, and built-in S3-compatible Object Storage.
-- Extensive App Store: Deploy complex applications with a single click. No YAML configuration, no container orchestration complexity - just point, click, and deploy.
-- Full Kubernetes Power: Access the full power of Kubernetes without the complexity. K8s-native from day one.
-- Enterprise Multi-Tenancy: Workspace-based isolation with granular RBAC and per-workspace resource quotas for secure collaboration.
-- AI-Native Infrastructure: Build and scale anything with AI simply by describing them.
+Sealos runs on Kubernetes, with standard container images and database engines underneath. See the [documentation](https://sealos.io/docs) for platform and infrastructure details.
 
 ## 🏘️ Community & support
 
