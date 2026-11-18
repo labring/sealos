@@ -24,10 +24,10 @@
 </p>
 
 <p align="center">
-  <a href="https://sealos.io/"><img src="./docs/img/desktop/desktop-deploy.gif" alt="Sealos homepage demo: deploying an app with PostgreSQL and Redis" width="960" /></a>
+  <a href="./docs/img/desktop/desktop-deploy.gif"><img src="./docs/img/desktop/desktop-deploy.gif" alt="Sealos homepage demo: deploying an app with PostgreSQL and Redis" width="860" /></a>
 </p>
 
-<p align="center"><sub>Deployment walkthrough from the Sealos homepage. Click to explore the interactive demo.</sub></p>
+<p align="center"><sub>Deployment walkthrough from the Sealos homepage. Click the image for full resolution; <a href="https://sealos.io/">explore the interactive demo</a>.</sub></p>
 
 ## Meet Sealos Desktop
 
@@ -40,7 +40,7 @@ The desktop app connects your local development workflow to Sealos Cloud. Your s
 Bring the project you already have, including code written with AI tools. Sealos analyzes the application, builds its image, provisions dependencies and deploys it with a public HTTPS endpoint. Databases and application configuration stay alongside the service they support.
 
 <p align="center">
-  <a href="https://sealos.io/"><img src="./docs/img/desktop/local-deploy.webp" alt="Local project deployed with a PostgreSQL database and a live page preview" width="960" /></a>
+  <a href="./docs/img/desktop/local-deploy.png"><img src="./docs/img/desktop/local-deploy.png" alt="Local project deployed with a PostgreSQL database and a live page preview" width="860" /></a>
 </p>
 
 ### Keep the whole project in view
@@ -48,7 +48,7 @@ Bring the project you already have, including code written with AI tools. Sealos
 See how your app and its dependencies fit together. Inspect deployments, connection details, resource usage and service health from the project view; open logs or a container terminal when you need to investigate.
 
 <p align="center">
-  <a href="https://sealos.io/"><img src="./docs/img/desktop/service-overview.webp" alt="Database service overview showing connection details and resource metrics" width="960" /></a>
+  <a href="./docs/img/desktop/service-overview.png"><img src="./docs/img/desktop/service-overview.png" alt="Database service overview showing connection details and resource metrics" width="860" /></a>
 </p>
 
 ### Ask your Ops Agent when something breaks
@@ -56,7 +56,7 @@ See how your app and its dependencies fit together. Inspect deployments, connect
 Investigate failed deployments, restarts, 502 errors and memory limits with the context of the whole project. The agent uses logs and metrics to explain the issue and propose a fix. Review change plans before execution, check the result and roll back a deployment when needed.
 
 <p align="center">
-  <a href="https://sealos.io/"><img src="./docs/img/desktop/ops-logs.webp" alt="Project logs showing application errors and database restarts for Ops Agent diagnosis" width="960" /></a>
+  <a href="./docs/img/desktop/ops-logs.png"><img src="./docs/img/desktop/ops-logs.png" alt="Project logs showing application errors and database restarts for Ops Agent diagnosis" width="860" /></a>
 </p>
 
 ## Everything the app depends on

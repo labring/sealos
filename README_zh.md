@@ -24,10 +24,10 @@
 </p>
 
 <p align="center">
-  <a href="https://sealos.io/"><img src="./docs/img/desktop/desktop-deploy.gif" alt="官网部署流程演示：为应用创建 PostgreSQL、Redis 并部署上线" width="960" /></a>
+  <a href="./docs/img/desktop/desktop-deploy.gif"><img src="./docs/img/desktop/desktop-deploy.gif" alt="官网部署流程演示：为应用创建 PostgreSQL、Redis 并部署上线" width="860" /></a>
 </p>
 
-<p align="center"><sub>国际站首页部署动效，点击图片可体验完整交互。</sub></p>
+<p align="center"><sub>国际版官网部署演示。点击图片查看原尺寸；<a href="https://sealos.io/">体验完整交互</a>。</sub></p>
 
 ## 认识 Sealos Desktop
 
@@ -43,22 +43,24 @@
 
 桌面版是控制中心，线上服务运行在你选择的 Sealos Cloud 区域；关闭客户端后，服务仍在云端运行。
 
+以下界面来自国际版官网演示，文字与图标均按高像素密度重新截取。
+
 ## 从源代码到线上服务
 
 选择项目并描述目标，例如：“部署这个项目，使用 PostgreSQL 保存数据、Redis 管理会话。”Agent 分析项目，完成构建、依赖配置与云端部署，最终交付可访问的公网链接。
 
 <p align="center">
-  <a href="https://sealos.cn/downloads"><img src="./docs/img/desktop/launch.webp" alt="应用上线后的运行状态与服务概览" width="960" /></a>
+  <a href="./docs/img/desktop/local-deploy.png"><img src="./docs/img/desktop/local-deploy.png" alt="本地项目上线：部署结果、数据库连接与线上页面预览" width="860" /></a>
 </p>
 
 ## 上线之后，继续交给 Agent 协助运维
 
 构建失败、容器重启、异常日志、数据库连接故障，都可以在项目上下文中直接提问。Agent 分析原因并给出修复方案；需要确认的变更通过计划呈现，执行后继续检查结果。
 
-下图展示了一个具体场景：仓库使用 pnpm，构建却使用了 npm，Agent 找到锁文件不匹配的原因，并给出修改构建命令后重试的方案。
+下图展示了国际版的项目日志视图：数据库异常退出后，应用出现连接失败与 502 错误。结合日志、状态和指标，可以向 Agent 发起诊断。
 
 <p align="center">
-  <a href="https://sealos.cn/downloads"><img src="./docs/img/desktop/debug.webp" alt="持续运维与 Debug：识别 npm 与 pnpm 锁文件不匹配，并提供修复建议" width="960" /></a>
+  <a href="./docs/img/desktop/ops-logs.png"><img src="./docs/img/desktop/ops-logs.png" alt="持续运维：数据库异常退出与应用 502 错误的关联日志" width="860" /></a>
 </p>
 
 ## 用资源拓扑理解整个项目
@@ -66,7 +68,7 @@
 应用、数据库和缓存之间的关系集中展示。查看服务状态和资源连接，进入部署记录、日志、监控与环境变量，排查问题时保留完整的项目上下文。
 
 <p align="center">
-  <a href="https://sealos.cn/downloads"><img src="./docs/img/desktop/topology.webp" alt="项目资源拓扑：集中查看应用、数据库及资源之间的关系" width="960" /></a>
+  <a href="./docs/img/desktop/topology.png"><img src="./docs/img/desktop/topology.png" alt="项目资源拓扑：应用与 PostgreSQL、Redis 的连接关系" width="860" /></a>
 </p>
 
 ## 应用需要的基础设施，在一个工作空间里
