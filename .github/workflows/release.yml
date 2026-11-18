@@ -50,15 +50,3 @@ jobs:
           USERNAME: ${{ github.repository_owner }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           FURY_TOKEN: ${{ secrets.FURY_TOKEN }}
-
-  cloud-release:
-    uses: ./.github/workflows/cloud-release.yml
-    needs:
-      - releaser
-    permissions:
-      contents: write
-      packages: write
-      actions: write
-    secrets: inherit
-    with:
-      tag: ${{ github.ref_name }}
