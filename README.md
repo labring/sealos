@@ -1,117 +1,81 @@
-<div align="center">
-
-  <a href="https://sealos.io" target="_blank" rel="noopener">
+<p align="center">
+  <a href="https://sealos.io/">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="./docs/img/sealos-left-dark.png" />
       <source media="(prefers-color-scheme: light)" srcset="./docs/img/sealos-left.png" />
-      <img src="./docs/img/sealos-left.png" />
+      <img src="./docs/img/sealos-left.png" alt="Sealos" width="260" />
     </picture>
   </a>
-  
-# 🚀 Develop, deploy, and scale in one seamless cloud platform ☁️
+</p>
 
-Sealos['siːləs] is an AI-native Cloud Operating System built on Kubernetes that unifies the entire application lifecycle, from development in cloud IDEs to production deployment and management. It is perfect for building and scaling modern AI applications, SaaS platforms, managed databases (MySQL, PostgreSQL, Redis, MongoDB) and complex microservice architectures.
+<h1 align="center">Your code is ready. Let Sealos ship it.</h1>
 
-</div>
+<p align="center">A desktop Ops Agent for deploying and running full-stack apps.<br />Local code, cloud infrastructure, and ongoing operations — in one project.</p>
 
-<div align="center">
+<p align="center">
+  <a href="https://sealos.cn/downloads"><img src="./docs/img/desktop/download-china.svg" alt="Download China" width="258" height="64" /></a>
+  <a href="https://sealos.io/"><img src="./docs/img/desktop/download-global.svg" alt="Download Global" width="258" height="64" /></a>
+</p>
 
-[![Open in Dev Container](https://img.shields.io/static/v1?label=Dev%20Container&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/github/labring/sealos)
-[![Build Status](https://github.com/labring/sealos/actions/workflows/release.yml/badge.svg)](https://github.com/labring/sealos/actions)
-[![](https://img.shields.io/docker/pulls/labring/kubernetes)](https://hub.docker.com/r/labring/kubernetes)
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Flabring%2Fsealos.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Flabring%2Fsealos?ref=badge_shield)
-[![codecov](https://codecov.io/gh/labring/sealos/branch/main/graph/badge.svg?token=e41ZDcj06N)](https://codecov.io/gh/labring/sealos)
-[![Website](https://img.shields.io/website?url=https%3A%2F%2Fpostwoman.io&logo=Postwoman)](https://sealos.io)
-[![OSCS Status](https://www.oscs1024.com/platform/badge/labring/sealos.svg?size=small)](https://www.oscs1024.com/repo/labring/sealos?ref=badge_small)
+<p align="center"><a href="https://sealos.io/docs">Documentation</a> · <a href="./README_zh.md">简体中文</a></p>
 
-<a href="https://runacap.com/ross-index/annual-2023/" target="_blank" rel="noopener">
-    <img
-        style="width: 260px; height: 56px margin-top: 50px"
-        src="https://runacap.com/wp-content/uploads/2024/03/Annual_ROSS_badge_black_2023.svg"
-        alt="ROSS Index - Fastest Growing Open-Source Startups | Runa Capital"
-        width="260"
-        height="56"
-    />
-</a>
+<p align="center">
+  <a href="./docs/img/desktop/desktop-deploy.gif"><img src="./docs/img/desktop/desktop-deploy.gif" alt="Sealos homepage demo: deploying an app with PostgreSQL and Redis" width="860" /></a>
+</p>
 
-</div>
+<p align="center"><sub>Deployment walkthrough from the Sealos homepage. Click the image for full resolution; <a href="https://sealos.io/">explore the interactive demo</a>.</sub></p>
 
-<hr />
+## Meet Sealos Desktop
 
-<div align="center">
- <a href="https://sealos.io">Website</a> •
-  <a href="https://sealos.io/docs">Docs</a> •
-  <a href="https://discord.gg/wdUn538zVP">Discord</a> •
-  <a href="https://twitter.com/Sealos_io">Twitter</a> •
-  <a href="./README_zh.md">简体中文</a>
-</div>
+Turn a local folder, a GitHub repository, a container image, or an application template into a running service. Describe what the project needs; the built-in agent handles the deployment workflow and connects the supporting resources.
 
-<br />
+The desktop app connects your local development workflow to Sealos Cloud. Your services run in the cloud region you choose, and stay available when you close the desktop app.
 
-<div align="center">
+### From local code to a public URL
 
-[![Deploy on Sealos][deploy-badge]][deploy-link]
+Bring the project you already have, including code written with AI tools. Sealos analyzes the application, builds its image, provisions dependencies and deploys it with a public HTTPS endpoint. Databases and application configuration stay alongside the service they support.
 
-https://github.com/user-attachments/assets/cc8599da-6c3e-4503-bb53-55e13bf61ef6
+<p align="center">
+  <a href="./docs/img/desktop/local-deploy.png"><img src="./docs/img/desktop/local-deploy.png" alt="Local project deployed with a PostgreSQL database and a live page preview" width="860" /></a>
+</p>
 
-<img width="916" alt="image" src="https://github.com/labring/sealos/assets/8912557/9e8c1d76-718e-4910-a9ab-94f220a61a9c">
+### Keep the whole project in view
 
-</div>
+See how your app and its dependencies fit together. Inspect deployments, connection details, resource usage and service health from the project view; open logs or a container terminal when you need to investigate.
+
+<p align="center">
+  <a href="./docs/img/desktop/service-overview.png"><img src="./docs/img/desktop/service-overview.png" alt="Database service overview showing connection details and resource metrics" width="860" /></a>
+</p>
+
+### Ask your Ops Agent when something breaks
+
+Investigate failed deployments, restarts, 502 errors and memory limits with the context of the whole project. The agent uses logs and metrics to explain the issue and propose a fix. Review change plans before execution, check the result and roll back a deployment when needed.
+
+<p align="center">
+  <a href="./docs/img/desktop/ops-logs.png"><img src="./docs/img/desktop/ops-logs.png" alt="Project logs showing application errors and database restarts for Ops Agent diagnosis" width="860" /></a>
+</p>
+
+## Everything the app depends on
+
+| Resource | What Sealos brings together |
+| --- | --- |
+| **App hosting** | Deploy local projects, GitHub repositories, container images and ready-to-run templates. |
+| **Databases & cache** | PostgreSQL, MySQL, MongoDB and Redis, with application connection configuration and daily backups. |
+| **Object storage** | S3-compatible buckets for uploads, assets and shared files. |
+| **AI Gateway** | Model access through a unified endpoint and API key, managed from your workspace. |
+| **Operations** | Logs, metrics, deployment history, rollback, scaling and agent-assisted troubleshooting. |
+| **Team workspaces** | Shared projects and resources, with individual member credentials. |
+
+Kubernetes powers the platform underneath. Apps use standard container images and databases use familiar engines, so your deployment remains portable.
 
 ## Get started
 
-### Create your Development Environment in Sealos with just one click
+1. **[Download Sealos Desktop](https://github.com/sealox/sealox-releases/releases/latest)** for macOS or Windows, install it and sign in.
+2. **Bring a project.** Open a local folder, paste a GitHub URL, deploy a container image, or pick a template such as Dify, n8n, WordPress or Open WebUI.
+3. **Describe the outcome.** For example: “Deploy this project with PostgreSQL and Redis.”
+4. **Review and deploy.** Approve the plan, open your public URL, then use the same project to monitor and maintain the stack.
 
-1. Open Sealos Devbox.
-
- <img width="914" height="331" alt="image" src="https://github.com/user-attachments/assets/cbc2982b-d40a-458b-9c07-078bd9e36a3b" />
-
-2. Create a development environment, choosing from a range of languages and frameworks.
-
- <img width="1147" alt="image" src="https://github.com/user-attachments/assets/6075bbb0-4765-4786-9154-3adaa139900c">
-
-3. Access your environment from a selection of IDEs, such as VSCode and Cursor.
-
-    <img width="864" alt="image" src="https://github.com/user-attachments/assets/e5f9dcdc-5149-4e43-aa13-6c17507fbe9f">
-
-    <img width="1024" alt="image" src="https://github.com/user-attachments/assets/9a985280-6ff2-48dc-83b9-9abd8f93af17">
-
-### Create your Database on Sealos
-
-1. Open Sealos database.
-
- <img width="824" height="256" alt="image" src="https://github.com/user-attachments/assets/4f28b15f-c453-4110-93ae-ce0e72caea48" />
-
-2. Create your database.
-
- <img width="874" alt="image" src="https://github.com/user-attachments/assets/4cc88a54-70e6-458f-9766-4578774e7f81">
-
-3. View your database and access details.
-
- <img width="1430" alt="image" src="https://github.com/user-attachments/assets/bcf54218-f4f4-4c89-a107-0bbde6f92d67">
-
-### Deploy your Docker Image on Sealos
-
-1. Open Sealos App Launchpad.
-
- <img width="885" height="191" alt="image" src="https://github.com/user-attachments/assets/3134922a-75b4-4c3b-a3e4-6c402f171dff" />
-
-2. Deploy the Docker image using a Kubernetes Deployment and expose it with an Ingress.
-
- <img width="971" alt="image" src="https://github.com/user-attachments/assets/a291571f-d9fe-42e5-812e-3d8f274a97ca">
-
-3. View your app details and access your service.
-
- <img width="1016" alt="image" src="https://github.com/user-attachments/assets/a54884cf-a1e8-4178-88af-655234ec7eef">
-
-## 💡 Core features
-
-- Integrated Cloud IDEs: Zero-setup, collaborative development in the cloud. Eliminate local environment inconsistencies with DevBox.
-- Managed Databases & Storage: Production-ready PostgreSQL, MySQL, MongoDB, Redis, and built-in S3-compatible Object Storage.
-- Extensive App Store: Deploy complex applications with a single click. No YAML configuration, no container orchestration complexity - just point, click, and deploy.
-- Full Kubernetes Power: Access the full power of Kubernetes without the complexity. K8s-native from day one.
-- Enterprise Multi-Tenancy: Workspace-based isolation with granular RBAC and per-workspace resource quotas for secure collaboration.
-- AI-Native Infrastructure: Build and scale anything with AI simply by describing them.
+[Explore the live product demo](https://sealos.io/) · [Read the docs](https://sealos.io/docs)
 
 ## 🏘️ Community & support
 

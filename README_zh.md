@@ -1,91 +1,97 @@
-<h2 align="center">
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/img/sealos-left-dark.png" />
-  <source media="(prefers-color-scheme: light)" srcset="./docs/img/sealos-left.png" />
-  <img src="./docs/img/sealos-left.png" />
-</picture>
-
-一款以 Kubernetes 为内核的云操作系统发行版
-
-</h2>
-
-<div align="center">
-
-[![Open in Dev Container](https://img.shields.io/static/v1?label=Dev%20Container&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/github/labring/sealos)
-[![Build Status](https://github.com/labring/sealos/actions/workflows/release.yml/badge.svg)](https://github.com/labring/sealos/actions)
-[![](https://img.shields.io/docker/pulls/labring/kubernetes)](https://hub.docker.com/r/labring/kubernetes)
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Flabring%2Fsealos.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Flabring%2Fsealos?ref=badge_shield)
-[![codecov](https://codecov.io/gh/labring/sealos/branch/main/graph/badge.svg?token=e41ZDcj06N)](https://codecov.io/gh/labring/sealos)
-[![Website](https://img.shields.io/website?url=https%3A%2F%2Fpostwoman.io&logo=Postwoman)](https://sealos.run)
-[![OSCS Status](https://www.oscs1024.com/platform/badge/labring/sealos.svg?size=small)](https://www.oscs1024.com/repo/labring/sealos?ref=badge_small)
-
-<br />
-
-[![discord](https://theme.zdassets.com/theme_assets/678183/cc59daa07820943e943c2fc283b9079d7003ff76.svg)](https://discord.gg/qzBmGGZGk7)
-
-</div>
-
-
-
-https://github.com/user-attachments/assets/8418437c-51ff-42b0-9195-38d1017c8522
-
-
-
 <p align="center">
-  <a href="https://sealos.run/docs/Intro">文档</a> |
-  <a href="./README.md">English</a> | 
-  <a href="https://github.com/orgs/labring/projects/4/views/9">发展规划</a>
+  <a href="https://sealos.io/">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="./docs/img/sealos-left-dark.png" />
+      <source media="(prefers-color-scheme: light)" srcset="./docs/img/sealos-left.png" />
+      <img src="./docs/img/sealos-left.png" alt="Sealos" width="260" />
+    </picture>
+  </a>
 </p>
 
-Sealos 是一款以 Kubernetes 为内核的**云操作系统发行版**。它以云原生的方式，抛弃了传统的云计算架构，转向以 Kubernetes 为云内核的新架构，使企业能够**像使用个人电脑一样**简单地使用云。
+<h1 align="center">代码写好了，让 Sealos 帮你上线。</h1>
 
+<p align="center">专注于应用上线与持续运维的桌面 Agent。<br />从本地代码到云端运行，把应用和依赖放在同一个项目里管理。</p>
 
-## 🚀 在 Sealos 上快速部署分布式应用
+<p align="center">
+  <a href="https://sealos.cn/downloads"><img src="./docs/img/desktop/download-china.svg" alt="Download China" width="258" height="64" /></a>
+  <a href="https://sealos.io/"><img src="./docs/img/desktop/download-global.svg" alt="Download Global" width="258" height="64" /></a>
+</p>
 
-[在线使用](https://cloud.sealos.run)
+<p align="center"><a href="https://sealos.cn/docs">文档</a> · <a href="./README.md">English</a></p>
 
-* [在 Sealos 上 30 秒内轻松部署 Nginx](https://sealos.run/docs/quick-start/use-app-launchpad)
-* [在 Sealos 上 30 秒启动 mysql/pgsql/mongo 高可用数据库](https://sealos.run/docs/quick-start/use-database)
-* [在 Sealos 上 运行 WordPress](https://sealos.run/docs/examples/blog-platform/install-wordpress)
-* [在 Sealos 上 运行 Uptime Kuma 拨测系统](https://sealos.run/docs/examples/dial-testing-system/install-uptime-kuma)
-* [在 Sealos 上 运行低代码平台](https://sealos.run/docs/category/low-code-platform)
-* [在 Sealos 上 运行搭建聊天应用](https://sealos.run/docs/examples/social-communication/install-tailchat)
+<p align="center">
+  <a href="./docs/img/desktop/desktop-deploy.gif"><img src="./docs/img/desktop/desktop-deploy.gif" alt="官网部署流程演示：为应用创建 PostgreSQL、Redis 并部署上线" width="860" /></a>
+</p>
 
-![](/docs/img/sealos-desktop-zh.webp)
+<p align="center"><sub>国际版官网部署演示。点击图片查看原尺寸；<a href="https://sealos.io/">体验完整交互</a>。</sub></p>
 
-🔍 您可以通过以下的屏幕截图进一步了解 Sealos，关于 Sealos 更为详细的介绍与说明，请参阅 [什么是 Sealos](https://sealos.run/docs/Intro)。
+## 认识 Sealos Desktop
 
-<div align="center">
+用 AI 写完代码后，下一步是让项目真正运行起来。Sealos Desktop 内置面向部署与运维的 Agent：理解项目、构建镜像、创建依赖、发布服务，并协助你处理上线之后的问题。
 
-| 模板市场 | 应用管理 |
-| :---: | :---: |
-| ![](/docs/img/templates-zh.jpg) | ![](/docs/img/app-launchpad-1-zh.jpg) |
-| 数据库管理 | 函数计算 |
-| ![](/docs/img/database-zh.jpg) | ![](/docs/img/laf-zh.jpg) |
+本地目录、GitHub 仓库、容器镜像和应用模板，都可以作为起点。应用、数据库、缓存、对象存储和模型访问配置，在同一个项目中完成交付和管理。
 
-</div>
+### 为什么是桌面版？
 
-## 💡 核心功能
+- **承接本地开发。** 直接选择电脑上的源码目录，将本地开发或 AI 工具生成的项目交给 Agent 部署。
+- **内置专用 Agent。** 用自然语言描述上线和运维需求，由 Agent 结合项目与云端资源执行工作流。
+- **依赖一起交付。** 创建应用所需的数据库、缓存、存储和模型密钥，并配置应用与资源之间的连接。
 
-- 🚀 **应用管理**：在模板市场中轻松管理并快速发布可公网访问的分布式应用。
-- 🗄️ **数据库管理**：秒级创建高可用数据库，支持 MySQL、PostgreSQL、MongoDB 和 Redis。
-- 🌥️ **公私一致**：即是公有云也是私有云，支持传统应用无缝迁移到云环境。
+桌面版是控制中心，线上服务运行在你选择的 Sealos Cloud 区域；关闭客户端后，服务仍在云端运行。
 
-## 🌟 优势
+以下界面来自国际版官网演示，文字与图标均按高像素密度重新截取。
 
-- 💰 **高效 & 经济**：仅需为容器付费，自动伸缩杜绝资源浪费，大幅度节省成本。
-- 🌐 **通用性强，无心智负担**：专注于业务本身，无需担心复杂性，几乎没有学习成本。
-- 🛡️ **灵活 & 安全**：多租户共享机制在确保安全的同时，实现资源隔离与高效协作。
+## 从源代码到线上服务
 
+选择项目并描述目标，例如：“部署这个项目，使用 PostgreSQL 保存数据、Redis 管理会话。”Agent 分析项目，完成构建、依赖配置与云端部署，最终交付可访问的公网链接。
+
+<p align="center">
+  <a href="./docs/img/desktop/local-deploy.png"><img src="./docs/img/desktop/local-deploy.png" alt="本地项目上线：部署结果、数据库连接与线上页面预览" width="860" /></a>
+</p>
+
+## 上线之后，继续交给 Agent 协助运维
+
+构建失败、容器重启、异常日志、数据库连接故障，都可以在项目上下文中直接提问。Agent 分析原因并给出修复方案；需要确认的变更通过计划呈现，执行后继续检查结果。
+
+下图展示了国际版的项目日志视图：数据库异常退出后，应用出现连接失败与 502 错误。结合日志、状态和指标，可以向 Agent 发起诊断。
+
+<p align="center">
+  <a href="./docs/img/desktop/ops-logs.png"><img src="./docs/img/desktop/ops-logs.png" alt="持续运维：数据库异常退出与应用 502 错误的关联日志" width="860" /></a>
+</p>
+
+## 用资源拓扑理解整个项目
+
+应用、数据库和缓存之间的关系集中展示。查看服务状态和资源连接，进入部署记录、日志、监控与环境变量，排查问题时保留完整的项目上下文。
+
+<p align="center">
+  <a href="./docs/img/desktop/topology.png"><img src="./docs/img/desktop/topology.png" alt="项目资源拓扑：应用与 PostgreSQL、Redis 的连接关系" width="860" /></a>
+</p>
+
+## 应用需要的基础设施，在一个工作空间里
+
+| 能力 | 可以做什么 |
+| --- | --- |
+| **应用托管** | 部署本地项目、GitHub 仓库、容器镜像，或使用 Dify、n8n、WordPress、Open WebUI 等模板。 |
+| **数据库与缓存** | 创建 PostgreSQL、MySQL、MongoDB、Redis，配置应用连接，并使用每日备份。 |
+| **对象存储** | 使用兼容 S3 的存储桶管理上传文件、静态资源和共享文件。 |
+| **AI 网关** | 通过统一端点和 API Key 接入模型服务，在工作空间中管理访问配置。 |
+| **持续运维** | 查看日志与指标、诊断故障、调整资源、管理部署历史和回滚。 |
+| **团队协作** | 在共享工作空间中管理项目与资源，每位成员使用自己的凭据。 |
+
+Sealos 底层由 Kubernetes 驱动，应用采用标准容器镜像，数据库使用通用引擎，方便后续迁移与扩展。
+
+## 开始使用
+
+1. **[下载 Sealos Desktop](https://sealos.cn/downloads)**，选择 macOS 或 Windows 安装包，安装后登录。
+2. **选择项目来源**：本地目录、GitHub 仓库、容器镜像或应用模板。
+3. **描述上线需求**，查看 Agent 给出的执行计划并确认。
+4. **打开线上链接**，在同一项目中继续查看状态、管理资源和排查问题。
+
+[体验完整产品演示](https://sealos.cn/downloads) · [阅读文档](https://sealos.cn/docs)
 
 ## 🏘️ 社区与支持
 
-- 🌐 访问 [Sealos官网](https://sealos.run/) 获取完整的文档和实用链接。
-
-- 📱 扫码加入社区微信交流群👇
-
-  <img style="width: 250px;" src="https://oss.laf.run/htr4n1-images/sealos-qr-code.jpg">
+- 🌐 访问 [Sealos官网](https://sealos.io/) 获取完整的文档和实用链接。
 
 - 💬 加入我们的 [Discord服务器](https://discord.gg/qzBmGGZGk7)，与 Sealos 开发者和终端用户进行交流。这是了解 Sealos 和 Kubernetes 以及提问和分享经验的理想之地。
 
