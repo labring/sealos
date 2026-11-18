@@ -12,18 +12,9 @@
 
 <p align="center">A desktop Ops Agent for deploying and running full-stack apps.<br />Local code, cloud infrastructure, and ongoing operations — in one project.</p>
 
-<p align="center"><strong>Global</strong></p>
 <p align="center">
-  <a href="https://github.com/sealox/sealox-releases/releases/download/v0.10.5/Sealos-0.10.5-mac-arm64.dmg"><img src="./docs/img/desktop/download-mac-arm64-en.svg" alt="Global — Mac Apple Silicon download" width="258" height="76" /></a>
-  <a href="https://github.com/sealox/sealox-releases/releases/download/v0.10.5/Sealos-0.10.5-mac-x64.dmg"><img src="./docs/img/desktop/download-mac-x64-en.svg" alt="Global — Mac Intel download" width="258" height="76" /></a>
-  <a href="https://github.com/sealox/sealox-releases/releases/download/v0.10.5/Sealos-0.10.5-win-x64.exe"><img src="./docs/img/desktop/download-windows-x64-en.svg" alt="Global — Windows 64-bit download" width="258" height="76" /></a>
-</p>
-
-<p align="center"><strong>China</strong></p>
-<p align="center">
-  <a href="https://sealox.oss-cn-hangzhou.aliyuncs.com/app/releases/0.10.5/Sealos-0.10.5-mac-arm64.dmg"><img src="./docs/img/desktop/download-mac-arm64-en.svg" alt="China — Mac Apple Silicon download" width="258" height="76" /></a>
-  <a href="https://sealox.oss-cn-hangzhou.aliyuncs.com/app/releases/0.10.5/Sealos-0.10.5-mac-x64.dmg"><img src="./docs/img/desktop/download-mac-x64-en.svg" alt="China — Mac Intel download" width="258" height="76" /></a>
-  <a href="https://sealox.oss-cn-hangzhou.aliyuncs.com/app/releases/0.10.5/Sealos-0.10.5-win-x64.exe"><img src="./docs/img/desktop/download-windows-x64-en.svg" alt="China — Windows 64-bit download" width="258" height="76" /></a>
+  <a href="https://sealos.cn/downloads"><img src="./docs/img/desktop/download-china.svg" alt="Download China" width="258" height="64" /></a>
+  <a href="https://sealos.io/"><img src="./docs/img/desktop/download-global.svg" alt="Download Global" width="258" height="64" /></a>
 </p>
 
 <p align="center"><a href="https://sealos.io/docs">Documentation</a> · <a href="./README_zh.md">简体中文</a></p>

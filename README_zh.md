@@ -12,18 +12,9 @@
 
 <p align="center">专注于应用上线与持续运维的桌面 Agent。<br />从本地代码到云端运行，把应用和依赖放在同一个项目里管理。</p>
 
-<p align="center"><strong>Global</strong></p>
 <p align="center">
-  <a href="https://github.com/sealox/sealox-releases/releases/download/v0.10.5/Sealos-0.10.5-mac-arm64.dmg"><img src="./docs/img/desktop/download-mac-arm64-zh.svg" alt="Global — Mac Apple Silicon 下载" width="258" height="76" /></a>
-  <a href="https://github.com/sealox/sealox-releases/releases/download/v0.10.5/Sealos-0.10.5-mac-x64.dmg"><img src="./docs/img/desktop/download-mac-x64-zh.svg" alt="Global — Mac Intel 下载" width="258" height="76" /></a>
-  <a href="https://github.com/sealox/sealox-releases/releases/download/v0.10.5/Sealos-0.10.5-win-x64.exe"><img src="./docs/img/desktop/download-windows-x64-zh.svg" alt="Global — Windows 64-bit 下载" width="258" height="76" /></a>
-</p>
-
-<p align="center"><strong>China</strong></p>
-<p align="center">
-  <a href="https://sealox.oss-cn-hangzhou.aliyuncs.com/app/releases/0.10.5/Sealos-0.10.5-mac-arm64.dmg"><img src="./docs/img/desktop/download-mac-arm64-zh.svg" alt="China — Mac Apple Silicon 下载" width="258" height="76" /></a>
-  <a href="https://sealox.oss-cn-hangzhou.aliyuncs.com/app/releases/0.10.5/Sealos-0.10.5-mac-x64.dmg"><img src="./docs/img/desktop/download-mac-x64-zh.svg" alt="China — Mac Intel 下载" width="258" height="76" /></a>
-  <a href="https://sealox.oss-cn-hangzhou.aliyuncs.com/app/releases/0.10.5/Sealos-0.10.5-win-x64.exe"><img src="./docs/img/desktop/download-windows-x64-zh.svg" alt="China — Windows 64-bit 下载" width="258" height="76" /></a>
+  <a href="https://sealos.cn/downloads"><img src="./docs/img/desktop/download-china.svg" alt="Download China" width="258" height="64" /></a>
+  <a href="https://sealos.io/"><img src="./docs/img/desktop/download-global.svg" alt="Download Global" width="258" height="64" /></a>
 </p>
 
 <p align="center"><a href="https://sealos.cn/docs">文档</a> · <a href="./README.md">English</a></p>
