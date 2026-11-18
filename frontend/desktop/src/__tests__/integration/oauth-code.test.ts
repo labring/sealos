@@ -14,6 +14,14 @@ const db = new DatabaseClient({
 });
 vi.mock('@/services/backend/db/init', () => ({ globalPrisma: db }));
 
+const trackMocks = vi.hoisted(() => ({
+  trackDesktopNewUser: vi.fn(
+    (_payload: { userUid: string; clientId: string; accountAgeDays: number; region: string }) =>
+      Promise.resolve(null)
+  )
+}));
+vi.mock('@/services/backend/tracking', () => trackMocks);
+
 const uid = randomUUID();
 const clientId = `pkce-${uid}`;
 const redirectUri = 'io.sealos.desktop:/callback';
@@ -106,6 +114,7 @@ describe.skipIf(!databaseUrl)('authorization code HTTP contract', () => {
   });
   afterAll(async () => {
     await db.oAuthAuthorizationRequest.deleteMany({ where: { clientId } });
+    await db.oAuthUserConsent.deleteMany({ where: { clientId } });
     await db.oAuthRefreshSession.deleteMany({ where: { clientId } });
     await db.oAuthClient.deleteMany({ where: { clientId } });
     await db.user.deleteMany({ where: { uid } });
@@ -739,5 +748,49 @@ describe.skipIf(!databaseUrl)('authorization code HTTP contract', () => {
       await db.oAuthAuthorizationRequest.deleteMany({ where: { clientId: wildcardId } });
       await db.oAuthClient.delete({ where: { clientId: wildcardId } });
     }
+  });
+  it('records consent and reports first use only on the first completed exchange', async () => {
+    const exchange = async () => {
+      const started = await call(authorize, { query: query() });
+      const id = new URL(started.headers.Location, 'https://auth.example.test').searchParams.get(
+        'request_id'
+      );
+      const [cookieName, cookieValue] = authorizationCookie(started).split(';')[0].split('=');
+      const decision = (await import('@/pages/api/auth/oauth2/code/decision')).default;
+      const approved = await call(decision, {
+        method: 'POST',
+        body: { request_id: id, decision: 'approve' },
+        cookies: { [cookieName]: cookieValue },
+        headers: {
+          origin: 'https://auth.example.test',
+          'content-type': 'application/json',
+          authorization: sign({ userUid: uid, regionUid: 'test-region' }, 'test-region-secret')
+        }
+      });
+      const token = (await import('@/pages/api/auth/oauth2/token')).default;
+      return call(token, {
+        method: 'POST',
+        body: new URLSearchParams({
+          grant_type: 'authorization_code',
+          client_id: clientId,
+          redirect_uri: redirectUri,
+          code: new URL(approved.body.redirect_uri).searchParams.get('code')!,
+          code_verifier: verifier
+        }).toString()
+      });
+    };
+    await db.oAuthUserConsent.deleteMany({ where: { userUid: uid, clientId } });
+    trackMocks.trackDesktopNewUser.mockClear();
+    expect((await exchange()).statusCode).toBe(200);
+    expect(trackMocks.trackDesktopNewUser).toHaveBeenCalledTimes(1);
+    expect(trackMocks.trackDesktopNewUser.mock.calls[0][0]).toMatchObject({
+      userUid: uid,
+      clientId,
+      accountAgeDays: expect.any(Number),
+      region: 'https://auth.example.test'
+    });
+    expect(await db.oAuthUserConsent.count({ where: { userUid: uid, clientId } })).toBe(1);
+    expect((await exchange()).statusCode).toBe(200);
+    expect(trackMocks.trackDesktopNewUser).toHaveBeenCalledTimes(1);
   });
 });

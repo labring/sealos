@@ -4,6 +4,7 @@ import { globalPrisma } from '../db/init';
 import { generateOAuth2AccessToken } from '../auth';
 import { OAuth2HttpError } from './errors';
 import { approveAnalyticsHandoff, redeemAnalyticsHandoff } from './analytics-cookie';
+import { trackDesktopNewUser } from '../tracking';
 
 export const CODE_REFRESH_PREFIX = 'sc_rt_';
 const hash = (value: string) => createHash('sha256').update(value).digest('hex');
@@ -256,7 +257,7 @@ export const exchangeAuthorizationCode = async (params: Record<string, string>) 
   if (!params.code || !params.redirect_uri || !params.code_verifier)
     throw new OAuth2HttpError(400, 'invalid_request');
   if (!/^[A-Za-z0-9._~-]{43,128}$/.test(params.code_verifier)) fail();
-  return transaction(async (db) => {
+  const { response, firstUse } = await transaction(async (db) => {
     const request = await db.oAuthAuthorizationRequest.findUnique({
       where: { codeHash: hash(params.code) }
     });
@@ -289,6 +290,23 @@ export const exchangeAuthorizationCode = async (params: Record<string, string>) 
         tokens: { create: { hash: hash(refresh) } }
       }
     });
+    let firstUse: { userUid: string; accountAgeDays: number } | null = null;
+    const consented = await db.oAuthUserConsent.findUnique({
+      where: { userUid_clientId: { userUid: user.uid, clientId: client.clientId } },
+      select: { id: true }
+    });
+    if (!consented) {
+      await db.oAuthUserConsent.create({
+        data: { userUid: user.uid, clientId: client.clientId }
+      });
+      firstUse = {
+        userUid: user.uid,
+        accountAgeDays: Math.max(
+          0,
+          Math.floor((Date.now() - user.createdAt.getTime()) / 86_400_000)
+        )
+      };
+    }
     const attribution = redeemAnalyticsHandoff(
       params.analytics_token,
       request,
@@ -296,10 +314,22 @@ export const exchangeAuthorizationCode = async (params: Record<string, string>) 
       codeOrigin()
     );
     return {
-      ...tokenResponse(user, client.clientId, refresh),
-      ...(attribution ? { analytics_context: attribution } : {})
+      response: {
+        ...tokenResponse(user, client.clientId, refresh),
+        ...(attribution ? { analytics_context: attribution } : {})
+      },
+      firstUse
     };
   });
+  if (firstUse) {
+    void trackDesktopNewUser({
+      userUid: firstUse.userUid,
+      clientId: client.clientId,
+      accountAgeDays: firstUse.accountAgeDays,
+      region: codeOrigin()
+    });
+  }
+  return response;
 };
 export const refreshCodeToken = async (params: Record<string, string>) => {
   ensureCodeEnabled(false);

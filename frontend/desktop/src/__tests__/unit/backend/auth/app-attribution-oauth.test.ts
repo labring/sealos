@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
     oAuthAuthorizationRequest: { findUnique: vi.fn(), updateMany: vi.fn() },
     user: { findUnique: vi.fn() },
     oAuthRefreshSession: { create: vi.fn() },
+    oAuthUserConsent: { findUnique: vi.fn(), create: vi.fn() },
     $transaction: vi.fn()
   }
 }));
@@ -75,7 +76,13 @@ describe('OAuth stays authoritative while optional metadata crosses the existing
       Object.assign(request, data);
       return { count: 1 };
     });
-    mocks.db.user.findUnique.mockResolvedValue({ uid, id: '1234', nickname: 'Alice' });
+    mocks.db.user.findUnique.mockResolvedValue({
+      uid,
+      id: '1234',
+      nickname: 'Alice',
+      createdAt: new Date()
+    });
+    mocks.db.oAuthUserConsent.findUnique.mockResolvedValue({ id: 'consent-1' });
     mocks.db.oAuthRefreshSession.create.mockResolvedValue({});
   });
   afterEach(() => {

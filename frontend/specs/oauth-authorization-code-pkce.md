@@ -73,6 +73,16 @@ Sealos Desktop 授权服务目前通过设备流向原生客户端签发凭证�
 - 同步维护项目现有全局数据库各 provider schema、迁移及生成类型。只增加字段/表，不迁移或重写 OAuthDeviceGrant 和已有 OAuthUserConsent 数据。
 - 提供桌面 loopback 和移动端回调契约示例，要求客户端使用系统浏览器、验证 state、保存最新 refresh token；回调方案与具体平台关联配置由各原生客户端落实。
 
+## 客户端首用统计（2026-11-18）
+
+为统计"某账号首次使用某授权码客户端"（Desktop 新用户），授权码兑换在服务端持久化首用事实并向产品统计上报一次事件。
+
+- `exchangeAuthorizationCode` 的同一事务内：先查 `OAuthUserConsent`（`userUid + clientId` 唯一）；不存在则创建，并标记本次为首用。并发兑换由串行化事务保证至多一个请求创建记录，重放与重复登录不再触发。
+- 事务提交后、返回 token 前，服务端以 fire-and-forget 方式向部署配置的 Rybbit（`desktop.layout.rybbitHost` / `rybbitSiteId`）发送 `desktop_new_user` 自定义事件：先 `POST /identify`（`user_id` 为 `userUid`），再 `POST /track`。属性白名单：`client_id`、`account_age_days`（`User.createdAt` 到当日的天数）、`region`（本部署 origin）。不带 access/refresh token、code、verifier、IP 或 UA。
+- 该事件是服务端一次性生命周期事实：不受客户端统计开关控制，不重试、不补发；发送失败记 `[tracking][desktopNewUser]` 日志并静默，不影响登录与 token 响应；任一配置缺失则不发送。
+- 语义边界：以"完成授权码兑换"为首用，不含审批后未兑换、拒绝、过期；刷新与撤销不产生事件。多可用区各自持久化 consent，跨区同一账号会各记一次，报表按 `userUid` 取最早一次去重。授权请求按既有清理机制过期删除，历史首用无法回填，事件口径自部署之日起生效。
+- `OAuthUserConsent` 对授权码客户端的新增写入同时供后续"已同意可跳过确认"等能力使用；本规格不改变确认页行为。
+
 ## Testing Decisions
 
 - 测试边界：以现有 OAuth API handler 的请求/响应作为主要边界，验证真实 service 和 PKCE 行为，不 mock 被测授权服务；只在数据库、时间和外部登录身份等边界提供替身。已有 handler 单测大量 mock service，不把它们单独当作新流程安全保证。
