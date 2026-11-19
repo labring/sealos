@@ -205,8 +205,7 @@ func (c *ScaleProcessor) preProcess(cluster *v2.Cluster) error {
 		return err
 	}
 	if c.IsScaleUp {
-		// cluster status might be overwrite by inappropriate usage, add mounts if loss.
-		if err = MountClusterImages(c.Buildah, cluster, true); err != nil {
+		if err = mountImagesForScaleUp(c.Buildah, cluster); err != nil {
 			return err
 		}
 		if cluster.GetRootfsImage().KubeVersion() == "" {
@@ -360,4 +359,16 @@ func NewScaleProcessor(
 		IsScaleUp:          len(masterToJoin) > 0 || len(nodeToJoin) > 0,
 		Guest:              gs,
 	}, nil
+}
+
+// mountImagesForScaleUp restores any lost mounts and merges env in
+// cluster.spec into every mount, as in CreateProcessor, otherwise scripts run
+// on the new nodes miss the user-defined env.
+func mountImagesForScaleUp(bdah buildah.Interface, cluster *v2.Cluster) error {
+	// cluster status might be overwrite by inappropriate usage, add mounts if loss.
+	if err := MountClusterImages(bdah, cluster, true); err != nil {
+		return err
+	}
+	mergeSpecEnvIntoMounts(cluster, nil)
+	return nil
 }
