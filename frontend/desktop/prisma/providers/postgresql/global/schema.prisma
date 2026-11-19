@@ -566,13 +566,11 @@ model OAuthRefreshSession {
 }
 
 model OAuthCodeRefreshToken {
-  hash         String              @id
-  sessionId    String              @db.Uuid
-  session      OAuthRefreshSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  consumedAt   DateTime?
-  // Set when the client replays the previous token because this one never reached it.
-  supersededAt DateTime?
-  createdAt    DateTime            @default(now())
+  hash       String              @id
+  sessionId  String              @db.Uuid
+  session    OAuthRefreshSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  consumedAt DateTime?
+  createdAt  DateTime            @default(now())
 
   @@index([sessionId])
 }

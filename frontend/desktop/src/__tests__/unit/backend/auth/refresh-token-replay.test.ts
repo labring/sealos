@@ -1,11 +1,5 @@
 import { createHash } from 'crypto';
 
-type TokenRow = {
-  hash: string;
-  sessionId: string;
-  consumedAt: Date | null;
-  supersededAt: Date | null;
-};
 const state = vi.hoisted(() => ({
   tokens: new Map<string, any>(),
   session: {} as any
@@ -21,25 +15,6 @@ const mocks = vi.hoisted(() => ({
       }),
       update: vi.fn(async ({ where, data }: any) =>
         Object.assign(state.tokens.get(where.hash), data)
-      ),
-      updateMany: vi.fn(async ({ where, data }: any) => {
-        let count = 0;
-        for (const token of state.tokens.values()) {
-          if (token.sessionId !== where.sessionId) continue;
-          if (token.consumedAt !== null || token.supersededAt !== null) continue;
-          Object.assign(token, data);
-          count++;
-        }
-        return { count };
-      }),
-      count: vi.fn(
-        async ({ where }: any) =>
-          [...state.tokens.values()].filter(
-            (token) =>
-              token.sessionId === where.sessionId &&
-              token.consumedAt !== null &&
-              token.consumedAt.getTime() > where.consumedAt.gt.getTime()
-          ).length
       )
     },
     oAuthRefreshSession: {
@@ -50,8 +25,7 @@ const mocks = vi.hoisted(() => ({
           state.tokens.set(tokens.create.hash, {
             hash: tokens.create.hash,
             sessionId: state.session.id,
-            consumedAt: null,
-            supersededAt: null
+            consumedAt: null
           });
       })
     },
@@ -71,7 +45,7 @@ const refresh = (token: string) =>
 const rejected = (token: string) =>
   expect(refresh(token)).rejects.toMatchObject({ error: 'invalid_grant' });
 
-describe('a refresh whose response was lost can be repeated', () => {
+describe('a refresh whose response was lost can be retried', () => {
   const previous = global.AppConfig;
   beforeEach(() => {
     vi.useFakeTimers();
@@ -87,13 +61,7 @@ describe('a refresh whose response was lost can be repeated', () => {
       expiresAt: new Date(Date.now() + 86400_000)
     };
     state.tokens.clear();
-    const row: TokenRow = {
-      hash: hash(first),
-      sessionId: 'session-id',
-      consumedAt: null,
-      supersededAt: null
-    };
-    state.tokens.set(row.hash, row);
+    state.tokens.set(hash(first), { hash: hash(first), sessionId: 'session-id', consumedAt: null });
     mocks.db.$transaction.mockImplementation((run: any) => run(mocks.db));
     mocks.db.oAuthClient.findUnique.mockResolvedValue({
       clientId: 'sealos-io',
@@ -110,37 +78,34 @@ describe('a refresh whose response was lost can be repeated', () => {
     vi.useRealTimers();
     global.AppConfig = previous;
   });
-  const later = () => vi.advanceTimersByTime(3600_000);
+  const wait = (seconds: number) => vi.advanceTimersByTime(seconds * 1000);
 
-  it('replaying the last rotated token returns a new pair and keeps the session', async () => {
+  it('retrying a spent token within the grace window returns a new pair', async () => {
     const lost = await refresh(first);
-    later();
-    const replayed = await refresh(first);
-    expect(replayed.access_token).toBe('access-token');
-    expect(replayed.refresh_token).not.toBe(lost.refresh_token);
+    wait(59);
+    const retried = await refresh(first);
+    expect(retried.access_token).toBe('access-token');
+    expect(retried.refresh_token).not.toBe(lost.refresh_token);
     expect(state.session.revokedAt).toBeNull();
-    later();
-    expect((await refresh(replayed.refresh_token)).access_token).toBe('access-token');
+    wait(3600);
+    expect((await refresh(retried.refresh_token)).access_token).toBe('access-token');
     expect(state.session.revokedAt).toBeNull();
   });
 
-  it('the replacement that was never delivered revokes the session when presented', async () => {
-    const lost = await refresh(first);
-    later();
-    const replayed = await refresh(first);
-    later();
-    await rejected(lost.refresh_token);
-    expect(state.session.revokedAt).toBeInstanceOf(Date);
-    await rejected(replayed.refresh_token);
-  });
-
-  it('replaying a token after its replacement was used revokes the session', async () => {
-    const second = await refresh(first);
-    later();
-    const third = await refresh(second.refresh_token);
-    later();
+  it('retrying does not extend the grace window', async () => {
+    await refresh(first);
+    wait(40);
+    await refresh(first);
+    wait(40);
     await rejected(first);
     expect(state.session.revokedAt).toBeInstanceOf(Date);
-    await rejected(third.refresh_token);
+  });
+
+  it('a spent token presented after the grace window revokes the session', async () => {
+    const second = await refresh(first);
+    wait(61);
+    await rejected(first);
+    expect(state.session.revokedAt).toBeInstanceOf(Date);
+    await rejected(second.refresh_token);
   });
 });
