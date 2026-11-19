@@ -316,7 +316,15 @@ export const refreshCodeToken = async (params: Record<string, string>) => {
       token.session.expiresAt.getTime() <= Date.now()
     )
       return null;
-    if (token.consumedAt) {
+    // A rotation can commit while its response is lost, so the client still holds the
+    // token it just spent. That token stays usable until its replacement is used.
+    const replay =
+      !!token.consumedAt &&
+      !token.supersededAt &&
+      (await db.oAuthCodeRefreshToken.count({
+        where: { sessionId: token.sessionId, consumedAt: { gt: token.consumedAt } }
+      })) === 0;
+    if ((token.consumedAt || token.supersededAt) && !replay) {
       await db.oAuthRefreshSession.update({
         where: { id: token.sessionId },
         data: { revokedAt: new Date() }
@@ -325,10 +333,18 @@ export const refreshCodeToken = async (params: Record<string, string>) => {
     }
     const user = await db.user.findUnique({ where: { uid: token.session.userUid } });
     if (!user) return null;
-    await db.oAuthCodeRefreshToken.update({
-      where: { hash: token.hash },
-      data: { consumedAt: new Date() }
-    });
+    if (replay) {
+      // The replacement never reached the client; whoever presents it later is not the client.
+      await db.oAuthCodeRefreshToken.updateMany({
+        where: { sessionId: token.sessionId, consumedAt: null, supersededAt: null },
+        data: { supersededAt: new Date() }
+      });
+    } else {
+      await db.oAuthCodeRefreshToken.update({
+        where: { hash: token.hash },
+        data: { consumedAt: new Date() }
+      });
+    }
     const refresh = CODE_REFRESH_PREFIX + random();
     await db.oAuthRefreshSession.update({
       where: { id: token.sessionId },
