@@ -32,6 +32,13 @@ import (
 
 const ModeTransitionFilename = "control-plane-transition.json"
 
+// MaintenanceInheritEnvKey marks a guest command that runs inside a lifecycle
+// operation already holding this cluster's maintenance lock. Cluster images
+// commonly embed sealos and invoke it from their commands; those nested
+// invocations inherit the driving command's serialization instead of failing
+// on the lock it holds.
+const MaintenanceInheritEnvKey = "SEALOS_MAINTENANCE_INHERIT"
+
 // LockMaintenance serializes lifecycle operations using the same cluster
 // inventory. A durable transition marker blocks unrelated mutations on retry.
 func LockMaintenance(name string, conversion bool) (func(), error) {
@@ -43,6 +50,10 @@ func LockLifecycleMaintenance(name string) (func(), error) {
 }
 
 func lockMaintenance(name string, conversion bool) (func(), error) {
+	if os.Getenv(MaintenanceInheritEnvKey) == name {
+		// The driving lifecycle command holds the lock for this cluster.
+		return func() {}, nil
+	}
 	dir := constants.ClusterDir(name)
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return nil, err

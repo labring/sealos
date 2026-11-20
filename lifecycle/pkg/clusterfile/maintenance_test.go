@@ -20,6 +20,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/types/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -169,5 +170,34 @@ func TestModeGuardPreservesLegacyOfflineReset(t *testing.T) {
 		offline,
 	) {
 		t.Fatalf("managed inventory bypassed API verification: %v", err)
+	}
+}
+
+func TestLockMaintenanceInheritsGuestMarker(t *testing.T) {
+	previousRoot := constants.DefaultRuntimeRootDir
+	constants.DefaultRuntimeRootDir = t.TempDir()
+	t.Cleanup(func() { constants.DefaultRuntimeRootDir = previousRoot })
+
+	release, err := LockMaintenance("inherit-test", false)
+	if err != nil {
+		t.Fatalf("first acquisition failed: %v", err)
+	}
+	defer release()
+
+	if _, err := LockMaintenance("inherit-test", false); err == nil ||
+		!strings.Contains(err.Error(), "another lifecycle command") {
+		t.Fatalf("second acquisition without the marker succeeded: %v", err)
+	}
+
+	t.Setenv(MaintenanceInheritEnvKey, "inherit-test")
+	inherited, err := LockMaintenance("inherit-test", false)
+	if err != nil {
+		t.Fatalf("nested acquisition rejected: %v", err)
+	}
+	inherited()
+
+	t.Setenv(MaintenanceInheritEnvKey, "other-cluster")
+	if _, err := LockMaintenance("inherit-test", false); err == nil {
+		t.Fatal("marker for a different cluster bypassed the lock")
 	}
 }
