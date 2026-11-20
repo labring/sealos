@@ -7,7 +7,7 @@ import useBillingStore from '@/stores/billing';
 import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import { loadStripe } from '@stripe/stripe-js';
 import { BalanceSection } from '@/components/plan/BalanceSection';
-import { getAccountBalance } from '@/api/account';
+import { getAccountBalance, getAccountSummary } from '@/api/account';
 import request from '@/service/request';
 import RechargeModal from '@/components/RechargeModal';
 import TransferModal from '@/components/TransferModal';
@@ -51,16 +51,19 @@ export default function Cost() {
   const transferRef = useRef<any>();
 
   // Get balance data
-  const { data: balance_raw } = useQuery({
+  const accountQuery = useQuery({
     queryKey: ['getAccount'],
     queryFn: getAccountBalance,
     staleTime: 0
   });
 
   // Calculate balance
-  let rechargeAmount = balance_raw?.data?.balance || 0;
-  let expenditureAmount = balance_raw?.data?.deductionBalance || 0;
-  let balance = rechargeAmount - expenditureAmount;
+  const {
+    recharge: rechargeAmount,
+    expenditure: expenditureAmount,
+    balance
+  } = getAccountSummary(accountQuery.data?.data);
+  const accountUnavailable = accountQuery.isError || (!accountQuery.isLoading && balance === null);
 
   // Get k8s_username for transfer functionality
   const getSession = useSessionStore((state) => state.getSession);
@@ -81,13 +84,20 @@ export default function Cost() {
         <div className="flex-1">
           <BalanceSection
             balance={balance}
+            isError={accountUnavailable}
+            isLoading={accountQuery.isLoading}
             rechargeEnabled={config.recharge.enabled}
             subscriptionEnabled={config.features.subscriptionEnabled}
             onTopUpClick={() => rechargeRef?.current?.onOpen()}
+            onRetry={() => void accountQuery.refetch()}
           />
         </div>
 
-        <RechargeExpenditureSection recharge={rechargeAmount} expenditure={expenditureAmount} />
+        <RechargeExpenditureSection
+          expenditure={expenditureAmount}
+          isLoading={accountQuery.isLoading}
+          recharge={rechargeAmount}
+        />
       </div>
 
       <div className="flex flex-col gap-4 overflow-auto">
@@ -99,7 +109,7 @@ export default function Cost() {
       {config.recharge.enabled && (
         <RechargeModal
           ref={rechargeRef}
-          balance={balance}
+          balance={balance ?? 0}
           stripePromise={stripePromise}
           request={request}
           onPaySuccess={async () => {
@@ -113,7 +123,7 @@ export default function Cost() {
       {config.features.transferEnabled && (
         <TransferModal
           ref={transferRef}
-          balance={balance}
+          balance={balance ?? 0}
           onTransferSuccess={async () => {
             await new Promise((s) => setTimeout(s, 2000));
             await queryClient.invalidateQueries({ queryKey: ['billing'] });
