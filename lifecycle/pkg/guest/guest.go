@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	"github.com/labring/sealos/fork/golang/expansion"
+	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/env"
 	"github.com/labring/sealos/pkg/exec"
 	"github.com/labring/sealos/pkg/ssh"
@@ -63,7 +64,7 @@ func (d *Default) Apply(cluster *v2.Cluster, mounts []v2.MountImage, targetHosts
 					isControlPlaneHost(cluster, node) {
 					continue
 				}
-				envs := maps.Merge(m.Env, envGetter.Getenv(node))
+				envs := withMaintenanceInherit(cluster, maps.Merge(m.Env, envGetter.Getenv(node)))
 				cmds := formalizeImageCommands(cluster, i, m, envs)
 				eg.Go(func() error {
 					return execer.CmdAsyncWithContext(ctx, node,
@@ -76,7 +77,9 @@ func (d *Default) Apply(cluster *v2.Cluster, mounts []v2.MountImage, targetHosts
 			}
 		case m.IsApplication():
 			// on run on the first master
-			envs := maps.Merge(m.Env, envGetter.Getenv(cluster.GetMaster0IP()))
+			envs := withMaintenanceInherit(
+				cluster, maps.Merge(m.Env, envGetter.Getenv(cluster.GetMaster0IP())),
+			)
 			cmds := formalizeImageCommands(cluster, i, m, envs)
 			if err := execer.CmdAsync(cluster.GetMaster0IPAndPort(),
 				stringsutil.RenderShellWithEnv(strings.Join(cmds, "; "), envs),
@@ -93,6 +96,18 @@ func isControlPlaneHost(cluster *v2.Cluster, host string) bool {
 		return true
 	}
 	return slices.Contains(cluster.GetMasterIPList(), host)
+}
+
+// withMaintenanceInherit marks every guest command with the cluster whose
+// maintenance lock the driving lifecycle command holds, so cluster images that
+// invoke a nested sealos inherit its serialization instead of failing on the
+// lock.
+func withMaintenanceInherit(cluster *v2.Cluster, envs map[string]string) map[string]string {
+	if envs == nil {
+		envs = make(map[string]string, 1)
+	}
+	envs[clusterfile.MaintenanceInheritEnvKey] = cluster.Name
+	return envs
 }
 
 func formalizeImageCommands(

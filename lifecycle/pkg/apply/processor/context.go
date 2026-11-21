@@ -18,9 +18,13 @@ package processor
 
 import "context"
 
-var (
-	commandKey struct{}
-	envKey     struct{}
+// contextKey values must be distinct: two struct{} keys are equal and would
+// overwrite each other in the context chain.
+type contextKey int
+
+const (
+	commandKey contextKey = iota
+	envKey
 )
 
 //nolint:staticcheck
@@ -42,7 +46,7 @@ func WithEnvs(ctx context.Context, envs map[string]string) context.Context {
 }
 
 func GetEnvs(ctx context.Context) map[string]string {
-	v := ctx.Value(commandKey)
+	v := ctx.Value(envKey)
 	if v != nil {
 		return v.(map[string]string)
 	}
