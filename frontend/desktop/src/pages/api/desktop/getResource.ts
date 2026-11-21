@@ -17,7 +17,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const kc = K8sApi(realKc);
     if (!kc) return jsonRes(res, { code: 404, message: 'The kubeconfig is not found' });
 
-    const result = await kc.makeApiClient(k8s.CoreV1Api).listNamespacedPod(namespace);
+    const result = await kc
+      .makeApiClient(k8s.CoreV1Api)
+      .listNamespacedPod({ namespace });
 
     let totalCpuLimits = 0;
     let totalMemoryLimits = 0;
@@ -26,7 +28,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let totalGpuCount = 0;
     let totalPodCount = 0;
 
-    for (const pod of result.body.items) {
+    for (const pod of result.items) {
       if (pod.status?.phase === 'Succeeded') continue;
       if (!pod?.spec) continue;
 
@@ -56,8 +58,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         try {
           const pvc = await kc
             .makeApiClient(k8s.CoreV1Api)
-            .readNamespacedPersistentVolumeClaim(pvcName, namespace);
-          const storage = pvc?.body?.spec?.resources?.requests?.storage || '0';
+            .readNamespacedPersistentVolumeClaim({ name: pvcName, namespace });
+          const storage = pvc?.spec?.resources?.requests?.storage || '0';
           totalStorageRequests += parseResourceValue(storage, 'storage');
         } catch (error) {}
       }

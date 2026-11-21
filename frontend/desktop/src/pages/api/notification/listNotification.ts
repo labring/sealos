@@ -25,11 +25,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     };
 
     const result = (await ListCRD(kc, notification_meta)) as {
-      body: {
-        items: NotificationCR[];
-      };
+      items: NotificationCR[];
     };
-    const data = result.body?.items?.map(adaptNotification).filter((notification) => {
+    const data = result.items?.map(adaptNotification).filter((notification) => {
       const started = notification.startTime
         ? new Date(notification.startTime).getTime() < Date.now()
         : true;
