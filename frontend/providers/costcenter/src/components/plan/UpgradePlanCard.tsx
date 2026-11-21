@@ -6,6 +6,7 @@ import usePlanStore from '@/stores/plan';
 import { formatMoney, formatTrafficAuto } from '@/utils/format';
 import { useTranslation } from 'next-i18next';
 import CurrencySymbol from '../CurrencySymbol';
+import { canRecreateSubscription, getSubscriptionOperator } from '@/utils/subscription';
 
 interface UpgradePlanCardProps {
   plan: SubscriptionPlan;
@@ -39,6 +40,7 @@ export function UpgradePlanCard({
   const lastTransaction = lastTransactionData?.transaction;
   const currentPlan = getCurrentPlan() || undefined;
   const inDebt = subscription?.Status?.toLowerCase() === 'debt';
+  const canRecreate = canRecreateSubscription(subscription?.Status);
   const isCurrentPlan = !isCreateMode && plan.Name === subscription?.PlanName;
   const isNextPlan =
     !isCreateMode &&
@@ -61,22 +63,12 @@ export function UpgradePlanCard({
 
   const actionType = getActionType();
 
-  // Get operator for upgrade amount calculation
-  const getOperator = () => {
-    // If in debt state, always use 'created' operation
-    if (inDebt) return 'created';
-    if (!currentPlan) return 'created';
-    if (currentPlan.UpgradePlanList?.includes(plan.Name)) return 'upgraded';
-    if (currentPlan.DowngradePlanList?.includes(plan.Name)) return 'downgraded';
-    return 'upgraded';
-  };
-
   const handleSubscribeClick = () => {
-    // If in debt state, allow clicking on current plan (for renew)
-    if (!inDebt && (isCurrentPlan || isNextPlan || actionType === 'contact')) {
+    // Inactive subscriptions can select their previous plan again.
+    if (!canRecreate && (isCurrentPlan || isNextPlan || actionType === 'contact')) {
       return;
     }
-    const operator = getOperator();
+    const operator = getSubscriptionOperator(subscription?.Status, currentPlan, plan.Name);
     // Determine business operation for UI display
     let businessOperation: 'create' | 'upgrade' | 'downgrade' | 'renew' | undefined;
     if (inDebt) {
@@ -123,7 +115,8 @@ export function UpgradePlanCard({
     // If in debt state and is current plan, show Renew button
     if (inDebt && isCurrentPlan) return t('common:renew');
 
-    if (!inDebt && isCurrentPlan) return t('common:your_current_plan');
+    if (canRecreate && isCurrentPlan) return t('common:subscribe');
+    if (!canRecreate && isCurrentPlan) return t('common:your_current_plan');
     if (isNextPlan) return t('common:your_next_plan');
     if (isLoading) return t('common:processing');
 
@@ -180,15 +173,15 @@ export function UpgradePlanCard({
             className={cn(
               'w-full mb-6 font-medium',
               // If in debt state and is current plan, show enabled button
-              inDebt && isCurrentPlan
+              canRecreate && isCurrentPlan
                 ? 'bg-gray-900 text-white hover:bg-gray-800'
-                : !inDebt && (isCurrentPlan || isNextPlan)
+                : !canRecreate && (isCurrentPlan || isNextPlan)
                 ? 'bg-gray-200 text-gray-600 cursor-not-allowed hover:bg-gray-200'
                 : actionType === 'contact'
                 ? 'bg-blue-600 text-white hover:bg-blue-700'
                 : 'bg-gray-900 text-white hover:bg-gray-800'
             )}
-            disabled={(!inDebt && (isCurrentPlan || isNextPlan)) || isLoading}
+            disabled={(!canRecreate && (isCurrentPlan || isNextPlan)) || isLoading}
             onClick={handleSubscribeClick}
           >
             {getButtonText()}
