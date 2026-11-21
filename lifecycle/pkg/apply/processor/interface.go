@@ -173,6 +173,15 @@ func getIndexOfContainerInMounts(mounts []v2.MountImage, imageName string) int {
 	return -1
 }
 
+// mergeSpecEnvIntoMounts merges env in cluster.spec (and any extra env, which
+// takes precedence) into every mounts object.
+func mergeSpecEnvIntoMounts(cluster *v2.Cluster, extra map[string]string) {
+	env := maps.FromSlice(cluster.Spec.Env)
+	for i := range cluster.Status.Mounts {
+		cluster.Status.Mounts[i].Env = maps.Merge(cluster.Status.Mounts[i].Env, env, extra)
+	}
+}
+
 func MountClusterImages(bdah buildah.Interface, cluster *v2.Cluster, skipApp bool) error {
 	if cluster.Status.Mounts == nil {
 		cluster.Status.Mounts = make([]v2.MountImage, 0)
