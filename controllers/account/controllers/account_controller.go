@@ -322,6 +322,8 @@ func convertDebtStatus(statusType accountv1.DebtStatusType) pkgtypes.DebtStatusT
 		return pkgtypes.LowBalancePeriod
 	case accountv1.CriticalBalancePeriod:
 		return pkgtypes.CriticalBalancePeriod
+	case accountv1.OneDayBalancePeriod:
+		return pkgtypes.OneDayBalancePeriod
 	case accountv1.DebtPeriod:
 		return pkgtypes.DebtPeriod
 	case accountv1.DebtDeletionPeriod:
