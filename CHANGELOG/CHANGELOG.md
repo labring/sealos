@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+- [CHANGELOG-5.2.0.md](./CHANGELOG-5.2.0.md)
+- [CHANGELOG-5.1.2-rc6.md](./CHANGELOG-5.1.2-rc6.md)
+- [CHANGELOG-5.1.2-rc5.md](./CHANGELOG-5.1.2-rc5.md)
+- [CHANGELOG-5.1.2-rc4.md](./CHANGELOG-5.1.2-rc4.md)
+- [CHANGELOG-5.1.2-rc3.md](./CHANGELOG-5.1.2-rc3.md)
+- [CHANGELOG-5.1.2-rc2.md](./CHANGELOG-5.1.2-rc2.md)
+- [CHANGELOG-5.1.2-rc1.md](./CHANGELOG-5.1.2-rc1.md)
+- [CHANGELOG-5.1.2.md](./CHANGELOG-5.1.2.md)
+- [CHANGELOG-5.1.1-rc1.md](./CHANGELOG-5.1.1-rc1.md)
+- [CHANGELOG-5.1.1.md](./CHANGELOG-5.1.1.md)
 - [CHANGELOG-5.1.0-rc3.md](./CHANGELOG-5.1.0-rc3.md)
 - [CHANGELOG-5.1.0-rc2.md](./CHANGELOG-5.1.0-rc2.md)
 - [CHANGELOG-5.1.0-rc1.md](./CHANGELOG-5.1.0-rc1.md)
