@@ -5,7 +5,7 @@ on:
       pre-version:
         description: 'Pre Version to release. Has v prefix'
         required: true
-        default: 'v5.0.1'
+        default: 'v5.2.0'
       version:
         description: 'Version to release. Has v prefix'
         required: true
@@ -93,7 +93,7 @@ jobs:
           echo "Current branch: $branch"
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git pull 
+          git pull
           git fetch --tags
           git tag ${{ steps.tagpr.outputs.version }}
           git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
