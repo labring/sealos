@@ -32,7 +32,6 @@ import (
 	"github.com/labring/sealos/pkg/runtime/factory"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/labring/sealos/pkg/utils/maps"
 	"github.com/labring/sealos/pkg/utils/yaml"
 )
 
@@ -101,12 +100,7 @@ func (c *CreateProcessor) preProcess(cluster *v2.Cluster) error {
 	if err := MountClusterImages(c.Buildah, cluster, false); err != nil {
 		return err
 	}
-	// env in cluster.spec will be merged into every mounts object
-	env := maps.FromSlice(cluster.Spec.Env)
-	// extra env must been set at the very first
-	for i := range cluster.Status.Mounts {
-		cluster.Status.Mounts[i].Env = maps.Merge(cluster.Status.Mounts[i].Env, env, c.ExtraEnvs)
-	}
+	mergeSpecEnvIntoMounts(cluster, c.ExtraEnvs)
 
 	rt, err := factory.New(cluster, c.ClusterFile.GetRuntimeConfig())
 	if err != nil {
