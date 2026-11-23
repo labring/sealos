@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { KubeConfig } from '@kubernetes/client-node';
+import { HttpMethod, KubeConfig, RequestContext } from '@kubernetes/client-node';
 import yaml from 'js-yaml';
 
 const { verifyAccessToken } = vi.hoisted(() => ({ verifyAccessToken: vi.fn() }));
@@ -44,8 +44,8 @@ describe('rotate kubeconfig api', () => {
       workspaceId: 'other-workspace'
     });
     client.getClusterCustomObjectStatus
-      .mockResolvedValueOnce({ body: { status: { kubeConfig: kubeconfig('old-test-token') } } })
-      .mockResolvedValue({ body: { status: { kubeConfig: kubeconfig('new-test-token') } } });
+      .mockResolvedValueOnce({ status: { kubeConfig: kubeconfig('old-test-token') } })
+      .mockResolvedValue({ status: { kubeConfig: kubeconfig('new-test-token') } });
     client.patchClusterCustomObject.mockResolvedValue({});
   });
 
@@ -99,16 +99,19 @@ describe('rotate kubeconfig api', () => {
       expect(returned.contexts[0].context.namespace).toBe('other-workspace');
       expect(returned.users[0].user.token).toBe('new-test-token');
       expect(client.patchClusterCustomObject).toHaveBeenCalledWith(
-        'user.sealos.io',
-        'v1',
-        'users',
-        name,
-        [expect.objectContaining({ op: 'add', path: '/spec/kubeConfigRotateAt' })],
-        undefined,
-        undefined,
-        undefined,
-        { headers: { 'Content-Type': 'application/json-patch+json' } }
+        {
+          group: 'user.sealos.io',
+          version: 'v1',
+          plural: 'users',
+          name,
+          body: [expect.objectContaining({ op: 'add', path: '/spec/kubeConfigRotateAt' })]
+        },
+        { middleware: [expect.objectContaining({ pre: expect.any(Function) })] }
       );
+      const middleware = client.patchClusterCustomObject.mock.calls[0][1].middleware[0];
+      const context = new RequestContext('https://cluster.example.test', HttpMethod.PATCH);
+      const patched = await middleware.pre(context).toPromise();
+      expect(patched.getHeaders()['Content-Type']).toBe('application/json-patch+json');
     }
   );
 

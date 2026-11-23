@@ -50,7 +50,10 @@ async function fixture(metricsAuth = fixtureMetricsAuth) {
   const kubeconfig = JSON.stringify({
     apiVersion: 'v1',
     kind: 'Config',
-    clusters: [{ name: 'fixture', cluster: { server: `${origin}/k8s` } }],
+    // client-node 1.x requires an explicit opt-in for this local HTTP fixture.
+    clusters: [
+      { name: 'fixture', cluster: { server: `${origin}/k8s`, 'insecure-skip-tls-verify': true } }
+    ],
     users: [{ name: 'fixture', user: { token: 'fictional-test-token' } }],
     contexts: [
       { name: 'fixture', context: { cluster: 'fixture', user: 'fixture', namespace: 'demo' } }

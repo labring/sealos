@@ -23,10 +23,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Get devbox running count
     const runningDevboxes = await k8sCustomObjects
-      .listNamespacedCustomObject('devbox.sealos.io', 'v1alpha1', namespace, 'devboxes')
+      .listNamespacedCustomObject({
+        group: 'devbox.sealos.io',
+        version: 'v1alpha1',
+        namespace,
+        plural: 'devboxes'
+      })
       .then(
         (devboxResponse) =>
-          ((devboxResponse.body as any)?.items || []).filter(
+          ((devboxResponse as any)?.items || []).filter(
             (devbox: any) => devbox?.status?.phase === 'Running'
           ).length
       )
@@ -34,63 +39,46 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Get database running count
     const runningDatabases = await k8sCustomObjects
-      .listNamespacedCustomObject(
-        'apps.kubeblocks.io',
-        'v1alpha1',
+      .listNamespacedCustomObject({
+        group: 'apps.kubeblocks.io',
+        version: 'v1alpha1',
         namespace,
-        'clusters',
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        `clusterdefinition.kubeblocks.io/name`
-      )
+        plural: 'clusters',
+        labelSelector: 'clusterdefinition.kubeblocks.io/name'
+      })
       .then(
         (dbResponse) =>
-          ((dbResponse.body as any)?.items || []).filter(
-            (db: any) => db?.status?.phase === 'Running'
-          ).length
+          ((dbResponse as any)?.items || []).filter((db: any) => db?.status?.phase === 'Running')
+            .length
       )
       .catch(() => 0);
 
     // Get all deployments and statefulsets with app-deploy-manager label
     const runningLaunchpadApps = await Promise.all([
-      k8sApp.listNamespacedDeployment(
+      k8sApp.listNamespacedDeployment({
         namespace,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        'cloud.sealos.io/app-deploy-manager'
-      ),
-      k8sApp.listNamespacedStatefulSet(
+        labelSelector: 'cloud.sealos.io/app-deploy-manager'
+      }),
+      k8sApp.listNamespacedStatefulSet({
         namespace,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        'cloud.sealos.io/app-deploy-manager'
-      )
+        labelSelector: 'cloud.sealos.io/app-deploy-manager'
+      })
     ])
       .then((promises) =>
         Promise.all(
           promises
-            .flatMap((appList) => appList.body.items)
+            .flatMap((appList) => appList.items)
             .map((app) =>
-              k8sCore.listNamespacedPod(
+              k8sCore.listNamespacedPod({
                 namespace,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                `app=${app.metadata!.name}`
-              )
+                labelSelector: `app=${app.metadata!.name}`
+              })
             )
         )
       )
       .then((appPodLists) =>
         appPodLists
-          .map(({ body: { items: pods } }) => {
+          .map(({ items: pods }) => {
             // Returns true if have at least one pod running
             return pods.some((pod: any) => {
               const container = pod.status?.containerStatuses || [];

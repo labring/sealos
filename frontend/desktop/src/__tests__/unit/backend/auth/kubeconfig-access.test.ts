@@ -25,10 +25,12 @@ describe('kubeconfig access policy', () => {
     vi.spyOn(KubeConfig.prototype, 'loadFromDefault').mockImplementation(() => {});
     vi.spyOn(KubeConfig.prototype, 'makeApiClient').mockReturnValue(client as any);
     client.getClusterCustomObject.mockResolvedValue({
-      body: { kind: 'User', metadata: { labels: {} }, status: { kubeConfig: 'test-kubeconfig' } }
+      kind: 'User',
+      metadata: { labels: {} },
+      status: { kubeConfig: 'test-kubeconfig' }
     });
     client.getClusterCustomObjectStatus.mockResolvedValue({
-      body: { status: { kubeConfig: 'test-kubeconfig' } }
+      status: { kubeConfig: 'test-kubeconfig' }
     });
   });
 
@@ -82,24 +84,24 @@ describe('kubeconfig access policy', () => {
     setFlag(true);
     expect(isKubeconfigAccessDenied('admin')).toBe(false);
     await expect(getUserKubeconfigNotPatch('admin')).resolves.toBe('test-kubeconfig');
-    expect(client.getClusterCustomObject).toHaveBeenCalledWith(
-      'user.sealos.io',
-      'v1',
-      'users',
-      'admin'
-    );
+    expect(client.getClusterCustomObject).toHaveBeenCalledWith({
+      group: 'user.sealos.io',
+      version: 'v1',
+      plural: 'users',
+      name: 'admin'
+    });
   });
 
   it('runs the existing admin initialization flow when enabled', async () => {
     setFlag(true);
     await expect(getUserKubeconfig('uid', 'admin', 'payg')).resolves.toBe('test-kubeconfig');
     expect(client.patchClusterCustomObject).toHaveBeenCalledOnce();
-    expect(client.getClusterCustomObjectStatus).toHaveBeenCalledWith(
-      'user.sealos.io',
-      'v1',
-      'users',
-      'admin'
-    );
+    expect(client.getClusterCustomObjectStatus).toHaveBeenCalledWith({
+      group: 'user.sealos.io',
+      version: 'v1',
+      plural: 'users',
+      name: 'admin'
+    });
   });
 
   it('preserves User CR creation through the existing initialization flow', async () => {
@@ -108,12 +110,12 @@ describe('kubeconfig access policy', () => {
       body: { kind: 'Status', reason: 'NotFound', code: 404 }
     });
     await expect(getUserKubeconfig('uid', 'admin', 'payg')).resolves.toBe('test-kubeconfig');
-    expect(client.createClusterCustomObject).toHaveBeenCalledWith(
-      'user.sealos.io',
-      'v1',
-      'users',
-      expect.objectContaining({ metadata: expect.objectContaining({ name: 'admin' }) })
-    );
+    expect(client.createClusterCustomObject).toHaveBeenCalledWith({
+      group: 'user.sealos.io',
+      version: 'v1',
+      plural: 'users',
+      body: expect.objectContaining({ metadata: expect.objectContaining({ name: 'admin' }) })
+    });
   });
 
   it.each(['ns-admin', 'workspace-user'])(
